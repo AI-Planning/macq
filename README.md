@@ -18,5 +18,9 @@ Coming soon...
 
 * Tarski
 
-## Citing This Work
+## Related work
+
+* [Good resource that summarizes many of the techniques](https://hal.archives-ouvertes.fr/hal-02010536/document)
+
+## Citing this work
 Coming soon...
