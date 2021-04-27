@@ -12,6 +12,9 @@ Coming soon...
 - [ ] [Acquisition of Object-Centred Domain Models from Planning Examples](https://ojs.aaai.org/index.php/ICAPS/article/view/13391) (ICAPS'09)
 - [ ] [Generalised Domain Model Acquisition from Action Traces](https://ojs.aaai.org/index.php/ICAPS/article/view/13476) (ICAPS'11)
 - [ ] [Learning STRIPS Operators from Noisy and Incomplete Observations](https://arxiv.org/abs/1210.4889) (UAI'12)
+- [ ] [Domain Model Acquisition in Domains with Action Costs](https://ojs.aaai.org/index.php/ICAPS/article/view/13762) (ICAPS'16)
+- [ ] [Efficient, Safe, and Probably Approximately Complete Learning of Action Models](https://arxiv.org/abs/1705.08961) (IJCAI'17)
+- [ ] [LOUGA: Learning Planning Operators Using Genetic Algorithms](https://www.springerprofessional.de/en/louga-learning-planning-operators-using-genetic-algorithms/15981308) (PRKAW'18)
 - [ ] [Learning action models with minimal observability](https://www.sciencedirect.com/science/article/abs/pii/S0004370218304259) (AIJ'19)
 
 ## Requirements
