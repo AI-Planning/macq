@@ -18,12 +18,18 @@ Coming soon...
 - [ ] [Generalised Domain Model Acquisition from Action Traces](https://ojs.aaai.org/index.php/ICAPS/article/view/13476) (ICAPS'11)
 - [ ] [Autonomous Learning of Action Models for Planning](https://papers.nips.cc/paper/2011/file/4671aeaf49c792689533b00664a5c3ef-Paper.pdf) (NeurIPS'11)
 - [ ] [Learning STRIPS Operators from Noisy and Incomplete Observations](https://arxiv.org/abs/1210.4889) (UAI'12)
+- [ ] [Learning Action Models from Disordered and Noisy Plan Traces](https://arxiv.org/abs/1908.09800) (IJCAI'13)
+- [ ] [Action-model acquisition for planning via transfer learning](https://www.sciencedirect.com/science/article/pii/S0004370214000320) (AIJ'14)
 - [ ] [Domain Model Acquisition in Domains with Action Costs](https://ojs.aaai.org/index.php/ICAPS/article/view/13762) (ICAPS'16)
+- [ ] [Domain Model Acquisition in the Presence of Static Relations in the LOP System](https://www.ijcai.org/Proceedings/16/Papers/622.pdf) (IJCAI'16)
 - [ ] [Efficient, Safe, and Probably Approximately Complete Learning of Action Models](https://arxiv.org/abs/1705.08961) (IJCAI'17)
 - [ ] [Robust planning with incomplete domain models](https://www.sciencedirect.com/science/article/pii/S0004370216301539) (AIJ'17)
 - [ ] [LOUGA: Learning Planning Operators Using Genetic Algorithms](https://www.springerprofessional.de/en/louga-learning-planning-operators-using-genetic-algorithms/15981308) (PRKAW'18)
+- [ ] [Learning STRIPS Action Models with Classical Planning](https://arxiv.org/abs/1903.01153) (ICAPS'18)
 - [ ] [Learning action models with minimal observability](https://www.sciencedirect.com/science/article/abs/pii/S0004370218304259) (AIJ'19)
 - [ ] [Bridging the Gap: Providing Post-Hoc Symbolic Explanations for Sequential Decision-Making Problems with Black Box Simulators](https://arxiv.org/abs/2002.01080) (ICML-WS'20)
+- [ ] [STRIPS Action Discovery](https://arxiv.org/abs/2001.11457) (arXiv'20)
+- [ ] [Learning First-Order Symbolic Representations for Planning from the Structure of the State Space](https://arxiv.org/abs/1909.05546) (ECAI'20)
 - [ ] [Agent Interrogation Algorithm](https://github.com/AAIR-lab/AIA-AAAI21) (AAAI'21)
 
 ## Requirements
