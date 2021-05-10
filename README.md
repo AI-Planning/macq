@@ -71,6 +71,21 @@ model.actions[0].to_pddl()
 - [ ] [Learning First-Order Symbolic Representations for Planning from the Structure of the State Space](https://arxiv.org/abs/1909.05546) (ECAI'20)
 - [ ] [Agent Interrogation Algorithm](https://github.com/AAIR-lab/AIA-AAAI21) (AAAI'21)
 
+## Features
+
+- Determinism:
+  - Fully deterministic
+  - Non-deterministic
+  - Probabilistic
+- Fluent observability
+  - Fully observable
+  - Some fluents consistently missing
+  - Random fluents missing
+- Action observability
+- State noise
+- Action noise
+- _more coming soon..._
+
 ## Requirements
 
 * Tarski
