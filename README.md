@@ -76,7 +76,7 @@ model.actions[0].to_pddl()
 - [ ] [Discovering Underlying Plans Based on Shallow Models](https://dl.acm.org/doi/abs/10.1145/3368270) (ACM TIST'20)
 - [ ] [Agent Interrogation Algorithm](https://github.com/AAIR-lab/AIA-AAAI21) (AAAI'21)
 
-## Features
+## Features / Assumptions
 
 - Determinism:
   - Fully deterministic
@@ -86,10 +86,24 @@ model.actions[0].to_pddl()
   - Fully observable
   - Some fluents consistently missing
   - Random fluents missing
+- Parameterized
+  - Atomic fluents/actions (no objects)
+  - Predicates/action parameters (objects+types)
 - Action observability
+  - Know action names?
+  - Know action parameters?
+  - Know some action pre/eff?
+  - Know everything?
 - State noise
+  - Fluents observed are correct.
+  - Fluents observed may be wrong.
 - Action noise
-- _more coming soon..._
+  - Obs tokens contain correct action info
+  - Obs tokens may be incorrect with some probability
+- Assumes rationality
+  - Yes
+  - Bounded
+  - No
 
 ## Requirements
 
