@@ -1,6 +1,6 @@
 class Effect:
     def __init__(self, name, func, probability=100):
-        '''Class to handle an individual effect of an action'''
+        """Class to handle an individual effect of an action"""
         # name of the effect
         self.name = name
         # function to apply the effect in the corresponding action
@@ -9,12 +9,12 @@ class Effect:
         self.prob = self.set_prob(probability)
         
     def set_prob(self, prob):
-        '''Setter function for probability'''
+        """Setter function for probability"""
         # ensure an integer is given
         try:
             test_int = int(prob)
         except ValueError:
-            raise Exception('Must enter an integer value for probability.')
+            raise ValueError("Must enter an integer value for probability.")
         # enforce that probability is between 0 and 100 inclusive
         if prob < 0:
             prob = 0
