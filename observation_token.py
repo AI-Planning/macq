@@ -1,5 +1,13 @@
-from enum import Enum
 from inspect import signature
+from enum import Enum
+from typing import Union
+from collections.abc import Callable, Sequence
+
+
+class Action:
+    """Placeholder"""
+
+    pass
 
 
 class InvalidMethod(Exception):
@@ -19,7 +27,7 @@ class ObservationToken:
     observation token for an action-state pair.
     """
 
-    def __init__(self, method=token_method.IDENTITY):
+    def __init__(self, method: Union[token_method, Callable] = token_method.IDENTITY):
         """
         Creates an ObservationToken object. This will store the supplied
         tokenize method to use on action-state pairs.
@@ -40,7 +48,7 @@ class ObservationToken:
         else:
             raise InvalidMethod(method)
 
-    def get_method(self, method) -> object:
+    def get_method(self, method) -> Callable[[Action, Sequence], Union[tuple, None]]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -54,12 +62,13 @@ class ObservationToken:
         tokenize : object
             The `tokenize` function reference.
         """
-        tokenize = lambda _: None
+
+        tokenize = self.identity
         if method == token_method.IDENTITY:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action, state) -> tuple:
+    def identity(self, action: Action, state: Sequence) -> tuple:
         """
         The identity `tokenize` function.
 
