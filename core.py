@@ -8,7 +8,7 @@ class CustomObject:
         self.name = name
 
 
-class Predicate:
+class Fluent:
     def __init__(self, name: str, objects: list[CustomObject]):
         """
         Class to handle a predicate and the objects it is applied to.
@@ -24,7 +24,7 @@ class Predicate:
         self.objects = objects
 
 
-class Effect(Predicate):
+class Effect(Fluent):
     def __init__(
         self,
         name: str,
@@ -87,7 +87,7 @@ class Action:
 
         Other Class Attributes
         ---------
-        precond : list of Predicates
+        precond : list of Fluents
             The list of preconditions needed for this action.
         effects : list of Effects
             The list of effects this action results in/
@@ -151,40 +151,9 @@ class Action:
                 raise Exception(
                     "Object must be one of the objects supplied to the action"
                 )
-        precond = Predicate(name, objects)
+        precond = Fluent(name, objects)
         self.precond.append(precond)
 
-class Trace:
-    """
-    Class for a Trace, which consists of each Step in a generated solution.
-
-    Arguments
-    ---------
-    steps : list of Steps
-        The list of Step objects that make up the trace.
-    
-
-    Other Class Attributes:
-    num_fluents : int
-        The number of fluents used in this Trace.
-    fluents : list of str
-        The base list of fluents used in this Trace.
-        Information on the values of fluents are found in the Steps.
-    actions: list of Actions
-        The base list of Actions used in this Trace.
-        Information on the preconditions/effects of Actions are found in the Steps.
-
-    """
-    def __init__(self, steps : list[Step]):
-        self.steps = steps
-        self.num_fluents = len(steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
-
-    def base_fluents():
-        for step in self.steps:
-            
-    def base_actions():
 
 class ObservationToken:
     """
@@ -198,7 +167,7 @@ class ObservationToken:
     def __init__(
         self,
         method: Union[
-            token_method, Callable[[Action, list[Predicate]], tuple]
+            token_method, Callable[[Action, list[Fluent]], tuple]
         ] = token_method.IDENTITY,
     ):
         """
@@ -218,7 +187,7 @@ class ObservationToken:
 
     def get_method(
         self, method: token_method
-    ) -> Callable[[Action, list[Predicate]], tuple]:
+    ) -> Callable[[Action, list[Fluent]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -238,7 +207,7 @@ class ObservationToken:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action: Action, state: list[Predicate]) -> tuple:
+    def identity(self, action: Action, state: list[Fluent]) -> tuple:
         """
         The identity `tokenize` function.
 
@@ -263,7 +232,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, action: Action, state: list[Predicate]):
+    def __init__(self, action: Action, state: list[Fluent]):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
@@ -279,13 +248,89 @@ class Step:
         self.state = state
 
 
+class Trace:
+    """
+    Class for a Trace, which consists of each Step in a generated solution.
+
+    Arguments
+    ---------
+    steps : list of Steps
+        The list of Step objects that make up the trace.
+
+
+    Other Class Attributes:
+    num_fluents : int
+        The number of fluents used in this Trace.
+    fluents : list of str
+        The base list of fluents used in this Trace.
+        Information on the values of fluents are found in the Steps.
+    actions: list of Actions
+        The base list of Actions used in this Trace.
+        Information on the preconditions/effects of Actions are found in the Steps.
+
+    """
+
+    def __init__(self, steps: list[Step]):
+        self.steps = steps
+        self.num_fluents = len(steps)
+        self.fluents = self.base_fluents()
+        self.actions = self.base_actions()
+
+    def base_fluents():
+        for step in self.steps:
+            pass
+
+    def base_actions():
+        pass
+
+
+class MissingGenerator(Exception):
+    def __init__(
+        self,
+        trace_list,
+        message="TraceList is missing a generate function.",
+    ):
+        self.trace_list = trace_list
+        self.message = message
+        super().__init__(message)
+
+
+class TraceList:
+    """
+    A TraceList object is a list-like object that holds information about a
+    series of traces.
+    """
+
+    def __init__(self, generator: Union[Callable, None] = None):
+        """
+        Creates a TraceList object. This stores a list of traces and optionally
+        the function used to generate the traces.
+
+        Attributes
+        ----------
+        traces : list
+            The list of `Trace` objects.
+        generator : funtion | None
+            (Optional) The function used to generate the traces.
+        """
+        self.traces: list[Trace] = []
+        self.generator = generator
+
+    def generate_more(self, num: int):
+        """ """
+        if self.generator is None:
+            raise MissingGenerator(self)
+
+        self.traces.extend(self.generator(num))
+
+
 if __name__ == "__main__":
     objects = [CustomObject(str(o)) for o in range(3)]
     action = Action("put down", objects)
     # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
     # action.add_precond("precond", ["block 1", "block 2"])
     # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
-    p = Predicate("name", objects)
+    p = Fluent("name", objects)
 
     s = Step(action, [p])
 
