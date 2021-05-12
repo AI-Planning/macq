@@ -10,6 +10,12 @@ class Action:
     pass
 
 
+class Predicate:
+    """Placeholder"""
+
+    pass
+
+
 class InvalidMethod(Exception):
     def __init__(self, method, message="Invalid method."):
         self.method = method
@@ -48,7 +54,7 @@ class ObservationToken:
         else:
             raise InvalidMethod(method)
 
-    def get_method(self, method) -> Callable[[Action, Sequence], tuple]:
+    def get_method(self, method) -> Callable[[Action, Sequence[Predicate]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -68,7 +74,7 @@ class ObservationToken:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action: Action, state: Sequence) -> tuple:
+    def identity(self, action: Action, state: Sequence[Predicate]) -> tuple:
         """
         The identity `tokenize` function.
 
