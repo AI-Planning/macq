@@ -15,7 +15,7 @@ class Predicate:
 
         Arguments
         ---------
-        name : string
+        name : str
             The name of the predicate.
         objects : list
             The list of objects this predicate applies to.
@@ -37,7 +37,7 @@ class Effect(Predicate):
 
         Arguments
         ---------
-        name : string
+        name : str
             The name of the effect.
         objects : list
             The list of objects this effect applies to.
@@ -80,7 +80,7 @@ class Action:
 
         Arguments
         ---------
-        name : string
+        name : str
             The name of the action.
         obj_params : list
             The list of objects this action applies to.
@@ -109,7 +109,7 @@ class Action:
 
         Arguments
         ---------
-        name : string
+        name : str
             The name of the effect.
         objects : list
             The list of objects this effect applies to.
@@ -137,7 +137,7 @@ class Action:
 
         Arguments
         ---------
-        name : string
+        name : str
             The name of the predicate to be used for the precondition.
         objects : list
             The list of objects this predicate applies to.
@@ -154,6 +154,37 @@ class Action:
         precond = Predicate(name, objects)
         self.precond.append(precond)
 
+class Trace:
+    """
+    Class for a Trace, which consists of each Step in a generated solution.
+
+    Arguments
+    ---------
+    steps : list of Steps
+        The list of Step objects that make up the trace.
+    
+
+    Other Class Attributes:
+    num_fluents : int
+        The number of fluents used in this Trace.
+    fluents : list of str
+        The base list of fluents used in this Trace.
+        Information on the values of fluents are found in the Steps.
+    actions: list of Actions
+        The base list of Actions used in this Trace.
+        Information on the preconditions/effects of Actions are found in the Steps.
+
+    """
+    def __init__(self, steps : list[Step]):
+        self.steps = steps
+        self.num_fluents = len(steps)
+        self.fluents = self.base_fluents()
+        self.actions = self.base_actions()
+
+    def base_fluents():
+        for step in self.steps:
+            
+    def base_actions():
 
 class ObservationToken:
     """
