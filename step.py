@@ -5,13 +5,19 @@ class NotAnAction(Exception):
         super().__init__(message)
 
 
+class Action:
+    """Placeholder"""
+
+    pass
+
+
 class Step:
     """
     A Step object stores the action, fluents being acted on, and state prior
     to the action for a step in a trace.
     """
 
-    def __init__(self, action, fluents, state):
+    def __init__(self, action: Action, fluents: list, state: list):
         """
         Creates a Step object. This stores action, fluents being acted on,
         and state prior to the action.
@@ -25,8 +31,6 @@ class Step:
         state : list
             A list of fluents representing the state.
         """
-        # if not isinstance(action, Action):
-        # raise NotAnAction(action)
         self.action = action
         self.fluents = fluents
         self.state = state
