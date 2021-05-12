@@ -4,6 +4,4 @@ class Predicate:
         # name of the predicate
         self.name = name
         # assign objects it is applied to
-        self.objects = []
-        for obj in objects:
-            self.objects.append(obj)
+        self.objects = objects
