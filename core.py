@@ -9,7 +9,7 @@ class CustomObject:
 
 
 class Fluent:
-    def __init__(self, name: str, objects: list[CustomObject]):
+    def __init__(self, name: str, objects: list[CustomObject], value: bool):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -19,9 +19,12 @@ class Fluent:
             The name of the predicate.
         objects : list
             The list of objects this predicate applies to.
+        value : bool
+            The value of the fluent (true or false)
         """
         self.name = name
         self.objects = objects
+        self.value = value
 
 
 class Effect(Fluent):
@@ -257,16 +260,15 @@ class Trace:
     steps : list of Steps
         The list of Step objects that make up the trace.
 
-
     Other Class Attributes:
     num_fluents : int
-        The number of fluents used in this Trace.
+        The number of fluents used.
     fluents : list of str
-        The base list of fluents used in this Trace.
-        Information on the values of fluents are found in the Steps.
+        The list of the names of all fluents used.
+        Information on the values of fluents are found in the steps.
     actions: list of Actions
-        The base list of Actions used in this Trace.
-        Information on the preconditions/effects of Actions are found in the Steps.
+        The list of the names of all actions used.
+        Information on the preconditions/effects of actions are found in the steps.
 
     """
 
@@ -276,12 +278,74 @@ class Trace:
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
 
-    def base_fluents():
-        for step in self.steps:
-            pass
+    def base_fluents(self):
+        """
+        Retrieves the names of all fluents used in this trace.
 
-    def base_actions():
+        Returns
+        -------
+        list : str
+            Returns a list of the names of all fluents used in this trace.
+        """
+        fluents = []
+        for step in self.steps:
+            for fluent in step.state:
+                name = fluent.name
+                if name not in fluents:
+                    fluents.append(name)
+        return fluents
+
+    def base_actions(self):
+        """
+        Retrieves the names of all actions used in this trace.
+
+        Returns
+        -------
+        list : str
+            Returns a list of the names of all actions used in this trace.
+        """
+        actions = []
+        for step in self.steps:
+            name = step.action.name
+            if name not in actions:
+                actions.append(name)
+        return actions
+
+    def get_prev_states(self, action: Action):
+        """
+        Returns the state of the trace before this action.
+
+        Arguments
+        ---------
+        action : Action
+            An `Action` object.
+
+        Returns
+        -------
+        state : list of Steps
+            A list of Steps before this action took place.
+        """  
+        prev_states = []
+        for step in self.steps:
+            if step.action == action:
+                prev_states.append(action)
+
+    def get_post_states(self, action: Action):
+        """
+        Returns the state of the trace after this Action.
+
+        Arguments
+        ---------
+        action : Action
+            An `Action` object.
+
+        Returns
+        -------
+        state : list of Fluents
+            An list of fluents representing the state.
+        """  
         pass
+    
 
 
 class MissingGenerator(Exception):
@@ -338,3 +402,5 @@ if __name__ == "__main__":
     state = [p]
     token = o.tokenize(action, state)
     print(token)
+
+    #trace = Trace(s)
