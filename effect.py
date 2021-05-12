@@ -1,12 +1,13 @@
-class Effect:
-    def __init__(self, name, func, probability=100):
+from predicate import Predicate
+
+class Effect(Predicate):
+    def __init__(self, name, objects, func, probability=100):
         """Class to handle an individual effect of an action"""
-        # name of the effect
-        self.name = name
+        super().__init__(name, objects)
         # function to apply the effect in the corresponding action
         self.func = func
         # for non-deterministic problems, the probability this effect will take place (defaults to 100)
-        self.prob = self.set_prob(probability)
+        self.probability = self.set_prob(probability)
         
     def set_prob(self, prob):
         """Setter function for probability"""
