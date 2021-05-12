@@ -1,10 +1,15 @@
 from enum import Enum
 from typing import Union
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
+
+
+class CustomObject:
+    def __init__(self, name):
+        self.name = name
 
 
 class Predicate:
-    def __init__(self, name, objects):
+    def __init__(self, name: str, objects: list[CustomObject]):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -20,7 +25,13 @@ class Predicate:
 
 
 class Effect(Predicate):
-    def __init__(self, name, objects, func, probability=100):
+    def __init__(
+        self,
+        name: str,
+        objects: list[CustomObject],
+        func: Callable,
+        probability: int = 100,
+    ):
         """
         Class to handle an individual effect of an action.
 
@@ -30,17 +41,17 @@ class Effect(Predicate):
             The name of the effect.
         objects : list
             The list of objects this effect applies to.
-        func : string
-            The name of the function that applies the effect in the corresponding action.
+        func : function
+            The function that applies the effect in the corresponding action.
         probability : int
             For non-deterministic problems, the probability that this effect will take place
-            (defaults to 100)
+            (defaults to 100).
         """
         super().__init__(name, objects)
         self.func = func
         self.probability = self.set_prob(probability)
 
-    def set_prob(self, prob):
+    def set_prob(self, prob: int):
         """
         Setter function for probability.
 
@@ -54,11 +65,6 @@ class Effect(Predicate):
         prob : int
             The probability, after being checked for validity.
         """
-        # ensure an integer is given
-        try:
-            test_int = int(prob)
-        except ValueError:
-            raise ValueError("Must enter an integer value for probability.")
         # enforce that probability is between 0 and 100 inclusive
         if prob < 0:
             prob = 0
@@ -68,7 +74,7 @@ class Effect(Predicate):
 
 
 class Action:
-    def __init__(self, name, obj_params):
+    def __init__(self, name: str, obj_params: list[CustomObject]):
         """
         Class to handle each action.
 
@@ -91,7 +97,13 @@ class Action:
         self.precond = []
         self.effects = []
 
-    def add_effect(self, name, objects, func, probability=100):
+    def add_effect(
+        self,
+        name: str,
+        objects: list[CustomObject],
+        func: Callable,
+        probability: int = 100,
+    ):
         """
         Creates an effect and adds it to this action.
 
@@ -101,8 +113,8 @@ class Action:
             The name of the effect.
         objects : list
             The list of objects this effect applies to.
-        func : string
-            The name of the function that applies the effect in the corresponding action.
+        func : function
+            The function that applies the effect in the corresponding action.
         probability : int
             For non-deterministic problems, the probability that this effect will take place
             (defaults to 100)
@@ -116,10 +128,10 @@ class Action:
                 raise Exception(
                     "Object must be one of the objects supplied to the action"
                 )
-        effect = Effect(name, objects, func, probability=100)
+        effect = Effect(name, objects, func, probability)
         self.effects.append(effect)
 
-    def add_precond(self, name, objects):
+    def add_precond(self, name: str, objects: list[CustomObject]):
         """
         Creates a precondition and adds it to this action.
 
@@ -155,7 +167,7 @@ class ObservationToken:
     def __init__(
         self,
         method: Union[
-            token_method, Callable[[Action, Sequence[Predicate]], tuple]
+            token_method, Callable[[Action, list[Predicate]], tuple]
         ] = token_method.IDENTITY,
     ):
         """
@@ -173,7 +185,9 @@ class ObservationToken:
         else:
             self.tokenize = method
 
-    def get_method(self, method) -> Callable[[Action, Sequence[Predicate]], tuple]:
+    def get_method(
+        self, method: token_method
+    ) -> Callable[[Action, list[Predicate]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -193,7 +207,7 @@ class ObservationToken:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action: Action, state: Sequence[Predicate]) -> tuple:
+    def identity(self, action: Action, state: list[Predicate]) -> tuple:
         """
         The identity `tokenize` function.
 
@@ -214,37 +228,37 @@ class ObservationToken:
 
 class Step:
     """
-    A Step object stores the action, fluents being acted on, and state prior
-    to the action for a step in a trace.
+    A Step object stores the action, and state prior to the action for a step
+    in a trace.
     """
 
-    def __init__(self, action: Action, fluents: list, state: list):
+    def __init__(self, action: Action, state: list[Predicate]):
         """
-        Creates a Step object. This stores action, fluents being acted on,
-        and state prior to the action.
+        Creates a Step object. This stores action, and state prior to the
+        action.
 
         Attributes
         ----------
         action : Action
             The action taken in this step.
-        fluents : list
-            A list of fluents being acted on.
         state : list
             A list of fluents representing the state.
         """
         self.action = action
-        self.fluents = fluents
         self.state = state
 
 
 if __name__ == "__main__":
-    action = Action("put down", ["block 1", "block 2"])
+    objects = [CustomObject(str(o)) for o in range(3)]
+    action = Action("put down", objects)
     # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
     # action.add_precond("precond", ["block 1", "block 2"])
     # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
+    p = Predicate("name", objects)
+
+    s = Step(action, [p])
 
     o = ObservationToken()
-    p = Predicate("name", [1])
     state = [p]
     token = o.tokenize(action, state)
     print(token)
