@@ -48,7 +48,7 @@ class ObservationToken:
         else:
             raise InvalidMethod(method)
 
-    def get_method(self, method) -> Callable[[Action, Sequence], Union[tuple, None]]:
+    def get_method(self, method) -> Callable[[Action, Sequence], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
