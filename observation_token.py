@@ -16,13 +16,6 @@ class Predicate:
     pass
 
 
-class InvalidMethod(Exception):
-    def __init__(self, method, message="Invalid method."):
-        self.method = method
-        self.message = message
-        super().__init__(self.message)
-
-
 class token_method(Enum):
     IDENTITY = 1
 
@@ -33,7 +26,12 @@ class ObservationToken:
     observation token for an action-state pair.
     """
 
-    def __init__(self, method: Union[token_method, Callable] = token_method.IDENTITY):
+    def __init__(
+        self,
+        method: Union[
+            token_method, Callable[[Action, Sequence[Predicate]], tuple]
+        ] = token_method.IDENTITY,
+    ):
         """
         Creates an ObservationToken object. This will store the supplied
         tokenize method to use on action-state pairs.
@@ -46,13 +44,8 @@ class ObservationToken:
         """
         if isinstance(method, token_method):
             self.tokenize = self.get_method(method)
-        elif callable(method):
-            # more checking to make sure the method is a proper tokenizer?
-            if not len(signature(method).parameters) == 2:
-                raise InvalidMethod(method)
-            self.tokenize = method
         else:
-            raise InvalidMethod(method)
+            self.tokenize = method
 
     def get_method(self, method) -> Callable[[Action, Sequence[Predicate]], tuple]:
         """
