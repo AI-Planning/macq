@@ -1,10 +1,3 @@
-class NotAnAction(Exception):
-    def __init__(self, action, message="Invalid action."):
-        self.action = action
-        self.message = message
-        super().__init__(message)
-
-
 class Action:
     """Placeholder"""
 
