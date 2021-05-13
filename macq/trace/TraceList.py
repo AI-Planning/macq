@@ -1,3 +1,8 @@
+from typing import Union, List, Callable
+from .Action import Action
+from .Trace import Trace
+
+
 class TraceList:
     """
     A TraceList object is a list-like object that holds information about a
@@ -40,6 +45,3 @@ class TraceList:
         for trace in self.traces:
             usages.append(trace.get_usage(action))
         return usages
-
-    def __iter__(self):
-        return TraceListIterator(self)

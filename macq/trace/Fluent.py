@@ -1,3 +1,6 @@
+from typing import List
+
+
 class CustomObject:
     def __init__(self, name):
         self.name = name

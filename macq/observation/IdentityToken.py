@@ -1,3 +1,4 @@
+from ..trace.Step import Step
 from .ObservationToken import ObservationToken
 
 
@@ -5,7 +6,7 @@ class IdentityToken(ObservationToken):
     def __init__(self):
         pass
 
-    def tokenize(self, step: Step) -> tuple:
+    def tokenize(self, step: Step) -> Step:
         """
         The identity `tokenize` function.
 

@@ -1,3 +1,8 @@
+from typing import List
+from .Action import Action
+from .Step import Step
+
+
 class Trace:
     """
     Class for a Trace, which consists of each Step in a generated solution.
