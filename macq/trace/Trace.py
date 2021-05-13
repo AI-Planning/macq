@@ -9,16 +9,16 @@ class Trace:
 
     Arguments
     ---------
-    steps : List of Steps
+    steps : list of Steps
         The list of Step objects that make up the trace.
 
     Other Class Attributes:
     num_fluents : int
         The number of fluents used.
-    fluents : List of str
+    fluents : list of str
         The list of the names of all fluents used.
         Information on the values of fluents are found in the steps.
-    actions: List of Actions
+    actions: list of Actions
         The list of the names of all actions used.
         Information on the preconditions/effects of actions are found in the steps.
 
@@ -74,8 +74,8 @@ class Trace:
 
         Returns
         -------
-        prev_states : List of States
-            A list of states before this action took place.
+        state : list of Steps
+            A list of Steps before this action took place.
         """
         prev_states = []
         for step in self.steps:

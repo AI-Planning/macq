@@ -1,23 +1,10 @@
 from ..trace.Step import Step
-from .ObservationToken import ObservationToken
+from .ObservationToken import Observation
 
 
-class IdentityToken(ObservationToken):
-    def __init__(self):
-        pass
-
-    def tokenize(self, step: Step) -> Step:
-        """
-        The identity `tokenize` function.
-
-        Arguments
-        ---------
-        step : Step
-        A step object to generate an observation token for.
-
-        Returns
-        -------
-        step : Step
-        The supplied step object.
-        """
-        return step
+class IdentityObservation(Observation):
+    def __init__(self, step: Step):
+        super().__init__(step)
+        # if this wasn't identity there would be more processing before
+        # assigning self.token
+        self.token = step

@@ -30,7 +30,7 @@ class TraceList:
 
         Attributes
         ----------
-        traces : List
+        traces : list
             The list of `Trace` objects.
         generator : funtion | None
             (Optional) The function used to generate the traces.

@@ -1,3 +1,6 @@
+.venv
 .vscode
 __pycache__
-*.pyc
+build/
+dist/
+macq/macq.egg-info/
