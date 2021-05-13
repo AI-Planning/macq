@@ -169,7 +169,7 @@ class ObservationToken:
     def __init__(
         self,
         method: Union[
-            token_method, Callable[[Action, list[Fluent]], tuple]
+            token_method, Callable[[Action, List[Fluent]], tuple]
         ] = token_method.IDENTITY,
     ):
         """
@@ -189,7 +189,7 @@ class ObservationToken:
 
     def get_method(
         self, method: token_method
-    ) -> Callable[[Action, list[Fluent]], tuple]:
+    ) -> Callable[[Action, List[Fluent]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -234,35 +234,34 @@ class State:
 
     Arguments
     ---------
-    state : List of Fluents
+    fluents : List of Fluents
             A list of fluents representing the state.
     """
 
-    def __init__(self, state: List[Fluent]):
-        self.state = state
+    def __init__(self, fluents: List[Fluent]):
+        self.fluents = fluents
 
 
-class Step(State):
+class Step():
     """
     A Step object stores the action, and state prior to the action for a step
     in a trace.
     """
 
-    def __init__(self, action: Action, state: List[Fluent]):
+    def __init__(self, action: Action, state: State):
         """
         Creates a Step object. This stores action, and state prior to the
-        action. Step is a child of State as it similarly consists of a list of Fluents
-        but also contains the next action.
+        action.
 
         Attributes
         ----------
         action : Action
             The action taken in this step.
-        state : List of Fluents
-            A list of fluents representing the state.
+        state : State
+            The state (list of fluents) at this step.
         """
-        super().__init__(state)
         self.action = action
+        self.state = state
 
 
 class Trace:
@@ -303,7 +302,7 @@ class Trace:
         """
         fluents = []
         for step in self.steps:
-            for fluent in step.state:
+            for fluent in step.state.fluents:
                 name = fluent.name
                 if name not in fluents:
                     fluents.append(name)
@@ -336,13 +335,14 @@ class Trace:
 
         Returns
         -------
-        state : List of Steps
-            A list of Steps before this action took place.
+        prev_states : List of States
+            A list of states before this action took place.
         """
         prev_states = []
         for step in self.steps:
             if step.action == action:
-                prev_states.append(action)
+                prev_states.append(step.state)
+        return prev_states
 
     def get_post_states(self, action: Action):
         """
@@ -355,11 +355,14 @@ class Trace:
 
         Returns
         -------
-        state : List of Fluents
-            An list of fluents representing the state.
+        post_states : List of States
+            A list of states after this action took place.
         """
-        pass
-
+        post_states = []
+        for i in range(len(self.steps) - 1):
+            if self.steps[i].action == action:
+                post_states.append(self.steps[i + 1].state)
+        return post_states
 
 class TraceList:
     """
@@ -437,6 +440,6 @@ if __name__ == "__main__":
     o = ObservationToken()
     state = [p]
     token = o.tokenize(action, state)
-    print(token)
+    # print(token)
 
-    # trace = Trace(s)
+    trace = Trace([s])
