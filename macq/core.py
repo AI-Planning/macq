@@ -1,6 +1,5 @@
 from enum import Enum
-from typing import Union
-from collections.abc import Callable
+from typing import Union, Callable, List
 
 
 class CustomObject:
@@ -9,7 +8,7 @@ class CustomObject:
 
 
 class Fluent:
-    def __init__(self, name: str, objects: list[CustomObject], value: bool):
+    def __init__(self, name: str, objects: List[CustomObject], value: bool):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -17,7 +16,7 @@ class Fluent:
         ---------
         name : str
             The name of the predicate.
-        objects : list
+        objects : List
             The list of objects this predicate applies to.
         value : bool
             The value of the fluent (true or false)
@@ -31,7 +30,7 @@ class Effect(Fluent):
     def __init__(
         self,
         name: str,
-        objects: list[CustomObject],
+        objects: List[CustomObject],
         func: Callable,
         probability: int = 100,
     ):
@@ -42,7 +41,7 @@ class Effect(Fluent):
         ---------
         name : str
             The name of the effect.
-        objects : list
+        objects : List
             The list of objects this effect applies to.
         func : function
             The function that applies the effect in the corresponding action.
@@ -77,7 +76,7 @@ class Effect(Fluent):
 
 
 class Action:
-    def __init__(self, name: str, obj_params: list[CustomObject]):
+    def __init__(self, name: str, obj_params: List[CustomObject]):
         """
         Class to handle each action.
 
@@ -85,14 +84,14 @@ class Action:
         ---------
         name : str
             The name of the action.
-        obj_params : list
+        obj_params : List
             The list of objects this action applies to.
 
         Other Class Attributes
         ---------
-        precond : list of Fluents
+        precond : List of Fluents
             The list of preconditions needed for this action.
-        effects : list of Effects
+        effects : List of Effects
             The list of effects this action results in/
         """
         self.name = name
@@ -103,7 +102,7 @@ class Action:
     def add_effect(
         self,
         name: str,
-        objects: list[CustomObject],
+        objects: List[CustomObject],
         func: Callable,
         probability: int = 100,
     ):
@@ -114,7 +113,7 @@ class Action:
         ---------
         name : str
             The name of the effect.
-        objects : list
+        objects : List
             The list of objects this effect applies to.
         func : function
             The function that applies the effect in the corresponding action.
@@ -134,7 +133,7 @@ class Action:
         effect = Effect(name, objects, func, probability)
         self.effects.append(effect)
 
-    def add_precond(self, name: str, objects: list[CustomObject]):
+    def add_precond(self, name: str, objects: List[CustomObject]):
         """
         Creates a precondition and adds it to this action.
 
@@ -142,7 +141,7 @@ class Action:
         ---------
         name : str
             The name of the predicate to be used for the precondition.
-        objects : list
+        objects : List
             The list of objects this predicate applies to.
 
         Returns
@@ -190,7 +189,7 @@ class ObservationToken:
 
     def get_method(
         self, method: token_method
-    ) -> Callable[[Action, list[Fluent]], tuple]:
+    ) -> Callable[[Action, List[Fluent]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -210,7 +209,7 @@ class ObservationToken:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action: Action, state: list[Fluent]) -> tuple:
+    def identity(self, action: Action, state: List[Fluent]) -> tuple:
         """
         The identity `tokenize` function.
 
@@ -218,7 +217,7 @@ class ObservationToken:
         ---------
         action : Action
             An `Action` object.
-        state : list
+        state : List
             An list of fluents representing the state.
 
         Returns
@@ -235,7 +234,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, action: Action, state: list[Fluent]):
+    def __init__(self, action: Action, state: List[Fluent]):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
@@ -244,7 +243,7 @@ class Step:
         ----------
         action : Action
             The action taken in this step.
-        state : list
+        state : List
             A list of fluents representing the state.
         """
         self.action = action
@@ -257,22 +256,22 @@ class Trace:
 
     Arguments
     ---------
-    steps : list of Steps
+    steps : List of Steps
         The list of Step objects that make up the trace.
 
     Other Class Attributes:
     num_fluents : int
         The number of fluents used.
-    fluents : list of str
+    fluents : List of str
         The list of the names of all fluents used.
         Information on the values of fluents are found in the steps.
-    actions: list of Actions
+    actions: List of Actions
         The list of the names of all actions used.
         Information on the preconditions/effects of actions are found in the steps.
 
     """
 
-    def __init__(self, steps: list[Step]):
+    def __init__(self, steps: List[Step]):
         self.steps = steps
         self.num_fluents = len(steps)
         self.fluents = self.base_fluents()
@@ -322,7 +321,7 @@ class Trace:
 
         Returns
         -------
-        state : list of Steps
+        state : List of Steps
             A list of Steps before this action took place.
         """
         prev_states = []
@@ -341,11 +340,13 @@ class Trace:
 
         Returns
         -------
-        state : list of Fluents
+        state : List of Fluents
             An list of fluents representing the state.
         """
         pass
 
+    def get_usage(self, action: Action):
+        pass
 
 
 class TraceList:
@@ -364,20 +365,48 @@ class TraceList:
             self.message = message
             super().__init__(message)
 
-    def __init__(self, generator: Union[Callable, None] = None):
+    def __init__(
+        self,
+        traces: Union[List[Trace], None] = None,
+        generator: Union[Callable, None] = None,
+    ):
         """
         Creates a TraceList object. This stores a list of traces and optionally
         the function used to generate the traces.
 
         Attributes
         ----------
-        traces : list
+        traces : List
             The list of `Trace` objects.
         generator : funtion | None
             (Optional) The function used to generate the traces.
         """
-        self.traces: list[Trace] = []
+        self.traces: List[Trace] = [] if traces is None else traces
         self.generator = generator
+
+    def __len__(self):
+        return len(self.traces)
+
+    def __setitem__(self, key: int, value: Trace):
+        self.traces[key] = value
+
+    def __getitem__(self, key: int):
+        return self.traces[key]
+
+    def __delitem__(self, key: int):
+        del self.traces[key]
+
+    def __iter__(self):
+        return iter(self.traces)
+
+    def __reversed__(self):
+        return reversed(self.traces)
+
+    def __contains__(self, item: Trace):
+        return item in self.traces
+
+    def append(self, item: Trace):
+        self.traces.append(item)
 
     def generate_more(self, num: int):
         if self.generator is None:
@@ -391,25 +420,6 @@ class TraceList:
             usages.append(trace.get_usage(action))
         return usages
 
-    def __iter__(self):
-        return TraceListIterator(self)
-
-
-class TraceListIterator:
-    def __init__(self, trace_list: TraceList):
-        self._trace_list = trace_list
-        self._index = 0
-
-    def __next__(self):
-        if self._index < len(self._trace_list.traces):
-            item = self._trace_list.traces[self._index]
-            self._index += 1
-            return item
-        raise StopIteration
-
-    def __iter__(self):
-        return self
-
 
 if __name__ == "__main__":
     objects = [CustomObject(str(o)) for o in range(3)]
@@ -417,7 +427,7 @@ if __name__ == "__main__":
     # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
     # action.add_precond("precond", ["block 1", "block 2"])
     # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
-    p = Fluent("name", objects)
+    p = Fluent("name", objects, True)
 
     s = Step(action, [p])
 
@@ -426,4 +436,4 @@ if __name__ == "__main__":
     token = o.tokenize(action, state)
     print(token)
 
-    #trace = Trace(s)
+    # trace = Trace(s)
