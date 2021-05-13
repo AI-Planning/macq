@@ -228,8 +228,19 @@ class ObservationToken:
         """
         return (action, state)
 
+class State:
+    """
+    Class for a State, which is the set of all fluents and their values at a particular Step.
 
-class Step:
+    Arguments
+    ---------
+    state : list of Fluents
+            A list of fluents representing the state.
+    """
+    def __init__(self, state: list[Fluent]):
+        self.state = state
+
+class Step(State):
     """
     A Step object stores the action, and state prior to the action for a step
     in a trace.
@@ -238,18 +249,18 @@ class Step:
     def __init__(self, action: Action, state: list[Fluent]):
         """
         Creates a Step object. This stores action, and state prior to the
-        action.
+        action. Step is a child of State as it similarly consists of a list of Fluents
+        but also contains the next action.
 
         Attributes
         ----------
         action : Action
             The action taken in this step.
-        state : list
+        state : list of Fluents
             A list of fluents representing the state.
         """
+        super().__init__(state)
         self.action = action
-        self.state = state
-
 
 class Trace:
     """
@@ -345,8 +356,6 @@ class Trace:
             An list of fluents representing the state.
         """
         pass
-
-
 
 class TraceList:
     """
