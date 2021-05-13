@@ -1,5 +1,9 @@
 import macq
-from macq.trace.Fluent import CustomObject 
+from macq.trace.Fluent import CustomObject, Fluent
+from macq.trace.Action import Action
+from macq.trace.State import State
+from macq.trace.Step import Step
+from macq.trace.Trace import Trace
 
 if __name__ == "__main__":
     objects = [CustomObject(str(o)) for o in range(3)]
@@ -39,3 +43,6 @@ if __name__ == "__main__":
     #print(trace.get_cost_range(1,5))
 
     print(trace.get_usage(action))
+
+    #DEBUG - SHOULD AT LEAST GIVE PREVIOUS
+    print(trace.get_sas_triples(action3))

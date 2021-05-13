@@ -1,5 +1,6 @@
 from typing import List, Callable
-from Fluent import CustomObject, Fluent
+import macq
+from macq.trace.Fluent import CustomObject, Fluent
 
 
 class Action:
