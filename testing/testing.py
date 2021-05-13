@@ -1,3 +1,5 @@
+import macq.trace.Action.Action
+
 if __name__ == "__main__":
     objects = [CustomObject(str(o)) for o in range(3)]
     action = Action("put down", objects)

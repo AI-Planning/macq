@@ -1,9 +1,9 @@
 from typing import List, Callable
-from .Fluent import CustomObject, Fluent
+from Fluent import CustomObject, Fluent
 
 
 class Action:
-    def __init__(self, name: str, obj_params: List[CustomObject]):
+    def __init__(self, name: str, obj_params: List[CustomObject], cost: int = 0):
         """
         Class to handle each action.
 
@@ -25,6 +25,7 @@ class Action:
         self.obj_params = obj_params
         self.precond = []
         self.effects = []
+        self.cost = cost
 
     def add_effect(
         self,

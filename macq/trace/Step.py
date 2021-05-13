@@ -1,7 +1,7 @@
 from typing import List
-from .Action import Action
-from .Fluent import Fluent
-from .State import State
+from Action import Action
+from Fluent import Fluent
+from State import State
 
 class Step:
     """

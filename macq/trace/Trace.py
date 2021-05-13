@@ -1,7 +1,8 @@
 from typing import List
-from .Action import Action
-from .Step import Step
-
+from Action import Action
+from Step import Step
+from Fluent import Fluent, CustomObject
+from State import State
 
 class Trace:
     """
@@ -102,3 +103,71 @@ class Trace:
             if self.steps[i].action == action:
                 post_states.append(self.steps[i + 1].state)
         return post_states
+
+    def get_total_cost(self):
+        """
+        Returns the total cost of all actions used in this Trace.
+
+        Returns
+        -------
+        sum : int
+            The total cost of all actions used.
+        """
+        sum = 0
+        for step in self.steps:
+            sum += step.action.cost
+        return sum
+
+    def get_cost_range(self, start: int, end: int):
+        """
+        Returns the total cost of the actions in the specified range of this Trace.
+        The range starts at 0 and 
+
+        Arguments
+        ---------
+        start : int
+            The start of the specified range.
+        end: int
+            The end of the specified range.
+
+        Returns
+        -------
+        sum : int
+            The total cost of all actions in the specified range.
+        """
+        sum = 0
+        for i in range(start - 1, end):
+            sum += self.steps[i].action.cost
+        return sum
+
+if __name__ == "__main__":
+    objects = [CustomObject(str(o)) for o in range(3)]
+    action = Action("put down", objects, 1)
+    action2 = Action("pick up", objects, 3)
+    action3 = Action("restart", objects, 5)
+    # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
+    # action.add_precond("precond", ["block 1", "block 2"])
+    # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
+    fluent = Fluent("on table", objects, True)
+    fluent2 = Fluent("in hand", objects, True)
+    fluent3 = Fluent("dropped", objects, False)
+
+    state = State([fluent])
+    state2 = State([fluent, fluent2])
+    state3 = State([fluent, fluent2, fluent3])
+
+    step = Step(action, state)
+    step2 = Step(action2, state2)
+    step3 = Step(action3, state3)
+    
+    trace = Trace([step, step2, step3])
+    print(trace.steps)
+    print(trace.num_fluents)
+    print(trace.fluents)
+    print(trace.actions)
+    print(trace.get_prev_states(action2))
+    print(trace.get_post_states(action2))
+    print(trace.get_total_cost())
+    print(trace.get_cost_range(1,3))
+    print(trace.get_cost_range(1,2))
+    print(trace.get_cost_range(2,3))
