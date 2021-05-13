@@ -4,7 +4,8 @@ from macq.trace.Fluent import CustomObject, Fluent
 
 
 class Action:
-    def __init__(self, name: str, obj_params: List[CustomObject], cost: int = 0):
+    def __init__(self, name: str, obj_params: List[CustomObject], precond: List[Fluent], add: List[Fluent], 
+    delete: List[Fluent], cost: int = 0):
         """
         Class to handle each action.
 
@@ -13,19 +14,21 @@ class Action:
         name : str
             The name of the action.
         obj_params : list
-            The list of objects this action applies to.
-
-        Other Class Attributes
-        ---------
-        precond : list of Fluents
-            The list of preconditions needed for this action.
-        effects : list of Effects
-            The list of effects this action results in/
+            The list of objects this action can apply to.
+        precond: list of Fluents
+            The list of preconditions that must pass before this action takes place.
+        add : list of Fluents
+            The list of fluents to be flipped to True after this action takes place.
+        delete : list of Fluents
+            The list of fluents to be flipped to False after this action takes place.
+        cost : int
+            The cost of this action.
         """
         self.name = name
         self.obj_params = obj_params
-        self.precond = []
-        self.effects = []
+        self.precond = precond
+        self.add = add
+        self.delete = delete
         self.cost = cost
 
     def add_effect(
@@ -85,7 +88,7 @@ class Action:
         precond = Fluent(name, objects)
         self.precond.append(precond)
 
-
+'''
 class Effect(Fluent):
     def __init__(
         self,
@@ -133,3 +136,4 @@ class Effect(Fluent):
         elif prob > 100:
             prob = 100
         return prob
+'''

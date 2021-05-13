@@ -2,7 +2,8 @@ from typing import List
 
 
 class CustomObject:
-    def __init__(self, name):
+    def __init__(self, obj_type, name):
+        self.obj_type = obj_type
         self.name = name
 
 
@@ -23,3 +24,4 @@ class Fluent:
         self.name = name
         self.objects = objects
         self.value = value
+
