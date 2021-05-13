@@ -14,6 +14,8 @@ class Trace:
         The list of Step objects that make up the trace.
 
     Other Class Attributes:
+    num_steps : int
+        The number of steps used.
     num_fluents : int
         The number of fluents used.
     fluents : List of str
@@ -27,9 +29,10 @@ class Trace:
 
     def __init__(self, steps: List[Step]):
         self.steps = steps
-        self.num_fluents = len(steps)
+        self.num_steps = len(steps)
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
+        self.num_fluents = len(self.fluents)
 
     def base_fluents(self):
         """
@@ -99,7 +102,7 @@ class Trace:
             A list of states after this action took place.
         """
         post_states = []
-        for i in range(len(self.steps) - 1):
+        for i in range(self.num_steps - 1):
             if self.steps[i].action == action:
                 post_states.append(self.steps[i + 1].state)
         return post_states
@@ -121,7 +124,7 @@ class Trace:
     def get_cost_range(self, start: int, end: int):
         """
         Returns the total cost of the actions in the specified range of this Trace.
-        The range starts at 0 and 
+        The range starts at 1 and ends at the number of steps.
 
         Arguments
         ---------
@@ -135,39 +138,45 @@ class Trace:
         sum : int
             The total cost of all actions in the specified range.
         """
+
+        if(start < 1 or end < 1 or start > self.num_steps or end > self.num_steps):
+            raise CostRangeError("Range supplied goes out of the feasible range.")
+        if(start > end):
+            raise CostRangeError("The start boundary must be smaller than the end boundary.")
+
         sum = 0
         for i in range(start - 1, end):
             sum += self.steps[i].action.cost
         return sum
 
-if __name__ == "__main__":
-    objects = [CustomObject(str(o)) for o in range(3)]
-    action = Action("put down", objects, 1)
-    action2 = Action("pick up", objects, 3)
-    action3 = Action("restart", objects, 5)
-    # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
-    # action.add_precond("precond", ["block 1", "block 2"])
-    # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
-    fluent = Fluent("on table", objects, True)
-    fluent2 = Fluent("in hand", objects, True)
-    fluent3 = Fluent("dropped", objects, False)
+    def get_usage(self, action: Action):
+        """
+        Returns the percentage of the number of times this action was used compared to the total
+        number of actions taken.
 
-    state = State([fluent])
-    state2 = State([fluent, fluent2])
-    state3 = State([fluent, fluent2, fluent3])
+        Arguments
+        ---------
+        action : Action
+            An `Action` object.
 
-    step = Step(action, state)
-    step2 = Step(action2, state2)
-    step3 = Step(action3, state3)
-    
-    trace = Trace([step, step2, step3])
-    print(trace.steps)
-    print(trace.num_fluents)
-    print(trace.fluents)
-    print(trace.actions)
-    print(trace.get_prev_states(action2))
-    print(trace.get_post_states(action2))
-    print(trace.get_total_cost())
-    print(trace.get_cost_range(1,3))
-    print(trace.get_cost_range(1,2))
-    print(trace.get_cost_range(2,3))
+        Returns
+        -------
+        percentage : float
+            The percentage of the number of times this action was used compared to the total
+            number of actions taken.
+        """    
+        sum = 0
+        for step in self.steps:
+            if step.action == action:
+                sum += 1
+        return sum / self.num_steps
+
+
+class CostRangeError(Exception):
+    """
+    Exception raised for incorrect user input for the cost range.
+    """
+    def __init__(self, message):
+        super().__init__(message)
+
+
