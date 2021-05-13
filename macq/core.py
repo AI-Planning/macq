@@ -276,23 +276,12 @@ class Trace:
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
 
-    def base_fluents():
+    def base_fluents(self):
         for step in self.steps:
             pass
 
-    def base_actions():
+    def base_actions(self):
         pass
-
-
-class MissingGenerator(Exception):
-    def __init__(
-        self,
-        trace_list,
-        message="TraceList is missing a generate function.",
-    ):
-        self.trace_list = trace_list
-        self.message = message
-        super().__init__(message)
 
 
 class TraceList:
@@ -300,6 +289,16 @@ class TraceList:
     A TraceList object is a list-like object that holds information about a
     series of traces.
     """
+
+    class MissingGenerator(Exception):
+        def __init__(
+            self,
+            trace_list,
+            message="TraceList is missing a generate function.",
+        ):
+            self.trace_list = trace_list
+            self.message = message
+            super().__init__(message)
 
     def __init__(self, generator: Union[Callable, None] = None):
         """
@@ -317,11 +316,35 @@ class TraceList:
         self.generator = generator
 
     def generate_more(self, num: int):
-        """ """
         if self.generator is None:
-            raise MissingGenerator(self)
+            raise self.MissingGenerator(self)
 
         self.traces.extend(self.generator(num))
+
+    def get_usage(self, action: Action):
+        usages = []
+        for trace in self.traces:
+            usages.append(trace.get_usage(action))
+        return usages
+
+    def __iter__(self):
+        return TraceListIterator(self)
+
+
+class TraceListIterator:
+    def __init__(self, trace_list: TraceList):
+        self._trace_list = trace_list
+        self._index = 0
+
+    def __next__(self):
+        if self._index < len(self._trace_list.traces):
+            item = self._trace_list.traces[self._index]
+            self._index += 1
+            return item
+        raise StopIteration
+
+    def __iter__(self):
+        return self
 
 
 if __name__ == "__main__":
