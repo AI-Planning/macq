@@ -1,4 +1,5 @@
 import macq
+from macq.trace.Fluent import CustomObject 
 
 if __name__ == "__main__":
     objects = [CustomObject(str(o)) for o in range(3)]
