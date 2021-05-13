@@ -1,6 +1,5 @@
 from enum import Enum
-from typing import Union
-from collections.abc import Callable
+from typing import Union, List, Callable
 
 
 class CustomObject:
@@ -9,7 +8,7 @@ class CustomObject:
 
 
 class Fluent:
-    def __init__(self, name: str, objects: list[CustomObject], value: bool):
+    def __init__(self, name: str, objects: List[CustomObject], value: bool):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -31,7 +30,7 @@ class Effect(Fluent):
     def __init__(
         self,
         name: str,
-        objects: list[CustomObject],
+        objects: List[CustomObject],
         func: Callable,
         probability: int = 100,
     ):
@@ -77,7 +76,7 @@ class Effect(Fluent):
 
 
 class Action:
-    def __init__(self, name: str, obj_params: list[CustomObject]):
+    def __init__(self, name: str, obj_params: List[CustomObject]):
         """
         Class to handle each action.
 
@@ -103,7 +102,7 @@ class Action:
     def add_effect(
         self,
         name: str,
-        objects: list[CustomObject],
+        objects: List[CustomObject],
         func: Callable,
         probability: int = 100,
     ):
@@ -134,7 +133,7 @@ class Action:
         effect = Effect(name, objects, func, probability)
         self.effects.append(effect)
 
-    def add_precond(self, name: str, objects: list[CustomObject]):
+    def add_precond(self, name: str, objects: List[CustomObject]):
         """
         Creates a precondition and adds it to this action.
 
@@ -170,7 +169,7 @@ class ObservationToken:
     def __init__(
         self,
         method: Union[
-            token_method, Callable[[Action, list[Fluent]], tuple]
+            token_method, Callable[[Action, List[Fluent]], tuple]
         ] = token_method.IDENTITY,
     ):
         """
@@ -190,7 +189,7 @@ class ObservationToken:
 
     def get_method(
         self, method: token_method
-    ) -> Callable[[Action, list[Fluent]], tuple]:
+    ) -> Callable[[Action, List[Fluent]], tuple]:
         """
         Retrieves a predefined `tokenize` function.
 
@@ -210,7 +209,7 @@ class ObservationToken:
             tokenize = self.identity
         return tokenize
 
-    def identity(self, action: Action, state: list[Fluent]) -> tuple:
+    def identity(self, action: Action, state: List[Fluent]) -> tuple:
         """
         The identity `tokenize` function.
 
@@ -235,7 +234,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, action: Action, state: list[Fluent]):
+    def __init__(self, action: Action, state: List[Fluent]):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
@@ -272,7 +271,7 @@ class Trace:
 
     """
 
-    def __init__(self, steps: list[Step]):
+    def __init__(self, steps: List[Step]):
         self.steps = steps
         self.num_fluents = len(steps)
         self.fluents = self.base_fluents()
@@ -347,7 +346,6 @@ class Trace:
         pass
 
 
-
 class TraceList:
     """
     A TraceList object is a list-like object that holds information about a
@@ -376,7 +374,7 @@ class TraceList:
         generator : funtion | None
             (Optional) The function used to generate the traces.
         """
-        self.traces: list[Trace] = []
+        self.traces: List[Trace] = []
         self.generator = generator
 
     def generate_more(self, num: int):
@@ -426,4 +424,4 @@ if __name__ == "__main__":
     token = o.tokenize(action, state)
     print(token)
 
-    #trace = Trace(s)
+    # trace = Trace(s)
