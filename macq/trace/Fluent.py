@@ -1,6 +1,5 @@
 from typing import List
 
-
 class CustomObject:
     def __init__(self, obj_type, name):
         self.obj_type = obj_type

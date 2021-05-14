@@ -4,18 +4,57 @@ from macq.trace.Action import Action
 from macq.trace.State import State
 from macq.trace.Step import Step
 from macq.trace.Trace import Trace
+from typing import List
 
 if __name__ == "__main__":
-    objects = [CustomObject(str(o)) for o in range(3)]
-    action = Action("put down", objects, 1)
-    action2 = Action("pick up", objects, 3)
-    action3 = Action("restart", objects, 5)
-    # action.add_effect("eff", ["block 1", "block 2"], "func1", 94)
-    # action.add_precond("precond", ["block 1", "block 2"])
-    # action.add_effect("eff", ["block 1", "block 3"], "func1", 94)
-    fluent = Fluent("on table", objects, True)
-    fluent2 = Fluent("in hand", objects, True)
-    fluent3 = Fluent("dropped", objects, False)
+    objects = [CustomObject("number", str(o)) for o in range(6)]
+    other = CustomObject("other", 10)
+
+    fluent = Fluent("on table", [objects[0]], True)
+    fluent2 = Fluent("in hand", [objects[1]], True)
+    fluent3 = Fluent("dropped", [objects[2]], False)
+    fluent4 = Fluent("picked up", [objects[3]], True)
+    fluent5 = Fluent("on top", [objects[4]], False)
+    other = Fluent("put down other", [other], True)
+
+    precond = [fluent, fluent2]
+    add = [fluent3, fluent4]
+    delete = [fluent]
+
+    action = Action("put down", objects, precond, add, delete, 1)
+    action2 = Action("pick up", objects, precond, add, delete, 3)
+    action3 = Action("restart", objects, precond, add, delete, 5)
+
+    print(action.precond)
+    #should crash
+    #action.add_precond([other])
+    #print(action.precond)
+    action.add_precond([fluent5])
+    print(action.precond)
+    print()
+
+    print(action.add)
+    #should crash
+    #action.add_effect_add([other])
+    #print(action.add)
+    action.add_effect_add([fluent5])
+    print(action.add)
+    print()
+
+    print(action.delete)
+    #should crash
+    #action.add_effect_delete([other])
+    #print(action.delete)
+    action.add_effect_delete([fluent5])
+    print(action.delete)
+    print()
+
+    print(action.obj_params)
+    action.add_parameter(other)
+    print(action.obj_params)
+
+    #should crash
+    #print(action.__add_fluent([other], action.precond))
 
     state = State([fluent])
     state2 = State([fluent, fluent2])
@@ -44,5 +83,5 @@ if __name__ == "__main__":
 
     print(trace.get_usage(action))
 
-    #DEBUG - SHOULD AT LEAST GIVE PREVIOUS
     print(trace.get_sas_triples(action3))
+   
