@@ -1,5 +1,5 @@
 from typing import List, Callable
-from .Fluent import CustomObject, Fluent
+from . import CustomObject, Fluent
 
 
 class Action:

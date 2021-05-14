@@ -1,6 +1,6 @@
 from typing import Iterable, Union, List, Callable
-from .Action import Action
-from .Trace import Trace
+from . import Action
+from . import Trace
 
 
 class TraceList:

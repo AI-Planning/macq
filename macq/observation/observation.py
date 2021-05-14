@@ -1,4 +1,4 @@
-from ..trace.Step import Step
+from ..trace import Step
 
 
 class Observation:

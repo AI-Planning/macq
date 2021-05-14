@@ -1,5 +1,6 @@
 from typing import List
-from .Fluent import Fluent
+from . import Fluent
+
 
 class State:
     """

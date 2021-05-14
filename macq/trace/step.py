@@ -1,5 +1,5 @@
-from .Action import Action
-from .State import State
+from . import Action
+from . import State
 
 
 class Step:

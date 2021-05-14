@@ -1,6 +1,6 @@
 from typing import List
-from .Action import Action
-from .Step import Step
+from . import Action
+from . import Step
 
 
 class Trace:
