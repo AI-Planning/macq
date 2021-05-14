@@ -3,6 +3,18 @@ from .fluent import CustomObject, Fluent
 
 
 class Action:
+    class InvalidFluentException(Exception):
+        """
+        The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
+        outside of the parameters supplied to the action.
+        """
+
+        def __init__(
+            self,
+            message="Cannot add a fluent referencing objects beyond the scope of this action.",
+        ):
+            super().__init__(message)
+
     def __init__(
         self,
         name: str,
@@ -56,7 +68,7 @@ class Action:
         for fluent in fluents:
             for obj in fluent.objects:
                 if obj not in self.obj_params:
-                    raise InvalidFluentException()
+                    raise self.InvalidFluentException()
         condition.extend(fluents)
 
     def add_precond(self, fluents: List[Fluent]):
@@ -102,15 +114,3 @@ class Action:
             The object to be added to the action's list of available parameters.
         """
         self.obj_params.append(obj)
-
-
-    class InvalidFluentException(Exception):
-        """
-        The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
-        outside of the parameters supplied to the action.
-        """
-
-        def __init__(self):
-            super().__init__(
-                "The fluent you want to add references objects outside of the parameters of this action."
-            )
