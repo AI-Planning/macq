@@ -3,7 +3,7 @@ from .fluent import CustomObject, Fluent
 
 
 class Action:
-    class InvalidFluentException(Exception):
+    class InvalidFluent(Exception):
         """
         The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
         outside of the parameters supplied to the action.
@@ -68,7 +68,7 @@ class Action:
         for fluent in fluents:
             for obj in fluent.objects:
                 if obj not in self.obj_params:
-                    raise self.InvalidFluentException()
+                    raise self.InvalidFluent()
         condition.extend(fluents)
 
     def add_precond(self, fluents: List[Fluent]):
