@@ -4,3 +4,4 @@ __pycache__
 build/
 dist/
 macq.egg-info/
+.pytest_cache

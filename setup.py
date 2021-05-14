@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.1"
+VERSION = "0.0.1.dev1"
 
 NAME = "macq"
 
@@ -8,6 +8,10 @@ DESCRIPTION = "Action model acquisition from state trace data."
 
 DEPENDENCIES = [
     "tarski>=0.7.0",
+]
+
+DEV_DEPENDENCIES = [
+    "pytest",
 ]
 
 CLASSIFIERS = [
@@ -38,10 +42,11 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
+    keywords="planning model acquisition trace",
     url="https://github.com/QuMuLab/macq",
     classifiers=CLASSIFIERS,
     packages=find_packages("macq/macq"),
     python_requires=">=3.8",
     install_requires=DEPENDENCIES,
-    keywords="planning model acquisition trace",
+    extras_require={"dev": DEV_DEPENDENCIES},
 )
