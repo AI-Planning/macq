@@ -1,7 +1,6 @@
-from typing import List
-import macq
-from macq.trace.Action import Action
-from macq.trace.State import State
+from . import Action
+from . import State
+
 
 class Step:
     """

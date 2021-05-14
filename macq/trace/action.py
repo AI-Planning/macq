@@ -1,11 +1,17 @@
-from typing import List, Callable
-import macq
-from macq.trace.Fluent import CustomObject, Fluent
+from typing import List
+from . import CustomObject, Fluent
 
 
 class Action:
-    def __init__(self, name: str, obj_params: List[CustomObject], precond: List[Fluent], add: List[Fluent], 
-    delete: List[Fluent], cost: int = 0):
+    def __init__(
+        self,
+        name: str,
+        obj_params: List[CustomObject],
+        precond: List[Fluent],
+        add: List[Fluent],
+        delete: List[Fluent],
+        cost: int = 0,
+    ):
         """
         Class to handle each action.
 
@@ -30,7 +36,7 @@ class Action:
         self.add = add
         self.delete = delete
         self.cost = cost
-    
+
     def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
         """
         Checks the validity of a fluent before adding it to either the action's preconditions,
@@ -93,6 +99,9 @@ class Action:
         """
         self.obj_params.append(obj)
 
+
 class InvalidFluentException(Exception):
     def __init__(self):
-        super().__init__("The fluent you want to add references objects outside of the parameters of this action.")
+        super().__init__(
+            "The fluent you want to add references objects outside of the parameters of this action."
+        )

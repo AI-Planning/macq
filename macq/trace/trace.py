@@ -1,9 +1,7 @@
 from typing import List
-import macq
-from macq.trace.Action import Action
-from macq.trace.Step import Step
-from macq.trace.Fluent import Fluent, CustomObject
-from macq.trace.State import State
+from . import Action
+from . import Step
+
 
 class Trace:
     """
@@ -107,7 +105,7 @@ class Trace:
                 post_states.append(self.steps[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action:Action):
+    def get_sas_triples(self, action: Action):
         """
         Returns a list of tuples where each tuple contains the state of the trace
         before the action, the action, and the state of the trace after the action.
@@ -168,10 +166,12 @@ class Trace:
             The total cost of all actions in the specified range.
         """
 
-        if(start < 1 or end < 1 or start > self.num_steps or end > self.num_steps):
+        if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
             raise CostRangeError("Range supplied goes out of the feasible range.")
-        if(start > end):
-            raise CostRangeError("The start boundary must be smaller than the end boundary.")
+        if start > end:
+            raise CostRangeError(
+                "The start boundary must be smaller than the end boundary."
+            )
 
         sum = 0
         for i in range(start - 1, end):
@@ -193,7 +193,7 @@ class Trace:
         percentage : float
             The percentage of the number of times this action was used compared to the total
             number of actions taken.
-        """    
+        """
         sum = 0
         for step in self.steps:
             if step.action == action:
@@ -205,5 +205,6 @@ class CostRangeError(Exception):
     """
     Exception raised for incorrect user input for the cost range.
     """
+
     def __init__(self, message):
         super().__init__(message)
