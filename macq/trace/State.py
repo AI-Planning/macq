@@ -1,5 +1,6 @@
 from typing import List
-from .Fluent import Fluent
+import macq
+from macq.trace.Fluent import Fluent
 
 class State:
     """

@@ -1,5 +1,5 @@
 from ..trace.Step import Step
-from .ObservationToken import Observation
+from ObservationToken import ObservationToken
 
 
 class IdentityObservation(Observation):
