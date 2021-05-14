@@ -11,7 +11,7 @@ class Trace:
 
     Arguments
     ---------
-    steps : List of Steps
+    steps : List of Steps (optional)
         The list of Step objects that make up the trace.
 
     Other Class Attributes:
@@ -27,12 +27,23 @@ class Trace:
         Information on the preconditions/effects of actions are found in the steps.
     """
 
-    def __init__(self, steps: List[Step]):
+    def __init__(self, steps: List[Step] = []):
         self.steps = steps
         self.num_steps = len(steps)
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
         self.num_fluents = len(self.fluents)
+
+    def add_steps(self, steps: List[Step]):
+        """
+        Class for a Trace, which consists of each Step in a generated solution.
+
+        Arguments
+        ---------
+        steps : List of Steps (optional)
+            The list of Step objects to be added to the trace.
+        """
+        self.steps.extend(steps)
 
     def base_fluents(self):
         """

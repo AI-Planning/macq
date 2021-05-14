@@ -63,6 +63,9 @@ if __name__ == "__main__":
     step = Step(action, state)
     step2 = Step(action2, state2)
     step3 = Step(action3, state3)
+
+    print(step.base_action())
+    print(step.base_fluents())
     
     trace = Trace([step, step2, step3])
     print(trace.steps)

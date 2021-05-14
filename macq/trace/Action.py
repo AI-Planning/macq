@@ -2,7 +2,6 @@ from typing import List, Callable
 import macq
 from macq.trace.Fluent import CustomObject, Fluent
 
-
 class Action:
     def __init__(self, name: str, obj_params: List[CustomObject], precond: List[Fluent], add: List[Fluent], 
     delete: List[Fluent], cost: int = 0):
@@ -26,9 +25,13 @@ class Action:
         """
         self.name = name
         self.obj_params = obj_params
-        self.precond = precond
-        self.add = add
-        self.delete = delete
+        self.precond = []
+        self.add_precond(precond)
+        self.add = []
+        self.add_effect_add(add)
+        self.delete = []
+        self.add_effect_delete(delete)
+        
         self.cost = cost
     
     def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
@@ -94,5 +97,9 @@ class Action:
         self.obj_params.append(obj)
 
 class InvalidFluentException(Exception):
+    """
+    The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects 
+    outside of the parameters supplied to the action.
+    """
     def __init__(self):
         super().__init__("The fluent you want to add references objects outside of the parameters of this action.")

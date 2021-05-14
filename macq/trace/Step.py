@@ -23,3 +23,28 @@ class Step:
         """
         self.action = action
         self.state = state
+
+    def base_fluents(self):
+        """
+        Retrieves the names of all fluents used in this step.
+
+        Returns
+        -------
+        list : str
+            Returns a list of the names of all fluents used in this step.
+        """
+        fluents = []
+        for fluent in self.state.fluents:
+            fluents.append(fluent.name)
+        return fluents
+
+    def base_action(self):
+        """
+        Retrieves the name of the action used in this step.
+
+        Returns
+        -------
+        list : str
+            Returns the name of the action used in this step.
+        """
+        return self.action.name
