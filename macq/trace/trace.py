@@ -2,7 +2,6 @@ from typing import List
 from . import Action
 from . import Step
 
-
 class Trace:
     """
     Class for a Trace, which consists of each Step in a generated solution.
@@ -23,7 +22,7 @@ class Trace:
     actions: List of Actions
         The list of the names of all actions used.
         Information on the preconditions/effects of actions are found in the steps.
-    tokens: List of Observations
+    observations: List of Observations
         The set of observation tokens, tokenized from the steps.
     """
 
@@ -33,7 +32,7 @@ class Trace:
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
         self.num_fluents = len(self.fluents)
-        self.tokens = []
+        self.observations = []
 
     def add_steps(self, steps: List[Step]):
         """
@@ -214,15 +213,17 @@ class Trace:
                 sum += 1
         return sum / self.num_steps
 
-    def tokenize(self, obs: Observation):
+    def tokenize(self, Token: Observation):
         """
-        Creates the observation token using the token provided by the Observation.
+        Creates the observation tokens using the token provided by the Observation.
 
         Arguments
         ---------
-        obs : Observation
+        method : Observation
             An `Observation` object.
         """    
+        for step in self.steps:
+            self.observations.append(Token(step))
 
 class CostRangeError(Exception):
     """
@@ -231,3 +232,4 @@ class CostRangeError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
+

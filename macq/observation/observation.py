@@ -11,3 +11,4 @@ class Observation:
         Creates an Observation object, storing the step as a token.
         """
         self.step = step
+
