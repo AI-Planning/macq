@@ -64,6 +64,7 @@ if __name__ == "__main__":
     step2 = Step(action2, state2)
     step3 = Step(action3, state3)
 
+    print("test step")
     print(step.base_action())
     print(step.base_fluents())
     
