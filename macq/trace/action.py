@@ -104,13 +104,13 @@ class Action:
         self.obj_params.append(obj)
 
 
-class InvalidFluentException(Exception):
-    """
-    The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
-    outside of the parameters supplied to the action.
-    """
+    class InvalidFluentException(Exception):
+        """
+        The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
+        outside of the parameters supplied to the action.
+        """
 
-    def __init__(self):
-        super().__init__(
-            "The fluent you want to add references objects outside of the parameters of this action."
-        )
+        def __init__(self):
+            super().__init__(
+                "The fluent you want to add references objects outside of the parameters of this action."
+            )

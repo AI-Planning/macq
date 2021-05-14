@@ -228,10 +228,10 @@ class Trace:
             self.observations.append(Token(step))
 
 
-class CostRangeError(Exception):
-    """
-    Exception raised for incorrect user input for the cost range.
-    """
+    class CostRangeError(Exception):
+        """
+        Exception raised for incorrect user input for the cost range.
+        """
 
-    def __init__(self, message):
-        super().__init__(message)
+        def __init__(self, message):
+            super().__init__(message)

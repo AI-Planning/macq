@@ -1,12 +1,11 @@
-import macq
-from macq.trace.Fluent import CustomObject, Fluent
-from macq.trace.Action import Action, InvalidFluentException
-from macq.trace.State import State
-from macq.trace.Step import Step
-from macq.trace.Trace import Trace, CostRangeError
-from macq.observation.IdentityToken import IdentityObservation
+from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
+from macq.observation import IdentityObservation
+CostRangeError = Trace.CostRangeError
+InvalidFluentException = Action.InvalidFluentException
+
 from typing import List
 import pytest
+
 
 # create objects 
 objects = [CustomObject("number", str(o)) for o in range(6)]
