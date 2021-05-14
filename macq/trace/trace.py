@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Type
 from . import Action
 from . import Step
 from ..observation import Observation
@@ -27,6 +27,14 @@ class Trace:
     observations: List of Observations
         The set of observation tokens, tokenized from the steps.
     """
+
+    class InvalidCostRange(Exception):
+        """
+        Exception raised for incorrect user input for the cost range.
+        """
+
+        def __init__(self, message):
+            super().__init__(message)
 
     def __init__(self, steps: List[Step] = []):
         self.steps = steps
@@ -182,9 +190,11 @@ class Trace:
         """
 
         if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
-            raise CostRangeError("Range supplied goes out of the feasible range.")
+            raise self.InvalidCostRange(
+                "Range supplied goes out of the feasible range."
+            )
         if start > end:
-            raise CostRangeError(
+            raise self.InvalidCostRange(
                 "The start boundary must be smaller than the end boundary."
             )
 
@@ -215,23 +225,15 @@ class Trace:
                 sum += 1
         return sum / self.num_steps
 
-    def tokenize(self, Token: Observation):
+    def tokenize(self, Token: Type[Observation]):
         """
         Creates the observation tokens using the token provided by the Observation.
 
         Arguments
         ---------
-        method : Observation
-            An `Observation` object.
+        Token : Observation subclass
+            An `Observation` subclass.
         """
         for step in self.steps:
-            self.observations.append(Token(step))
-
-
-    class CostRangeError(Exception):
-        """
-        Exception raised for incorrect user input for the cost range.
-        """
-
-        def __init__(self, message):
-            super().__init__(message)
+            token = Token(step)
+            self.observations.append(token)
