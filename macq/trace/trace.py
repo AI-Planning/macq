@@ -1,6 +1,8 @@
 from typing import List
 from . import Action
 from . import Step
+from ..observation import Observation
+
 
 class Trace:
     """
@@ -221,9 +223,10 @@ class Trace:
         ---------
         method : Observation
             An `Observation` object.
-        """    
+        """
         for step in self.steps:
             self.observations.append(Token(step))
+
 
 class CostRangeError(Exception):
     """
@@ -232,4 +235,3 @@ class CostRangeError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
-

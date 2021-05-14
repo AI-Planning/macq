@@ -1,5 +1,4 @@
-from .action import Action
-from .fluent import Fluent, CustomObject
+from .action import Action, Fluent, CustomObject
 from .state import State
 from .step import Step
 from .trace import Trace
