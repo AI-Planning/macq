@@ -1,4 +1,4 @@
-from typing import Union, List, Callable
+from typing import Iterable, Union, List, Callable
 from .Action import Action
 from .Trace import Trace
 
@@ -61,6 +61,36 @@ class TraceList:
 
     def append(self, item: Trace):
         self.traces.append(item)
+
+    def clear(self):
+        self.traces.clear()
+
+    def copy(self):
+        return self.traces.copy()
+
+    def count(self, value: Trace):
+        return self.traces.count(value)
+
+    def extend(self, iterable: Iterable[Trace]):
+        self.traces.extend(iterable)
+
+    def index(self, value: Trace):
+        return self.traces.index(value)
+
+    def insert(self, index: int, item: Trace):
+        self.traces.insert(index, item)
+
+    def pop(self):
+        return self.traces.pop()
+
+    def remove(self, value: Trace):
+        self.traces.remove(value)
+
+    def reverse(self):
+        self.traces.reverse()
+
+    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
+        self.traces.sort(reverse=reverse, key=key)
 
     def generate_more(self, num: int):
         if self.generator is None:
