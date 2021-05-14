@@ -4,6 +4,7 @@ from macq.trace.Action import Action
 from macq.trace.Step import Step
 from macq.trace.Fluent import Fluent, CustomObject
 from macq.trace.State import State
+from macq.observation.ObservationToken import Observation
 
 class Trace:
     """
@@ -211,6 +212,15 @@ class Trace:
                 sum += 1
         return sum / self.num_steps
 
+    def tokenize(self, obs: Observation):
+        """
+        Creates the observation token using the token provided by the Observation.
+
+        Arguments
+        ---------
+        obs : Observation
+            An `Observation` object.
+        """    
 
 class CostRangeError(Exception):
     """

@@ -1,5 +1,6 @@
 from ..trace.Step import Step
-from ObservationToken import ObservationToken
+import macq
+from macq.observation.ObservationToken import ObservationToken
 
 
 class IdentityObservation(Observation):
