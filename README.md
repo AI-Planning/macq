@@ -2,6 +2,8 @@
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
+Install for development by cloning the repository and running `pip install .[dev]`.
+
 ## Usage
 ```python
 from macq import generate, extract
