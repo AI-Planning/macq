@@ -8,24 +8,6 @@ class Trace:
     """
     Class for a Trace, which consists of each Step in a generated solution.
 
-    Arguments
-    ---------
-    steps : List of Steps (optional)
-        The list of Step objects that make up the trace.
-
-    Other Class Attributes:
-    num_steps : int
-        The number of steps used.
-    num_fluents : int
-        The number of fluents used.
-    fluents : List of str
-        The list of the names of all fluents used.
-        Information on the values of fluents are found in the steps.
-    actions: List of Actions
-        The list of the names of all actions used.
-        Information on the preconditions/effects of actions are found in the steps.
-    observations: List of Observations
-        The set of observation tokens, tokenized from the steps.
     """
 
     class InvalidCostRange(Exception):
@@ -37,6 +19,29 @@ class Trace:
             super().__init__(message)
 
     def __init__(self, steps: List[Step] = []):
+        """
+        Creates a Trace object.
+
+        Arguments
+        ---------
+        steps : List of Steps (optional)
+            The list of Step objects that make up the trace.
+
+        Attributes
+        ----------
+        num_steps : int
+            The number of steps used.
+        num_fluents : int
+            The number of fluents used.
+        fluents : List of str
+            The list of the names of all fluents used.
+            Information on the values of fluents are found in the steps.
+        actions: List of Actions
+            The list of the names of all actions used.
+            Information on the preconditions/effects of actions are found in the steps.
+        observations: List of Observations
+            The set of observation tokens, tokenized from the steps.
+        """
         self.steps = steps
         self.num_steps = len(steps)
         self.fluents = self.base_fluents()
