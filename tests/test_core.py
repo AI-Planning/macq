@@ -11,6 +11,32 @@ import pytest
 
 # TESTS FOR ACTION CLASS
 
+# HELPER FUNCTIONS
+
+# generates basic fluents to be used for testing
+def generate_fluents(num_fluents):
+    fluents = []
+    objects = [CustomObject("number", str(o)) for o in range(num_fluents)]
+    for i in range(num_fluents):
+        fluent_name = "fluent" + " " + str(i)
+        if i % 2 == 0:
+            value = True
+        else:
+            value = False
+        fluent = Fluent(fluent_name, [objects[i]], value)
+        fluents.append(fluent)
+    return fluents
+
+# returns the objects used by the given fluents in a list
+def get_fluent_obj(fluents):
+    objects = []
+    for fluent in fluents:
+        for obj in fluent.objects:
+            objects.append(obj)
+    return objects
+
+#TESTS
+
 # ensure that invalid fluents can't be added to actions
 def test_action_errors():
     objects = [CustomObject("number", str(o)) for o in range(6)]
@@ -25,36 +51,29 @@ def test_action_errors():
 
 # ensure that valid fluents can be added as action preconditions
 def test_action_add_preconditions():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, [], [], [], 1)
-    fluent1 = Fluent("on table", [objects[0]], True)
-    fluent2 = Fluent("in hand", [objects[1]], True)
-    fluent3 = Fluent("dropped", [objects[2]], False)
+    fluents = generate_fluents(3)
+    (fl1, fl2, fl3) = tuple(fluents)
+    action = Action("put down", get_fluent_obj(fluents), [], [], [], 1)
 
-    action.add_precond([fluent1])
-    assert action.precond == [fluent1]
-    action.add_precond([fluent2, fluent3])
-    assert action.precond == [fluent1, fluent2, fluent3]
+    action.add_precond([fl1])
+    assert action.precond == [fl1]
+    action.add_precond([fl2, fl3])
+    assert action.precond == [fl1, fl2, fl3]
 
 # ensure that valid fluents can be added as action effects
 def test_action_add_effects():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, [], [], [], 1)
-    fluent1 = Fluent("on table", [objects[0]], True)
-    fluent2 = Fluent("in hand", [objects[1]], True)
-    fluent3 = Fluent("dropped", [objects[2]], False)
-    fluent4 = Fluent("picked up", [objects[3]], True)
-    fluent5 = Fluent("on top", [objects[4]], False)
-    fluent6 = Fluent("red", [objects[5]], False)
+    fluents = generate_fluents(6)
+    (fl1, fl2, fl3, fl4, fl5, fl6) = tuple(fluents)
+    action = Action("put down", get_fluent_obj(fluents), [], [], [], 1)
 
-    action.add_effect_add([fluent4])
-    assert action.add == [fluent4]
-    action.add_effect_add([fluent5, fluent6])
-    assert action.add == [fluent4, fluent5, fluent6]
-    action.add_effect_delete([fluent1])
-    assert action.delete == [fluent1]
-    action.add_effect_delete([fluent2, fluent3])
-    assert action.delete == [fluent1, fluent2, fluent3]
+    action.add_effect_add([fl4])
+    assert action.add == [fl4]
+    action.add_effect_add([fl5, fl6])
+    assert action.add == [fl4, fl5, fl6]
+    action.add_effect_delete([fl1])
+    assert action.delete == [fl1]
+    action.add_effect_delete([fl2, fl3])
+    assert action.delete == [fl1, fl2, fl3]
 
 # ensure that valid object parameters can be added and subsequently referenced
 def test_action_add_params():
@@ -73,6 +92,9 @@ def test_action_add_params():
 
 
 # TESTS FOR TRACE CLASS
+
+# HELPER FUNCTION
+#def get_trace
 
 # test the functionality to add steps to a trace
 def test_trace_add_steps():
