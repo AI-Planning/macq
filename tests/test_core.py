@@ -11,8 +11,20 @@ import copy
 
 # HELPER FUNCTIONS
 
-# generates basic fluents to be used for testing
 def generate_test_fluents(num_fluents: int):
+    """
+    Generates basic fluents to be used for testing.
+
+    Arguments
+    ---------
+    num_fluents : int
+        The number of fluents to generate.
+
+    Returns
+    -------
+    fluents : List of Fluents
+        The list of testing fluents generated.
+    """
     fluents = []
     objects = [CustomObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
@@ -25,8 +37,22 @@ def generate_test_fluents(num_fluents: int):
         fluents.append(fluent)
     return fluents
 
-# generates basic actions to be used for testing
 def generate_test_actions(num_actions: int, objects: List[CustomObject]):
+    """
+    Generates basic actions to be used for testing.
+
+    Arguments
+    ---------
+    num_actions : int
+        The number of actions to generate.
+    objects: List of CustomObjects
+        The objects available to these actions.
+
+    Returns
+    -------
+    actions : List of Actions
+        The list of testing actions generated.
+    """
     actions = []
     for i in range(num_actions):
         action_name = "action" + " " + str(i + 1)
@@ -35,16 +61,42 @@ def generate_test_actions(num_actions: int, objects: List[CustomObject]):
         actions.append(action)
     return actions
 
-# returns the objects used by the given fluents in a list
 def get_fluent_obj(fluents: List[Fluent]):
+    """
+    Extracts the objects used by the given fluents.
+
+    Arguments
+    ---------
+    fluents : List of Fluents
+        The fluents to extract the objects from.
+
+    Returns
+    -------
+    objects : List of CustomObjects
+        The list of objects used by the given fluents.
+    """
     objects = []
     for fluent in fluents:
         for obj in fluent.objects:
             objects.append(obj)
     return objects
 
-# generate states to be used for testing, using the given fluents (each state will add a fluent)
 def generate_test_states(num_states: int, fluents: List[Fluent]):
+    """
+    Generate states to be used for testing, using the given fluents (each state will add a fluent)
+
+    Arguments
+    ---------
+    num_states : int
+        The number of states to generate.
+    fluents : List of Fluents
+        The fluents that will be used to make up the states.
+
+    Returns
+    -------
+    states : List of States
+        The list of testing states generated.
+    """
     states = []
     next_fluents = []
     for i in range(num_states):
@@ -55,8 +107,24 @@ def generate_test_states(num_states: int, fluents: List[Fluent]):
         states.append(state)
     return states
 
-# generate steps to be used for testing, given the number of steps and possible actions and states
 def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
+    """
+    Generate steps to be used for testing, given the number of steps and possible actions and states.
+
+    Arguments
+    ---------
+    num_steps : int
+        The number of steps to generate.
+    actions : List of Actions
+        The list of possible actions to be used for the generated steps.
+    states : List of States
+        The list of possible states to be used for the generated steps.
+
+    Returns
+    -------
+    steps : List of Steps
+        The list of testing steps generated.
+    """
     steps = []
     # indices for actions and states respectively
     a_index = 0
@@ -75,8 +143,20 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
         steps.append(step)
     return steps
 
-# generate a test trace with the given complexity (number of actions, fluents, states, and steps)
 def generate_test_trace(complexity: int):
+    """
+    Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
+
+    Arguments
+    ---------
+    complexity : int
+        The number of number of actions, fluents, states, and steps to use in this trace.
+
+    Returns
+    -------
+    trace : Trace
+        The testing trace generated.
+    """
     fluents = generate_test_fluents(complexity)
     actions = generate_test_actions(complexity, get_fluent_obj(fluents))
     states = generate_test_states(complexity, fluents)
