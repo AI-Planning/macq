@@ -8,13 +8,10 @@ InvalidFluent = Action.InvalidFluent
 from typing import List
 import pytest
 
-
-# TESTS FOR ACTION CLASS
-
 # HELPER FUNCTIONS
 
 # generates basic fluents to be used for testing
-def generate_fluents(num_fluents):
+def generate_test_fluents(num_fluents):
     fluents = []
     objects = [CustomObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
@@ -27,6 +24,15 @@ def generate_fluents(num_fluents):
         fluents.append(fluent)
     return fluents
 
+# generates basic actions to be used for testing
+def generate_test_actions(num_actions, objects):
+    actions = []
+    for i in range(num_actions):
+        action_name = "action" + " " + str(i)
+        action = Action(action_name, objects, [], [], [], i)
+        actions.append(action)
+    return actions
+
 # returns the objects used by the given fluents in a list
 def get_fluent_obj(fluents):
     objects = []
@@ -35,7 +41,49 @@ def get_fluent_obj(fluents):
             objects.append(obj)
     return objects
 
-#TESTS
+# generate states to be used for testing, using the given fluents (each state will add a fluent)
+def generate_test_states(num_states, fluents):
+    states = []
+    next_fluents = []
+    for i in range(num_states):
+        state_name = "state" + " " + str(i)
+        if i < len(fluents):
+            next_fluents.append(fluents[i])
+        state = State(next_fluents)
+        states.append(state)
+    return states
+
+# generate steps to be used for testing, given the number of steps and possible actions and states
+def generate_test_steps(num_steps, actions, states):
+    steps = []
+    # indices for actions and states respectively
+    a_index = 0
+    s_index = 0
+    for i in range(num_steps):
+        # cycle through actions and states
+        if a_index < len(actions):
+            a_index += 1
+        else:
+            a_index = 0
+        if s_index < len(states):
+            s_index += 1
+        else:
+            s_index = 0
+        step = Step(actions[a_index], states[s_index])
+        steps.append(step)
+    return steps
+
+# generate a test trace with the given complexity (number of actions, fluents, states, and steps)
+def generate_test_trace(complexity):
+    fluents = generate_test_fluents(complexity)
+    actions = generate_test_actions(complexity, get_fluent_obj(fluents))
+    states = generate_test_states(complexity, fluents)
+    steps = generate_test_steps(complexity, actions, states)
+    trace = Trace(steps)
+    return trace
+    
+
+# TESTS FOR ACTION CLASS
 
 # ensure that invalid fluents can't be added to actions
 def test_action_errors():
@@ -51,7 +99,7 @@ def test_action_errors():
 
 # ensure that valid fluents can be added as action preconditions
 def test_action_add_preconditions():
-    fluents = generate_fluents(3)
+    fluents = generate_test_fluents(3)
     (fl1, fl2, fl3) = tuple(fluents)
     action = Action("put down", get_fluent_obj(fluents), [], [], [], 1)
 
@@ -62,7 +110,7 @@ def test_action_add_preconditions():
 
 # ensure that valid fluents can be added as action effects
 def test_action_add_effects():
-    fluents = generate_fluents(6)
+    fluents = generate_test_fluents(6)
     (fl1, fl2, fl3, fl4, fl5, fl6) = tuple(fluents)
     action = Action("put down", get_fluent_obj(fluents), [], [], [], 1)
 
@@ -92,9 +140,6 @@ def test_action_add_params():
 
 
 # TESTS FOR TRACE CLASS
-
-# HELPER FUNCTION
-#def get_trace
 
 # test the functionality to add steps to a trace
 def test_trace_add_steps():
