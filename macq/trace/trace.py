@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List, Type, Iterable, Callable
 from . import Action
 from . import Step
 from ..observation import Observation
@@ -43,6 +43,60 @@ class Trace:
         self.actions = self.base_actions()
         self.num_fluents = len(self.fluents)
         self.observations = []
+
+    def __len__(self):
+        return len(self.steps)
+
+    def __setitem__(self, key: int, value: Step):
+        self.steps[key] = value
+
+    def __getitem__(self, key: int):
+        return self.steps[key]
+
+    def __delitem__(self, key: int):
+        del self.steps[key]
+
+    def __iter__(self):
+        return iter(self.steps)
+
+    def __reversed__(self):
+        return reversed(self.steps)
+
+    def __contains__(self, item: Step):
+        return item in self.steps
+
+    def append(self, item: Step):
+        self.steps.append(item)
+
+    def clear(self):
+        self.steps.clear()
+
+    def copy(self):
+        return self.steps.copy()
+
+    def count(self, value: Step):
+        return self.steps.count(value)
+
+    def extend(self, iterable: Iterable[Step]):
+        self.steps.extend(iterable)
+
+    def index(self, value: Step):
+        return self.steps.index(value)
+
+    def insert(self, index: int, item: Step):
+        self.steps.insert(index, item)
+
+    def pop(self):
+        return self.steps.pop()
+
+    def remove(self, value: Step):
+        self.steps.remove(value)
+
+    def reverse(self):
+        self.steps.reverse()
+
+    def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
+        self.steps.sort(reverse=reverse, key=key)
 
     def add_steps(self, steps: List[Step]):
         """
