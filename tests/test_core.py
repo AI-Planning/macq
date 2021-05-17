@@ -1,4 +1,3 @@
-#import macq
 from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
 from macq.observation import IdentityObservation
 
@@ -7,7 +6,6 @@ InvalidFluent = Action.InvalidFluent
 
 from typing import List
 import pytest
-import copy
 
 # HELPER FUNCTIONS
 
@@ -56,7 +54,7 @@ def generate_test_actions(num_actions: int, objects: List[CustomObject]):
     actions = []
     for i in range(num_actions):
         action_name = "action" + " " + str(i + 1)
-        #action 1 has a cost of 1, etc.
+        # action 1 has a cost of 1, etc.
         action = Action(action_name, objects, [], [], [], i + 1)
         actions.append(action)
     return actions
@@ -129,7 +127,7 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
     # indices for actions and states respectively
     a_index = 0
     s_index = 0
-    for i in range(num_steps):
+    for _ in range(num_steps):
         step = Step(actions[a_index], states[s_index])
         # cycle through actions and states
         if a_index < len(actions):
@@ -163,7 +161,8 @@ def generate_test_trace(complexity: int):
     steps = generate_test_steps(complexity, actions, states)
     trace = Trace(steps)
     return trace
-    
+
+
 # TESTS FOR ACTION CLASS
 
 # ensure that invalid fluents can't be added to actions
@@ -178,6 +177,7 @@ def test_action_errors():
         action.add_effect_add([fluent_other])
         action.add_effect_delete([fluent_other])
 
+
 # ensure that valid fluents can be added as action preconditions
 def test_action_add_preconditions():
     fluents = generate_test_fluents(3)
@@ -188,6 +188,7 @@ def test_action_add_preconditions():
     assert action.precond == [fl1]
     action.add_precond([fl2, fl3])
     assert action.precond == [fl1, fl2, fl3]
+
 
 # ensure that valid fluents can be added as action effects
 def test_action_add_effects():
@@ -204,6 +205,7 @@ def test_action_add_effects():
     action.add_effect_delete([fl2, fl3])
     assert action.delete == [fl1, fl2, fl3]
 
+
 # ensure that valid object parameters can be added and subsequently referenced
 def test_action_add_params():
     objects = [CustomObject("number", str(o)) for o in range(6)]
@@ -219,11 +221,12 @@ def test_action_add_params():
     assert action.add == [fluent_other]
     assert action.delete == [fluent_other]
 
+
 # TESTS FOR TRACE CLASS
 
 # test the functionality to add steps to a trace (NOT YET WORKING -- need equality dunders). pass for now
 def test_trace_add_steps():
-    '''
+    """
     objects = [CustomObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
     fluent = Fluent("on table", [objects[0]], True)
@@ -236,14 +239,16 @@ def test_trace_add_steps():
 
     trace.add_steps([step4])
     assert trace.steps == result
-    '''
+    """
     pass
+
 
 # ensure that the Trace base_fluents() and base_actions() functions work correctly
 def test_trace_base():
     trace = generate_test_trace(3)
     assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
     assert trace.base_actions() == ["action 1", "action 2", "action 3"]
+
 
 # test that the previous states are being retrieved correctly
 def test_trace_prev_states():
@@ -256,6 +261,7 @@ def test_trace_prev_states():
     assert trace.get_prev_states(action1) == [state1]
     assert trace.get_prev_states(action3) == [state3]
 
+
 # test that the post states are being retrieved correctly
 def test_trace_post_states():
     trace = generate_test_trace(3)
@@ -266,6 +272,7 @@ def test_trace_post_states():
 
     assert trace.get_post_states(action1) == [state2]
     assert trace.get_post_states(action3) == []
+
 
 # test trace SAS triples function
 def test_trace_get_sas_triples():
@@ -278,10 +285,12 @@ def test_trace_get_sas_triples():
     assert trace.get_sas_triples(action2) == [(state2, action2, state3)]
     assert trace.get_sas_triples(action3) == [(state3, action3)]
 
+
 # test that the total cost is working correctly
 def test_trace_total_cost():
     trace = generate_test_trace(5)
     assert trace.get_total_cost() == 15
+
 
 # test that the cost range is working correctly
 def test_trace_valid_cost_range():
@@ -291,6 +300,7 @@ def test_trace_valid_cost_range():
     assert trace.get_cost_range(1, 5) == 15
     assert trace.get_cost_range(4, 5) == 9
 
+
 # test that incorrect provided cost ranges throw errors
 def test_trace_invalid_cost_range():
     trace = generate_test_trace(3)
@@ -299,6 +309,7 @@ def test_trace_invalid_cost_range():
         trace.get_cost_range(0, 2)
         trace.get_cost_range(1, 5)
 
+
 # test trace action usage
 def test_trace_usage():
     trace = generate_test_trace(3)
@@ -306,17 +317,20 @@ def test_trace_usage():
     action1 = trace.steps[0].action
     assert trace.get_usage(action1) == 1 / 3
 
+
 # test trace tokenize function
 def test_trace_tokenize():
     trace = generate_test_trace(3)
     (step1, step2, step3) = (trace.steps[0], trace.steps[1], trace.steps[2])
     trace.tokenize(IdentityObservation)
     print(trace.observations)
-    print([
-        IdentityObservation(step1),
-        IdentityObservation(step2),
-        IdentityObservation(step3),
-    ])
+    print(
+        [
+            IdentityObservation(step1),
+            IdentityObservation(step2),
+            IdentityObservation(step3),
+        ]
+    )
     assert trace.observations == [
         IdentityObservation(step1),
         IdentityObservation(step2),
