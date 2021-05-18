@@ -325,12 +325,14 @@ def test_trace_tokenize():
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
 
-objects = [CustomObject("number", str(o)) for o in range(5)]
-fluent = Fluent("fluent 1", objects, False)
-fluent2 = Fluent("fluent 2", objects, True)
-state = State([fluent, fluent2])
-action = Action("action 1", objects, [fluent], [], [fluent2], 10)
-step = Step(action, state)
-step2 = Step(action, state)
-trace = Trace([step, step2])
-print(trace)
+if __name__ == "__main__":
+    #printing tests
+    objects = [CustomObject("number", str(o)) for o in range(5)]
+    fluent = Fluent("fluent 1", objects, False)
+    fluent2 = Fluent("fluent 2", objects, True)
+    state = State([fluent, fluent2])
+    action = Action("action 1", objects, [fluent], [], [fluent2], 10)
+    step = Step(action, state)
+    step2 = Step(action, state)
+    trace = Trace([step, step2])
+    print(trace)
