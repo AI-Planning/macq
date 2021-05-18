@@ -1,7 +1,6 @@
 from typing import List
 from . import Fluent
 
-
 class State:
     """
     Class for a State, which is the set of all fluents and their values at a particular Step.
@@ -16,8 +15,8 @@ class State:
         self.fluents = fluents
 
     def __repr__(self):
-        string = ""
+        string = "State:\n\n"
         for fluent in self.fluents:
-            string = string + fluent.name + ": " + str(fluent.value) + "\n"
+            string += str(fluent) + "\n"
         string = string.strip()
         return string
