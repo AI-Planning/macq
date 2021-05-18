@@ -1,8 +1,9 @@
-from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
+from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
+MissingGenerator = TraceList.MissingGenerator
 
 from typing import List
 import pytest
@@ -263,3 +264,33 @@ def test_trace_tokenize():
     ]
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
+
+
+def generate_test_trace_list(length: int):
+    trace = generate_test_trace(3)
+    traces = [trace] * length
+    return TraceList(traces)
+
+
+def test_trace_list():
+    trace_list = generate_test_trace_list(5)
+
+    assert len(trace_list) == 5
+
+    with pytest.raises(MissingGenerator):
+        trace_list.generate_more(5)
+
+    first = trace_list[0]
+    trace_list.generator = generate_test_trace_list
+    trace_list.generate_more(5)
+    assert len(trace_list) == 10
+    assert trace_list[0] is first
+
+    action = trace_list[0].steps[0].action
+    usages = trace_list.get_usage(action)
+    for i, trace in enumerate(trace_list):
+        assert usages[i] == trace.get_usage(action)
+
+
+if __name__ == "__main__":
+    test_trace_list()

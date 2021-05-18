@@ -100,6 +100,6 @@ class TraceList:
 
     def get_usage(self, action: Action):
         usages = []
-        for trace in self.traces:
+        for trace in self:
             usages.append(trace.get_usage(action))
         return usages
