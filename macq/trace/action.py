@@ -1,7 +1,6 @@
 from typing import List
 from .fluent import CustomObject, Fluent
 
-
 class Action:
     class InvalidFluent(Exception):
         """
@@ -50,8 +49,23 @@ class Action:
         self.add_effect_add(add)
         self.delete = []
         self.add_effect_delete(delete)
-
         self.cost = cost
+
+    def __repr__(self):
+        string = "Action with Name: " + self.name + "\n\nObject Parameters:\n"
+        for obj in self.obj_params:
+            string += str(obj) + "\n"
+        string += "Preconditions:\n"
+        for fluent in self.precond:
+            string += str(fluent)
+        string += "\nEffects to add:\n"
+        for fluent in self.add:
+            string += str(fluent)
+        string += "\nEffects to delete:\n"
+        for fluent in self.delete:
+            string += str(fluent)
+        string += "\nCost: " + str(self.cost)
+        return string
 
     def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
         """

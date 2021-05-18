@@ -23,6 +23,10 @@ class Step:
         self.action = action
         self.state = state
 
+    def __repr__(self):
+        string = str(self.action) + "\n\n" + str(self.state)
+        return string
+
     def base_fluents(self):
         """
         Retrieves the names of all fluents used in this step.

@@ -48,6 +48,23 @@ class Trace:
         self.actions = self.base_actions()
         self.num_fluents = len(self.fluents)
         self.observations = []
+        
+    def __repr__(self): 
+        string = "TRACE:\n\nAttributes:\n\nNumber of Steps: " + str(self.num_steps)
+        string += "\nNumber of Fluents: " + str(self.num_fluents)
+        string += "\n\nBase Fluents:\n"
+        for fluent in self.fluents:
+            string += fluent + "\n"
+        string += "\nBase Actions:\n"
+        for action in self.actions:
+            string += action + "\n"
+        string += "\n\nSteps:"
+        for i in range(self.num_steps):
+            string += "\n\nSTEP " + str(i + 1) + ":\n\n" + str(self.steps[i]) + "\n"
+        string += "\nObservations:\n"
+        for obs in self.observations:
+            string += "\n" + str(obs)   
+        return string
 
     def __len__(self):
         return len(self.steps)
