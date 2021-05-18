@@ -1,9 +1,11 @@
 from typing import List
 
+
 class CustomObject:
     def __init__(self, obj_type: str, name: str):
         self.obj_type = obj_type
         self.name = name
+
     def __repr__(self):
         string = "Type: " + self.obj_type + ", Name: " + self.name
         return string
@@ -26,11 +28,10 @@ class Fluent:
         self.name = name
         self.objects = objects
         self.value = value
+
     def __repr__(self):
         string = "Fluent with Name: " + self.name + "\nObjects:\n"
         for obj in self.objects:
             string += str(obj) + "\n"
         string += "Value: " + str(self.value)
         return string
-
-

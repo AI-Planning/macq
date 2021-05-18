@@ -371,3 +371,9 @@ def test_trace_list():
     usages = trace_list.get_usage(action)
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
+
+    print(trace_list)
+
+
+if __name__ == "__main__":
+    test_trace_list()
