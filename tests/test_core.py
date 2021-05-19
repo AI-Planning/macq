@@ -348,8 +348,13 @@ def test_trace_tokenize():
 
 
 def generate_test_trace_list(length: int):
-    trace = generate_test_trace(3)
-    traces = [trace] * length
+    from random import randint
+
+    traces = []
+    for _ in range(length):
+        comp = randint(1, 3)
+        trace = generate_test_trace(comp)
+        traces.append(trace)
     return TraceList(traces)
 
 
