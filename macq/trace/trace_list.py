@@ -38,15 +38,15 @@ class TraceList:
         self.traces: List[Trace] = [] if traces is None else traces
         self.generator = generator
 
-    def __repr__(self):
-        rep = "["
+    def __str__(self):
+        string = "["
         for trace in self:
-            rep += "\n"
-            rep += "-" * 100
-            rep += "\n\n"
-            rep += repr(trace)
-        rep += "]"
-        return rep
+            string += "\n"
+            string += "-" * 100
+            string += "\n\n"
+            string += str(trace)
+        string += "]"
+        return string
 
     def __len__(self):
         return len(self.traces)

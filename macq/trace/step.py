@@ -23,7 +23,7 @@ class Step:
         self.action = action
         self.state = state
 
-    def __repr__(self):
+    def __str__(self):
         string = str(self.action) + "\n\n" + str(self.state)
         return string
 

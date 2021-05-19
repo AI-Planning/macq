@@ -15,7 +15,7 @@ class State:
     def __init__(self, fluents: List[Fluent]):
         self.fluents = fluents
 
-    def __repr__(self):
+    def __str__(self):
         string = "State:\n\n"
         for fluent in self.fluents:
             string += str(fluent) + "\n"

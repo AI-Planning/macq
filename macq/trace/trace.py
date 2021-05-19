@@ -49,7 +49,7 @@ class Trace:
         self.num_fluents = len(self.fluents)
         self.observations = []
 
-    def __repr__(self):
+    def __str__(self):
         string = "TRACE:\n\nAttributes:\n\nNumber of Steps: " + str(self.num_steps)
         string += "\nNumber of Fluents: " + str(self.num_fluents)
         string += "\n\nBase Fluents:\n"

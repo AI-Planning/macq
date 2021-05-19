@@ -6,7 +6,7 @@ class CustomObject:
         self.obj_type = obj_type
         self.name = name
 
-    def __repr__(self):
+    def __str__(self):
         string = "Type: " + self.obj_type + ", Name: " + self.name
         return string
 
@@ -29,7 +29,7 @@ class Fluent:
         self.objects = objects
         self.value = value
 
-    def __repr__(self):
+    def __str__(self):
         string = "Fluent with Name: " + self.name + "\nObjects:\n"
         for obj in self.objects:
             string += str(obj) + "\n"

@@ -52,7 +52,7 @@ class Action:
         self.add_effect_delete(delete)
         self.cost = cost
 
-    def __repr__(self):
+    def __str__(self):
         string = "Action with Name: " + self.name + "\n\nObject Parameters:\n"
         for obj in self.obj_params:
             string += str(obj) + "\n"
