@@ -7,8 +7,8 @@ from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress, is_applicable
 from tarski.grounding import LPGroundingStrategy
+from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
 from tarski.grounding.errors import ReachabilityLPUnsolvable
-#tarski.grounding.
 
 def generate_traces(dom, prob, plan_len : int, num_traces : int):
     """
@@ -40,10 +40,14 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
     grounder = tarski.grounding.LPGroundingStrategy(reader.problem)
     actions = grounder.ground_actions()
     print(actions)
+    print()
+    print(grounder.ground_state_variables())
+    operators = ground_problem_schemas_into_plain_operators(problem)
+    print()
+    print(operators)
+    instance = GroundForwardSearchModel(problem, operators)
 
-    instance = GroundForwardSearchModel(problem, actions)
-
-    is_applicable(problem.init, actions[0])
+    #is_applicable(problem.init,grounder.ground_state_variables()[0])
 
     #try again with ground forward - ask why you get errors here and inspect the errors deeper
     #(grounded operator -> action w/ no parameters? but there is no other applicable function...
@@ -60,7 +64,7 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
             for item in app_act:
                 #pass
                 ls.append(item)
-            act = random.choice(app_act)
+            act = random.choice(ls)
             trace.append(Step(Action(act), State(state)))
             next_state = progress(state, act)
         traces.append(trace)
