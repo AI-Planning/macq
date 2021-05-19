@@ -176,7 +176,7 @@ def generate_test_trace(complexity: int):
 def test_action_errors():
     objects = [CustomObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", 10)
+    other = CustomObject("other", "10")
     fluent_other = Fluent("put down other", [other], True)
 
     with pytest.raises(InvalidFluent):

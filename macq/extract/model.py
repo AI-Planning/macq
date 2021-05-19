@@ -1,6 +1,6 @@
 from json import dump, dumps
 from typing import List
-from ..trace import Fluent, Action, State
+from ..trace import Fluent, Action
 
 
 class Model:
@@ -9,17 +9,9 @@ class Model:
     fluents, actions, initial state, and goal of a problem.
     """
 
-    def __init__(
-        self,
-        fluents: List[Fluent],
-        actions: List[Action],
-        initial_state: State,
-        goal: State,
-    ):
+    def __init__(self, fluents: List[Fluent], actions: List[Action]):
         self.fluents = fluents
         self.actions = actions
-        self.initial_state = initial_state
-        self.goal = goal
 
     def serialize(self, filepath: str = None):
         """

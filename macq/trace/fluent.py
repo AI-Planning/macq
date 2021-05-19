@@ -7,7 +7,9 @@ class CustomObject:
         self.name = name
 
     def __str__(self):
-        string = "Type: " + self.obj_type + ", Name: " + self.name
+        string = "Object:\n"
+        string += f"  name: {self.name}\n"
+        string += f"  type: {self.obj_type}"
         return string
 
 
@@ -30,8 +32,11 @@ class Fluent:
         self.value = value
 
     def __str__(self):
-        string = "Fluent with Name: " + self.name + "\nObjects:\n"
+        string = "Fluent:\n"
+        string += f"  name: {self.name}\n"
+        string += f"  value: {self.value}\n"
+        string += f"  objects:\n"
         for obj in self.objects:
-            string += str(obj) + "\n"
-        string += "Value: " + str(self.value)
-        return string
+            for line in str(obj).split("\n"):
+                string += f"    {line}\n"
+        return string.rstrip()

@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from .model import Model
-from ..trace import TraceList, State
+from ..trace import TraceList
 
 
 class modes(Enum):
@@ -29,26 +29,7 @@ class Extract:
         return list(actions)
 
     @staticmethod
-    def _get_initial_state(traces: TraceList):
-        # All traces should share an initial state (state of step 0)
-        return traces[0][0].state
-
-    @staticmethod
-    def _get_goal(traces: TraceList):
-        # Infer the goal from the final states
-        final_states = []
-        for trace in traces:
-            final_states.append(trace[-1].state.fluents)
-
-        # This will only work if the states share the same fluent objects
-        # I think they should, but if not will need to use loops to find
-        # overlapping fluents (name, value)
-        return State(list(set(final_states[0]).intersection(*final_states)))
-
-    @staticmethod
     def _extract_observer(traces: TraceList):
         fluents = Extract._get_fluents(traces)
         actions = Extract._get_actions(traces)
-        initial_state = Extract._get_initial_state(traces)
-        goal = Extract._get_goal(traces)
-        return Model(fluents, actions, initial_state, goal)
+        return Model(fluents, actions)

@@ -19,5 +19,5 @@ class State:
         string = "State:\n\n"
         for fluent in self.fluents:
             string += str(fluent) + "\n"
-        string = string.strip()
+        string = string.rstrip()
         return string
