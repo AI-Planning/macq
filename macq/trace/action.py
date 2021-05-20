@@ -55,12 +55,12 @@ class Action:
         string = "Action with Name: " + self.name + "\n\nObject Parameters:\n"
         for obj in self.obj_params:
             string += str(obj) + "\n"
-        string += "Preconditions:\n"
+        string += "\nPreconditions:\n"
         for fluent in self.precond:
-            string += str(fluent)
+            string += str(fluent) + "\n\n"
         string += "\nEffects to add:\n"
         for fluent in self.add:
-            string += str(fluent)
+            string += str(fluent) + "\n\n"
         string += "\nEffects to delete:\n"
         for fluent in self.delete:
             string += str(fluent)
@@ -79,9 +79,13 @@ class Action:
         condition : list of Fluents
             Either the action's preconditions, add effects, or delete effects to be added to.
         """
+        valid = False
         for fluent in fluents:
             for obj in fluent.objects:
-                if obj not in self.obj_params:
+                for param in self.obj_params:
+                    if obj == param:
+                        valid = True
+                if not valid:        
                     raise self.InvalidFluent()
         condition.extend(fluents)
 

@@ -7,6 +7,11 @@ class CustomObject:
     def __repr__(self):
         string = "Type: " + self.obj_type + ", Name: " + self.name
         return string
+    def __eq__(self, other):
+        if isinstance(other, CustomObject):
+            return self.name == other.name and self.obj_type == other.obj_type
+        else:
+            return False
 
 
 class Fluent:
