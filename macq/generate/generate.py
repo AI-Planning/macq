@@ -59,10 +59,12 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
                 ls.append(item)
             act = random.choice(ls)
             
-            action = tarski_act_to_macq(act, problem)
-            #trace.append(Step(Action(act), State(state)))
-            #next_state = progress(state, act)
+            macq_action = _tarski_act_to_macq(act, problem)
+            macq_state = _tarski_state_to_macq(state, problem)
+            trace.append(Step(macq_action, macq_state))
+            state = progress(state, act)
         traces.append(trace)
+    return traces
 
 def _extract_action_typing(problem: tarski.fstrips.problem.Problem):
     actions = problem.actions
@@ -92,22 +94,17 @@ def _extract_predicate_typing(writer: FstripsWriter):
         extracted_pred_types[name] = params    
     return extracted_pred_types
 
-def tarski_act_to_macq(act: tarski.fstrips.action.PlainOperator, problem: tarski.fstrips.problem.Problem):
-    print(act)
-    action_info = typing_split(act.name, problem, True)
+def _tarski_act_to_macq(act: tarski.fstrips.action.PlainOperator, problem: tarski.fstrips.problem.Problem):
+    action_info = _typing_split(act.name, problem, True)
     precond = []
     raw_precond = act.precondition.subformulas
     for fluent in raw_precond:
-        precond.append(tarski_fluent_to_macq(str(fluent), problem))
-    print(raw_precond)
-    print(act.effects)
-    (add, delete) = effect_split(act, problem)
+        precond.append(_tarski_fluent_to_macq(str(fluent), problem))
+    (add, delete) = _effect_split(act, problem)
     action = Action(action_info['name'], action_info['objects'], precond, add, delete)
-    print(action)
     return action
 
-def tarski_fluent_to_macq(raw: str, problem: tarski.fstrips.problem.Problem):
-    #fluents = fluents.subformulas
+def _tarski_fluent_to_macq(raw: str, problem: tarski.fstrips.problem.Problem):
     # remove starting and ending parentheses, if necessary
     if raw[0] == '(':
         raw = raw[1:len(raw) - 1]
@@ -116,24 +113,24 @@ def tarski_fluent_to_macq(raw: str, problem: tarski.fstrips.problem.Problem):
         value = False
     else:
         value = True
-    fluent = typing_split(test[-1], problem, False)
+    fluent = _typing_split(test[-1], problem, False)
     macq_fluent = Fluent(fluent['name'], fluent['objects'], value)
     return macq_fluent
 
-def effect_split(act: tarski.fstrips.action.PlainOperator, problem: tarski.fstrips.problem.Problem):
+def _effect_split(act: tarski.fstrips.action.PlainOperator, problem: tarski.fstrips.problem.Problem):
     effects = act.effects
     add = []
     delete = []
     for i in range(len(effects)):
         eff_str = effects[i].tostring()
-        fluent = tarski_fluent_to_macq(eff_str[3:], problem)
+        fluent = _tarski_fluent_to_macq(eff_str[3:], problem)
         if eff_str[:3] == 'ADD':
             add.append(fluent)
         else:
             delete.append(fluent)
     return(add, delete)
 
-def typing_split(raw: str, problem: tarski.fstrips.problem.Problem, is_action: bool):
+def _typing_split(raw: str, problem: tarski.fstrips.problem.Problem, is_action: bool):
     split = {}
     raw = raw.strip(')')
     name = raw.split('(')[0]
@@ -159,13 +156,16 @@ def typing_split(raw: str, problem: tarski.fstrips.problem.Problem, is_action: b
     split['objects'] = obj_param
     return split
 
-def tarski_state_to_macq(state: tarski.model.Model):
+def _tarski_state_to_macq(state: tarski.model.Model, problem: tarski.fstrips.problem.Problem):
+    state = state.as_atoms()
+    fluents = []
     for fluent in state:
-        print(fluent)
+        fluents.append(_tarski_fluent_to_macq(str(fluent), problem))
+    return State(fluents)
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent.parent
     dom = (base / 'tests/pddl_testing_files/domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/problem.pddl').resolve()
-    generate_traces(dom, prob, 1, 1)
+    print(generate_traces(dom, prob, 1, 1))
