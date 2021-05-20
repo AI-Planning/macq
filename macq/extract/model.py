@@ -1,4 +1,4 @@
-from json import dump, dumps
+from json import dump, dumps, loads
 from typing import List
 from ..trace import Fluent, Action
 
@@ -33,8 +33,24 @@ class Model:
 
         return dumps(self, indent=2, default=lambda o: o.__dict__)
 
-    def unserialize(self):
-        pass
+    @staticmethod
+    def deserialize(string):
+        """
+        Deserializes a json string into a Model object.
 
-    def to_pddl(self):
-        pass
+        Arguments
+        ---------
+        string : str
+            The json string representing a model.
+
+        Returns
+        -------
+        The Model object represented by the string : Model
+        """
+        return Model.from_json(loads(string))
+
+    @classmethod
+    def from_json(cls, data: dict):
+        fluents = list(map(Fluent.from_json, data["fluents"]))
+        actions = list(map(Action.from_json, data["actions"]))
+        return cls(fluents, actions)

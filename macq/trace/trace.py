@@ -44,8 +44,8 @@ class Trace:
         """
         self.steps = steps
         self.num_steps = len(steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
+        self.fluents = self._get_fluents()
+        self.actions = self._get_actions()
         self.num_fluents = len(self.fluents)
         self.observations = []
 
@@ -131,38 +131,34 @@ class Trace:
         """
         self.steps.extend(steps)
 
-    def base_fluents(self):
+    def _get_fluents(self):
         """
-        Retrieves the names of all fluents used in this trace.
+        Retrieves the fluents used in this trace.
 
         Returns
         -------
-        list : str
-            Returns a list of the names of all fluents used in this trace.
+        list : Fluent
+            Returns a list of all the fluents used in this trace.
         """
-        fluents = []
-        for step in self.steps:
+        fluents = set()
+        for step in self:
             for fluent in step.state.fluents:
-                name = fluent.name
-                if name not in fluents:
-                    fluents.append(name)
-        return fluents
+                fluents.add(fluent)
+        return list(fluents)
 
-    def base_actions(self):
+    def _get_actions(self):
         """
-        Retrieves the names of all actions used in this trace.
+        Retrieves the actions used in this trace.
 
         Returns
         -------
-        list : str
-            Returns a list of the names of all actions used in this trace.
+        list : Action
+            Returns a list of all the actions used in this trace.
         """
-        actions = []
+        actions = set()
         for step in self.steps:
-            name = step.action.name
-            if name not in actions:
-                actions.append(name)
-        return actions
+            actions.add(step.action)
+        return list(actions)
 
     def get_prev_states(self, action: Action):
         """

@@ -12,6 +12,10 @@ class CustomObject:
         string += f"  type: {self.obj_type}"
         return string
 
+    @classmethod
+    def from_json(cls, data):
+        return cls(**data)
+
 
 class Fluent:
     def __init__(self, name: str, objects: List[CustomObject], value: bool):
@@ -40,3 +44,8 @@ class Fluent:
             for line in str(obj).split("\n"):
                 string += f"    {line}\n"
         return string.rstrip()
+
+    @classmethod
+    def from_json(cls, data):
+        objects = list(map(CustomObject.from_json, data["objects"]))
+        return cls(data["name"], objects, data["value"])

@@ -129,3 +129,11 @@ class Action:
             The object to be added to the action's list of available parameters.
         """
         self.obj_params.append(obj)
+
+    @classmethod
+    def from_json(cls, data):
+        obj_params = list(map(CustomObject.from_json, data["obj_params"]))
+        precond = list(map(Fluent.from_json, data["precond"]))
+        add = list(map(Fluent.from_json, data["add"]))
+        delete = list(map(Fluent.from_json, data["delete"]))
+        return cls(data["name"], obj_params, precond, add, delete, data["cost"])
