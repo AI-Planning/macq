@@ -1,3 +1,5 @@
+import pytest
+from typing import List
 from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 
@@ -5,8 +7,6 @@ InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
-from typing import List
-import pytest
 
 # HELPER FUNCTIONS
 
@@ -217,7 +217,7 @@ def test_action_add_effects():
 def test_action_add_params():
     objects = [CustomObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", 10)
+    other = CustomObject("other", "other")
     fluent_other = Fluent("put down other", [other], True)
 
     action.add_parameter(other)
@@ -248,13 +248,6 @@ def test_trace_add_steps():
     assert trace.steps == result
     """
     pass
-
-
-# ensure that the Trace base_fluents() and base_actions() functions work correctly
-def test_trace_base():
-    trace = generate_test_trace(3)
-    assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
-    assert trace.base_actions() == ["action 1", "action 2", "action 3"]
 
 
 # test that the previous states are being retrieved correctly
@@ -376,9 +369,3 @@ def test_trace_list():
     usages = trace_list.get_usage(action)
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
-
-    print(trace_list)
-
-
-if __name__ == "__main__":
-    test_trace_list()
