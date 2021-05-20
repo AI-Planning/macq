@@ -89,9 +89,11 @@ class Trace:
 
     def append(self, item: Step):
         self.steps.append(item)
+        self.update()
 
     def clear(self):
         self.steps.clear()
+        self.update()
 
     def copy(self):
         return self.steps.copy()
@@ -101,35 +103,30 @@ class Trace:
 
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
+        self.update()
 
     def index(self, value: Step):
         return self.steps.index(value)
 
     def insert(self, index: int, item: Step):
         self.steps.insert(index, item)
+        self.update()
 
     def pop(self):
-        return self.steps.pop()
+        result = self.steps.pop()
+        self.update()
+        return result
+
 
     def remove(self, value: Step):
         self.steps.remove(value)
+        self.update()
 
     def reverse(self):
         self.steps.reverse()
 
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
-
-    def add_steps(self, steps: List[Step]):
-        """
-        Class for a Trace, which consists of each Step in a generated solution.
-
-        Arguments
-        ---------
-        steps : List of Steps (optional)
-            The list of Step objects to be added to the trace.
-        """
-        self.steps.extend(steps)
 
     def base_fluents(self):
         """
@@ -313,3 +310,9 @@ class Trace:
         for step in self.steps:
             token = Token(step)
             self.observations.append(token)
+
+    def update(self):
+        self.num_steps = len(self.steps)
+        self.fluents = self.base_fluents()
+        self.actions = self.base_actions()
+        self.num_fluents = len(self.fluents)

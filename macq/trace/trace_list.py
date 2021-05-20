@@ -38,6 +38,16 @@ class TraceList:
         self.traces: List[Trace] = [] if traces is None else traces
         self.generator = generator
 
+    def __str__(self):
+        string = "["
+        for trace in self:
+            string += "\n"
+            string += "-" * 100
+            string += "\n\n"
+            string += str(trace)
+        string += "]"
+        return string
+
     def __len__(self):
         return len(self.traces)
 
@@ -100,6 +110,6 @@ class TraceList:
 
     def get_usage(self, action: Action):
         usages = []
-        for trace in self.traces:
+        for trace in self:
             usages.append(trace.get_usage(action))
         return usages

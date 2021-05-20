@@ -38,8 +38,6 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
     reader.parse_domain(dom)
     problem = reader.parse_instance(prob)
     writer = FstripsWriter(problem)
-    # print(problem.actions)
-    # print(writer.get_predicates())
     _extract_action_typing(problem)
     _extract_predicate_typing(writer)
     lang = problem.language
@@ -49,19 +47,26 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
     instance = GroundForwardSearchModel(problem, operators)
 
     traces = TraceList()
-    for i in range(num_traces):
-        trace = Trace()
+    trace = Trace()
+    num_generated = 0
+    while num_generated < num_traces:
+        num_generated += 1
+        trace.clear()
         state = problem.init
         for j in range(plan_len):
             app_act = instance.applicable(state)
             ls = []
             for item in app_act:
                 ls.append(item)
+            if ls == []:
+                num_generated -= 1
+                break
             act = random.choice(ls)
             
             macq_action = _tarski_act_to_macq(act, problem)
             macq_state = _tarski_state_to_macq(state, problem)
-            trace.append(Step(macq_action, macq_state))
+            step = Step(macq_action, macq_state)
+            trace.append(step)
             state = progress(state, act)
         traces.append(trace)
     return traces
@@ -168,4 +173,4 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = (base / 'tests/pddl_testing_files/domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/problem.pddl').resolve()
-    print(generate_traces(dom, prob, 1, 1))
+    print(generate_traces(dom, prob, 2, 50))
