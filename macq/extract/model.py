@@ -51,6 +51,18 @@ class Model:
 
     @classmethod
     def from_json(cls, data: dict):
+        """
+        Converts a json object to a Model object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The Model corresponding model object : Model
+        """
         fluents = list(map(Fluent.from_json, data["fluents"]))
         actions = list(map(Action.from_json, data["actions"]))
         return cls(fluents, actions)

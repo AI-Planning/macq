@@ -132,6 +132,18 @@ class Action:
 
     @classmethod
     def from_json(cls, data):
+        """
+        Converts a json object to an Action object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Action object : Action
+        """
         obj_params = list(map(CustomObject.from_json, data["obj_params"]))
         precond = list(map(Fluent.from_json, data["precond"]))
         add = list(map(Fluent.from_json, data["add"]))

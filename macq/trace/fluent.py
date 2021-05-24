@@ -14,6 +14,18 @@ class CustomObject:
 
     @classmethod
     def from_json(cls, data):
+        """
+        Converts a json object to a Custom object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Custom object : CustomObject
+        """
         return cls(**data)
 
 
@@ -47,5 +59,17 @@ class Fluent:
 
     @classmethod
     def from_json(cls, data):
+        """
+        Converts a json object to a Fluent object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Fluent object : Fluent
+        """
         objects = list(map(CustomObject.from_json, data["objects"]))
         return cls(data["name"], objects, data["value"])
