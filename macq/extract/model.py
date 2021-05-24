@@ -10,6 +10,17 @@ class Model:
     """
 
     def __init__(self, fluents: List[Fluent], actions: List[Action]):
+        """
+        Creates a Model object. This stores a list of fluents and actions that
+        represent a planning model.
+
+        Attributes
+        ----------
+        fluents : list
+            The list of `Fluent` objects.
+        actions : list
+            The list of `Action` objects.
+        """
         self.fluents = fluents
         self.actions = actions
 

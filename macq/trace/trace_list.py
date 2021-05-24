@@ -10,6 +10,11 @@ class TraceList:
     """
 
     class MissingGenerator(Exception):
+        """
+        A custom exception, thrown when a user attempts to generate more traces
+        on a trace list without providing a generator function.
+        """
+
         def __init__(
             self,
             trace_list,
