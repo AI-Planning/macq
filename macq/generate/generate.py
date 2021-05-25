@@ -12,17 +12,21 @@ from tarski.grounding.errors import ReachabilityLPUnsolvable
 from tarski.syntax.ops import CompoundFormula, flatten
 from collections import OrderedDict
 
-def generate_traces(dom, prob, plan_len : int, num_traces : int):
+class Generate:
+    def __init__(self, dom : str, prob : str):
+        super().__init__()
+
+def generate_traces(dom : str, prob : str, plan_len : int, num_traces : int):
     """
 	Generates traces randomly by uniformly sampling applicable actions to find plans
 	of the given length.
 
 	Arguments
 	---------
-	dom : file
-		The domain file.
-	prob : file
-		The problem file.
+	dom : str
+		The domain filename.
+	prob : str
+		The problem filename.
 	plan_len : int
 		The length of each generated trace.
 	num_traces : int
@@ -34,41 +38,47 @@ def generate_traces(dom, prob, plan_len : int, num_traces : int):
 		The list of traces generated.
     """
 
+    # read the domain and problem
     reader = PDDLReader(raise_on_error=True)
     reader.parse_domain(dom)
     problem = reader.parse_instance(prob)
-    writer = FstripsWriter(problem)
-    _extract_action_typing(problem)
-    _extract_predicate_typing(writer)
-    lang = problem.language
-    grounder = tarski.grounding.LPGroundingStrategy(reader.problem)
-    actions = grounder.ground_actions()
+    # ground the problem
     operators = ground_problem_schemas_into_plain_operators(problem)
     instance = GroundForwardSearchModel(problem, operators)
 
     traces = TraceList()
     trace = Trace()
     num_generated = 0
+    # loop through while the desired number of traces has not yet been generated
     while num_generated < num_traces:
         num_generated += 1
         trace.clear()
         state = problem.init
+        # True if trace is fully generated to the desired length
+        valid_trace = True
+        # add more steps while the trace has not yet reached the desired length
         for j in range(plan_len):
+            # find the next applicable actions
             app_act = instance.applicable(state)
+            # get items from generator
             ls = []
             for item in app_act:
                 ls.append(item)
+            # if the trace reaches a dead end, disregard this trace and try again
             if ls == []:
                 num_generated -= 1
+                valid_trace = False
                 break
+            # pick a random applicable action and apply it
             act = random.choice(ls)
-            
+            # create the trace and progress the state
             macq_action = _tarski_act_to_macq(act, problem)
             macq_state = _tarski_state_to_macq(state, problem)
             step = Step(macq_action, macq_state)
             trace.append(step)
             state = progress(state, act)
-        traces.append(trace)
+        if valid_trace:
+            traces.append(trace)
     return traces
 
 def _extract_action_typing(problem: tarski.fstrips.problem.Problem):
@@ -85,6 +95,7 @@ def _extract_action_typing(problem: tarski.fstrips.problem.Problem):
     return extracted_act_types
 
 def _extract_predicate_typing(writer: FstripsWriter):
+    #can just take a problem
     extracted_pred_types = {}
     raw_pred = writer.get_predicates().split('\n')
     for i in range(len(raw_pred)):
@@ -102,9 +113,14 @@ def _extract_predicate_typing(writer: FstripsWriter):
 def _tarski_act_to_macq(act: tarski.fstrips.action.PlainOperator, problem: tarski.fstrips.problem.Problem):
     action_info = _typing_split(act.name, problem, True)
     precond = []
-    raw_precond = act.precondition.subformulas
-    for fluent in raw_precond:
-        precond.append(_tarski_fluent_to_macq(str(fluent), problem))
+    if type(act.precondition) == CompoundFormula:
+        raw_precond = act.precondition.subformulas
+        for fluent in raw_precond:
+            precond.append(_tarski_fluent_to_macq(str(fluent), problem))
+    else:
+        raw_precond = act.precondition
+        precond.append(_tarski_fluent_to_macq(str(raw_precond), problem))
+    
     (add, delete) = _effect_split(act, problem)
     action = Action(action_info['name'], action_info['objects'], precond, add, delete)
     return action
@@ -173,4 +189,4 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = (base / 'tests/pddl_testing_files/domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/problem.pddl').resolve()
-    print(generate_traces(dom, prob, 2, 50))
+    print(generate_traces(dom, prob, 10, 10))
