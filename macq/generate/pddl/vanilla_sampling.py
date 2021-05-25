@@ -1,10 +1,10 @@
 from macq.trace import TraceList, Trace, Step
-from macq.generate.generate import Generate
+from macq.generate.pddl.generate import Generate
 from tarski.search.operations import progress
 from pathlib import Path
 import random
 
-class Vanilla_Sampling(Generate):
+class VanillaSampling(Generate):
     def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
         super().__init__(dom, prob)
         self.plan_len = plan_len
@@ -72,7 +72,7 @@ class Vanilla_Sampling(Generate):
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent.parent
-    dom = (base / 'tests/pddl_testing_files/domain2.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/problem2.pddl').resolve()
-    vanilla = Vanilla_Sampling(dom, prob, 10, 10)
+    dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
+    vanilla = VanillaSampling(dom, prob, 10, 10)
     print(vanilla.generate_traces())
