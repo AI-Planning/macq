@@ -64,7 +64,25 @@ class Generate:
                 delete.append(fluent)
         return(add, delete)
 
-    def _typing_split(self, raw: str, is_action: bool):
+    def _action_or_fluent_split(self, raw: str, is_action: bool):
+        """
+        Takes a string representing eitther an action or fluent in the form of: action/fluent(*objects)
+        and parses it to a dictionary that separates the name of the action or fluent from the objects it 
+        acts upon. The objects are also instantiated with the appropriate type/name.
+        Example: pick-up(f) is parsed to {'name': 'pick-up', 'objects': [Type: object, Name: f]}
+
+        Arguments
+        ---------
+        raw : str
+            The raw string containing the action or fluent.
+        is_action : bool
+            Determines if the string provided is either an action or a fluent.
+
+        Returns
+        -------
+        split : dict
+            The parsed action or fluent, separating its name from its instantiated objects.
+        """
         split = {}
         raw = raw.strip(')')
         name = raw.split('(')[0]
@@ -99,7 +117,7 @@ class Generate:
                 value = False
             else:
                 value = True
-            fluent = self._typing_split(test[-1], False)
+            fluent = self._action_or_fluent_split(test[-1], False)
             macq_fluent = Fluent(fluent['name'], fluent['objects'], value)
             return macq_fluent
 
@@ -111,7 +129,7 @@ class Generate:
         return State(fluents)
 
     def _tarski_act_to_macq(self, act: tarski.fstrips.action.PlainOperator):
-        action_info = self._typing_split(act.name, True)
+        action_info = self._action_or_fluent_split(act.name, True)
         precond = []
         if type(act.precondition) == CompoundFormula:
             raw_precond = act.precondition.subformulas
