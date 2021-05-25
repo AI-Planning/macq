@@ -1,1 +1,1 @@
-__all__ = ["generate_traces", "Generator"]
+__all__ = ["Generate", "Generator"]
