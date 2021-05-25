@@ -19,9 +19,9 @@ class Action:
         self,
         name: str,
         obj_params: List[CustomObject],
-        precond: List[Fluent],
-        add: List[Fluent],
-        delete: List[Fluent],
+        precond: List[Fluent] = None,
+        add: List[Fluent] = None,
+        delete: List[Fluent] = None,
         cost: int = 0,
     ):
         """
@@ -45,11 +45,14 @@ class Action:
         self.name = name
         self.obj_params = obj_params
         self.precond = []
-        self.add_precond(precond)
+        if precond is not None:
+            self.add_precond(precond)
         self.add = []
-        self.add_effect_add(add)
+        if add is not None:
+            self.add_effect_add(add)
         self.delete = []
-        self.add_effect_delete(delete)
+        if delete is not None:
+            self.add_effect_delete(delete)
         self.cost = cost
 
     def __str__(self):

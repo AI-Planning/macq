@@ -8,7 +8,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, action: Action, state: State):
+    def __init__(self, state: State, action: Action):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
