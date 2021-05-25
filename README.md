@@ -2,9 +2,12 @@
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
+Install for development by cloning the repository and running `pip install .[dev]` (use `pip3` if you have python2 installed).
+
 ## Usage
 ```python
 from macq import generate, extract
+from macq.observation import IdentityObservation
 
 # domain-specific generator: uses api.planning.domains problem_id
 blocks_gen = generate.pddl.Generator(problem_id = 123)
@@ -19,19 +22,25 @@ blocks_gen.configure(
   }
 )
 
-# generate 20 traces
+# generate 100 traces
 traces = generate.Generate(generator=blocks_gen, traces=100)
 
-traces[0]
-...
+more_traces = traces.generate_more(10)
 
-traces.fluents
-...
+traces.get_usage(action)
 
-f = traces.fluents[0]
+trace = traces[0]
+trace.fluents
+trace.actions
+trace.get_prev_states(action) # get the state before each occurance of action
+trace.get_post_states(action) # state after each occurance of action
+trace.get_total_cost()
+trace.tokenize(IdentityObservation)
+trace.tokens
 
-traces[0][f]
-True
+step = trace[0]
+step.base_fluents()
+step.base_action()
 
 model = extract.Extract(traces, extract.modes.OBSERVER)
 
