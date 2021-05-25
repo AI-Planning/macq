@@ -10,6 +10,7 @@ from tarski.grounding import LPGroundingStrategy
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
 from tarski.grounding.errors import ReachabilityLPUnsolvable
 from tarski.syntax.ops import CompoundFormula, flatten
+from tarski.syntax.formulas import Atom
 from collections import OrderedDict
 
 class Generate:
@@ -57,6 +58,7 @@ class Generate:
         delete = []
         for i in range(len(effects)):
             eff_str = effects[i].tostring()
+            eff = Atom()
             fluent = self._tarski_fluent_to_macq(eff_str[3:])
             if eff_str[:3] == 'ADD':
                 add.append(fluent)
@@ -64,7 +66,7 @@ class Generate:
                 delete.append(fluent)
         return(add, delete)
 
-    def _action_or_fluent_split(self, raw: str, is_action: bool):
+    def _action_or_predicate_split(self, raw: str, is_action: bool):
         """
         Takes a string representing eitther an action or fluent in the form of: action/fluent(*objects)
         and parses it to a dictionary that separates the name of the action or fluent from the objects it 
@@ -117,30 +119,60 @@ class Generate:
                 value = False
             else:
                 value = True
-            fluent = self._action_or_fluent_split(test[-1], False)
+            fluent = self._action_or_predicate_split(test[-1], False)
             macq_fluent = Fluent(fluent['name'], fluent['objects'], value)
             return macq_fluent
 
-    def _tarski_state_to_macq(self, state: tarski.model.Model):
-        state = state.as_atoms()
-        fluents = []
-        for fluent in state:
-            fluents.append(self._tarski_fluent_to_macq(str(fluent)))
-        return State(fluents)
+    def _tarski_state_to_macq(self, tarski_state: tarski.model.Model):
+        """
+        Converts a state as defined by tarski to a state as defined by macq.
 
-    def _tarski_act_to_macq(self, act: tarski.fstrips.action.PlainOperator):
-        action_info = self._action_or_fluent_split(act.name, True)
+        Arguments
+        ---------
+        tarski_state : Model (from tarski.model)
+            The supplied state, defined using the tarski Model class.
+
+        Returns
+        -------
+        macq_state : State
+            A state, defined using the macq State class.
+        """
+        tarski_state = tarski_state.as_atoms()
+        fluents = []
+        for fluent in tarski_state:
+            print(type(fluent))
+            fluents.append(self._tarski_fluent_to_macq(str(fluent)))
+        macq_state = State(fluents)
+        return macq_state
+
+    def _tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
+        """
+        Converts an action as defined by tarski to an action as defined by macq.
+
+        Arguments
+        ---------
+        tarski_act : PlainOperator (from tarski.fstrips.action)
+            The supplied action, defined using the tarski PlainOperator class.
+
+        Returns
+        -------
+        macq_act : Action
+            An action, defined using the macq Action class.
+        """
+        action_info = self._action_or_predicate_split(tarski_act.name, True)
         precond = []
-        if type(act.precondition) == CompoundFormula:
-            raw_precond = act.precondition.subformulas
+        if type(tarski_act.precondition) == CompoundFormula:
+            raw_precond = tarski_act.precondition.subformulas
             for fluent in raw_precond:
+                print(type(fluent))
                 precond.append(self._tarski_fluent_to_macq(str(fluent)))
         else:
-            raw_precond = act.precondition
+            raw_precond = tarski_act.precondition
+            print(type(raw_precond))
             precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
         
-        (add, delete) = self._effect_split(act)
-        action = Action(action_info['name'], action_info['objects'], precond, add, delete)
-        return action
+        (add, delete) = self._effect_split(tarski_act)
+        macq_act = Action(action_info['name'], action_info['objects'], precond, add, delete)
+        return macq_act
 
     
