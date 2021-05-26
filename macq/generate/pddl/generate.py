@@ -6,14 +6,11 @@ import tarski
 from tarski.io import PDDLReader, FstripsWriter
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress, is_applicable
-from tarski.grounding import LPGroundingStrategy
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
-from tarski.grounding.errors import ReachabilityLPUnsolvable
-from tarski.syntax.ops import CompoundFormula, flatten
-from tarski.syntax.formulas import Atom
-from tarski.utils.helpers import parse_atom
+from tarski.syntax.ops import CompoundFormula
 from collections import OrderedDict
 import time
+from multiprocessing.pool import ThreadPool
 
 MAX_TIME = 30.0
 
@@ -28,19 +25,32 @@ def _trace_timer(generator):
         The generator function to be wrapped with this time-checker.
     """
     def wrapper(*args, **kwargs):
-        # check time
-        print('TIMER TEST')
+        pool = ThreadPool(processes=1)
+        # start the timer
         begin = time.perf_counter()
         current = begin
-        while current - begin < MAX_TIME:
-        trace = generator(*args, **kwargs)
-        end = time.perf_counter()
-        print(end - begin)
-        if end - begin < MAX_TIME:
-            return trace
-        else:
-            raise Exception('time out')
+        thr = pool.apply_async(generator, args=args, kwds=kwargs)
+        # continue counting time while the function has not completed
+        while not thr.ready(): 
+            current = time.perf_counter()
+            # raise exception if the function takes too long
+            if current - begin > MAX_TIME:
+                raise TraceSearchTimeOut()
+        # return a successful trace
+        return thr.get()
     return wrapper
+
+class TraceSearchTimeOut(Exception):
+        """
+        Raised when the time it takes to generate (or attempt to generate) a single trace is 
+        longer than the MAX_TIME constant. MAX_TIME is 30 seconds by default.
+        """
+
+        def __init__(
+            self,
+            message="The generator function took longer than MAX_TIME in its attempt to generate a trace."
+        ):
+            super().__init__(message)
 
 class Generate:
     def __init__(self, dom : str, prob : str):

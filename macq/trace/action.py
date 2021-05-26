@@ -4,7 +4,7 @@ from .fluent import CustomObject, Fluent
 class Action:
     class InvalidFluent(Exception):
         """
-        The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
+        Raised when the user attempts to add fluents (to a precondition or effect) that act on objects
         outside of the parameters supplied to the action.
         """
 
