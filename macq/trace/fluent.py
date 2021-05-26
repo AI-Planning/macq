@@ -55,6 +55,9 @@ class Fluent:
                 string += f"    {line}\n"
         return string.rstrip()
 
+    def __hash__(self):
+        return hash(str(self))
+
     @classmethod
     def from_json(cls, data):
         """
