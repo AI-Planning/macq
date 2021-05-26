@@ -1,4 +1,4 @@
-from typing import Iterable, Union, List, Callable
+from typing import Iterable, List, Callable
 from . import Action
 from . import Trace
 
@@ -26,8 +26,8 @@ class TraceList:
 
     def __init__(
         self,
-        traces: Union[List[Trace], None] = None,
-        generator: Union[Callable, None] = None,
+        traces: List[Trace] = [],
+        generator: Callable = None,
     ):
         """
         Creates a TraceList object. This stores a list of traces and optionally
@@ -40,7 +40,7 @@ class TraceList:
         generator : funtion | None
             (Optional) The function used to generate the traces.
         """
-        self.traces: List[Trace] = [] if traces is None else traces
+        self.traces: List[Trace] = traces
         self.generator = generator
 
     def __str__(self):
