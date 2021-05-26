@@ -1,5 +1,5 @@
 from macq.trace import TraceList, Trace, Step
-from macq.generate.pddl.generate import Generate
+from macq.generate.pddl.generate import Generate, _trace_timer
 from tarski.search.operations import progress
 from pathlib import Path
 import random
@@ -32,6 +32,7 @@ class VanillaSampling(Generate):
             The list of traces generated.
         """
 
+    
     def generate_traces(self):
         """
         Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -44,15 +45,49 @@ class VanillaSampling(Generate):
         """
 
         traces = TraceList()
-        trace = Trace()
         num_generated = 0
         # loop through while the desired number of traces has not yet been generated
-        while num_generated < self.num_traces:
-            num_generated += 1
+        #while num_generated < self.num_traces:
+        #    num_generated += 1
+
+            # state = self.problem.init
+            # # True if trace is fully generated to the desired length
+            # valid_trace = True
+            # # add more steps while the trace has not yet reached the desired length
+            # for j in range(self.plan_len):
+            #     # find the next applicable actions
+            #     app_act = self.instance.applicable(state)
+            #     # get items from generator
+            #     ls = []
+            #     for item in app_act:
+            #         ls.append(item)
+            #     # if the trace reaches a dead lock, disregard this trace and try again
+            #     if ls == []:
+            #         num_generated -= 1
+            #         valid_trace = False
+            #         break
+            #     # pick a random applicable action and apply it
+            #     act = random.choice(ls)
+            #     # create the trace and progress the state
+            #     macq_action = self._tarski_act_to_macq(act)
+            #     macq_state = self._tarski_state_to_macq(state)
+            #     step = Step(macq_action, macq_state)
+            #     trace.append(step)
+            #     state = progress(state, act)
+        for i in range(self.num_traces):
+            trace = self.generate_single_trace()
+            traces.append(trace)
+        return traces
+
+    @_trace_timer
+    def generate_single_trace(self):
+        trace = Trace()
+        
+        state = self.problem.init
+        valid_trace = False
+
+        while not valid_trace:
             trace.clear()
-            state = self.problem.init
-            # True if trace is fully generated to the desired length
-            valid_trace = True
             # add more steps while the trace has not yet reached the desired length
             for j in range(self.plan_len):
                 # find the next applicable actions
@@ -61,10 +96,8 @@ class VanillaSampling(Generate):
                 ls = []
                 for item in app_act:
                     ls.append(item)
-                # if the trace reaches a dead end, disregard this trace and try again
+                # if the trace reaches a dead lock, disregard this trace and try again
                 if ls == []:
-                    num_generated -= 1
-                    valid_trace = False
                     break
                 # pick a random applicable action and apply it
                 act = random.choice(ls)
@@ -74,14 +107,15 @@ class VanillaSampling(Generate):
                 step = Step(macq_action, macq_state)
                 trace.append(step)
                 state = progress(state, act)
-            if valid_trace:
-                traces.append(trace)
-        return traces
+                
+                if j == self.plan_len - 1:
+                    valid_trace = True
+        return trace
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent.parent.parent
-    dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 3, 1)
-    print(vanilla.generate_traces())
+    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    vanilla = VanillaSampling(dom, prob, 10, 1)
+    print(vanilla.traces)

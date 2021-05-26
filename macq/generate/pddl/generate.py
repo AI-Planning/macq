@@ -13,6 +13,34 @@ from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom
 from tarski.utils.helpers import parse_atom
 from collections import OrderedDict
+import time
+
+MAX_TIME = 30.0
+
+def _trace_timer(generator):
+    """
+    Checks that a trace is generated within the time indicated by the MAX_TIME
+    constant.
+
+    Arguments
+    ---------
+    generator : function reference
+        The generator function to be wrapped with this time-checker.
+    """
+    def wrapper(*args, **kwargs):
+        # check time
+        print('TIMER TEST')
+        begin = time.perf_counter()
+        current = begin
+        while current - begin < MAX_TIME:
+        trace = generator(*args, **kwargs)
+        end = time.perf_counter()
+        print(end - begin)
+        if end - begin < MAX_TIME:
+            return trace
+        else:
+            raise Exception('time out')
+    return wrapper
 
 class Generate:
     def __init__(self, dom : str, prob : str):
