@@ -30,7 +30,7 @@ class CustomObject:
 
 
 class Fluent:
-    def __init__(self, name: str, objects: List[CustomObject], value: bool):
+    def __init__(self, name: str, objects: List[CustomObject]):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -45,12 +45,10 @@ class Fluent:
         """
         self.name = name
         self.objects = objects
-        self.value = value
 
     def __str__(self):
         string = "Fluent:\n"
         string += f"  name: {self.name}\n"
-        string += f"  value: {self.value}\n"
         string += f"  objects:\n"
         for obj in self.objects:
             for line in str(obj).split("\n"):
@@ -72,4 +70,4 @@ class Fluent:
         The corresponding Fluent object : Fluent
         """
         objects = list(map(CustomObject.from_json, data["objects"]))
-        return cls(data["name"], objects, data["value"])
+        return cls(data["name"], objects)
