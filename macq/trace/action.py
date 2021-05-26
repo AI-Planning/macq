@@ -63,7 +63,7 @@ class Action:
             string += str(fluent) + "\n\n"
         string += "\nEffects to delete:\n"
         for fluent in self.delete:
-            string += str(fluent)
+            string += str(fluent) + "\n\n"
         string += "\nCost: " + str(self.cost)
         return string
 

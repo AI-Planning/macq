@@ -81,7 +81,7 @@ class VanillaSampling(Generate):
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent.parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 5, 5)
-    (vanilla.generate_traces())
+    dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
+    vanilla = VanillaSampling(dom, prob, 3, 1)
+    print(vanilla.generate_traces())
