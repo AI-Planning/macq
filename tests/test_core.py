@@ -129,8 +129,8 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
     # indices for actions and states respectively
     a_index = 0
     s_index = 0
-    for _ in range(num_steps):
-        step = Step(actions[a_index], states[s_index])
+    for i in range(num_steps):
+        step = Step(actions[a_index], states[s_index], i)
         # cycle through actions and states
         if a_index < len(actions):
             a_index += 1
@@ -343,4 +343,6 @@ if __name__ == "__main__":
     dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
     vanilla = VanillaSampling(dom, prob, 5, 5)
-    print(vanilla.traces)
+    #print(vanilla.traces)
+    vanilla.traces[0].tokenize(IdentityObservation, TEST=1, TEST2=2, TEST3=3)
+    print(vanilla.traces[0].observations)

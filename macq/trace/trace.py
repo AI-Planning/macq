@@ -117,7 +117,6 @@ class Trace:
         self.update()
         return result
 
-
     def remove(self, value: Step):
         self.steps.remove(value)
         self.update()
@@ -298,7 +297,7 @@ class Trace:
                 sum += 1
         return sum / self.num_steps
 
-    def tokenize(self, Token: Type[Observation]):
+    def tokenize(self, Token: Type[Observation], **kwargs):
         """
         Creates the observation tokens using the token provided by the Observation.
 
@@ -307,8 +306,9 @@ class Trace:
         Token : Observation subclass
             An `Observation` subclass.
         """
+        
         for step in self.steps:
-            token = Token(step)
+            token = Token(step=step, **kwargs)
             self.observations.append(token)
 
     def update(self):
@@ -316,3 +316,6 @@ class Trace:
         self.fluents = self.base_fluents()
         self.actions = self.base_actions()
         self.num_fluents = len(self.fluents)
+        # update the placements of each step
+        for i in range(len(self.steps)):
+            self.steps[i].index = i
