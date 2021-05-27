@@ -1,10 +1,10 @@
 from macq.trace import TraceList, Trace, Step
-from macq.generate.pddl.generate import Generate, _trace_timer
+from macq.generate.pddl.generator import Generator, _trace_timer
 from tarski.search.operations import progress
 
 import random
 
-class VanillaSampling(Generate):
+class VanillaSampling(Generator):
     def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
         super().__init__(dom, prob)
         self.plan_len = plan_len

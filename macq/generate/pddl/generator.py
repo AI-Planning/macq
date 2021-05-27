@@ -52,7 +52,7 @@ class TraceSearchTimeOut(Exception):
         ):
             super().__init__(message)
 
-class Generate:
+class Generator:
     def __init__(self, dom : str, prob : str):
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)

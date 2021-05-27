@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-class Generator:
+class Configure:
     class determinism(Enum):
         FULLY = auto()
         NON = auto()

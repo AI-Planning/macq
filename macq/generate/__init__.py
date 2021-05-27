@@ -1,2 +1,2 @@
-from .generator import Generator
-__all__ = ["Generator"]
+from .configure import Configure
+__all__ = ["Configure"]
