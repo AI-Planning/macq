@@ -1,8 +1,7 @@
-from macq.trace import TraceList, Trace, Step
-from macq.generate.pddl.generator import Generator
-from macq.utils.timer import set_timer, MAX_TIME
+from ...trace import TraceList, Trace, Step
+from ...generate.pddl.generator import Generator
+from ...utils.timer import set_timer, MAX_TIME
 from tarski.search.operations import progress
-
 import random
 
 class VanillaSampling(Generator):

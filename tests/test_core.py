@@ -4,10 +4,8 @@ from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
 import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
-
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
-
 from typing import List
 import pytest
 
