@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import List, Type, Iterable, Callable
 from inspect import cleandoc
 from . import Action
@@ -221,12 +222,13 @@ class Trace:
             A list of tuples in the format (previous state, action, post-state).
         """
         sas_triples = []
+        SAS = namedtuple("SAS", "pre_state action post_state")
         for i, step in enumerate(self):
             if step.action == action:
                 if i + 1 < self.num_steps:
-                    triple = (step.state, action, self[i + 1].state)
+                    triple = SAS(step.state, action, self[i + 1].state)
                 else:
-                    triple = (step.state, action, None)
+                    triple = SAS(step.state, action, None)
                 sas_triples.append(triple)
 
         return sas_triples

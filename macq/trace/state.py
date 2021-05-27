@@ -96,5 +96,5 @@ class State:
                 added.append(f)
             elif self[f] and not other[f]:
                 deleted.append(f)
-        DeltaState = namedtuple("DeltaState", "added deleted pre-conditions")
+        DeltaState = namedtuple("DeltaState", "added deleted pre_cond")
         return DeltaState(added, deleted, pre_cond)
