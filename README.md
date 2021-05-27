@@ -76,6 +76,7 @@ model.actions[0].to_pddl()
 - [ ] [Learning First-Order Symbolic Representations for Planning from the Structure of the State Space](https://arxiv.org/abs/1909.05546) (ECAI'20)
 - [ ] [Discovering Underlying Plans Based on Shallow Models](https://dl.acm.org/doi/abs/10.1145/3368270) (ACM TIST'20)
 - [ ] [Agent Interrogation Algorithm](https://github.com/AAIR-lab/AIA-AAAI21) (AAAI'21)
+- [ ] [Learning First-Order Representations for Planning from Black-Box States: New Results](https://arxiv.org/abs/2105.10830) (arXiv'21)
 
 ## Features / Assumptions
 
