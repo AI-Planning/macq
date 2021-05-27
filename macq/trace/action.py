@@ -59,6 +59,14 @@ class Action:
         string = f"{self.name} {' '.join(map(str, self.obj_params))}"
         return string
 
+    def __eq__(self, other):
+        if not isinstance(other, Action):
+            return False
+        return self.name == other.name and self.obj_params == other.obj_params
+
+    def __hash__(self):
+        return hash(str(self))
+
     def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
         """
         Checks the validity of a fluent before adding it to either the action's preconditions,
