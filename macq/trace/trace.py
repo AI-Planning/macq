@@ -77,6 +77,7 @@ class Trace:
 
     def __delitem__(self, key: int):
         del self.steps[key]
+        self.update()
 
     def __iter__(self):
         return iter(self.steps)

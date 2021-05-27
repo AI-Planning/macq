@@ -342,7 +342,6 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent
     dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 5, 5)
-    #print(vanilla.traces)
-    vanilla.traces[0].tokenize(IdentityObservation, TEST=1, TEST2=2, TEST3=3)
-    print(vanilla.traces[0].observations)
+    vanilla = VanillaSampling(dom, prob, 5, 1)
+    print(vanilla.traces)
+    vanilla.traces[0].tokenize(IdentityObservation)
