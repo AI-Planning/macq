@@ -24,6 +24,16 @@ class Model:
         self.fluents = fluents
         self.actions = actions
 
+    def __str__(self):
+        string = "Model:\n"
+        indent = " " * 4
+        string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
+        string += f"{indent}Actions:\n"
+        string += indent * 2
+        string += f"\n{indent*2}".join(map(lambda a: str(a), self.actions))
+
+        return string
+
     def serialize(self, filepath: str = None):
         """
         Serializes the model into a json string. If a filepath is supplied,
