@@ -56,7 +56,7 @@ class Action:
         self.cost = cost
 
     def __str__(self):
-        string = f"{self.name} {' '.join(map(str, self.obj_params))}"
+        string = f"{self.name}"
         return string
 
     def __eq__(self, other):
