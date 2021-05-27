@@ -1,8 +1,15 @@
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import List, NamedTuple, Type, Iterable, Callable, Optional
 from inspect import cleandoc
 from . import Action, Step, State
 from ..observation import Observation
+
+
+@dataclass
+class SAS:
+    pre_state: State
+    action: Action
+    post_state: Optional[State]
 
 
 class Trace:
@@ -205,7 +212,7 @@ class Trace:
                 post_states.append(self.steps[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action):
+    def get_sas_triples(self, action: Action) -> List[SAS]:
         """
         Returns a list of tuples where each tuple contains the state of the trace
         before the action, the action, and the state of the trace after the action.
@@ -221,14 +228,6 @@ class Trace:
             A list of tuples in the format (previous state, action, post-state).
         """
         sas_triples = []
-        SAS = NamedTuple(
-            "SAS",
-            [
-                ("pre_state", State),
-                ("action", Action),
-                ("post_state", Optional[State]),
-            ],
-        )
         for i, step in enumerate(self):
             if step.action == action:
                 if i + 1 < self.num_steps:
