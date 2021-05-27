@@ -1,5 +1,6 @@
 from macq.trace import TraceList, Trace, Step
-from macq.generate.pddl.generator import Generator, _trace_timer
+from macq.generate.pddl.generator import Generator
+from macq.utils.timer import timer, MAX_TIME
 from tarski.search.operations import progress
 
 import random
@@ -46,12 +47,12 @@ class VanillaSampling(Generator):
 
         traces = TraceList()
         for i in range(self.num_traces):
-            trace = self.generate_single_trace()
+            trace = self.generate_single_trace(10)
             traces.append(trace)
         return traces
 
-    @_trace_timer
-    def generate_single_trace(self):
+    @timer
+    def generate_single_trace(self, time=MAX_TIME):
         """
         Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function 
