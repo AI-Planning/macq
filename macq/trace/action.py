@@ -19,9 +19,9 @@ class Action:
         self,
         name: str,
         obj_params: List[CustomObject],
-        precond: List[Fluent] = None,
-        add: List[Fluent] = None,
-        delete: List[Fluent] = None,
+        precond: set[Fluent] = None,
+        add: set[Fluent] = None,
+        delete: set[Fluent] = None,
         cost: int = 0,
     ):
         """
@@ -44,15 +44,15 @@ class Action:
         """
         self.name = name
         self.obj_params = obj_params
-        self.precond = []
+        self.precond = set()
         if precond is not None:
-            self.add_precond(precond)
-        self.add = []
+            self.update_precond(precond)
+        self.add = set()
         if add is not None:
-            self.add_effect_add(add)
-        self.delete = []
+            self.update_add(add)
+        self.delete = set()
         if delete is not None:
-            self.add_effect_delete(delete)
+            self.update_delete(delete)
         self.cost = cost
 
     def __str__(self):
@@ -67,7 +67,7 @@ class Action:
     def __hash__(self):
         return hash(str(self))
 
-    def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
+    def __add_fluents(self, fluents: set[Fluent], condition: set[Fluent]):
         """
         Checks the validity of a fluent before adding it to either the action's preconditions,
         add effects or delete effects.
@@ -83,9 +83,9 @@ class Action:
             for obj in fluent.objects:
                 if obj not in self.obj_params:
                     raise self.InvalidFluent()
-        condition.extend(fluents)
+        condition.update(fluents)
 
-    def add_precond(self, fluents: List[Fluent]):
+    def update_precond(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's preconditions.
 
@@ -94,9 +94,9 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's preconditions.
         """
-        self.__add_fluent(fluents, self.precond)
+        self.__add_fluents(fluents, self.precond)
 
-    def add_effect_add(self, fluents: List[Fluent]):
+    def update_add(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's add effects.
 
@@ -105,9 +105,9 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's add effects.
         """
-        self.__add_fluent(fluents, self.add)
+        self.__add_fluents(fluents, self.add)
 
-    def add_effect_delete(self, fluents: List[Fluent]):
+    def update_delete(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's delete effects.
 
@@ -116,7 +116,7 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's delete effects.
         """
-        self.__add_fluent(fluents, self.delete)
+        self.__add_fluents(fluents, self.delete)
 
     def add_parameter(self, obj: CustomObject):
         """
