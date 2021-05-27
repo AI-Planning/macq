@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections import namedtuple
+from typing import Optional
 from . import Fluent
 
 
@@ -71,7 +72,7 @@ class State:
     def items(self):
         return self.fluents.items()
 
-    def diff_from(self, other: State):
+    def diff_from(self, other: Optional[State]):
         """Find the delta-state between this state and `other`.
 
         Args:
@@ -86,15 +87,18 @@ class State:
 
 
         """
+        DeltaState = namedtuple("DeltaState", "added deleted pre_cond")
+        if other is None:
+            return DeltaState(None, None, self.fluents)
         added = []
         deleted = []
         pre_cond = []
         for f in self:
-            if self[f] and other[f]:
-                pre_cond.append(f)
-            elif self[f] and other[f]:
-                added.append(f)
-            elif self[f] and not other[f]:
-                deleted.append(f)
-        DeltaState = namedtuple("DeltaState", "added deleted pre_cond")
+            if f in other.keys():
+                if self[f] and other[f]:
+                    pre_cond.append(f)
+                elif self[f] and other[f]:
+                    added.append(f)
+                elif self[f] and not other[f]:
+                    deleted.append(f)
         return DeltaState(added, deleted, pre_cond)
