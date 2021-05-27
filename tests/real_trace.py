@@ -20,11 +20,12 @@ def real_trace_list():
     b_on_a = Fluent("B on A", [blockA, blockB])
 
     # Actions
-    pick_up = Action("pick up", [blockA, blockB])
-    put_down = Action("put down", [blockA, blockB])
-    stack = Action("stack", [blockA, blockB])
-    unstack = Action("unstack", [blockA, blockB])
-    # actions = [pick_up, put_down, stack, unstack]
+    pick_up_a = Action("pick up A", [blockA])
+    pick_up_b = Action("pick up B", [blockB])
+    put_down_a = Action("put down A", [blockA])
+    put_down_b = Action("put down B", [blockB])
+    stack_a_b = Action("stack A on B", [blockA, blockB])
+    stack_b_a = Action("stack B on A", [blockB, blockA])
 
     # Traces
     t1 = Trace(
@@ -38,7 +39,7 @@ def real_trace_list():
                         b_on_table: True,
                     }
                 ),
-                pick_up,
+                pick_up_a,
             ),
             Step(
                 State(
@@ -49,7 +50,7 @@ def real_trace_list():
                         holding_a: True,
                     }
                 ),
-                stack,
+                stack_a_b,
             ),
             Step(
                 State(
@@ -58,6 +59,7 @@ def real_trace_list():
                         b_clear: False,
                         b_on_table: True,
                         a_on_b: True,
+                        holding_a: False,
                     }
                 ),
                 None,
@@ -76,7 +78,7 @@ def real_trace_list():
                         b_on_table: True,
                     }
                 ),
-                pick_up,
+                pick_up_b,
             ),
             Step(
                 State(
@@ -87,7 +89,7 @@ def real_trace_list():
                         holding_b: True,
                     }
                 ),
-                stack,
+                stack_b_a,
             ),
             Step(
                 State(
@@ -96,6 +98,7 @@ def real_trace_list():
                         b_clear: True,
                         a_on_table: True,
                         b_on_a: True,
+                        holding_b: False,
                     }
                 ),
                 None,
