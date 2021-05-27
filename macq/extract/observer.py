@@ -29,12 +29,16 @@ class Observer:
                             sas.pre_state.diff_from(sas.post_state)
                         )
 
-        print("Delta state:")
+        print("Delta states:")
         indent = " " * 2
         for a, d in delta_states.items():
-            print(f"{indent}{a}: ")
+            print(f"{indent}Action: {a}")
             for i, l in enumerate(d):
                 print(f"{indent * 2}trace {i}:")
+                if l.pre_cond is not None:
+                    print(f"{indent*3}pre_cond:")
+                    for f in l.pre_cond:
+                        print(f"{indent*4}{f}")
                 if l.added is not None:
                     print(f"{indent * 3}added:")
                     for f in l.added:
@@ -43,6 +47,7 @@ class Observer:
                     print(f"{indent*3}deleted:")
                     for f in l.deleted:
                         print(f"{indent*4}{f}")
+
                 print()
 
         return []

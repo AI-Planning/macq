@@ -87,18 +87,31 @@ class State:
 
 
         """
-        DeltaState = namedtuple("DeltaState", "added deleted pre_cond")
+        DeltaState = namedtuple("DeltaState", "pre_cond added deleted")
         if other is None:
             return DeltaState(None, None, self.fluents)
-        added = []
-        deleted = []
-        pre_cond = []
-        for f in self:
-            if f in other.keys():
-                if self[f] and other[f]:
-                    pre_cond.append(f)
-                elif self[f] and other[f]:
-                    added.append(f)
-                elif self[f] and not other[f]:
-                    deleted.append(f)
-        return DeltaState(added, deleted, pre_cond)
+        pre_cond = set()
+        added = set()
+        deleted = set()
+        fluents = list(self.keys())
+        fluents.extend(list(other.keys()))
+        for f in fluents:
+            if self.has_key(f) and other.has_key(f):  # fluent in both states
+                if self[f] and other[f]:  # true in both states -> pre cond
+                    pre_cond.add(f)
+                elif self[f] and not other[f]:  # true pre, false post -> deleted
+                    deleted.add(f)
+                else:  # false pre, true post -> added
+                    added.add(f)
+            elif self.has_key(f):  # fluent in pre-state
+                if self[f]:  # true -> pre cond
+                    pre_cond.add(f)
+                else:  # false -> nothing
+                    pass
+            else:  # fluent in post-state
+                if other[f]:  # true -> added
+                    added.add(f)
+                else:  # false -> deleted
+                    deleted.add(f)
+
+        return DeltaState(pre_cond, added, deleted)
