@@ -1,3 +1,4 @@
+from collections import defaultdict
 from .model import Model
 from ..trace import TraceList
 
@@ -18,8 +19,30 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
-        actions = set()
+        delta_states = defaultdict(list)
         for trace in traces:
             for action in trace.actions:
-                actions.add(action)
-        return list(actions)
+                if action is not None:
+                    sas_triples = trace.get_sas_triples(action)
+                    for sas in sas_triples:
+                        delta_states[action].append(
+                            sas.pre_state.diff_from(sas.post_state)
+                        )
+
+        print("Delta state:")
+        indent = " " * 2
+        for a, d in delta_states.items():
+            print(f"{indent}{a}: ")
+            for i, l in enumerate(d):
+                print(f"{indent * 2}trace {i}:")
+                if l.added is not None:
+                    print(f"{indent * 3}added:")
+                    for f in l.added:
+                        print(f"{indent* 4}{f}")
+                if l.deleted is not None:
+                    print(f"{indent*3}deleted:")
+                    for f in l.deleted:
+                        print(f"{indent*4}{f}")
+                print()
+
+        return []
