@@ -1,5 +1,8 @@
 from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
 from macq.observation import IdentityObservation
+from pathlib import Path
+from macq.generate.pddl.generate import TraceSearchTimeOut
+from macq.generate.pddl import VanillaSampling
 
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
@@ -325,14 +328,11 @@ def test_trace_tokenize():
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
 
-if __name__ == "__main__":
-    #printing tests
-    objects = [CustomObject("number", str(o)) for o in range(5)]
-    fluent = Fluent("fluent 1", objects, False)
-    fluent2 = Fluent("fluent 2", objects, True)
-    state = State([fluent, fluent2])
-    action = Action("action 1", objects, [fluent], [], [fluent2], 10)
-    step = Step(action, state)
-    step2 = Step(action, state)
-    trace = Trace([step, step2])
-    print(trace)
+# test the timer wrapper on vanilla trace generation
+def test_timer_wrapper_wrapper():
+    # exit out to the base macq folder so we can get to /tests 
+    base = Path(__file__).parent.parent
+    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    with pytest.raises(TraceSearchTimeOut):
+        vanilla = VanillaSampling(dom, prob, 10, 5)

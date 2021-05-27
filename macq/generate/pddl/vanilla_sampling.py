@@ -1,7 +1,7 @@
 from macq.trace import TraceList, Trace, Step
 from macq.generate.pddl.generate import Generate, _trace_timer
 from tarski.search.operations import progress
-from pathlib import Path
+
 import random
 
 class VanillaSampling(Generate):
@@ -92,11 +92,3 @@ class VanillaSampling(Generate):
                 if j == self.plan_len - 1:
                     valid_trace = True
         return trace
-
-if __name__ == "__main__":
-    # exit out to the base macq folder so we can get to /tests 
-    base = Path(__file__).parent.parent.parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 10, 5)
-    print(vanilla.traces)
