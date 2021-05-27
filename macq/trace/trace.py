@@ -1,4 +1,5 @@
 from typing import List, Type, Iterable, Callable
+from inspect import cleandoc
 from . import Action
 from . import Step
 from ..observation import Observation
@@ -50,20 +51,24 @@ class Trace:
         self.observations = []
 
     def __str__(self):
-        string = "TRACE:\n\nAttributes:\n\nNumber of Steps: " + str(self.num_steps)
-        string += "\nNumber of Fluents: " + str(self.num_fluents)
-        string += "\n\nBase Fluents:\n"
-        for fluent in self.fluents:
-            string += fluent + "\n"
-        string += "\nBase Actions:\n"
-        for action in self.actions:
-            string += action + "\n"
-        string += "\n\nSteps:"
-        for i in range(self.num_steps):
-            string += "\n\nSTEP " + str(i + 1) + ":\n\n" + str(self.steps[i]) + "\n"
-        string += "\nObservations:\n"
-        for obs in self.observations:
-            string += "\n" + str(obs)
+        string = cleandoc(
+            f"""
+            Trace:
+                Attributes:
+                    {self.num_steps} steps
+                    {self.num_fluents} fluents
+                Steps:
+            """
+        )
+        string += "\n"
+
+        # Dynamically get the spacing, 2n time
+        state_len = max([len(str(step.state)) for step in self]) + 4
+        string += f"        {'Step':<5} {'State':^{state_len}} {'Action':<8}\n"
+
+        for i, step in enumerate(self):
+            string += f"        {i+1:<5} {str(step.state):<{state_len}} {str(step.action):<8}\n"
+
         return string
 
     def __len__(self):

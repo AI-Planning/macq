@@ -56,19 +56,7 @@ class Action:
         self.cost = cost
 
     def __str__(self):
-        string = "Action with Name: " + self.name + "\n\nObject Parameters:\n"
-        for obj in self.obj_params:
-            string += str(obj) + "\n"
-        string += "Preconditions:\n"
-        for fluent in self.precond:
-            string += str(fluent)
-        string += "\nEffects to add:\n"
-        for fluent in self.add:
-            string += str(fluent)
-        string += "\nEffects to delete:\n"
-        for fluent in self.delete:
-            string += str(fluent)
-        string += "\nCost: " + str(self.cost)
+        string = f"{self.name} {' '.join(map(str, self.obj_params))}"
         return string
 
     def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):

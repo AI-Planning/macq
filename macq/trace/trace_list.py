@@ -44,13 +44,10 @@ class TraceList:
         self.generator = generator
 
     def __str__(self):
-        string = "["
+        string = "TraceList:\n"
         for trace in self:
-            string += "\n"
-            string += "-" * 100
-            string += "\n\n"
-            string += str(trace)
-        string += "]"
+            for line in str(trace).splitlines():
+                string += f"    {line}\n"
         return string
 
     def __len__(self):

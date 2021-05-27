@@ -7,10 +7,7 @@ class CustomObject:
         self.name = name
 
     def __str__(self):
-        string = "Object:\n"
-        string += f"  name: {self.name}\n"
-        string += f"  type: {self.obj_type}"
-        return string
+        return self.name
 
     @classmethod
     def from_json(cls, data):
@@ -40,20 +37,12 @@ class Fluent:
             The name of the predicate.
         objects : list
             The list of objects this predicate applies to.
-        value : bool
-            The value of the fluent (true or false)
         """
         self.name = name
         self.objects = objects
 
     def __str__(self):
-        string = "Fluent:\n"
-        string += f"  name: {self.name}\n"
-        string += f"  objects:\n"
-        for obj in self.objects:
-            for line in str(obj).split("\n"):
-                string += f"    {line}\n"
-        return string.rstrip()
+        return self.name
 
     def __hash__(self):
         return hash(str(self))

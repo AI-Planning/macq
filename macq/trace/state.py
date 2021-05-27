@@ -23,6 +23,12 @@ class State:
         """
         self.fluents = fluents
 
+    def __str__(self):
+        string = ""
+        for fluent, value in self.items():
+            string += f"{fluent.name} ({value}), "
+        return string[:-2]
+
     def __len__(self):
         return len(self.fluents)
 
@@ -43,9 +49,6 @@ class State:
 
     def __repr__(self):
         return repr(self.fluents)
-
-    def __str__(self):
-        return str(self.fluents)
 
     def clear(self):
         return self.fluents.clear()

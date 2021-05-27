@@ -1,3 +1,4 @@
+from typing import Optional
 from . import Action
 from . import State
 
@@ -8,7 +9,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, state: State, action: Action):
+    def __init__(self, state: State, action: Optional[Action]):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
