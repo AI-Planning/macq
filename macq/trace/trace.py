@@ -221,16 +221,13 @@ class Trace:
             A list of tuples in the format (previous state, action, post-state).
         """
         sas_triples = []
-        triple = []
-        for i in range(self.num_steps):
-            if self.steps[i].action == action:
-                triple.append(self.steps[i].state)
-                triple.append(action)
+        for i, step in enumerate(self):
+            if step.action == action:
                 if i + 1 < self.num_steps:
-                    triple.append(self.steps[i + 1].state)
-                triple = tuple(triple)
+                    triple = (step.state, action, self[i + 1].state)
+                else:
+                    triple = (step.state, action, None)
                 sas_triples.append(triple)
-                triple = []
 
         return sas_triples
 
