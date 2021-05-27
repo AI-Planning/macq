@@ -1,14 +1,14 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 from . import Fluent
 
 
 @dataclass
 class DeltaState:
-    pre_cond: set[Fluent] = set()
-    added: set[Fluent] = set()
-    post_state: set[Fluent] = set()
+    pre_cond: set[Fluent] = field(default_factory=set)
+    added: set[Fluent] = field(default_factory=set)
+    deleted: set[Fluent] = field(default_factory=set)
 
 
 class State:
