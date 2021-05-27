@@ -1,7 +1,14 @@
 from __future__ import annotations
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import Optional
 from . import Fluent
+
+
+@dataclass
+class DeltaState:
+    pre_cond: set[Fluent] = set()
+    added: set[Fluent] = set()
+    post_state: set[Fluent] = set()
 
 
 class State:
@@ -87,9 +94,8 @@ class State:
 
 
         """
-        DeltaState = namedtuple("DeltaState", "pre_cond added deleted")
         if other is None:
-            return DeltaState(None, None, self.fluents)
+            return DeltaState(post_state=set(self.fluents.keys()))
         pre_cond = set()
         added = set()
         deleted = set()
