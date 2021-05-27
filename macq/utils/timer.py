@@ -39,6 +39,7 @@ class TraceSearchTimeOut(Exception):
 
         def __init__(
             self,
-            message="The generator function took longer than MAX_TIME in its attempt to generate a trace."
+            message="The generator function took longer than MAX_TIME in its attempt to generate a trace." +
+            "MAX_TIME can be changed through macq.utils.timer.MAX_TIME."
         ):
             super().__init__(message)

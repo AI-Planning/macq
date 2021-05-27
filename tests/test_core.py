@@ -2,6 +2,7 @@ from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
 from macq.observation import IdentityObservation
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
+import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
 
 InvalidCostRange = Trace.InvalidCostRange
@@ -334,13 +335,14 @@ def test_timer_wrapper_wrapper():
     base = Path(__file__).parent.parent
     dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
     prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    
     with pytest.raises(TraceSearchTimeOut):
         vanilla = VanillaSampling(dom, prob, 10, 5)
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
+    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
     vanilla = VanillaSampling(dom, prob, 5, 5)
     print(vanilla.traces)

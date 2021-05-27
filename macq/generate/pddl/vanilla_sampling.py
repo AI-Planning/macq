@@ -56,7 +56,7 @@ class VanillaSampling(Generator):
         """
         Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function 
-        to run past the time specified by the MAX_TIME constant in Generate.
+        to run past the time specified by the time specified.
 
         Returns
         -------
