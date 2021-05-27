@@ -1,3 +1,3 @@
-from .timer import timer, TraceSearchTimeOut
+from .timer import set_timer, TraceSearchTimeOut
 
-__all__ = ["timer", "TraceSearchTimeOut"]
+__all__ = ["set_timer", "TraceSearchTimeOut"]
