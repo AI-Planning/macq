@@ -1,14 +1,15 @@
 from ...trace import TraceList, Trace, Step
 from ...generate.pddl.generator import Generator
 from ...utils.timer import set_timer, MAX_TIME
+from ..trace_errors import InvalidPlanLength, InvalidNumberOfTraces
 from tarski.search.operations import progress
 import random
 
 class VanillaSampling(Generator):
     def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
         super().__init__(dom, prob)
-        self.plan_len = plan_len
-        self.num_traces = num_traces
+        self.set_plan_length(plan_len)
+        self.set_num_traces(num_traces)
         self.traces = self.generate_traces()
 
         """
@@ -32,6 +33,25 @@ class VanillaSampling(Generator):
             The list of traces generated.
         """
 
+    def set_num_traces(self, num_traces : int):
+        """AI is creating summary for set_num_traces
+
+        Args:
+            num_traces (int): [description]
+
+        Raises:
+            InvalidNumberOfTraces: [description]
+        """
+        if num_traces > 0:
+            self.num_traces = num_traces
+        else:
+            raise InvalidNumberOfTraces()
+
+    def set_plan_length(self, plan_len: int):
+        if plan_len > 0:
+            self.plan_len = plan_len
+        else:
+            raise InvalidPlanLength()
     
     def generate_traces(self):
         """
