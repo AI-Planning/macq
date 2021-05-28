@@ -6,7 +6,7 @@ from . import Fluent
 
 @dataclass
 class DeltaState:
-    pre_cond: set[Fluent] = field(default_factory=set)
+    precond: set[Fluent] = field(default_factory=set)
     added: set[Fluent] = field(default_factory=set)
     deleted: set[Fluent] = field(default_factory=set)
 
@@ -79,7 +79,7 @@ class State:
     def items(self):
         return self.fluents.items()
 
-    def diff_from(self, other: Optional[State]):
+    def diff_from(self, other: State):
         """Find the delta-state between this state and `other`.
 
         Args:
@@ -94,9 +94,7 @@ class State:
 
 
         """
-        if other is None:
-            return DeltaState(post_state=set(self.fluents.keys()))
-        pre_cond = set()
+        precond = set()
         added = set()
         deleted = set()
         fluents = list(self.keys())
@@ -104,14 +102,14 @@ class State:
         for f in fluents:
             if self.has_key(f) and other.has_key(f):  # fluent in both states
                 if self[f] and other[f]:  # true in both states -> pre cond
-                    pre_cond.add(f)
+                    precond.add(f)
                 elif self[f] and not other[f]:  # true pre, false post -> deleted
                     deleted.add(f)
                 else:  # false pre, true post -> added
                     added.add(f)
             elif self.has_key(f):  # fluent in pre-state
                 if self[f]:  # true -> pre cond
-                    pre_cond.add(f)
+                    precond.add(f)
                 else:  # false -> nothing
                     pass
             else:  # fluent in post-state
@@ -120,4 +118,4 @@ class State:
                 else:  # false -> deleted
                     deleted.add(f)
 
-        return DeltaState(pre_cond, added, deleted)
+        return DeltaState(precond, added, deleted)
