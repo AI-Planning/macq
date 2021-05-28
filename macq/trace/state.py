@@ -6,9 +6,8 @@ from . import Fluent
 
 @dataclass
 class DeltaState:
-    precond: set[Fluent] = field(default_factory=set)
-    added: set[Fluent] = field(default_factory=set)
-    deleted: set[Fluent] = field(default_factory=set)
+    added: set[Fluent]
+    deleted: set[Fluent]
 
 
 class State:
@@ -80,36 +79,20 @@ class State:
         return self.fluents.items()
 
     def diff_from(self, other: State):
-        """Find the delta-state between this state and `other`.
+        """
 
         Args:
             other (State): The secondary state to compare this one to.
 
         Returns:
-            A tuple with 3 entries. The first is the list of fluents that were
-            added from this state to `other`. The second is the list of fluents
-            that were deleted between this state and `other`. The third is a
-            list of the fluents that are true in both states, ie. the
-            preconditions
-
-
         """
-        # Was recommended to put this on State, but only handles the
-        # assumptions of Observer. Might want to consider moving to the
-        # extraction method.
-        precond = set()
         added = set()
         deleted = set()
         fluents = list(self.keys())
         fluents.extend(list(other.keys()))
         for f in fluents:
-            if self[f] and other[f]:  # true in both states -> pre cond
-                precond.add(f)
-            elif self[f] and not other[f]:  # true pre, false post -> deleted
+            if self[f] and not other[f]:  # true pre, false post -> deleted
                 deleted.add(f)
             elif not self[f] and other[f]:  # false pre, true post -> added
                 added.add(f)
-            else:  # false in both states -> ignore
-                pass
-
-        return DeltaState(precond, added, deleted)
+        return DeltaState(added, deleted)
