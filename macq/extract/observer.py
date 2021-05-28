@@ -1,6 +1,10 @@
 from collections import defaultdict
+from dataclasses import field
+from typing import List
+
+from attr import dataclass
 from .model import Model
-from ..trace import TraceList, DeltaState
+from ..trace import TraceList, DeltaState, State, Fluent
 
 
 class Observer:
@@ -19,27 +23,28 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
-        delta_states = defaultdict(list)
-        actions = set()
+        action_effects = defaultdict(lambda: defaultdict(list))
         for trace in traces:
             for action in trace.actions:
                 if action is not None:
-                    actions.add(action)
                     sas_triples = trace.get_sas_triples(action)
                     for sas in sas_triples:
                         delta = sas.pre_state.diff_from(sas.post_state)
-                        delta_states[action].append(delta)
+                        action_effects[action]["pre_states"].append(sas.pre_state)
+                        action_effects[action]["add"].append(delta.added)
+                        action_effects[action]["delete"].append(delta.deleted)
 
-        for action, deltas in delta_states.items():
-            precond = set.intersection(*[delta.precond for delta in deltas])
-            action.update_precond(precond)
-            add = set.intersection(*[delta.added for delta in deltas])
+        for action, effects in action_effects.items():
+            precond = Observer._get_preconditions(action_effects[action]["pre_states"])
+            # action.update_precond(precond)
+            add = set.intersection(*effects["add"])
             action.update_add(add)
-            delete = set.intersection(*[delta.deleted for delta in deltas])
+            delete = set.intersection(*effects["delete"])
             action.update_delete(delete)
 
+        print("=" * 100)
         indent = " " * 2
-        for action in actions:
+        for action in action_effects.keys():
             print(action)
             print(f"{indent}precond:")
             for precond in action.precond:
@@ -59,22 +64,11 @@ class Observer:
             # update all docstrings
             # make objects and fluents immutable
 
-            # print("Delta states:")
-            # for action, delta in delta_states.items():
-            #     print(f"{indent}Action: {action}")
-            #     if delta.pre_cond is not None:
-            #         print(f"{indent*3}pre_cond:")
-            #         for f in delta.pre_cond:
-            #             print(f"{indent*4}{f}")
-            #     if delta.added is not None:
-            #         print(f"{indent * 3}added:")
-            #         for f in delta.added:
-            #             print(f"{indent* 4}{f}")
-            #     if delta.deleted is not None:
-            #         print(f"{indent*3}deleted:")
-            #         for f in delta.deleted:
-            #             print(f"{indent*4}{f}")
-
             print()
 
         return []
+
+    @staticmethod
+    def _get_preconditions(pre_states: list[State]) -> set[Fluent]:
+        # (positive) intersection of States -> set of fluents
+        pass
