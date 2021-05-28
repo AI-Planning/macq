@@ -70,6 +70,7 @@ class Model:
             with open(filepath, "w") as fp:
                 dump(self, fp=fp, indent=2, default=lambda o: o.__dict__)
 
+        # BROKEN
         return dumps(self, indent=2, default=lambda o: o.__dict__)
 
     @staticmethod

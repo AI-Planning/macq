@@ -15,7 +15,7 @@ class Observer:
         for trace in traces:
             for fluent in trace.fluents:
                 fluents.add(fluent)
-        return list(fluents)
+        return fluents
 
     @staticmethod
     def _get_actions(traces: TraceList):
@@ -39,7 +39,7 @@ class Observer:
             action.update_add(effects["add"])
             action.update_delete(effects["delete"])
 
-        return [action for action in action_effects.keys()]
+        return {action for action in action_effects.keys()}
 
     @staticmethod
     def _get_true_fluents(state):
