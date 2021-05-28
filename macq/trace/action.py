@@ -79,10 +79,15 @@ class Action:
         condition : list of Fluents
             Either the action's preconditions, add effects, or delete effects to be added to.
         """
+        valid = False
         for fluent in fluents:
             for obj in fluent.objects:
-                if obj not in self.obj_params:
-                    raise self.InvalidFluent()
+                for param in self.obj_params:
+                    if obj == param:
+                        valid = True
+                if not valid:
+                    # raise self.InvalidFluent()
+                    print(f'WARNING: Adding "{fluent}" as an effect of "{self.name}"')
         condition.update(fluents)
 
     def update_precond(self, fluents: set[Fluent]):
