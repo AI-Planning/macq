@@ -19,17 +19,24 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
+        delta_states = defaultdict(list)
         actions = set()
         for trace in traces:
             for action in trace.actions:
                 if action is not None:
+                    actions.add(action)
                     sas_triples = trace.get_sas_triples(action)
                     for sas in sas_triples:
                         delta = sas.pre_state.diff_from(sas.post_state)
-                        action.update_precond(delta.precond)
-                        action.update_add(delta.added)
-                        action.update_delete(delta.deleted)
-                    actions.add(action)
+                        delta_states[action].append(delta)
+
+        for action, deltas in delta_states.items():
+            precond = set.intersection(*[delta.precond for delta in deltas])
+            action.update_precond(precond)
+            add = set.intersection(*[delta.added for delta in deltas])
+            action.update_add(add)
+            delete = set.intersection(*[delta.deleted for delta in deltas])
+            action.update_delete(delete)
 
         indent = " " * 2
         for action in actions:
