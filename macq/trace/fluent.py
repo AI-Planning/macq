@@ -48,18 +48,6 @@ class Fluent:
         return hash(str(self))
 
     @classmethod
-    def from_json(cls, data):
-        """
-        Converts a json object to a Fluent object.
-
-        Arguments
-        ---------
-        data : dict
-            The json object.
-
-        Returns
-        -------
-        The corresponding Fluent object : Fluent
-        """
+    def __from_json(cls, data):
         objects = list(map(PlanningObject.from_json, data["objects"]))
         return cls(data["name"], objects)
