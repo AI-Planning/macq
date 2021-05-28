@@ -94,28 +94,22 @@ class State:
 
 
         """
+        # Was recommended to put this on State, but only handles the
+        # assumptions of Observer. Might want to consider moving to the
+        # extraction method.
         precond = set()
         added = set()
         deleted = set()
         fluents = list(self.keys())
         fluents.extend(list(other.keys()))
         for f in fluents:
-            if self.has_key(f) and other.has_key(f):  # fluent in both states
-                if self[f] and other[f]:  # true in both states -> pre cond
-                    precond.add(f)
-                elif self[f] and not other[f]:  # true pre, false post -> deleted
-                    deleted.add(f)
-                else:  # false pre, true post -> added
-                    added.add(f)
-            elif self.has_key(f):  # fluent in pre-state
-                if self[f]:  # true -> pre cond
-                    precond.add(f)
-                else:  # false -> nothing
-                    pass
-            else:  # fluent in post-state
-                if other[f]:  # true -> added
-                    added.add(f)
-                else:  # false -> deleted
-                    deleted.add(f)
+            if self[f] and other[f]:  # true in both states -> pre cond
+                precond.add(f)
+            elif self[f] and not other[f]:  # true pre, false post -> deleted
+                deleted.add(f)
+            elif not self[f] and other[f]:  # false pre, true post -> added
+                added.add(f)
+            else:  # false in both states -> ignore
+                pass
 
         return DeltaState(precond, added, deleted)
