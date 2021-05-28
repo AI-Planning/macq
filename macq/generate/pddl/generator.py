@@ -1,4 +1,4 @@
-from ...trace import Action, State, CustomObject, Fluent
+from ...trace import Action, State, PlanningObject, Fluent
 from tarski.io import PDDLReader, FstripsWriter
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
@@ -6,13 +6,15 @@ from tarski.syntax.ops import CompoundFormula
 import tarski
 import random
 
+
 class Generator:
     """
-    A Generator handles creating a basic PDDL state trace generator. Handles all 
+    A Generator handles creating a basic PDDL state trace generator. Handles all
     parsing and stores the problem, language, and grounded instance for the child
-    generators to easily access and use. 
+    generators to easily access and use.
     """
-    def __init__(self, dom : str, prob : str):
+
+    def __init__(self, dom: str, prob: str):
         """
         Creates a Generator object by parsing the given domain and problem pddl files.
 
@@ -20,7 +22,7 @@ class Generator:
             dom (str): The domain filename.
             prob (str): The problem filename.
         """
-        
+
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
         reader.parse_domain(dom)
@@ -43,17 +45,16 @@ class Generator:
         Returns:
             [type]: [description]
         """
-        
-        
+
         actions = self.problem.actions
         extracted_act_types = {}
         for act in actions:
             raw_types = str(actions[act])
-            raw_types = raw_types[len(act) + 1: -1]
-            raw_types = raw_types.split(',')
+            raw_types = raw_types[len(act) + 1 : -1]
+            raw_types = raw_types.split(",")
             params = []
             for raw_act in raw_types:
-                params.append(raw_act.split(' ')[1])
+                params.append(raw_act.split(" ")[1])
             extracted_act_types[act] = params
         return extracted_act_types
 
@@ -70,17 +71,17 @@ class Generator:
         """
         writer = FstripsWriter(self.problem)
         extracted_pred_types = {}
-        raw_pred = writer.get_predicates().split('\n')
+        raw_pred = writer.get_predicates().split("\n")
         for i in range(len(raw_pred)):
             raw_pred[i] = raw_pred[i].lstrip()[1:-1]
-            raw_pred[i] = raw_pred[i].split(' ')
+            raw_pred[i] = raw_pred[i].split(" ")
             name = raw_pred[i][0]
             params = []
             for j in range(1, len(raw_pred[i])):
-                check_hyph = '-'in raw_pred[i][j]
-                if '-' not in raw_pred[i][j] and '?' not in raw_pred[i][j]:
+                check_hyph = "-" in raw_pred[i][j]
+                if "-" not in raw_pred[i][j] and "?" not in raw_pred[i][j]:
                     params.append(raw_pred[i][j])
-            extracted_pred_types[name] = params    
+            extracted_pred_types[name] = params
         return extracted_pred_types
 
     def __effect_split(self, act: tarski.fstrips.action.PlainOperator):
@@ -103,16 +104,16 @@ class Generator:
         for i in range(len(effects)):
             eff_str = effects[i].tostring()
             fluent = self.__tarski_fluent_to_macq(eff_str[3:])
-            if eff_str[:3] == 'ADD':
+            if eff_str[:3] == "ADD":
                 add.append(fluent)
             else:
                 delete.append(fluent)
-        return(add, delete)
+        return (add, delete)
 
     def __action_or_predicate_split(self, raw: str, is_action: bool):
         """
         Takes a string representing either an action or fluent in the form of: action/fluent(*objects)
-        and parses it to a dictionary that separates the name of the action or fluent from the objects it 
+        and parses it to a dictionary that separates the name of the action or fluent from the objects it
         acts upon. The objects are also instantiated with the appropriate type/name.
         Example: pick-up(f) is parsed to {'name': 'pick-up', 'objects': [Type: object, Name: f]}
 
@@ -129,16 +130,16 @@ class Generator:
             The parsed action or fluent, separating its name from its instantiated objects.
         """
         split = {}
-        raw = raw.strip(')')
-        name = raw.split('(')[0]
-        raw = raw.replace(' ', '')
-        param_names = raw.split('(')[1].split(',')
+        raw = raw.strip(")")
+        name = raw.split("(")[0]
+        raw = raw.replace(" ", "")
+        param_names = raw.split("(")[1].split(",")
         num_param = len(param_names)
-        obj_param = [] 
+        obj_param = []
 
-        if name == '=':
-            types = ['object', 'object']
-            name = 'equal'
+        if name == "=":
+            types = ["object", "object"]
+            name = "equal"
         else:
             if is_action:
                 act_types = self.__extract_action_typing()
@@ -148,19 +149,19 @@ class Generator:
                 types = fluent_types[name]
 
         for i in range(num_param):
-            obj_param.append(CustomObject(types[i], param_names[i]))
-        split['name'] = name
-        split['objects'] = obj_param
+            obj_param.append(PlanningObject(types[i], param_names[i]))
+        split["name"] = name
+        split["objects"] = obj_param
         return split
 
     def __tarski_fluent_to_macq(self, raw: str):
         """
         Takes a string representing either a fluent in the form of: fluent(*objects)
-        and parses it to a dictionary that separates the name of the fluent from the objects it 
+        and parses it to a dictionary that separates the name of the fluent from the objects it
         acts upon. The objects are also instantiated with the appropriate type/name.
         If the fluent has a 'not' operator, the value of the Fluent is set to False.
         Example: (not on-table(b)) is parsed to a Fluent with name 'on-table', object 'b', and
-        is set to False. 
+        is set to False.
 
         Arguments
         ---------
@@ -173,15 +174,15 @@ class Generator:
             The generated fluent.
         """
         # remove starting and ending parentheses, if necessary
-        if raw[0] == '(':
-            raw = raw[1:len(raw) - 1]
-        test =  raw.split(' ')
-        if 'not' in test:
+        if raw[0] == "(":
+            raw = raw[1 : len(raw) - 1]
+        test = raw.split(" ")
+        if "not" in test:
             value = False
         else:
             value = True
         fluent = self.__action_or_predicate_split(test[-1], False)
-        macq_fluent = Fluent(fluent['name'], fluent['objects'], value)
+        macq_fluent = Fluent(fluent["name"], fluent["objects"], value)
         return macq_fluent
 
     def tarski_state_to_macq(self, tarski_state: tarski.model.Model):
@@ -228,9 +229,9 @@ class Generator:
         else:
             raw_precond = tarski_act.precondition
             precond.append(self.__tarski_fluent_to_macq(str(raw_precond)))
-        
-        (add, delete) = self.__effect_split(tarski_act)
-        macq_act = Action(action_info['name'], action_info['objects'], precond, add, delete)
-        return macq_act
 
-    
+        (add, delete) = self.__effect_split(tarski_act)
+        macq_act = Action(
+            action_info["name"], action_info["objects"], precond, add, delete
+        )
+        return macq_act
