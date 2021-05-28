@@ -23,52 +23,32 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
-        action_effects = defaultdict(lambda: defaultdict(list))
+        action_effects = defaultdict(lambda: defaultdict(set))
         for trace in traces:
             for action in trace.actions:
                 if action is not None:
                     sas_triples = trace.get_sas_triples(action)
                     for sas in sas_triples:
+                        action_effects[action]["pre_states"].add(sas.pre_state)
                         delta = sas.pre_state.diff_from(sas.post_state)
-                        action_effects[action]["pre_states"].append(sas.pre_state)
-                        action_effects[action]["add"].append(delta.added)
-                        action_effects[action]["delete"].append(delta.deleted)
+                        action_effects[action]["add"].update(delta.added)
+                        action_effects[action]["delete"].update(delta.deleted)
 
         for action, effects in action_effects.items():
-            precond = Observer._get_preconditions(action_effects[action]["pre_states"])
-            # action.update_precond(precond)
-            add = set.intersection(*effects["add"])
-            action.update_add(add)
-            delete = set.intersection(*effects["delete"])
-            action.update_delete(delete)
+            precond = set.intersection(
+                *map(Observer._get_true_fluents, action_effects[action]["pre_states"])
+            )
+            action.update_precond(precond)
 
-        print("=" * 100)
-        indent = " " * 2
-        for action in action_effects.keys():
-            print(action)
-            print(f"{indent}precond:")
-            for precond in action.precond:
-                print(f"{indent*2}{precond}")
-            print(f"{indent}add:")
-            for add in action.add:
-                print(f"{indent*2}{add}")
-            print(f"{indent}delete:")
-            for delete in action.delete:
-                print(f"{indent*2}{delete}")
+            action.update_add(effects["add"])
+            action.update_delete(effects["delete"])
 
-            # TODO
-            # fix logic if necessary
-            # test actions are updated correct
-            # fix serialization
-            # test Observer extraction
-            # update all docstrings
-            # make objects and fluents immutable
-
-            print()
-
-        return []
+        return [action for action in action_effects.keys()]
 
     @staticmethod
-    def _get_preconditions(pre_states: list[State]) -> set[Fluent]:
-        # (positive) intersection of States -> set of fluents
-        pass
+    def _get_true_fluents(state):
+        true_fluents = set()
+        for fluent, is_true in state.items():
+            if is_true:
+                true_fluents.add(fluent)
+        return true_fluents

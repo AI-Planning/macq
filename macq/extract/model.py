@@ -26,13 +26,30 @@ class Model:
 
     def __str__(self):
         string = "Model:\n"
-        indent = " " * 4
+        indent = " " * 2
         string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
         string += f"{indent}Actions:\n"
-        string += indent * 2
-        string += f"\n{indent*2}".join(map(lambda a: str(a), self.actions))
+        for line in self._get_action_details().splitlines():
+            string += f"{indent * 2}{line}\n"
 
         return string
+
+    def _get_action_details(self):
+        indent = " " * 2
+        details = ""
+        for action in self.actions:
+            details += str(action) + ":\n"
+            details += f"{indent}precond:\n"
+            for f in action.precond:
+                details += f"{indent * 2}{f}\n"
+            details += f"{indent}add:\n"
+            for f in action.add:
+                details += f"{indent * 2}{f}\n"
+            details += f"{indent}delete:\n"
+            for f in action.delete:
+                details += f"{indent * 2}{f}\n"
+
+        return details
 
     def serialize(self, filepath: str = None):
         """
