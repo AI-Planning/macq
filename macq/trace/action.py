@@ -1,5 +1,5 @@
 from typing import List
-from .fluent import CustomObject, Fluent
+from .fluent import PlanningObject, Fluent
 
 
 class Action:
@@ -18,10 +18,10 @@ class Action:
     def __init__(
         self,
         name: str,
-        obj_params: List[CustomObject],
-        precond: List[Fluent],
-        add: List[Fluent],
-        delete: List[Fluent],
+        obj_params: List[PlanningObject],
+        precond: set[Fluent] = None,
+        add: set[Fluent] = None,
+        delete: set[Fluent] = None,
         cost: int = 0,
     ):
         """
@@ -44,31 +44,30 @@ class Action:
         """
         self.name = name
         self.obj_params = obj_params
-        self.precond = []
-        self.add_precond(precond)
-        self.add = []
-        self.add_effect_add(add)
-        self.delete = []
-        self.add_effect_delete(delete)
+        self.precond = set()
+        if precond is not None:
+            self.update_precond(precond)
+        self.add = set()
+        if add is not None:
+            self.update_add(add)
+        self.delete = set()
+        if delete is not None:
+            self.update_delete(delete)
         self.cost = cost
 
-    def __repr__(self):
-        string = "Action with Name: " + self.name + "\n\nObject Parameters:\n"
-        for obj in self.obj_params:
-            string += str(obj) + "\n"
-        string += "\nPreconditions:\n"
-        for fluent in self.precond:
-            string += str(fluent) + "\n\n"
-        string += "\nEffects to add:\n"
-        for fluent in self.add:
-            string += str(fluent) + "\n\n"
-        string += "\nEffects to delete:\n"
-        for fluent in self.delete:
-            string += str(fluent) + "\n\n"
-        string += "\nCost: " + str(self.cost)
+    def __str__(self):
+        string = f"{self.name}"
         return string
 
-    def __add_fluent(self, fluents: List[Fluent], condition: List[Fluent]):
+    def __eq__(self, other):
+        if not isinstance(other, Action):
+            return False
+        return self.name == other.name and self.obj_params == other.obj_params
+
+    def __hash__(self):
+        return hash(str(self) + str(self.obj_params))
+
+    def __add_fluents(self, fluents: set[Fluent], condition: set[Fluent]):
         """
         Checks the validity of a fluent before adding it to either the action's preconditions,
         add effects or delete effects.
@@ -86,11 +85,12 @@ class Action:
                 for param in self.obj_params:
                     if obj == param:
                         valid = True
-                if not valid:        
-                    raise self.InvalidFluent()
-        condition.extend(fluents)
+                if not valid:
+                    # raise self.InvalidFluent()
+                    print(f'WARNING: Adding "{fluent}" as an effect of "{self.name}"')
+        condition.update(fluents)
 
-    def add_precond(self, fluents: List[Fluent]):
+    def update_precond(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's preconditions.
 
@@ -99,9 +99,9 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's preconditions.
         """
-        self.__add_fluent(fluents, self.precond)
+        self.__add_fluents(fluents, self.precond)
 
-    def add_effect_add(self, fluents: List[Fluent]):
+    def update_add(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's add effects.
 
@@ -110,9 +110,9 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's add effects.
         """
-        self.__add_fluent(fluents, self.add)
+        self.__add_fluents(fluents, self.add)
 
-    def add_effect_delete(self, fluents: List[Fluent]):
+    def update_delete(self, fluents: set[Fluent]):
         """
         Adds the specified list of fluents to the action's delete effects.
 
@@ -121,9 +121,9 @@ class Action:
         fluents : list of Fluents
             The list of fluents to be added to the action's delete effects.
         """
-        self.__add_fluent(fluents, self.delete)
+        self.__add_fluents(fluents, self.delete)
 
-    def add_parameter(self, obj: CustomObject):
+    def add_parameter(self, obj: PlanningObject):
         """
         Adds the specified object to the action's list of available parameters.
 
@@ -133,3 +133,32 @@ class Action:
             The object to be added to the action's list of available parameters.
         """
         self.obj_params.append(obj)
+
+    def copy(self):
+        name = self.name
+        obj_params = self.obj_params.copy()
+        precond = self.precond.copy()
+        add = self.add.copy()
+        delete = self.delete.copy()
+        cost = self.cost
+        return Action(name, obj_params, precond, add, delete, cost)
+
+    @classmethod
+    def from_json(cls, data):
+        """
+        Converts a json object to an Action object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Action object : Action
+        """
+        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
+        precond = list(map(Fluent.from_json, data["precond"]))
+        add = list(map(Fluent.from_json, data["add"]))
+        delete = list(map(Fluent.from_json, data["delete"]))
+        return cls(data["name"], obj_params, precond, add, delete, data["cost"])

@@ -1,3 +1,4 @@
+from typing import Optional
 from . import Action
 from . import State
 
@@ -9,6 +10,7 @@ class Step:
     """
 
     def __init__(self, action: Action, state: State, index: int):
+    def __init__(self, state: State, action: Optional[Action]):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
@@ -26,7 +28,7 @@ class Step:
         self.state = state
         self.index = index
 
-    def __repr__(self):
+    def __str__(self):
         string = str(self.action) + "\n\n" + str(self.state)
         return string
 

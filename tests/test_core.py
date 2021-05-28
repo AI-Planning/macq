@@ -1,4 +1,6 @@
-from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
+import pytest
+from typing import List
+from macq.trace import PlanningObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
@@ -8,8 +10,6 @@ InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
-from typing import List
-import pytest
 
 # HELPER FUNCTIONS
 
@@ -29,7 +29,7 @@ def generate_test_fluents(num_fluents: int):
         The list of testing fluents generated.
     """
     fluents = []
-    objects = [CustomObject("number", str(o)) for o in range(num_fluents)]
+    objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
         fluent_name = "fluent" + " " + str(i + 1)
         if i % 2 == 0:
@@ -41,7 +41,7 @@ def generate_test_fluents(num_fluents: int):
     return fluents
 
 
-def generate_test_actions(num_actions: int, objects: List[CustomObject]):
+def generate_test_actions(num_actions: int, objects: List[PlanningObject]):
     """
     Generates basic actions to be used for testing.
 
@@ -177,9 +177,9 @@ def generate_test_trace(complexity: int):
 
 # ensure that invalid fluents can't be added to actions
 def test_action_errors():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
+    objects = [PlanningObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", 10)
+    other = PlanningObject("other", "10")
     fluent_other = Fluent("put down other", [other], True)
 
     with pytest.raises(InvalidFluent):
@@ -218,9 +218,9 @@ def test_action_add_effects():
 
 # ensure that valid object parameters can be added and subsequently referenced
 def test_action_add_params():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
+    objects = [PlanningObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", 10)
+    other = PlanningObject("other", "other")
     fluent_other = Fluent("put down other", [other], True)
 
     action.add_parameter(other)
@@ -251,13 +251,6 @@ def test_trace_add_steps():
     assert trace.steps == result
     """
     pass
-
-
-# ensure that the Trace base_fluents() and base_actions() functions work correctly
-def test_trace_base():
-    trace = generate_test_trace(3)
-    assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
-    assert trace.base_actions() == ["action 1", "action 2", "action 3"]
 
 
 # test that the previous states are being retrieved correctly
@@ -360,8 +353,13 @@ def test_timer_vanilla_wrapper():
         vanilla = VanillaSampling(dom, prob, 10, 5)
 
 def generate_test_trace_list(length: int):
-    trace = generate_test_trace(3)
-    traces = [trace] * length
+    from random import randint
+
+    traces = []
+    for _ in range(length):
+        comp = randint(1, 3)
+        trace = generate_test_trace(comp)
+        traces.append(trace)
     return TraceList(traces)
 
 

@@ -1,7 +1,15 @@
+from dataclasses import dataclass
 from typing import List, Type, Iterable, Callable
-from . import Action
-from . import Step
+from inspect import cleandoc
+from . import Action, Step, State
 from ..observation import Observation
+
+
+@dataclass
+class SAS:
+    pre_state: State
+    action: Action
+    post_state: State
 
 
 class Trace:
@@ -44,26 +52,30 @@ class Trace:
         """
         self.steps = steps
         self.num_steps = len(steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
+        self.fluents = self._get_fluents()
+        self.actions = self._get_actions()
         self.num_fluents = len(self.fluents)
         self.observations = []
 
-    def __repr__(self):
-        string = "TRACE:\n\nAttributes:\n\nNumber of Steps: " + str(self.num_steps)
-        string += "\nNumber of Fluents: " + str(self.num_fluents)
-        string += "\n\nBase Fluents:\n"
-        for fluent in self.fluents:
-            string += fluent + "\n"
-        string += "\nBase Actions:\n"
-        for action in self.actions:
-            string += action + "\n"
-        string += "\n\nSteps:"
-        for i in range(self.num_steps):
-            string += "\n\nSTEP " + str(i + 1) + ":\n\n" + str(self.steps[i]) + "\n"
-        string += "\nObservations:\n"
-        for obs in self.observations:
-            string += "\n" + str(obs)
+    def __str__(self):
+        string = cleandoc(
+            f"""
+            Trace:
+                Attributes:
+                    {self.num_steps} steps
+                    {self.num_fluents} fluents
+                Steps:
+            """
+        )
+        string += "\n"
+
+        # Dynamically get the spacing, 2n time
+        state_len = max([len(str(step.state)) for step in self]) + 4
+        string += f"        {'Step':<5} {'State':^{state_len}} {'Action':<8}\n"
+
+        for i, step in enumerate(self):
+            string += f"        {i+1:<5} {str(step.state):<{state_len}} {str(step.action):<8}\n"
+
         return string
 
     def __len__(self):
@@ -128,38 +140,45 @@ class Trace:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
 
-    def base_fluents(self):
+    def add_steps(self, steps: List[Step]):
         """
-        Retrieves the names of all fluents used in this trace.
+        Class for a Trace, which consists of each Step in a generated solution.
+
+        Arguments
+        ---------
+        steps : List of Steps (optional)
+            The list of Step objects to be added to the trace.
+        """
+        self.steps.extend(steps)
+
+    def _get_fluents(self):
+        """
+        Retrieves the fluents used in this trace.
 
         Returns
         -------
-        list : str
-            Returns a list of the names of all fluents used in this trace.
+        list : Fluent
+            Returns a list of all the fluents used in this trace.
         """
-        fluents = []
-        for step in self.steps:
+        fluents = set()
+        for step in self:
             for fluent in step.state.fluents:
-                name = fluent.name
-                if name not in fluents:
-                    fluents.append(name)
-        return fluents
+                fluents.add(fluent)
+        return list(fluents)
 
-    def base_actions(self):
+    def _get_actions(self):
         """
-        Retrieves the names of all actions used in this trace.
+        Retrieves the actions used in this trace.
 
         Returns
         -------
-        list : str
-            Returns a list of the names of all actions used in this trace.
+        list : Action
+            Returns a list of all the actions used in this trace.
         """
-        actions = []
+        actions = set()
         for step in self.steps:
-            name = step.action.name
-            if name not in actions:
-                actions.append(name)
-        return actions
+            actions.add(step.action)
+        return list(actions)
 
     def get_prev_states(self, action: Action):
         """
@@ -201,7 +220,7 @@ class Trace:
                 post_states.append(self.steps[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action):
+    def get_sas_triples(self, action: Action) -> List[SAS]:
         """
         Returns a list of tuples where each tuple contains the state of the trace
         before the action, the action, and the state of the trace after the action.
@@ -217,16 +236,10 @@ class Trace:
             A list of tuples in the format (previous state, action, post-state).
         """
         sas_triples = []
-        triple = []
-        for i in range(self.num_steps):
-            if self.steps[i].action == action:
-                triple.append(self.steps[i].state)
-                triple.append(action)
-                if i + 1 < self.num_steps:
-                    triple.append(self.steps[i + 1].state)
-                triple = tuple(triple)
+        for i, step in enumerate(self):
+            if step.action == action:
+                triple = SAS(step.state, action, self[i + 1].state)
                 sas_triples.append(triple)
-                triple = []
 
         return sas_triples
 
@@ -319,4 +332,3 @@ class Trace:
         self.num_fluents = len(self.fluents)
         # update the placements of each step
         for i in range(len(self.steps)):
-            self.steps[i].index = i

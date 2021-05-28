@@ -1,23 +1,33 @@
 from typing import List
 
 
-class CustomObject:
+class PlanningObject:
     def __init__(self, obj_type: str, name: str):
         self.obj_type = obj_type
         self.name = name
 
-    def __repr__(self):
-        string = "Type: " + self.obj_type + ", Name: " + self.name
-        return string
-    def __eq__(self, other):
-        if isinstance(other, CustomObject):
-            return self.name == other.name and self.obj_type == other.obj_type
-        else:
-            return False
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def from_json(cls, data):
+        """
+        Converts a json object to a Custom object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Custom object : CustomObject
+        """
+        return cls(**data)
 
 
 class Fluent:
-    def __init__(self, name: str, objects: List[CustomObject], value: bool):
+    def __init__(self, name: str, objects: List[PlanningObject]):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -27,16 +37,29 @@ class Fluent:
             The name of the predicate.
         objects : list
             The list of objects this predicate applies to.
-        value : bool
-            The value of the fluent (true or false)
         """
         self.name = name
         self.objects = objects
-        self.value = value
 
-    def __repr__(self):
-        string = "Fluent with Name: " + self.name + "\nObjects:\n"
-        for obj in self.objects:
-            string += str(obj) + "\n"
-        string += "Value: " + str(self.value)
-        return string
+    def __str__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(str(self))
+
+    @classmethod
+    def from_json(cls, data):
+        """
+        Converts a json object to a Fluent object.
+
+        Arguments
+        ---------
+        data : dict
+            The json object.
+
+        Returns
+        -------
+        The corresponding Fluent object : Fluent
+        """
+        objects = list(map(PlanningObject.from_json, data["objects"]))
+        return cls(data["name"], objects)

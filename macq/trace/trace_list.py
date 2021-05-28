@@ -1,4 +1,4 @@
-from typing import Iterable, Union, List, Callable
+from typing import Iterable, List, Callable
 from . import Action
 from . import Trace
 
@@ -10,6 +10,11 @@ class TraceList:
     """
 
     class MissingGenerator(Exception):
+        """
+        A custom exception, thrown when a user attempts to generate more traces
+        on a trace list without providing a generator function.
+        """
+
         def __init__(
             self,
             trace_list,
@@ -21,8 +26,8 @@ class TraceList:
 
     def __init__(
         self,
-        traces: Union[List[Trace], None] = None,
-        generator: Union[Callable, None] = None,
+        traces: List[Trace] = [],
+        generator: Callable = None,
     ):
         """
         Creates a TraceList object. This stores a list of traces and optionally
@@ -35,29 +40,15 @@ class TraceList:
         generator : funtion | None
             (Optional) The function used to generate the traces.
         """
-        self.traces: List[Trace] = [] if traces is None else traces
+        self.traces: List[Trace] = traces
         self.generator = generator
 
-
     def __str__(self):
-        string = "["
+        string = "TraceList:\n"
         for trace in self:
-            string += "\n"
-            string += "-" * 100
-            string += "\n\n"
-            string += str(trace)
-        string += "]"
+            for line in str(trace).splitlines():
+                string += f"    {line}\n"
         return string
-
-    def __repr__(self):
-        rep = "["
-        for trace in self:
-            rep += "\n"
-            rep += "-" * 100
-            rep += "\n\n"
-            rep += repr(trace)
-        rep += "]"
-        return rep
 
 
     def __len__(self):

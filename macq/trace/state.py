@@ -1,23 +1,98 @@
-from typing import List
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Optional
 from . import Fluent
 
 
+@dataclass
+class DeltaState:
+    added: set[Fluent]
+    deleted: set[Fluent]
+
+
 class State:
-    """
-    Class for a State, which is the set of all fluents and their values at a particular Step.
+    """State representation.
 
-    Arguments
-    ---------
-    fluents : List of Fluents
-            A list of fluents representing the state.
+    A Dict-like object. Maps `Fluent` objects to boolean values, representing
+    the state for a `Step` in a `Trace`.
+
+    Attributes:
+        fluents (dict): A mapping of `Fluent` objects to their value in this
+        state.
     """
 
-    def __init__(self, fluents: List[Fluent]):
+    def __init__(self, fluents: dict[Fluent, bool] = {}):
+        """Initializes State with an optional fluent-value mapping.
+
+        Args:
+            fluents (dict): Optional; A mapping of `Fluent` objects to their
+            value in this state. Defaults to an empty `dict`.
+        """
         self.fluents = fluents
 
+    def __str__(self):
+        string = ""
+        for fluent, value in self.items():
+            string += f"{fluent.name} ({value}), "
+        return string[:-2]
+
+    def __len__(self):
+        return len(self.fluents)
+
+    def __setitem__(self, key: Fluent, value: bool):
+        self.fluents[key] = value
+
+    def __getitem__(self, key: Fluent):
+        return self.fluents[key]
+
+    def __delitem__(self, key: Fluent):
+        del self.fluents[key]
+
+    def __iter__(self):
+        return iter(self.fluents)
+
+    def __contains__(self, key):
+        return self.fluents.__contains__(key)
+
     def __repr__(self):
-        string = "State:\n\n"
-        for fluent in self.fluents:
-            string += str(fluent) + "\n"
-        string = string.strip()
-        return string
+        return repr(self.fluents)
+
+    def clear(self):
+        return self.fluents.clear()
+
+    def copy(self):
+        return self.fluents.copy()
+
+    def has_key(self, k):
+        return k in self.fluents
+
+    def update(self, *args, **kwargs):
+        return self.fluents.update(*args, **kwargs)
+
+    def keys(self):
+        return self.fluents.keys()
+
+    def values(self):
+        return self.fluents.values()
+
+    def items(self):
+        return self.fluents.items()
+
+    def diff_from(self, other: State):
+        """
+
+        Args:
+            other (State): The secondary state to compare this one to.
+
+        Returns:
+        """
+        added = set()
+        deleted = set()
+        fluents = list(self.keys())
+        fluents.extend(list(other.keys()))
+        for f in fluents:
+            if self[f] and not other[f]:  # true pre, false post -> deleted
+                deleted.add(f)
+            elif not self[f] and other[f]:  # false pre, true post -> added
+                added.add(f)
+        return DeltaState(added, deleted)

@@ -42,13 +42,68 @@ step = trace[0]
 step.base_fluents()
 step.base_action()
 
+######################################################################
+# Model Extraction
+######################################################################
 model = extract.Extract(traces, extract.modes.OBSERVER)
+model.serialize()
 
-model.actions
-...
+{
+  "fluents": [
+    {
+      "name": "fluent 1",
+      "objects": [
+        {
+          "obj_type": "number",
+          "name": "0"
+        }
+      ],
+      "value": true
+    }
+  ],
+  "actions": [
+    {
+      "name": "action 1",
+      "obj_params": [
+        {
+          "obj_type": "number",
+          "name": "0"
+        }
+      ],
+      "precond": [],
+      "add": [],
+      "delete": [],
+      "cost": 1
+    }
+  ]
+}
 
-model.actions[0].to_pddl()
+model2 = extract.Model.deserialize(json_model)
 
+for fluent in model2.fluents:
+     print(str(fluent))
+
+Fluent:
+  name: fluent 3
+  value: True
+  objects:
+    Object:
+      name: 2
+      type: number
+Fluent:
+  name: fluent 1
+  value: True
+  objects:
+    Object:
+      name: 0
+      type: number
+Fluent:
+  name: fluent 2
+  value: False
+  objects:
+    Object:
+      name: 1
+      type: number
 ```
 
 ## Coverage
