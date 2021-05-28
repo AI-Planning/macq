@@ -48,6 +48,17 @@ class TraceList:
         string += "]"
         return string
 
+    def __repr__(self):
+        rep = "["
+        for trace in self:
+            rep += "\n"
+            rep += "-" * 100
+            rep += "\n\n"
+            rep += repr(trace)
+        rep += "]"
+        return rep
+
+
     def __len__(self):
         return len(self.traces)
 
