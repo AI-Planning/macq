@@ -10,7 +10,7 @@ class PartiallyObservableState:
             A list of fluents representing the state.
     """
 
-    def __init__(self, fluents: List[Fluent]):
-       super().__init__(fluents)
+    def __init__(self, fluents: List[Fluent]):    
+        super().__init__(fluents)
     #def random_subset(self):
-        
+    
