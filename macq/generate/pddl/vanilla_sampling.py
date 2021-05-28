@@ -5,8 +5,9 @@ from ..trace_errors import InvalidPlanLength, InvalidNumberOfTraces
 from tarski.search.operations import progress
 import random
 
+
 class VanillaSampling(Generator):
-    def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
+    def __init__(self, dom: str, prob: str, plan_len: int, num_traces: int):
         super().__init__(dom, prob)
         self.set_plan_length(plan_len)
         self.set_num_traces(num_traces)
@@ -33,7 +34,7 @@ class VanillaSampling(Generator):
             The list of traces generated.
         """
 
-    def set_num_traces(self, num_traces : int):
+    def set_num_traces(self, num_traces: int):
         """AI is creating summary for set_num_traces
 
         Args:
@@ -52,7 +53,7 @@ class VanillaSampling(Generator):
             self.plan_len = plan_len
         else:
             raise InvalidPlanLength()
-    
+
     def generate_traces(self):
         """
         Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -74,7 +75,7 @@ class VanillaSampling(Generator):
     def generate_single_trace(self):
         """
         Generates a single trace using the uniform random sampling technique.
-        Loops until a valid trace is found. Wrapper does not allow the function 
+        Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
 
         Returns
@@ -83,7 +84,7 @@ class VanillaSampling(Generator):
             The valid trace generated.
         """
         trace = Trace()
-        
+
         state = self.problem.init
         valid_trace = False
         num_generated = 0
@@ -105,9 +106,9 @@ class VanillaSampling(Generator):
                 # pick a random applicable action and apply it
                 act = random.choice(ls)
                 # create the trace and progress the state
-                macq_action = self.tarski_act_to_macq(act)
                 macq_state = self.tarski_state_to_macq(state)
-                step = Step(macq_action, macq_state, num_generated)
+                macq_action = self.tarski_act_to_macq(act)
+                step = Step(macq_state, macq_action, num_generated)
                 trace.append(step)
                 state = progress(state, act)
 

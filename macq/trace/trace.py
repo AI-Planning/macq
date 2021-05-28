@@ -320,15 +320,15 @@ class Trace:
         Token : Observation subclass
             An `Observation` subclass.
         """
-        
+
         for step in self.steps:
             token = Token(step=step, **kwargs)
             self.observations.append(token)
 
     def update(self):
         self.num_steps = len(self.steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
+        self.fluents = self._get_fluents()
+        self.actions = self._get_actions()
         self.num_fluents = len(self.fluents)
         # update the placements of each step
         for i in range(len(self.steps)):

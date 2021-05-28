@@ -134,31 +134,23 @@ class Action:
         """
         self.obj_params.append(obj)
 
-    def copy(self):
-        name = self.name
-        obj_params = self.obj_params.copy()
-        precond = self.precond.copy()
-        add = self.add.copy()
-        delete = self.delete.copy()
-        cost = self.cost
-        return Action(name, obj_params, precond, add, delete, cost)
 
-    @classmethod
-    def from_json(cls, data):
-        """
-        Converts a json object to an Action object.
+#     @classmethod
+#     def from_json(cls, data):
+#         """
+#         Converts a json object to an Action object.
 
-        Arguments
-        ---------
-        data : dict
-            The json object.
+#         Arguments
+#         ---------
+#         data : dict
+#             The json object.
 
-        Returns
-        -------
-        The corresponding Action object : Action
-        """
-        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
-        precond = list(map(Fluent.from_json, data["precond"]))
-        add = list(map(Fluent.from_json, data["add"]))
-        delete = list(map(Fluent.from_json, data["delete"]))
-        return cls(data["name"], obj_params, precond, add, delete, data["cost"])
+#         Returns
+#         -------
+#         The corresponding Action object : Action
+#         """
+#         obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
+#         precond = list(map(Fluent.from_json, data["precond"]))
+#         add = list(map(Fluent.from_json, data["add"]))
+#         delete = list(map(Fluent.from_json, data["delete"]))
+#         return cls(data["name"], obj_params, precond, add, delete, data["cost"])
