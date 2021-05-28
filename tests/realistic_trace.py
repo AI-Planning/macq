@@ -42,6 +42,7 @@ def real_trace_list():
                     }
                 ),
                 pick_up_a,
+                0,
             ),
             Step(
                 State(
@@ -57,6 +58,7 @@ def real_trace_list():
                     }
                 ),
                 stack_a_b,
+                1,
             ),
             Step(
                 State(
@@ -72,6 +74,7 @@ def real_trace_list():
                     }
                 ),
                 None,
+                2,
             ),
         ]
     )
@@ -92,6 +95,7 @@ def real_trace_list():
                     }
                 ),
                 pick_up_b,
+                0,
             ),
             Step(
                 State(
@@ -107,6 +111,7 @@ def real_trace_list():
                     }
                 ),
                 stack_b_a,
+                1,
             ),
             Step(
                 State(
@@ -122,6 +127,7 @@ def real_trace_list():
                     }
                 ),
                 None,
+                2,
             ),
         ]
     )
@@ -142,6 +148,7 @@ def real_trace_list():
                     }
                 ),
                 pick_up_a,
+                0,
             ),
             Step(
                 State(
@@ -157,6 +164,7 @@ def real_trace_list():
                     }
                 ),
                 stack_a_b,
+                1,
             ),
             Step(
                 State(
@@ -172,6 +180,7 @@ def real_trace_list():
                     }
                 ),
                 None,
+                2,
             ),
         ]
     )
