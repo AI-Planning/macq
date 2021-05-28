@@ -1,6 +1,7 @@
 from typing import List
 from . import Fluent
 
+
 class State:
     """
     Class for a State, which is the set of all fluents and their values at a particular Step.
