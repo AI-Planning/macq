@@ -24,6 +24,7 @@ class Step:
         """
         self.action = action
         self.state = state
+        self.index = index
 
     def __repr__(self):
         string = str(self.action) + "\n\n" + str(self.state)
