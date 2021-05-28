@@ -31,7 +31,6 @@ class Model:
         string += f"{indent}Actions:\n"
         for line in self._get_action_details().splitlines():
             string += f"{indent * 2}{line}\n"
-
         return string
 
     def _get_action_details(self):

@@ -1,10 +1,6 @@
 from collections import defaultdict
-from dataclasses import field
-from typing import List
-
-from attr import dataclass
 from .model import Model
-from ..trace import TraceList, DeltaState, State, Fluent
+from ..trace import TraceList
 
 
 class Observer:
