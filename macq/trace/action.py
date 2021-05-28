@@ -1,6 +1,7 @@
 from typing import List
 from .fluent import CustomObject, Fluent
 
+
 class Action:
     class InvalidFluent(Exception):
         """
