@@ -20,14 +20,22 @@ class Observer:
     @staticmethod
     def _get_actions(traces: TraceList):
         for trace in traces:
-            for action in trace.actions:
-                if action is not None:
+            for trace_action in trace.actions:
+                if trace_action is not None:
+                    action = trace_action.copy()
                     sas_triples = trace.get_sas_triples(action)  # list
                     for sas in sas_triples:
                         delta = sas.pre_state.diff_from(sas.post_state)
                         action.update_preconds(delta.pre_cond)
                         action.update_add(delta.added)
                         action.update_delete(delta.deleted)
+
+            # TODO
+            # fix logic if necessary
+            # test actions are updated correct
+            # fix serialization
+            # test Observer extraction
+            # update all docstrings
 
             # print("Delta states:")
             # indent = " " * 2

@@ -4,8 +4,8 @@ from macq.trace import *
 
 def real_trace_list():
     # Objects
-    blockA = CustomObject("block", "A")
-    blockB = CustomObject("block", "B")
+    blockA = PlanningObject("block", "A")
+    blockB = PlanningObject("block", "B")
 
     objects = [blockA, blockB]
 

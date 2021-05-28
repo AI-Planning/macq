@@ -1,5 +1,5 @@
 from typing import List
-from .fluent import CustomObject, Fluent
+from .fluent import PlanningObject, Fluent
 
 
 class Action:
@@ -18,7 +18,7 @@ class Action:
     def __init__(
         self,
         name: str,
-        obj_params: List[CustomObject],
+        obj_params: List[PlanningObject],
         precond: set[Fluent] = None,
         add: set[Fluent] = None,
         delete: set[Fluent] = None,
@@ -118,7 +118,7 @@ class Action:
         """
         self.__add_fluents(fluents, self.delete)
 
-    def add_parameter(self, obj: CustomObject):
+    def add_parameter(self, obj: PlanningObject):
         """
         Adds the specified object to the action's list of available parameters.
 
@@ -128,6 +128,15 @@ class Action:
             The object to be added to the action's list of available parameters.
         """
         self.obj_params.append(obj)
+
+    def copy(self):
+        name = self.name
+        obj_params = self.obj_params.copy()
+        precond = self.precond.copy()
+        add = self.add.copy()
+        delete = self.delete.copy()
+        cost = self.cost
+        return Action(name, obj_params, precond, add, delete, cost)
 
     @classmethod
     def from_json(cls, data):
@@ -143,7 +152,7 @@ class Action:
         -------
         The corresponding Action object : Action
         """
-        obj_params = list(map(CustomObject.from_json, data["obj_params"]))
+        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
         precond = list(map(Fluent.from_json, data["precond"]))
         add = list(map(Fluent.from_json, data["add"]))
         delete = list(map(Fluent.from_json, data["delete"]))

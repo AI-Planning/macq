@@ -1,7 +1,7 @@
 from typing import List
 
 
-class CustomObject:
+class PlanningObject:
     def __init__(self, obj_type: str, name: str):
         self.obj_type = obj_type
         self.name = name
@@ -27,7 +27,7 @@ class CustomObject:
 
 
 class Fluent:
-    def __init__(self, name: str, objects: List[CustomObject]):
+    def __init__(self, name: str, objects: List[PlanningObject]):
         """
         Class to handle a predicate and the objects it is applied to.
 
@@ -61,5 +61,5 @@ class Fluent:
         -------
         The corresponding Fluent object : Fluent
         """
-        objects = list(map(CustomObject.from_json, data["objects"]))
+        objects = list(map(PlanningObject.from_json, data["objects"]))
         return cls(data["name"], objects)

@@ -1,6 +1,6 @@
 import pytest
 from typing import List
-from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
+from macq.trace import PlanningObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 
 InvalidCostRange = Trace.InvalidCostRange
@@ -26,7 +26,7 @@ def generate_test_fluents(num_fluents: int):
         The list of testing fluents generated.
     """
     fluents = []
-    objects = [CustomObject("number", str(o)) for o in range(num_fluents)]
+    objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
         fluent_name = "fluent" + " " + str(i + 1)
         if i % 2 == 0:
@@ -38,7 +38,7 @@ def generate_test_fluents(num_fluents: int):
     return fluents
 
 
-def generate_test_actions(num_actions: int, objects: List[CustomObject]):
+def generate_test_actions(num_actions: int, objects: List[PlanningObject]):
     """
     Generates basic actions to be used for testing.
 
@@ -174,9 +174,9 @@ def generate_test_trace(complexity: int):
 
 # ensure that invalid fluents can't be added to actions
 def test_action_errors():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
+    objects = [PlanningObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", "10")
+    other = PlanningObject("other", "10")
     fluent_other = Fluent("put down other", [other], True)
 
     with pytest.raises(InvalidFluent):
@@ -215,9 +215,9 @@ def test_action_add_effects():
 
 # ensure that valid object parameters can be added and subsequently referenced
 def test_action_add_params():
-    objects = [CustomObject("number", str(o)) for o in range(6)]
+    objects = [PlanningObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    other = CustomObject("other", "other")
+    other = PlanningObject("other", "other")
     fluent_other = Fluent("put down other", [other], True)
 
     action.add_parameter(other)
