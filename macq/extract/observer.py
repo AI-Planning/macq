@@ -19,16 +19,30 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
+        actions = set()
         for trace in traces:
-            for trace_action in trace.actions:
-                if trace_action is not None:
-                    action = trace_action.copy()
-                    sas_triples = trace.get_sas_triples(action)  # list
+            for action in trace.actions:
+                if action is not None:
+                    sas_triples = trace.get_sas_triples(action)
                     for sas in sas_triples:
                         delta = sas.pre_state.diff_from(sas.post_state)
-                        action.update_preconds(delta.pre_cond)
+                        action.update_precond(delta.precond)
                         action.update_add(delta.added)
                         action.update_delete(delta.deleted)
+                    actions.add(action)
+
+        indent = " " * 2
+        for action in actions:
+            print(action)
+            print(f"{indent}precond:")
+            for precond in action.precond:
+                print(f"{indent*2}{precond}")
+            print(f"{indent}add:")
+            for add in action.add:
+                print(f"{indent*2}{add}")
+            print(f"{indent}delete:")
+            for delete in action.delete:
+                print(f"{indent*2}{delete}")
 
             # TODO
             # fix logic if necessary
@@ -36,9 +50,9 @@ class Observer:
             # fix serialization
             # test Observer extraction
             # update all docstrings
+            # make objects and fluents immutable
 
             # print("Delta states:")
-            # indent = " " * 2
             # for action, delta in delta_states.items():
             #     print(f"{indent}Action: {action}")
             #     if delta.pre_cond is not None:
