@@ -7,7 +7,20 @@ import tarski
 import random
 
 class Generator:
+    """
+    A Generator handles creating a basic PDDL state trace generator. Handles all 
+    parsing and stores the problem, language, and grounded instance for the child
+    generators to easily access and use. 
+    """
     def __init__(self, dom : str, prob : str):
+        """
+        Creates a Generator object by parsing the given domain and problem pddl files.
+
+        Args:
+            dom (str): The domain filename.
+            prob (str): The problem filename.
+        """
+        
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
         reader.parse_domain(dom)
@@ -16,19 +29,6 @@ class Generator:
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
-
-        """
-        Class that handles creating a basic PDDL state trace generator. Handles all 
-        parsing and stores the problem, language, and grounded instance for the child
-        generators to easily access and use. 
-
-        Arguments
-        ---------
-        dom : str
-            The domain filename.
-        prob : str
-            The problem filename.
-        """
 
     def __extract_action_typing(self):
         """
@@ -40,7 +40,11 @@ class Generator:
         extracted_act_types : dict
             The dictionary that indicates the types of all the objects each action in
             the problem acts upon.
+        Returns:
+            [type]: [description]
         """
+        
+        
         actions = self.problem.actions
         extracted_act_types = {}
         for act in actions:
