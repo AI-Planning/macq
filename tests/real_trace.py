@@ -126,4 +126,54 @@ def real_trace_list():
         ]
     )
 
-    return TraceList([t1, t2])
+    t3 = Trace(
+        [
+            Step(
+                State(
+                    {
+                        a_clear: True,
+                        b_clear: False,
+                        a_on_table: False,
+                        b_on_table: True,
+                        holding_a: False,
+                        holding_b: False,
+                        a_on_b: True,
+                        b_on_a: False,
+                    }
+                ),
+                pick_up_a,
+            ),
+            Step(
+                State(
+                    {
+                        a_clear: True,
+                        b_clear: True,
+                        a_on_table: False,
+                        b_on_table: True,
+                        holding_a: True,
+                        holding_b: False,
+                        a_on_b: False,
+                        b_on_a: False,
+                    }
+                ),
+                stack_a_b,
+            ),
+            Step(
+                State(
+                    {
+                        a_clear: True,
+                        b_clear: False,
+                        a_on_table: False,
+                        b_on_table: True,
+                        holding_a: False,
+                        holding_b: False,
+                        a_on_b: True,
+                        b_on_a: False,
+                    }
+                ),
+                None,
+            ),
+        ]
+    )
+
+    return TraceList([t1, t2, t1, t3])
