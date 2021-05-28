@@ -65,7 +65,7 @@ class Action:
         return self.name == other.name and self.obj_params == other.obj_params
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(str(self) + str(self.obj_params))
 
     def __add_fluents(self, fluents: set[Fluent], condition: set[Fluent]):
         """
