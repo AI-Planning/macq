@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, NamedTuple, Type, Iterable, Callable, Optional
+from typing import List, Type, Iterable, Callable
 from inspect import cleandoc
 from . import Action, Step, State
 from ..observation import Observation
@@ -9,7 +9,7 @@ from ..observation import Observation
 class SAS:
     pre_state: State
     action: Action
-    post_state: Optional[State]
+    post_state: State
 
 
 class Trace:
@@ -230,10 +230,7 @@ class Trace:
         sas_triples = []
         for i, step in enumerate(self):
             if step.action == action:
-                if i + 1 < self.num_steps:
-                    triple = SAS(step.state, action, self[i + 1].state)
-                else:
-                    triple = SAS(step.state, action, None)
+                triple = SAS(step.state, action, self[i + 1].state)
                 sas_triples.append(triple)
 
         return sas_triples

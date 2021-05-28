@@ -22,8 +22,6 @@ def real_trace_list():
     # Actions
     pick_up_a = Action("pick up A", [blockA])
     pick_up_b = Action("pick up B", [blockB])
-    put_down_a = Action("put down A", [blockA])
-    put_down_b = Action("put down B", [blockB])
     stack_a_b = Action("stack A on B", [blockA, blockB])
     stack_b_a = Action("stack B on A", [blockB, blockA])
 
@@ -37,6 +35,10 @@ def real_trace_list():
                         b_clear: True,
                         a_on_table: True,
                         b_on_table: True,
+                        holding_a: False,
+                        holding_b: False,
+                        a_on_b: False,
+                        b_on_a: False,
                     }
                 ),
                 pick_up_a,
@@ -44,10 +46,14 @@ def real_trace_list():
             Step(
                 State(
                     {
+                        a_clear: True,
                         b_clear: True,
                         a_on_table: False,
                         b_on_table: True,
                         holding_a: True,
+                        holding_b: False,
+                        a_on_b: False,
+                        b_on_a: False,
                     }
                 ),
                 stack_a_b,
@@ -57,9 +63,12 @@ def real_trace_list():
                     {
                         a_clear: True,
                         b_clear: False,
+                        a_on_table: False,
                         b_on_table: True,
-                        a_on_b: True,
                         holding_a: False,
+                        holding_b: False,
+                        a_on_b: True,
+                        b_on_a: False,
                     }
                 ),
                 None,
@@ -76,6 +85,10 @@ def real_trace_list():
                         b_clear: True,
                         a_on_table: True,
                         b_on_table: True,
+                        holding_a: False,
+                        holding_b: False,
+                        a_on_b: False,
+                        b_on_a: False,
                     }
                 ),
                 pick_up_b,
@@ -84,9 +97,13 @@ def real_trace_list():
                 State(
                     {
                         a_clear: True,
+                        b_clear: True,
                         a_on_table: True,
                         b_on_table: False,
+                        holding_a: False,
                         holding_b: True,
+                        a_on_b: False,
+                        b_on_a: False,
                     }
                 ),
                 stack_b_a,
@@ -97,8 +114,11 @@ def real_trace_list():
                         a_clear: False,
                         b_clear: True,
                         a_on_table: True,
-                        b_on_a: True,
+                        b_on_table: False,
+                        holding_a: False,
                         holding_b: False,
+                        a_on_b: False,
+                        b_on_a: True,
                     }
                 ),
                 None,
