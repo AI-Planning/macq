@@ -1,4 +1,4 @@
-from macq.trace import CustomObject, Fluent, Action, Step, State, Trace
+from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
@@ -6,10 +6,12 @@ import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
+MissingGenerator = TraceList.MissingGenerator
 from typing import List
 import pytest
 
 # HELPER FUNCTIONS
+
 
 def generate_test_fluents(num_fluents: int):
     """
@@ -37,6 +39,7 @@ def generate_test_fluents(num_fluents: int):
         fluents.append(fluent)
     return fluents
 
+
 def generate_test_actions(num_actions: int, objects: List[CustomObject]):
     """
     Generates basic actions to be used for testing.
@@ -61,6 +64,7 @@ def generate_test_actions(num_actions: int, objects: List[CustomObject]):
         actions.append(action)
     return actions
 
+
 def get_fluent_obj(fluents: List[Fluent]):
     """
     Extracts the objects used by the given fluents.
@@ -80,6 +84,7 @@ def get_fluent_obj(fluents: List[Fluent]):
         for obj in fluent.objects:
             objects.append(obj)
     return objects
+
 
 def generate_test_states(num_states: int, fluents: List[Fluent]):
     """
@@ -106,6 +111,7 @@ def generate_test_states(num_states: int, fluents: List[Fluent]):
         state = State(next_fluents)
         states.append(state)
     return states
+
 
 def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
     """
@@ -143,6 +149,7 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
         steps.append(step)
     return steps
 
+
 def generate_test_trace(complexity: int):
     """
     Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
@@ -164,6 +171,7 @@ def generate_test_trace(complexity: int):
     trace = Trace(steps)
     return trace
 
+
 # TESTS FOR ACTION CLASS
 
 # ensure that invalid fluents can't be added to actions
@@ -178,6 +186,7 @@ def test_action_errors():
         action.add_effect_add([fluent_other])
         action.add_effect_delete([fluent_other])
 
+
 # ensure that valid fluents can be added as action preconditions
 def test_action_add_preconditions():
     fluents = generate_test_fluents(3)
@@ -188,6 +197,7 @@ def test_action_add_preconditions():
     assert action.precond == [fl1]
     action.add_precond([fl2, fl3])
     assert action.precond == [fl1, fl2, fl3]
+
 
 # ensure that valid fluents can be added as action effects
 def test_action_add_effects():
@@ -204,6 +214,7 @@ def test_action_add_effects():
     action.add_effect_delete([fl2, fl3])
     assert action.delete == [fl1, fl2, fl3]
 
+
 # ensure that valid object parameters can be added and subsequently referenced
 def test_action_add_params():
     objects = [CustomObject("number", str(o)) for o in range(6)]
@@ -218,6 +229,7 @@ def test_action_add_params():
     assert action.precond == [fluent_other]
     assert action.add == [fluent_other]
     assert action.delete == [fluent_other]
+
 
 # TESTS FOR TRACE CLASS
 
@@ -239,11 +251,13 @@ def test_trace_add_steps():
     """
     pass
 
+
 # ensure that the Trace base_fluents() and base_actions() functions work correctly
 def test_trace_base():
     trace = generate_test_trace(3)
     assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
     assert trace.base_actions() == ["action 1", "action 2", "action 3"]
+
 
 # test that the previous states are being retrieved correctly
 def test_trace_prev_states():
@@ -256,6 +270,7 @@ def test_trace_prev_states():
     assert trace.get_prev_states(action1) == [state1]
     assert trace.get_prev_states(action3) == [state3]
 
+
 # test that the post states are being retrieved correctly
 def test_trace_post_states():
     trace = generate_test_trace(3)
@@ -266,6 +281,7 @@ def test_trace_post_states():
 
     assert trace.get_post_states(action1) == [state2]
     assert trace.get_post_states(action3) == []
+
 
 # test trace SAS triples function
 def test_trace_get_sas_triples():
@@ -278,10 +294,12 @@ def test_trace_get_sas_triples():
     assert trace.get_sas_triples(action2) == [(state2, action2, state3)]
     assert trace.get_sas_triples(action3) == [(state3, action3)]
 
+
 # test that the total cost is working correctly
 def test_trace_total_cost():
     trace = generate_test_trace(5)
     assert trace.get_total_cost() == 15
+
 
 # test that the cost range is working correctly
 def test_trace_valid_cost_range():
@@ -291,6 +309,7 @@ def test_trace_valid_cost_range():
     assert trace.get_cost_range(1, 5) == 15
     assert trace.get_cost_range(4, 5) == 9
 
+
 # test that incorrect provided cost ranges throw errors
 def test_trace_invalid_cost_range():
     trace = generate_test_trace(3)
@@ -299,12 +318,14 @@ def test_trace_invalid_cost_range():
         trace.get_cost_range(0, 2)
         trace.get_cost_range(1, 5)
 
+
 # test trace action usage
 def test_trace_usage():
     trace = generate_test_trace(3)
     # get the first action
     action1 = trace.steps[0].action
     assert trace.get_usage(action1) == 1 / 3
+
 
 # test trace tokenize function
 def test_trace_tokenize():
@@ -328,7 +349,7 @@ def test_trace_tokenize():
     assert trace.observations != step1
 
 # test the timer wrapper on vanilla trace generation
-def test_timer_wrapper_wrapper():
+def test_timer_wrapper_vanilla():
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent
     dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
@@ -336,6 +357,32 @@ def test_timer_wrapper_wrapper():
     
     with pytest.raises(TraceSearchTimeOut):
         vanilla = VanillaSampling(dom, prob, 10, 5)
+
+def generate_test_trace_list(length: int):
+    trace = generate_test_trace(3)
+    traces = [trace] * length
+    return TraceList(traces)
+
+def test_trace_list():
+    trace_list = generate_test_trace_list(5)
+
+    assert len(trace_list) == 5
+
+    with pytest.raises(MissingGenerator):
+        trace_list.generate_more(5)
+
+    first = trace_list[0]
+    trace_list.generator = generate_test_trace_list
+    trace_list.generate_more(5)
+    assert len(trace_list) == 10
+    assert trace_list[0] is first
+
+    action = trace_list[0].steps[0].action
+    usages = trace_list.get_usage(action)
+    for i, trace in enumerate(trace_list):
+        assert usages[i] == trace.get_usage(action)
+
+    print(trace_list)
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
