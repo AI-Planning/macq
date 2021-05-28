@@ -325,10 +325,10 @@ class Trace:
             token = Token(step=step, **kwargs)
             self.observations.append(token)
 
-    def update(self):
-        self.num_steps = len(self.steps)
-        self.fluents = self._get_fluents()
-        self.actions = self._get_actions()
-        self.num_fluents = len(self.fluents)
-        # update the placements of each step
-        for i in range(len(self.steps)):
+    # def update(self):
+    #     self.num_steps = len(self.steps)
+    #     self.fluents = self._get_fluents()
+    #     self.actions = self._get_actions()
+    #     self.num_fluents = len(self.fluents)
+    #     # update the placements of each step
+    #     for i in range(len(self.steps)):
