@@ -4,13 +4,41 @@ from ..trace import TraceList
 
 
 class Observer:
+    """Observer model extraction method.
+
+    Extracts a Model from state traces using the observer technique.  All
+    the fluents present in the traces are saved as is. The actions have their
+    preconditions, add effects, and delete effects found and added to the
+    object.
+
+    The preconditions of an action are defined as the (positive)
+    intersection of all pre-states to that action. The effects are the union
+    off all fluents that changed state from a pre-state to a post-state of an
+    action. Add effects are fluents that went from False to True, delete
+    effects are fluents that went from True to False.
+
+    Assumptions:
+        - fully deterministic
+        - fully observable
+        - no noise
+        - no conditional effects
+
+    """
+
     def __new__(cls, traces: TraceList):
+        """Creates a new Model object.
+
+        Args:
+            traces (TraceList):
+                The state traces to extract the model from.
+        """
         fluents = Observer._get_fluents(traces)
         actions = Observer._get_actions(traces)
         return Model(fluents, actions)
 
     @staticmethod
     def _get_fluents(traces: TraceList):
+        """Retrieves the set of fluents in the traces."""
         fluents = set()
         for trace in traces:
             for fluent in trace.fluents:
@@ -19,30 +47,33 @@ class Observer:
 
     @staticmethod
     def _get_actions(traces: TraceList):
-        action_effects = defaultdict(lambda: defaultdict(set))
+        """Retrieves and augments the set of actions in the traces."""
+        # Generator code already augments actions
+        # If that remains the case, will need to wipe the action's attributes
+        # here or earlier in Extract
+        action_pre_states = defaultdict(set)
         for trace in traces:
             for action in trace.actions:
-                if action is not None:
-                    sas_triples = trace.get_sas_triples(action)
+                if action is not None:  # Final step has no action
+                    sas_triples = trace.get_sas_triples(action)  # (S,A,S')
                     for sas in sas_triples:
-                        action_effects[action]["pre_states"].add(sas.pre_state)
+                        # Add all action pre-states to a set
+                        action_pre_states[action].add(sas.pre_state)
+                        # Directly add effects
                         delta = sas.pre_state.diff_from(sas.post_state)
-                        action_effects[action]["add"].update(delta.added)
-                        action_effects[action]["delete"].update(delta.deleted)
+                        action.update_add(delta.added)
+                        action.update_delete(delta.deleted)
 
-        for action, effects in action_effects.items():
-            precond = set.intersection(
-                *map(Observer._get_true_fluents, action_effects[action]["pre_states"])
-            )
+        for action, pre_states in action_pre_states.items():
+            # Find the (positive) intersection of the pre-states
+            precond = set.intersection(*map(Observer._filter_positive, pre_states))
             action.update_precond(precond)
 
-            action.update_add(effects["add"])
-            action.update_delete(effects["delete"])
-
-        return {action for action in action_effects.keys()}
+        return {action for action in action_pre_states.keys()}
 
     @staticmethod
-    def _get_true_fluents(state):
+    def _filter_positive(state):
+        """Returns the set of true fluents in a state."""
         true_fluents = set()
         for fluent, is_true in state.items():
             if is_true:

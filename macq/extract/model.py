@@ -30,15 +30,20 @@ class Model:
         self.actions = actions
 
     def __str__(self):
-        string = "Model:\n"
+        # Set the indent width
         indent = " " * 2
+        string = "Model:\n"
+        # Map fluents to a comma separated string of the fluent names
         string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
+        # Map the actions to a summary of their names, preconditions, add
+        # effects and delete effects
         string += f"{indent}Actions:\n"
-        for line in self.__get_action_details().splitlines():
+        for line in self._get_action_details().splitlines():
             string += f"{indent * 2}{line}\n"
         return string
 
-    def __get_action_details(self):
+    def _get_action_details(self):
+        # Set the indent width
         indent = " " * 2
         details = ""
         for action in self.actions:
@@ -84,10 +89,10 @@ class Model:
         Returns:
             A Model object matching the one specified by `string`.
         """
-        return Model.__from_json(loads(string))
+        return Model._from_json(loads(string))
 
     @classmethod
-    def __from_json(cls, data: dict):
-        fluents = set(map(Fluent.__from_json, data["fluents"]))
-        actions = set(map(Action.__from_json, data["actions"]))
+    def _from_json(cls, data: dict):
+        fluents = set(map(Fluent.from_json, data["fluents"]))
+        actions = set(map(Action.from_json, data["actions"]))
         return cls(fluents, actions)
