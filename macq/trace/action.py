@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 from .fluent import PlanningObject, Fluent
 
 
@@ -19,9 +19,9 @@ class Action:
         self,
         name: str,
         obj_params: List[PlanningObject],
-        precond: set[Fluent] = None,
-        add: set[Fluent] = None,
-        delete: set[Fluent] = None,
+        precond: Set[Fluent] = None,
+        add: Set[Fluent] = None,
+        delete: Set[Fluent] = None,
         cost: int = 0,
     ):
         """
@@ -67,7 +67,7 @@ class Action:
     def __hash__(self):
         return hash(str(self) + str(self.obj_params))
 
-    def __add_fluents(self, fluents: set[Fluent], condition: set[Fluent]):
+    def __add_fluents(self, fluents: Set[Fluent], condition: Set[Fluent]):
         """
         Checks the validity of a fluent before adding it to either the action's preconditions,
         add effects or delete effects.
@@ -90,7 +90,7 @@ class Action:
                     print(f'WARNING: Adding "{fluent}" as an effect of "{self.name}"')
         condition.update(fluents)
 
-    def update_precond(self, fluents: set[Fluent]):
+    def update_precond(self, fluents: Set[Fluent]):
         """
         Adds the specified list of fluents to the action's preconditions.
 
@@ -101,7 +101,7 @@ class Action:
         """
         self.__add_fluents(fluents, self.precond)
 
-    def update_add(self, fluents: set[Fluent]):
+    def update_add(self, fluents: Set[Fluent]):
         """
         Adds the specified list of fluents to the action's add effects.
 
@@ -112,7 +112,7 @@ class Action:
         """
         self.__add_fluents(fluents, self.add)
 
-    def update_delete(self, fluents: set[Fluent]):
+    def update_delete(self, fluents: Set[Fluent]):
         """
         Adds the specified list of fluents to the action's delete effects.
 
