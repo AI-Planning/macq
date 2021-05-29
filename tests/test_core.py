@@ -10,9 +10,7 @@ InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
-
 # HELPER FUNCTIONS
-
 
 def generate_test_fluents(num_fluents: int):
     """
