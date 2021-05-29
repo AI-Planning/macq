@@ -1,6 +1,6 @@
 from collections import defaultdict
 from .model import Model
-from ..trace import TraceList
+from ..trace import TraceList, Action
 
 
 class Observer:
@@ -53,6 +53,7 @@ class Observer:
         # here or earlier in Extract
         action_pre_states = defaultdict(set)
         for trace in traces:
+            action: Action
             for action in trace.actions:
                 if action is not None:  # Final step has no action
                     sas_triples = trace.get_sas_triples(action)  # (S,A,S')
