@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from .fluent import PlanningObject, Fluent
 
 
@@ -16,13 +16,13 @@ class Action:
             The list of objects the action acts on.
         cost (int):
             The cost to perform the action.
-        precond (set):
+        precond (set | None):
             The set of fluents that constitute the preconditions to perform
             the action. Found during model extraction.
-        add (set):
+        add (set | None):
             The set of fluents that constitute the add effects of the action.
             Found during model extraction.
-        delete (set):
+        delete (set | None):
             The set of fluents that constitute the delete effects of the
             action. Found during model extraction.
     """
@@ -39,9 +39,9 @@ class Action:
         name: str,
         obj_params: List[PlanningObject],
         cost: int = 0,
-        precond: set[Fluent] = None,
-        add: set[Fluent] = None,
-        delete: set[Fluent] = None,
+        precond: Optional[set[Fluent]] = None,
+        add: Optional[set[Fluent]] = None,
+        delete: Optional[set[Fluent]] = None,
     ):
         """Initializes an Action with the parameters provided.
 
@@ -54,16 +54,16 @@ class Action:
             obj_params (list):
                 The list of objects the action acts on.
             cost (int):
-                The cost to perform the action.
+                Optional; The cost to perform the action. Defaults to 0.
             precond (set):
-                The set of fluents that constitute the preconditions to perform
-                the action.
+                Optional; The set of fluents that constitute the preconditions to perform
+                the action. Defaults to None.
             add (set):
-                The set of fluents that constitute the add effects of the
-                action.
+                Optional; The set of fluents that constitute the add effects of the
+                action. Defaults to None.
             delete (set):
-                The set of fluents that constitute the delete effects of the
-                action.
+                Optional; The set of fluents that constitute the delete effects of the
+                action. Defaults to None.
         """
         self.name = name
         self.obj_params = obj_params

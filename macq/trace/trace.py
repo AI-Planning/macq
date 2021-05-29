@@ -58,23 +58,29 @@ class Trace:
         self.observations = []
 
     def __str__(self):
+        indent = " " * 2
         string = cleandoc(
             f"""
             Trace:
-                Attributes:
-                    {self.num_steps} steps
-                    {self.num_fluents} fluents
-                Steps:
+            {indent}Attributes:
+            {indent*2}{self.num_steps} steps
+            {indent*2}{self.num_fluents} fluents
+            {indent}Steps:
             """
         )
         string += "\n"
 
         # Dynamically get the spacing, 2n time
         state_len = max([len(str(step.state)) for step in self]) + 4
-        string += f"        {'Step':<5} {'State':^{state_len}} {'Action':<8}\n"
+        string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
+        string += "\n"
 
+        # Create step string representation here, so formatting is consistent
         for i, step in enumerate(self):
-            string += f"        {i+1:<5} {str(step.state):<{state_len}} {str(step.action):<8}\n"
+            string += (
+                f"{indent*2}{i+1:<5} {str(step.state):<{state_len}} "
+                f"{str(step.action):<8}\n"
+            )
 
         return string
 
