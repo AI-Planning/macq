@@ -35,8 +35,8 @@ class Step:
         return string
 
     def base_fluents(self):
-        # Is this useful?
-        # each extract method has its own "get fluents"
+        # Is this useful? Not used anywhere
+        # Each extract method has its own "get fluents"
         # if we want a general get fluents shouldn't it be on TraceList?
         fluents = []
         for fluent in self.state.fluents:
@@ -44,6 +44,6 @@ class Step:
         return fluents
 
     def base_action(self):
-        # Is this useful?
+        # Is this useful? Not used anywhere
         # could just do trace[i].action.name
         return self.action.name

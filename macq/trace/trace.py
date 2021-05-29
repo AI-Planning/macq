@@ -13,42 +13,36 @@ class SAS:
 
 
 class Trace:
-    """
-    Class for a Trace, which consists of each Step in a generated solution.
+    """A state trace of a planning problem.
 
+    A `list`-like object, where each element is a step of the state trace.
+
+    Attributes:
+        steps (list):
+            The list of Step objcts constituting the trace.
+        num_steps (int):
+            The number of steps in the trace.
+        num_fluents (int):
+            The number of fluents in the trace.
+        fluents (set):
+            The set of fluents in the trace.
+        actions (set):
+            The set of actions in the trace.
+        observations (list):
+            A tokenized version of the steps list.
     """
 
     class InvalidCostRange(Exception):
-        """
-        Exception raised for incorrect user input for the cost range.
-        """
-
         def __init__(self, message):
             super().__init__(message)
 
     def __init__(self, steps: List[Step] = []):
-        """
-        Creates a Trace object.
+        """Initializes a Trace with an optional list of steps.
 
-        Arguments
-        ---------
-        steps : List of Steps (optional)
-            The list of Step objects that make up the trace.
-
-        Attributes
-        ----------
-        num_steps : int
-            The number of steps used.
-        num_fluents : int
-            The number of fluents used.
-        fluents : List of str
-            The list of the names of all fluents used.
-            Information on the values of fluents are found in the steps.
-        actions: List of Actions
-            The list of the names of all actions used.
-            Information on the preconditions/effects of actions are found in the steps.
-        observations: List of Observations
-            The set of observation tokens, tokenized from the steps.
+        Args:
+            steps (list):
+                Optional; The list of steps in the trace. Defaults to an empty
+                `list`.
         """
         self.steps = steps
         self.num_steps = len(steps)
@@ -59,6 +53,7 @@ class Trace:
 
     def __str__(self):
         indent = " " * 2
+        # Attribute summary
         string = cleandoc(
             f"""
             Trace:
@@ -139,106 +134,79 @@ class Trace:
         self.steps.sort(reverse=reverse, key=key)
 
     def add_steps(self, steps: List[Step]):
-        """
-        Class for a Trace, which consists of each Step in a generated solution.
+        """Adds steps to the trace.
 
-        Arguments
-        ---------
-        steps : List of Steps (optional)
-            The list of Step objects to be added to the trace.
+        Args:
+            steps (list):
+                The ordered list of steps to append to this trace.
         """
         self.steps.extend(steps)
 
     def _get_fluents(self):
-        """
-        Retrieves the fluents used in this trace.
-
-        Returns
-        -------
-        list : Fluent
-            Returns a list of all the fluents used in this trace.
-        """
         fluents = set()
         for step in self:
             for fluent in step.state.fluents:
                 fluents.add(fluent)
-        return list(fluents)
+        return fluents
 
     def _get_actions(self):
-        """
-        Retrieves the actions used in this trace.
-
-        Returns
-        -------
-        list : Action
-            Returns a list of all the actions used in this trace.
-        """
         actions = set()
         for step in self.steps:
             actions.add(step.action)
-        return list(actions)
+        return actions
 
-    def get_prev_states(self, action: Action):
-        """
-        Returns a list of the states of the trace before this action took place.
+    def get_pre_states(self, action: Action):
+        """Retrieves the list of states prior to the action in this trace.
 
-        Arguments
-        ---------
-        action : Action
-            An `Action` object.
+        Args:
+            action (Action):
+                The action to retrieve pre-states for.
 
-        Returns
-        -------
-        prev_states : List of States
-            A list of states before this action took place.
+        Returns:
+            The list of states prior to the action being performed in this
+            trace.
         """
         prev_states = []
-        for step in self.steps:
+        for step in self:
             if step.action == action:
                 prev_states.append(step.state)
         return prev_states
 
     def get_post_states(self, action: Action):
-        """
-        Returns a list of the states of the trace after the given action took place.
+        """Retrieves the list of states after the action in this trace.
 
-        Arguments
-        ---------
-        action : Action
-            An `Action` object.
+        Args:
+            action (Action):
+                The action to retrieve post-states for.
 
-        Returns
-        -------
-        post_states : List of States
-            A list of states after this action took place.
+        Returns:
+            The list of states after the action was performed in this trace.
         """
         post_states = []
-        for i in range(self.num_steps - 1):
-            if self.steps[i].action == action:
-                post_states.append(self.steps[i + 1].state)
+        for i, step in enumerate(self):
+            if step.action == action:
+                post_states.append(self[i + 1].state)
         return post_states
 
     def get_sas_triples(self, action: Action) -> List[SAS]:
-        """
-        Returns a list of tuples where each tuple contains the state of the trace
-        before the action, the action, and the state of the trace after the action.
+        """Retrieves the list of (S,A,S') triples for the action in this trace.
 
-        Arguments
-        ---------
-        action : Action
-            An `Action` object.
+        In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
+        the post-state.
 
-        Returns
-        -------
-        sas_triples : List of tuples
-            A list of tuples in the format (previous state, action, post-state).
+        Args:
+            action (Action):
+                The action to retrieve (S,A,S') triples for.
+
+        Returns:
+            A `SAS` object, containing the `pre_state`, `action`, and
+            `post_state`.
         """
         sas_triples = []
         for i, step in enumerate(self):
             if step.action == action:
                 triple = SAS(step.state, action, self[i + 1].state)
                 sas_triples.append(triple)
-
         return sas_triples
 
     def get_total_cost(self):
