@@ -1,4 +1,3 @@
-from macq.extract import Extract, modes
 from macq.trace import *
 
 
@@ -6,8 +5,6 @@ def real_trace_list():
     # Objects
     blockA = PlanningObject("block", "A")
     blockB = PlanningObject("block", "B")
-
-    objects = [blockA, blockB]
 
     # Fluents
     a_clear = Fluent("A clear", [blockA])
@@ -20,10 +17,10 @@ def real_trace_list():
     b_on_a = Fluent("B on A", [blockA, blockB])
 
     # Actions
-    pick_up_a = Action("pick up A", [blockA])
-    pick_up_b = Action("pick up B", [blockB])
-    stack_a_b = Action("stack A on B", [blockA, blockB])
-    stack_b_a = Action("stack B on A", [blockB, blockA])
+    pick_up_a = Action("pick up", [blockA])
+    pick_up_b = Action("pick up", [blockB])
+    stack_a_b = Action("stack", [blockA, blockB])
+    stack_b_a = Action("stack", [blockB, blockA])
 
     # Traces
     t1 = Trace(

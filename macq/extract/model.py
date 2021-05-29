@@ -18,7 +18,7 @@ class Model:
     """
 
     def __init__(self, fluents: set[Fluent], actions: set[Action]):
-        """Initializes a Model with the set of fluents and set of actions.
+        """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
             fluents (set):
