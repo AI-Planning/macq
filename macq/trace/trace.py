@@ -45,6 +45,7 @@ class Trace:
                 `list`.
         """
         self.steps = steps
+        # trace is list-like, so is this neccessary? can do len(trace) instend
         self.num_steps = len(steps)
         self.fluents = self._get_fluents()
         self.actions = self._get_actions()
@@ -210,35 +211,28 @@ class Trace:
         return sas_triples
 
     def get_total_cost(self):
-        """
-        Returns the total cost of all actions used in this Trace.
+        """Calculates the total cost of this trace.
 
-        Returns
-        -------
-        sum : int
-            The total cost of all actions used.
+        Returns:
+            The total cost of all actions performed in the trace.
         """
         sum = 0
         for step in self.steps:
             sum += step.action.cost
         return sum
 
-    def get_cost_range(self, start: int, end: int):
-        """
-        Returns the total cost of the actions in the specified range of this Trace.
-        The range starts at 1 and ends at the number of steps.
+    def get_slice_cost(self, start: int, end: int):
+        """Calculates the total cost of a slice of this trace.
 
-        Arguments
-        ---------
-        start : int
-            The start of the specified range.
-        end: int
-            The end of the specified range.
+        Args:
+            start (int):
+                The start of the slice range. 1 <= start <= end.
+            end: int
+                The end of the slice range. start <= end <= n, where n is the
+                length of the trace (number of steps).
 
-        Returns
-        -------
-        sum : int
-            The total cost of all actions in the specified range.
+        Returns:
+            The total cost of the slice of the trace.
         """
 
         if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
@@ -256,35 +250,29 @@ class Trace:
         return sum
 
     def get_usage(self, action: Action):
-        """
-        Returns the percentage of the number of times this action was used compared to the total
-        number of actions taken.
+        """Calculates how often an action was performed in this trace.
 
-        Arguments
-        ---------
-        action : Action
-            An `Action` object.
+        Args:
+            action (Action):
+                The action to find the usage of.
 
-        Returns
-        -------
-        percentage : float
-            The percentage of the number of times this action was used compared to the total
-            number of actions taken.
+        Returns:
+            The frequency of the action in this trace. A percentage, calculated
+            as the number of occurences of the action divided by the length of
+            the trace (number of steps).
         """
         sum = 0
-        for step in self.steps:
+        for step in self:
             if step.action == action:
                 sum += 1
-        return sum / self.num_steps
+        return sum / len(self)
 
     def tokenize(self, Token: Type[Observation]):
-        """
-        Creates the observation tokens using the token provided by the Observation.
+        """Tokenizes the steps in this trace.
 
         Arguments
-        ---------
-        Token : Observation subclass
-            An `Observation` subclass.
+            A subclass of `Observation`, defining the method of tokenization
+            for the steps.
         """
         for step in self.steps:
             token = Token(step)
