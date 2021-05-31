@@ -26,11 +26,7 @@
         
     )
 
-    (:action empty_test
-     :parameters ()
-     :precondition ()
-     :effect ()
-    )
+    
 
     
     (:action add_song
@@ -48,6 +44,14 @@
      :effect (and
         (in_playlist ?add)
         (not (empty )))
+    )
+
+
+    (:action empty_test
+     :parameters ()
+     :precondition (empty )
+     :effect (and
+        (empty ))
     )
 
 )

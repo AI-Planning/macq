@@ -60,12 +60,15 @@ class Generate:
             raw_types = str(actions[act])
             # get the type/object the action is acting on; i.e. ?x: object,?y: object
             raw_types = raw_types[len(act) + 1: -1]
-            # split up the objects if they are multiple; i.e. ['?x: object', '?y: object']
-            raw_types = raw_types.split(',')
             params = []
-            for raw_act in raw_types:
-                # get the object types; i.e. retrieve ['object', 'object'] as stack takes two 'object' types
-                params.append(raw_act.split(' ')[1])
+            # only need to retrieve type information if this action takes parameters;
+            # otherwise the parameters will remain an empty list
+            if raw_types != '':
+                # split up the objects if they are multiple; i.e. ['?x: object', '?y: object']
+                raw_types = raw_types.split(',')
+                for raw_act in raw_types:
+                    # get the object types; i.e. retrieve ['object', 'object'] as stack takes two 'object' types
+                    params.append(raw_act.split(' ')[1])
             # add this action and its typing to the dictionary
             extracted_act_types[act] = params
         return extracted_act_types

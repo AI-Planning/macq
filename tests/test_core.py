@@ -380,6 +380,6 @@ if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent
     dom = (base / 'tests/pddl_testing_files/playlist_domain_modified.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/playlist_problem_modified.pddl').resolve()
     vanilla = VanillaSampling(dom, prob, 5, 1)
     #print(vanilla.traces)
