@@ -4,17 +4,20 @@ from . import Trace
 
 
 class TraceList:
-    """
-    A TraceList object is a list-like object that holds information about a
-    series of traces.
+    """A collection of traces.
+
+    A `list`-like object, where each element is a `Trace` of the same planning
+    problem.
+
+
+    Attributes:
+        traces (list):
+            The list of `Trace` objects.
+        generator (function | None):
+            The function used to generate the traces.
     """
 
     class MissingGenerator(Exception):
-        """
-        A custom exception, thrown when a user attempts to generate more traces
-        on a trace list without providing a generator function.
-        """
-
         def __init__(
             self,
             trace_list,
@@ -29,16 +32,13 @@ class TraceList:
         traces: List[Trace] = [],
         generator: Callable = None,
     ):
-        """
-        Creates a TraceList object. This stores a list of traces and optionally
-        the function used to generate the traces.
+        """Initializes a TraceList with a list of traces and a generator.
 
-        Attributes
-        ----------
-        traces : list
-            The list of `Trace` objects.
-        generator : funtion | None
-            (Optional) The function used to generate the traces.
+        Args:
+            traces (list):
+                Optional; The list of `Trace` objects.
+            generator (function):
+                Optional; The function used to generate the traces.
         """
         self.traces: List[Trace] = traces
         self.generator = generator
@@ -105,12 +105,33 @@ class TraceList:
         self.traces.sort(reverse=reverse, key=key)
 
     def generate_more(self, num: int):
+        """Generates more traces using the generator function.
+
+        Args:
+            num (int):
+                The number of additional traces to generate.
+
+        Raises:
+            MissingGenerator: Cannot generate more traces if the generator
+            function is not provided.
+        """
         if self.generator is None:
             raise self.MissingGenerator(self)
 
         self.traces.extend(self.generator(num))
 
     def get_usage(self, action: Action):
+        """Calculates how often an action was performed in each of the traces.
+
+        Args:
+            action (Action):
+                The action to find the usage of.
+
+        Returns:
+            The frequency of the action in each of the traces. A percentage,
+            calculated as the number of occurences of the action divided by the
+            length of the trace (number of steps).
+        """
         usages = []
         for trace in self:
             usages.append(trace.get_usage(action))
