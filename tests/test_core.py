@@ -7,6 +7,7 @@ from macq.generate.pddl import VanillaSampling
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
+
 from typing import List
 import pytest
 
@@ -362,7 +363,7 @@ def generate_test_trace_list(length: int):
     trace = generate_test_trace(3)
     traces = [trace] * length
     return TraceList(traces)
-
+  
 def test_trace_list():
     trace_list = generate_test_trace_list(5)
 
@@ -391,3 +392,4 @@ if __name__ == "__main__":
     prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
     vanilla = VanillaSampling(dom, prob, 5, 5)
     print(vanilla.traces)
+

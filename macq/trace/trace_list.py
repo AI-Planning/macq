@@ -57,7 +57,7 @@ class TraceList:
             rep += repr(trace)
         rep += "]"
         return rep
-
+      
     def __len__(self):
         return len(self.traces)
 
