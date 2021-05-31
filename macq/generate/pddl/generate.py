@@ -43,21 +43,30 @@ class Generate:
         Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
 
+        i.e. given the standard blocks problem/domain, this function would return something like:
+        {'pick-up': ['block'], 'put-down': ['block'], 'stack': ['block', 'block'], 'unstack': ['block', 'block']}
+
         Returns
         -------
         extracted_act_types : dict
             The dictionary that indicates the types of all the objects each action in
             the problem acts upon.
         """
+        # retrieve all actions (actions will be an OrderedDict of all actions in the domain)
         actions = self.problem.actions
         extracted_act_types = {}
         for act in actions:
+            # retrieves each action; i.e. stack(?x: object,?y: object)
             raw_types = str(actions[act])
+            # get the type/object the action is acting on; i.e. ?x: object,?y: object
             raw_types = raw_types[len(act) + 1: -1]
+            # split up the objects if they are multiple; i.e. ['?x: object', '?y: object']
             raw_types = raw_types.split(',')
             params = []
             for raw_act in raw_types:
+                # get the object types; i.e. retrieve ['object', 'object'] as stack takes two 'object' types
                 params.append(raw_act.split(' ')[1])
+            # add this action and its typing to the dictionary
             extracted_act_types[act] = params
         return extracted_act_types
 

@@ -1,11 +1,13 @@
 from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
+from macq.generate.pddl import VanillaSampling
 
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
 from typing import List
+from pathlib import Path
 import pytest
 
 # HELPER FUNCTIONS
@@ -375,4 +377,9 @@ def test_trace_list():
 
 
 if __name__ == "__main__":
-    test_trace_list()
+    # exit out to the base macq folder so we can get to /tests 
+    base = Path(__file__).parent.parent
+    dom = (base / 'tests/pddl_testing_files/playlist_domain_modified.pddl').resolve()
+    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    vanilla = VanillaSampling(dom, prob, 5, 1)
+    #print(vanilla.traces)
