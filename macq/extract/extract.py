@@ -13,7 +13,7 @@ class modes(Enum):
 
 
 class Extract:
-    """Extract models from traces.
+    """Extracts models from traces.
 
     The Extract class uses an extraction method to retrieve an action Model
     from state traces.
@@ -26,8 +26,10 @@ class Extract:
         technique.
 
         Args:
-            traces (TraceList): The state traces to extract the model from.
-            mode (Enum): The extraction technique to use.
+            traces (TraceList):
+                The state traces to extract the model from.
+            mode (Enum):
+                The extraction technique to use.
 
         Returns:
             A Model object. The model's characteristics are determined by the

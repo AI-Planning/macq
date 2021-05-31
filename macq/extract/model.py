@@ -1,39 +1,49 @@
 from json import dump, dumps, loads
-from typing import List
 from ..trace import Fluent, Action
 
 
 class Model:
-    """
-    A Model object represents a planning model. Contains information about the
-    fluents, actions, initial state, and goal of a problem.
+    """Action model.
+
+    An action model representing a planning problem. The characteristics of the
+    model are dependent on the extraction technique used to obtain the model.
+
+    Attributes:
+        fluents (set):
+            The set of fluents in the problem.
+        actions (set):
+            The set of actions in the problem. Actions include their
+            preconditions, add effects, and delete effects. The nature of the
+            action attributes characterize the model.
     """
 
-    def __init__(self, fluents: List[Fluent], actions: List[Action]):
-        """
-        Creates a Model object. This stores a list of fluents and actions that
-        represent a planning model.
+    def __init__(self, fluents: set[Fluent], actions: set[Action]):
+        """Initializes a Model with a set of fluents and a set of actions.
 
-        Attributes
-        ----------
-        fluents : list
-            The list of `Fluent` objects.
-        actions : list
-            The list of `Action` objects.
+        Args:
+            fluents (set):
+                The set of fluents in the model.
+            actions (set):
+                The set of actions in the model.
         """
         self.fluents = fluents
         self.actions = actions
 
     def __str__(self):
-        string = "Model:\n"
+        # Set the indent width
         indent = " " * 2
+        string = "Model:\n"
+        # Map fluents to a comma separated string of the fluent names
         string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
+        # Map the actions to a summary of their names, preconditions, add
+        # effects and delete effects
         string += f"{indent}Actions:\n"
         for line in self._get_action_details().splitlines():
             string += f"{indent * 2}{line}\n"
         return string
 
     def _get_action_details(self):
+        # Set the indent width
         indent = " " * 2
         details = ""
         for action in self.actions:
@@ -51,55 +61,38 @@ class Model:
         return details
 
     def serialize(self, filepath: str = None):
-        """
-        Serializes the model into a json string. If a filepath is supplied,
-        the string is also saved to that file.
+        """Serializes the model into a json string.
 
-        Arguments
-        ---------
-        filepath : str
-            The file to save the json object to.
+        Args:
+            filepath (str):
+                Optional; If supplied, the json string will be written to the
+                filepath.
 
-        Returns
-        -------
-        JSON representation of the model object : str
+        Returns:
+            A string in json format representing the model.
         """
         if filepath is not None:
             with open(filepath, "w") as fp:
                 dump(self, fp=fp, indent=2, default=lambda o: o.__dict__)
 
+        # BROKEN
         return dumps(self, indent=2, default=lambda o: o.__dict__)
 
     @staticmethod
-    def deserialize(string):
-        """
-        Deserializes a json string into a Model object.
+    def deserialize(string: str):
+        """Deserializes a json string into a Model.
 
-        Arguments
-        ---------
-        string : str
-            The json string representing a model.
+        Args:
+            string (str):
+                The json string representing a model.
 
-        Returns
-        -------
-        The Model object represented by the string : Model
+        Returns:
+            A Model object matching the one specified by `string`.
         """
-        return Model.from_json(loads(string))
+        return Model._from_json(loads(string))
 
     @classmethod
-    def from_json(cls, data: dict):
-        """
-        Converts a json object to a Model object.
-
-        Arguments
-        ---------
-        data : dict
-            The json object.
-
-        Returns
-        -------
-        The Model corresponding model object : Model
-        """
-        fluents = list(map(Fluent.from_json, data["fluents"]))
-        actions = list(map(Action.from_json, data["actions"]))
+    def _from_json(cls, data: dict):
+        fluents = set(map(Fluent.from_json, data["fluents"]))
+        actions = set(map(Action.from_json, data["actions"]))
         return cls(fluents, actions)

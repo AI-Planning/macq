@@ -10,22 +10,23 @@ class DeltaState:
 
 
 class State:
-    """State representation.
+    """State in a trace.
 
-    A Dict-like object. Maps `Fluent` objects to boolean values, representing
+    A dict-like object. Maps `Fluent` objects to boolean values, representing
     the state for a `Step` in a `Trace`.
 
     Attributes:
-        fluents (dict): A mapping of `Fluent` objects to their value in this
-        state.
+        fluents (dict):
+            A mapping of `Fluent` objects to their value in this state.
     """
 
     def __init__(self, fluents: dict[Fluent, bool] = {}):
         """Initializes State with an optional fluent-value mapping.
 
         Args:
-            fluents (dict): Optional; A mapping of `Fluent` objects to their
-            value in this state. Defaults to an empty `dict`.
+            fluents (dict):
+                Optional; A mapping of `Fluent` objects to their value in this
+                state. Defaults to an empty `dict`.
         """
         self.fluents = fluents
 
@@ -53,9 +54,6 @@ class State:
     def __contains__(self, key):
         return self.fluents.__contains__(key)
 
-    def __repr__(self):
-        return repr(self.fluents)
-
     def clear(self):
         return self.fluents.clear()
 
@@ -78,12 +76,17 @@ class State:
         return self.fluents.items()
 
     def diff_from(self, other: State):
-        """
+        """Determines the delta-state between this state and `other`.
 
         Args:
-            other (State): The secondary state to compare this one to.
+            other (State):
+                The state to compare this one to.
 
         Returns:
+            A `DeltaState` object, containing two sets: `added` and `deleted`.
+            The added set contains the list of fluents that were False in this
+            state and True in `other`. The deleted set contains the list of
+            fluents that were True in this state and False in `other`.
         """
         added = set()
         deleted = set()

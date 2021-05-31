@@ -2,64 +2,71 @@ from typing import List
 
 
 class PlanningObject:
+    """Objects of a planning domain.
+
+    Attributes:
+        obj_type (str):
+            The type of object in the problem domain.
+            Example: "block".
+        name (str):
+            The name of the object.
+            Example: "A"
+    """
+
     def __init__(self, obj_type: str, name: str):
+        """Initializes a PlanningObject with a type and a name.
+
+        Args:
+            obj_type (str):
+                The type of object in the problem domain.
+            name (str):
+                The name of the object.
+        """
         self.obj_type = obj_type
         self.name = name
 
     def __str__(self):
-        return self.name
+        return " ".join([self.obj_type, self.name])
 
     @classmethod
     def from_json(cls, data):
-        """
-        Converts a json object to a Custom object.
-
-        Arguments
-        ---------
-        data : dict
-            The json object.
-
-        Returns
-        -------
-        The corresponding Custom object : CustomObject
-        """
+        """Converts a json object to a PlanningObject."""
         return cls(**data)
 
 
 class Fluent:
-    def __init__(self, name: str, objects: List[PlanningObject]):
-        """
-        Class to handle a predicate and the objects it is applied to.
+    """Fluents of a planning domain.
 
-        Arguments
-        ---------
-        name : str
-            The name of the predicate.
-        objects : list
-            The list of objects this predicate applies to.
+    Attributes:
+        name (str):
+            The name of the fluent.
+            Example: "holding".
+        objects (list):
+            The objects this fluent applies to.
+            Example: Block A.
+    """
+
+    def __init__(self, name: str, objects: List[PlanningObject]):
+        """Initializes a Fluent with a name and a list of objects.
+
+        Args:
+        name (str):
+            The name of the fluent.
+        objects (list):
+            The objects this fluent applies to.
         """
         self.name = name
         self.objects = objects
 
     def __str__(self):
-        return self.name
+        return f"{self.name} {' '.join(map(str, self.objects))}"
 
     def __hash__(self):
+        # Order of objects is important!
         return hash(str(self))
 
     @classmethod
     def from_json(cls, data):
-        """
-        Converts a json object to a Fluent object.
-
-        Arguments
-        ---------
-        data : dict
-            The json object.
-
-        Returns
-        -------
-        The corresponding Fluent object : Fluent
-        """
+        """Converts a json object to a Fluent."""
         objects = list(map(PlanningObject.from_json, data["objects"]))
         return cls(data["name"], objects)

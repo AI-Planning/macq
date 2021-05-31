@@ -296,19 +296,19 @@ def test_trace_total_cost():
 # test that the cost range is working correctly
 def test_trace_valid_cost_range():
     trace = generate_test_trace(5)
-    assert trace.get_cost_range(1, 3) == 6
-    assert trace.get_cost_range(2, 3) == 5
-    assert trace.get_cost_range(1, 5) == 15
-    assert trace.get_cost_range(4, 5) == 9
+    assert trace.get_slice_cost(1, 3) == 6
+    assert trace.get_slice_cost(2, 3) == 5
+    assert trace.get_slice_cost(1, 5) == 15
+    assert trace.get_slice_cost(4, 5) == 9
 
 
 # test that incorrect provided cost ranges throw errors
 def test_trace_invalid_cost_range():
     trace = generate_test_trace(3)
     with pytest.raises(InvalidCostRange):
-        trace.get_cost_range(3, 1)
-        trace.get_cost_range(0, 2)
-        trace.get_cost_range(1, 5)
+        trace.get_slice_cost(3, 1)
+        trace.get_slice_cost(0, 2)
+        trace.get_slice_cost(1, 5)
 
 
 # test trace action usage
