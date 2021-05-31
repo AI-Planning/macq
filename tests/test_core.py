@@ -350,7 +350,8 @@ def test_trace_tokenize():
     assert trace.observations != step1
 
 # test the timer wrapper on vanilla trace generation
-def test_timer_vanilla_wrapper():
+
+def test_timer_wrapper_vanilla():
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent
     dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
@@ -363,7 +364,6 @@ def generate_test_trace_list(length: int):
     trace = generate_test_trace(3)
     traces = [trace] * length
     return TraceList(traces)
-
 
 def test_trace_list():
     trace_list = generate_test_trace_list(5)
@@ -384,7 +384,7 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
     print(trace_list)
-    
+
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
     base = Path(__file__).parent.parent
@@ -393,3 +393,5 @@ if __name__ == "__main__":
     vanilla = VanillaSampling(dom, prob, 5, 1)
     print(vanilla.traces)
     vanilla.traces[0].tokenize(IdentityObservation)
+    vanilla = VanillaSampling(dom, prob, 5, 5)
+    print(vanilla.traces)

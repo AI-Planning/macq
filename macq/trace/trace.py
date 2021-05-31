@@ -311,7 +311,7 @@ class Trace:
         for step in self.steps:
             token = Token(step=step, **kwargs)
             self.observations.append(token)
-
+            
     def update(self):
         self.num_steps = len(self.steps)
         self.fluents = self.base_fluents()
