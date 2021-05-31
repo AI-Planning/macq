@@ -389,7 +389,7 @@ if __name__ == "__main__":
     prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
     vanilla = VanillaSampling(dom, prob, 5, 1)
     print(vanilla.traces)
-    #vanilla.traces[0].tokenize(IdentityObservation)
-    
+    vanilla.traces[0].tokenize(IdentityObservation)
+    print(vanilla.traces[0].observations)
 
    
