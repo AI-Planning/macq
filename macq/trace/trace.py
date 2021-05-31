@@ -157,14 +157,15 @@ class Trace:
 
         Returns
         -------
-        list : Fluent
-            Returns a list of all the fluents used in this trace.
+        set : set of fluent dicts
+            Returns a set of all the fluents used in this trace.
         """
-        fluents = set()
+        
+        fluents_set = set()
         for step in self:
-            for fluent in step.state.fluents:
-                fluents.add(fluent)
-        return list(fluents)
+            for fluent in step.state.keys():
+                fluents_set.add(fluent)
+        return fluents_set
 
     def _get_actions(self):
         """
@@ -172,13 +173,13 @@ class Trace:
 
         Returns
         -------
-        list : Action
-            Returns a list of all the actions used in this trace.
+        set : Action
+            Returns a set of all the actions used in this trace.
         """
         actions = set()
         for step in self.steps:
             actions.add(step.action)
-        return list(actions)
+        return actions
 
     def get_prev_states(self, action: Action):
         """
@@ -240,7 +241,6 @@ class Trace:
             if step.action == action:
                 triple = SAS(step.state, action, self[i + 1].state)
                 sas_triples.append(triple)
-
         return sas_triples
 
     def get_total_cost(self):
