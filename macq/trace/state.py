@@ -33,7 +33,7 @@ class State:
     def __str__(self):
         string = ""
         for fluent, value in self.items():
-            string += f"{fluent.name} ({value}), "
+            string += f"{fluent} ({value}), "
         return string[:-2]
 
     def __len__(self):
