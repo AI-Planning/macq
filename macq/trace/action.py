@@ -27,13 +27,6 @@ class Action:
             action. Found during model extraction.
     """
 
-    class InvalidFluent(Exception):
-        def __init__(
-            self,
-            message="Fluent does not reference any of the objects of the action.",
-        ):
-            super().__init__(message)
-
     def __init__(
         self,
         name: str,
@@ -91,18 +84,6 @@ class Action:
         # Order of obj_params is important!
         return hash(str(self))
 
-    def _add_fluents(self, fluents: set[Fluent], condition: set[Fluent]):
-        valid = False
-        for fluent in fluents:
-            for obj in fluent.objects:
-                for param in self.obj_params:
-                    if obj == param:
-                        valid = True
-                if not valid:
-                    # raise self.InvalidFluent()
-                    print(f'WARNING: Adding "{fluent}" as an effect of "{self.name}"')
-        condition.update(fluents)
-
     def update_precond(self, fluents: set[Fluent]):
         """Adds preconditions to the action.
 
@@ -110,7 +91,7 @@ class Action:
             fluents (set):
                 The set of fluents to be added to the action's preconditions.
         """
-        self._add_fluents(fluents, self.precond)
+        self.precond.update(fluents)
 
     def update_add(self, fluents: set[Fluent]):
         """Adds add effects to the action.
@@ -119,7 +100,7 @@ class Action:
             fluents (set):
                 The set of fluents to be added to the action's add effects.
         """
-        self._add_fluents(fluents, self.add)
+        self.add.update(fluents)
 
     def update_delete(self, fluents: set[Fluent]):
         """Adds delete effects to the action.
@@ -128,7 +109,7 @@ class Action:
             fluents (set):
                 The set of fluents to be added to the action's delete effects.
         """
-        self._add_fluents(fluents, self.delete)
+        self.delete.update(fluents)
 
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.
