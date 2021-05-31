@@ -4,37 +4,38 @@
 name: Python package
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 jobs:
-  build:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: [3.7, 3.8, 3.9]
 
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.7, 3.8, 3.9]
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  python -m pip install black pytest
+                  if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+                  pip install -e .[dev]
+            - name: Lint with black
+              run: |
+                  black . --check
+            - name: Test with pytest
+              run: |
+                  pytest
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install black pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with black
-      run: |
-        black . --check
-    - name: Test with pytest
-      run: |
-        pytest
 #     - name: Build and publish
 #       env:
 #           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
