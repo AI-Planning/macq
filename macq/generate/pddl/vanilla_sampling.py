@@ -13,7 +13,7 @@ class VanillaSampling(Generate):
         #TEST
     
         for act in self.instance.operators:
-            print(act)
+            #print(act)
             macq_action = self._tarski_act_to_macq(act)
             #print(macq_action)
         print('DONE TEST')

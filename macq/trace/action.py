@@ -84,7 +84,7 @@ class Action:
         for fluent in fluents:
             for obj in fluent.objects:
                 # if this fluent takes no parameters it is automatically valid
-                if len(fluent.objects) == 1 and fluent.objects[0].name == '' and fluent.objects[0].type == '':
+                if len(fluent.objects) == 1 and fluent.objects[0].name == '' and fluent.objects[0].obj_type == '':
                     valid = True
                 else:
                     for param in self.obj_params:

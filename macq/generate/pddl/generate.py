@@ -21,6 +21,7 @@ class Generate:
         reader.parse_domain(dom)
         self.problem = reader.parse_instance(prob)
         self.lang = self.problem.language
+        # print(reader.parse_string('(has_genre ?x1 - song ?x2 - genre)', 'single_predicate_definition'))
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
@@ -43,7 +44,7 @@ class Generate:
         Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
 
-        i.e. given the standard blocks problem/domain, this function would return something like:
+        i.e. given the standard blocks problem/domain, this function would return:
         {'pick-up': ['block'], 'put-down': ['block'], 'stack': ['block', 'block'], 'unstack': ['block', 'block']}
 
         Returns
@@ -78,6 +79,9 @@ class Generate:
         Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
 
+        i.e. given the standard blocks problem/domain, this function would return:
+        {'on': ['block', 'block'], 'ontable': ['block'], 'clear': ['block'], 'handempty': [''], 'holding': ['block']}
+
         Returns
         -------
         extracted_pred_types : dict
@@ -86,16 +90,26 @@ class Generate:
         """
         writer = FstripsWriter(self.problem)
         extracted_pred_types = {}
+        # get all predicates and split them up to get them individually (will get something 
+        # like (on ?x1 - block ?x2 - block) for each predicate)
         raw_pred = writer.get_predicates().split('\n')
+        print(raw_pred)
+        # loop through all predicates
         for i in range(len(raw_pred)):
+            # remove starting and ending parentheses 
             raw_pred[i] = raw_pred[i].lstrip()[1:-1]
+            # split up the components of the predicate
             raw_pred[i] = raw_pred[i].split(' ')
+            # the first component will be the name of the predicate, i.e. 'on'
             name = raw_pred[i][0]
             params = []
+            # loop through the rest of the components
             for j in range(1, len(raw_pred[i])):
-                check_hyph = '-'in raw_pred[i][j]
+                # if the component isn't a parameter (i.e. ?x1) or isn't a hyphen, then
+                # it is a type; add it to the list
                 if '-' not in raw_pred[i][j] and '?' not in raw_pred[i][j]:
                     params.append(raw_pred[i][j])
+            # this predicate uses this list of types
             extracted_pred_types[name] = params    
         return extracted_pred_types
 
@@ -116,9 +130,19 @@ class Generate:
         effects = act.effects
         add = []
         delete = []
+        from tarski.utils.helpers import parse_atom
+        from tarski.syntax.formulas import Formula
         for i in range(len(effects)):
-            eff_str = effects[i].tostring()
-            fluent = self._tarski_fluent_to_macq(eff_str[3:])
+            eff_str = effects[i].tostring()[4:-1]
+            print(eff_str)
+            # attempt to convert to tarski Atom to standardize the tarski_fluent_to_macq function
+            '''
+            if '()' in eff_str:
+                atom = Formula()
+            else:
+                atom = parse_atom(self.lang, eff_str)
+            '''
+            fluent = self._tarski_fluent_to_macq(eff_str)
             if eff_str[:3] == 'ADD':
                 add.append(fluent)
             else:
@@ -144,12 +168,16 @@ class Generate:
         split : dict
             The parsed action or fluent, separating its name from its instantiated objects.
         """
+
         split = {}
         raw = raw.strip(')')
         name = raw.split('(')[0]
         raw = raw.replace(' ', '')
         param_names = raw.split('(')[1].split(',')
         num_param = len(param_names)
+        # handle case where the action or fluent has no parameters
+        if len(param_names) == 1 and param_names[0] == '':
+            num_param = 0
         obj_param = [] 
 
         if name == '=':
@@ -190,15 +218,11 @@ class Generate:
         """
         # remove starting and ending parentheses, if necessary
         if raw[0] == '(':
-            raw = raw[1:len(raw) - 1]
+            raw = raw[1:-1]
         test =  raw.split(' ')
-        if 'not' in test:
-            value = False
-        else:
-            value = True
+        value = 'not' not in test
         fluent = self._action_or_predicate_split(test[-1], False)
-        macq_fluent = Fluent(fluent['name'], fluent['objects'], value)
-        return macq_fluent
+        return Fluent(fluent['name'], fluent['objects'], value)
 
     def _tarski_state_to_macq(self, tarski_state: tarski.model.Model):
         """
@@ -214,12 +238,7 @@ class Generate:
         macq_state : State
             A state, defined using the macq State class.
         """
-        tarski_state = tarski_state.as_atoms()
-        fluents = []
-        for fluent in tarski_state:
-            fluents.append(self._tarski_fluent_to_macq(str(fluent)))
-        macq_state = State(fluents)
-        return macq_state
+        return State([self._tarski_fluent_to_macq(str(f)) for f in tarsi_state.as_atoms()])
 
     def _tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
         """
@@ -240,13 +259,13 @@ class Generate:
         if type(tarski_act.precondition) == CompoundFormula:
             raw_precond = tarski_act.precondition.subformulas
             for fluent in raw_precond:
+                #print(type(fluent))
                 precond.append(self._tarski_fluent_to_macq(str(fluent)))
         else:
             raw_precond = tarski_act.precondition
             precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
         
         (add, delete) = self._effect_split(tarski_act)
-        macq_act = Action(action_info['name'], action_info['objects'], precond, add, delete)
-        return macq_act
+        return Action(action_info['name'], action_info['objects'], precond, add, delete)
 
     
