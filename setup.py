@@ -12,6 +12,7 @@ DEPENDENCIES = [
 
 DEV_DEPENDENCIES = [
     "pytest",
+    "pytest-cov",
 ]
 
 CLASSIFIERS = [

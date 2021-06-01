@@ -29,12 +29,12 @@ jobs:
                   python -m pip install black pytest
                   if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
                   pip install -e .[dev]
-            - name: Lint with black
+            - name: Lint code
               run: |
                   black . --check
-            - name: Test with pytest
+            - name: Run tests and check coverage
               run: |
-                  pytest
+                  pytest --cov=.
 
 #     - name: Build and publish
 #       env:
