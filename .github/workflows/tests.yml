@@ -33,10 +33,15 @@ jobs:
               run: black . --check
             - name: Run tests
               run: pytest
-            - name: Get coverage
+            # Only get coverage once
+            - if: ${{ matrix.python-version == '3.9' }}
+              name: Get coverage
               run: |
                   SUMMARY="$(pytest --cov=. | tail -4 | head -1)"
                   TOKENS=($SUMMARY)
+                  echo ${TOKENS[1]}
+                  echo ${TOKENS[2]}
+                  echo ${TOKENS[3]}
                   echo "COVERAGE=$(echo ${TOKENS[2]})" >> $GITHUB_ENV
                   REF=${{ github.ref }}
                   echo "github.ref: $REF"
@@ -44,7 +49,8 @@ jobs:
                   BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
                   echo $BRANCH_NAME
                   echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-            - name: Create coverage badge
+            - if: ${{ matrix.python-version == '3.9' }}
+              name: Create coverage badge
               uses: schneegans/dynamic-badges-action@v1.0.0
               with:
                   auth: ${{ secrets.GIST_SECRET }}
