@@ -40,7 +40,7 @@ def generate_test_fluents(num_fluents: int):
     return fluents
 
 
-def generate_test_actions(num_actions: int, objects: List[CustomObject]):
+def generate_test_actions(num_actions: int):
     """
     Generates basic actions to be used for testing.
 
@@ -56,6 +56,7 @@ def generate_test_actions(num_actions: int, objects: List[CustomObject]):
     actions : List of Actions
         The list of testing actions generated.
     """
+    objects = [CustomObject("number", str(o)) for o in range(num_actions)]
     actions = []
     for i in range(num_actions):
         action_name = "action" + " " + str(i + 1)
@@ -85,8 +86,7 @@ def get_fluent_obj(fluents: List[Fluent]):
             objects.append(obj)
     return objects
 
-
-def generate_test_states(num_states: int, fluents: List[Fluent]):
+def generate_test_states(num_states: int):
     """
     Generate states to be used for testing, using the given fluents (each state will add a fluent)
 
@@ -104,16 +104,15 @@ def generate_test_states(num_states: int, fluents: List[Fluent]):
     """
     states = []
     next_fluents = []
+    fluents = generate_test_fluents(num_states)
     for i in range(num_states):
         state_name = "state" + " " + str(i + 1)
-        if i < len(fluents):
-            next_fluents.append(fluents[i])
+        next_fluents.append(fluents[i])
         state = State(next_fluents)
         states.append(state)
     return states
 
-
-def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
+def generate_test_steps(num_steps: int):
     """
     Generate steps to be used for testing, given the number of steps and possible actions and states.
 
@@ -132,23 +131,12 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
         The list of testing steps generated.
     """
     steps = []
-    # indices for actions and states respectively
-    a_index = 0
-    s_index = 0
-    for _ in range(num_steps):
-        step = Step(actions[a_index], states[s_index])
-        # cycle through actions and states
-        if a_index < len(actions):
-            a_index += 1
-        else:
-            a_index = 0
-        if s_index < len(states):
-            s_index += 1
-        else:
-            s_index = 0
+    actions = generate_test_actions(num_steps)
+    states = generate_test_states(num_steps)
+    for i in range(num_steps):
+        step = Step(actions[i], states[i])
         steps.append(step)
     return steps
-
 
 def generate_test_trace(complexity: int):
     """
@@ -164,13 +152,9 @@ def generate_test_trace(complexity: int):
     trace : Trace
         The testing trace generated.
     """
-    fluents = generate_test_fluents(complexity)
-    actions = generate_test_actions(complexity, get_fluent_obj(fluents))
-    states = generate_test_states(complexity, fluents)
-    steps = generate_test_steps(complexity, actions, states)
+    steps = generate_test_steps(complexity)
     trace = Trace(steps)
     return trace
-
 
 # TESTS FOR ACTION CLASS
 
@@ -255,8 +239,10 @@ def test_trace_add_steps():
 # ensure that the Trace base_fluents() and base_actions() functions work correctly
 def test_trace_base():
     trace = generate_test_trace(3)
-    assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
-    assert trace.base_actions() == ["action 1", "action 2", "action 3"]
+    print(trace.fluents)
+    print(trace.actions)
+    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3"]
+    assert trace.actions == ["action 1", "action 2", "action 3"]
 
 
 # test that the previous states are being retrieved correctly
@@ -378,8 +364,11 @@ def test_trace_list():
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests 
-    base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 5, 1)
-    #print(vanilla.traces)
+    # base = Path(__file__).parent.parent
+    # dom = (base / 'tests/pddl_testing_files/blocks_domain.pddl').resolve()
+    # prob = (base / 'tests/pddl_testing_files/blocks_problem.pddl').resolve()
+    # vanilla = VanillaSampling(dom, prob, 2, 1)
+    # print(vanilla.traces)
+    # #vanilla.traces[0].append(generate_test_steps(1))
+    # print(vanilla.traces[0].fluents)
+    test_trace_base()
