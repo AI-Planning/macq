@@ -13,6 +13,7 @@ DEPENDENCIES = [
 DEV_DEPENDENCIES = [
     "pytest",
     "pytest-cov",
+    "pre-commit",
 ]
 
 CLASSIFIERS = [
