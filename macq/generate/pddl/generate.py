@@ -21,7 +21,6 @@ class Generate:
         reader.parse_domain(dom)
         self.problem = reader.parse_instance(prob)
         self.lang = self.problem.language
-        # print(reader.parse_string('(has_genre ?x1 - song ?x2 - genre)', 'single_predicate_definition'))
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
@@ -93,7 +92,6 @@ class Generate:
         # get all predicates and split them up to get them individually (will get something 
         # like (on ?x1 - block ?x2 - block) for each predicate)
         raw_pred = writer.get_predicates().split('\n')
-        print(raw_pred)
         # loop through all predicates
         for i in range(len(raw_pred)):
             # remove starting and ending parentheses 
@@ -134,7 +132,6 @@ class Generate:
         from tarski.syntax.formulas import Formula
         for i in range(len(effects)):
             eff_str = effects[i].tostring()[4:-1]
-            print(eff_str)
             # attempt to convert to tarski Atom to standardize the tarski_fluent_to_macq function
             '''
             if '()' in eff_str:
@@ -238,7 +235,7 @@ class Generate:
         macq_state : State
             A state, defined using the macq State class.
         """
-        return State([self._tarski_fluent_to_macq(str(f)) for f in tarsi_state.as_atoms()])
+        return State([self._tarski_fluent_to_macq(str(f)) for f in tarski_state.as_atoms()])
 
     def _tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
         """
@@ -259,7 +256,6 @@ class Generate:
         if type(tarski_act.precondition) == CompoundFormula:
             raw_precond = tarski_act.precondition.subformulas
             for fluent in raw_precond:
-                #print(type(fluent))
                 precond.append(self._tarski_fluent_to_macq(str(fluent)))
         else:
             raw_precond = tarski_act.precondition
