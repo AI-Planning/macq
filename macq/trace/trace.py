@@ -28,8 +28,6 @@ class Trace:
             The set of fluents in the trace.
         actions (set):
             The set of actions in the trace.
-        observations (list):
-            A tokenized version of the steps list.
     """
 
     class InvalidCostRange(Exception):
@@ -50,7 +48,6 @@ class Trace:
         self.fluents = self._get_fluents()
         self.actions = self._get_actions()
         self.num_fluents = len(self.fluents)
-        self.observations = []
 
     def __str__(self):
         indent = " " * 2
@@ -284,9 +281,11 @@ class Trace:
                 for the steps.
         """
 
+        observations = []
         for step in self.steps:
-            token = Token(step=step, **kwargs)
-            self.observations.append(token)
+            token = Token(step, **kwargs)
+            observations.append(token)
+        return observations
 
     def update(self):
         self.num_steps = len(self.steps)
