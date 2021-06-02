@@ -98,7 +98,7 @@ class Trace:
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
         for step in iterable:
-            self.__update_actions_and_fluents(iterable)
+            self.__update_actions_and_fluents(step)
 
     def index(self, value: Step):
         return self.steps.index(value)
