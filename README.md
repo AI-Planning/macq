@@ -1,7 +1,7 @@
 # MAcq: The Model Acquisition Toolkit
 
-![CI](https://github.com/QuMuLab/macq/actions/workflows/CI.yml/badge.svg)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json)
+[![CI](https://github.com/QuMuLab/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/QuMuLab/macq/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json)](https://github.com/QuMuLab/macq/actions)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/QuMuLab/macq/blob/main/LICENSE)
 
