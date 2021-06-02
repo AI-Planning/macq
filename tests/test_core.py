@@ -1,7 +1,6 @@
 from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceList
 from macq.observation import IdentityObservation
 from macq.generate.pddl import VanillaSampling
-from macq.generate.pddl.planning_domains_api import get_problem
 
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
@@ -422,5 +421,5 @@ if __name__ == "__main__":
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
     vanilla = VanillaSampling(dom, prob, 2, 1)
     # print(vanilla.traces)
-    file = get_problem(123)["problem_url"]
-    print(file)
+    # file = get_problem(123)["problem_url"]
+    # print(file)

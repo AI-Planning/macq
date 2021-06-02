@@ -4,8 +4,16 @@ from tarski.search.operations import progress
 from pathlib import Path
 import random
 
+
 class VanillaSampling(Generate):
-    def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
+    def __init__(
+        self,
+        plan_len: int,
+        num_traces: int,
+        dom: str = "",
+        prob: str = "",
+        problem_id: int = None,
+    ):
         super().__init__(dom, prob)
         self.plan_len = plan_len
         self.num_traces = num_traces
@@ -31,8 +39,6 @@ class VanillaSampling(Generate):
         traces : TraceList
             The list of traces generated.
         """
-
-
 
     def generate_traces(self):
         """

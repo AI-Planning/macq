@@ -1,4 +1,4 @@
-#from ..trace import TraceList, Trace
+# from ..trace import TraceList, Trace
 import random
 from macq.trace import TraceList, Trace, Step, Action, State, CustomObject, Fluent
 from pathlib import Path
@@ -14,8 +14,9 @@ from tarski.syntax.formulas import Atom
 from tarski.utils.helpers import parse_atom
 from collections import OrderedDict
 
+
 class Generate:
-    def __init__(self, dom : str, prob : str):
+    def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
         reader.parse_domain(dom)
@@ -27,7 +28,8 @@ class Generate:
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
         parsing and stores the problem, language, and grounded instance for the child
-        generators to easily access and use. 
+        generators to easily access and use. Takes either the raw filenames of the 
+        domain and problem, or a problem ID.
 
         Arguments
         ---------
@@ -35,6 +37,8 @@ class Generate:
             The domain filename.
         prob : str
             The problem filename.
+        problem_id : int
+            The ID of the problem to access.
         """
 
     def _extract_action_typing(self):
@@ -58,16 +62,16 @@ class Generate:
             # retrieves each action; i.e. stack(?x: object,?y: object)
             raw_types = str(actions[act])
             # get the type/object the action is acting on; i.e. ?x: object,?y: object
-            raw_types = raw_types[len(act) + 1: -1]
+            raw_types = raw_types[len(act) + 1 : -1]
             params = []
             # only need to retrieve type information if this action takes parameters;
             # otherwise the parameters will remain an empty list
-            if raw_types != '':
+            if raw_types != "":
                 # split up the objects if they are multiple; i.e. ['?x: object', '?y: object']
-                raw_types = raw_types.split(',')
+                raw_types = raw_types.split(",")
                 for raw_act in raw_types:
                     # get the object types; i.e. retrieve ['object', 'object'] as stack takes two 'object' types
-                    params.append(raw_act.split(' ')[1])
+                    params.append(raw_act.split(" ")[1])
             # add this action and its typing to the dictionary
             extracted_act_types[act] = params
         return extracted_act_types
@@ -88,15 +92,15 @@ class Generate:
         """
         writer = FstripsWriter(self.problem)
         extracted_pred_types = {}
-        # get all predicates and split them up to get them individually (will get something 
+        # get all predicates and split them up to get them individually (will get something
         # like (on ?x1 - block ?x2 - block) for each predicate)
-        raw_pred = writer.get_predicates().split('\n')
+        raw_pred = writer.get_predicates().split("\n")
         # loop through all predicates
         for i in range(len(raw_pred)):
-            # remove starting and ending parentheses 
+            # remove starting and ending parentheses
             raw_pred[i] = raw_pred[i].lstrip()[1:-1]
             # split up the components of the predicate
-            raw_pred[i] = raw_pred[i].split(' ')
+            raw_pred[i] = raw_pred[i].split(" ")
             # the first component will be the name of the predicate, i.e. 'on'
             name = raw_pred[i][0]
             params = []
@@ -104,10 +108,10 @@ class Generate:
             for j in range(1, len(raw_pred[i])):
                 # if the component isn't a parameter (i.e. ?x1) or isn't a hyphen, then
                 # it is a type; add it to the list
-                if '-' not in raw_pred[i][j] and '?' not in raw_pred[i][j]:
+                if "-" not in raw_pred[i][j] and "?" not in raw_pred[i][j]:
                     params.append(raw_pred[i][j])
             # this predicate uses this list of types
-            extracted_pred_types[name] = params    
+            extracted_pred_types[name] = params
         return extracted_pred_types
 
     def _effect_split(self, act: tarski.fstrips.action.PlainOperator):
@@ -129,26 +133,27 @@ class Generate:
         delete = []
         from tarski.utils.helpers import parse_atom
         from tarski.syntax.formulas import Formula
+
         for i in range(len(effects)):
             eff_str = effects[i].tostring()[4:-1]
             # attempt to convert to tarski Atom to standardize the tarski_fluent_to_macq function
-            '''
+            """
             if '()' in eff_str:
                 atom = Formula()
             else:
                 atom = parse_atom(self.lang, eff_str)
-            '''
+            """
             fluent = self._tarski_fluent_to_macq(eff_str)
-            if eff_str[:3] == 'ADD':
+            if eff_str[:3] == "ADD":
                 add.append(fluent)
             else:
                 delete.append(fluent)
-        return(add, delete)
+        return (add, delete)
 
     def _action_or_predicate_split(self, raw: str, is_action: bool):
         """
         Takes a string representing either an action or fluent in the form of: action/fluent(*objects)
-        and parses it to a dictionary that separates the name of the action or fluent from the objects it 
+        and parses it to a dictionary that separates the name of the action or fluent from the objects it
         acts upon. The objects are also instantiated with the appropriate type/name.
         Example: pick-up(f) is parsed to {'name': 'pick-up', 'objects': [Type: object, Name: f]}
 
@@ -166,19 +171,19 @@ class Generate:
         """
 
         split = {}
-        raw = raw.strip(')')
-        name = raw.split('(')[0]
-        raw = raw.replace(' ', '')
-        param_names = raw.split('(')[1].split(',')
+        raw = raw.strip(")")
+        name = raw.split("(")[0]
+        raw = raw.replace(" ", "")
+        param_names = raw.split("(")[1].split(",")
         num_param = len(param_names)
         # handle case where the action or fluent has no parameters
-        if len(param_names) == 1 and param_names[0] == '':
+        if len(param_names) == 1 and param_names[0] == "":
             num_param = 0
-        obj_param = [] 
+        obj_param = []
 
-        if name == '=':
-            types = ['object', 'object']
-            name = 'equal'
+        if name == "=":
+            types = ["object", "object"]
+            name = "equal"
         else:
             if is_action:
                 act_types = self._extract_action_typing()
@@ -189,18 +194,18 @@ class Generate:
 
         for i in range(num_param):
             obj_param.append(CustomObject(types[i], param_names[i]))
-        split['name'] = name
-        split['objects'] = obj_param
+        split["name"] = name
+        split["objects"] = obj_param
         return split
 
     def _tarski_fluent_to_macq(self, raw: str):
         """
         Takes a string representing either a fluent in the form of: fluent(*objects)
-        and parses it to a dictionary that separates the name of the fluent from the objects it 
+        and parses it to a dictionary that separates the name of the fluent from the objects it
         acts upon. The objects are also instantiated with the appropriate type/name.
         If the fluent has a 'not' operator, the value of the Fluent is set to False.
         Example: (not on-table(b)) is parsed to a Fluent with name 'on-table', object 'b', and
-        is set to False. 
+        is set to False.
 
         Arguments
         ---------
@@ -213,12 +218,12 @@ class Generate:
             The generated fluent.
         """
         # remove starting and ending parentheses, if necessary
-        if raw[0] == '(':
+        if raw[0] == "(":
             raw = raw[1:-1]
-        test =  raw.split(' ')
-        value = 'not' not in test
+        test = raw.split(" ")
+        value = "not" not in test
         fluent = self._action_or_predicate_split(test[-1], False)
-        return Fluent(fluent['name'], fluent['objects'], value)
+        return Fluent(fluent["name"], fluent["objects"], value)
 
     def _tarski_state_to_macq(self, tarski_state: tarski.model.Model):
         """
@@ -234,7 +239,9 @@ class Generate:
         macq_state : State
             A state, defined using the macq State class.
         """
-        return State([self._tarski_fluent_to_macq(str(f)) for f in tarski_state.as_atoms()])
+        return State(
+            [self._tarski_fluent_to_macq(str(f)) for f in tarski_state.as_atoms()]
+        )
 
     def _tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
         """
@@ -259,8 +266,6 @@ class Generate:
         else:
             raw_precond = tarski_act.precondition
             precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
-        
-        (add, delete) = self._effect_split(tarski_act)
-        return Action(action_info['name'], action_info['objects'], precond, add, delete)
 
-    
+        (add, delete) = self._effect_split(tarski_act)
+        return Action(action_info["name"], action_info["objects"], precond, add, delete)
