@@ -13,6 +13,7 @@ from macq.observation import IdentityObservation
 # generate 100 traces of length 20 using vanilla sampling
 traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100)
 
+
 more_traces = traces.generate_more(10)
 
 traces.get_usage(action)
