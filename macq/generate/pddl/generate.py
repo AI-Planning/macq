@@ -24,7 +24,6 @@ class Generate:
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
-
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
         parsing and stores the problem, language, and grounded instance for the child
