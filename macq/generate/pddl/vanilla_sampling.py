@@ -14,7 +14,7 @@ class VanillaSampling(Generate):
         prob: str = "",
         problem_id: int = None,
     ):
-        super().__init__(dom, prob)
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.plan_len = plan_len
         self.num_traces = num_traces
         self.traces = self.generate_traces()
