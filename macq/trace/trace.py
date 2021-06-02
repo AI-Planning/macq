@@ -281,7 +281,7 @@ class Trace:
                 for the steps.
         """
 
-        observations = []
+        observations: List[Observation] = []
         for step in self.steps:
             token = Token(step, **kwargs)
             observations.append(token)
