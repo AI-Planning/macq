@@ -14,17 +14,28 @@ from tarski.syntax.formulas import Atom
 from tarski.utils.helpers import parse_atom
 from collections import OrderedDict
 
+import requests
+from macq.generate.pddl.planning_domains_api import get_problem
+
 
 class Generate:
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
+        # dom = requests.get(get_problem(problem_id)['domain_url']).text
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
-        reader.parse_domain(dom)
-        self.problem = reader.parse_instance(prob)
-        self.lang = self.problem.language
-        # ground the problem
-        operators = ground_problem_schemas_into_plain_operators(self.problem)
-        self.instance = GroundForwardSearchModel(self.problem, operators)
+
+        if problem_id == None:
+            reader.parse_domain(dom)
+            self.problem = reader.parse_instance(prob)
+            self.lang = self.problem.language
+            # ground the problem
+            operators = ground_problem_schemas_into_plain_operators(self.problem)
+            self.instance = GroundForwardSearchModel(self.problem, operators)
+        else:
+            # TODO: Get problem ID extraction working
+            # dom = requests.get(get_problem(problem_id)['domain_url']).text
+            # prob = requests.get(get_problem(problem_id)['prob_url']).text
+            pass
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
         parsing and stores the problem, language, and grounded instance for the child
