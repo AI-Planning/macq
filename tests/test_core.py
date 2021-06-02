@@ -46,8 +46,6 @@ def generate_test_actions(num_actions: int):
     ---------
     num_actions : int
         The number of actions to generate.
-    objects: List of CustomObjects
-        The objects available to these actions.
 
     Returns
     -------
@@ -91,8 +89,6 @@ def generate_test_states(num_states: int):
     ---------
     num_states : int
         The number of states to generate.
-    fluents : List of Fluents
-        The fluents that will be used to make up the states.
 
     Returns
     -------
@@ -117,10 +113,6 @@ def generate_test_steps(num_steps: int):
     ---------
     num_steps : int
         The number of steps to generate.
-    actions : List of Actions
-        The list of possible actions to be used for the generated steps.
-    states : List of States
-        The list of possible states to be used for the generated steps.
 
     Returns
     -------
@@ -149,9 +141,9 @@ def generate_test_trace(complexity: int):
     trace : Trace
         The testing trace generated.
     """
-    steps = generate_test_steps(complexity)
-    trace = Trace(steps)
+    trace = Trace(generate_test_steps(complexity))
     return trace
+
 
 # TESTS FOR ACTION CLASS
 
@@ -301,11 +293,13 @@ def test_trace_tokenize():
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
 
+# generate testing trace lists
 def generate_test_trace_list(length: int):
     trace = generate_test_trace(3)
     traces = [trace] * length
     return TraceList(traces)
 
+# test trace lists
 def test_trace_list():
     trace_list = generate_test_trace_list(5)
 
@@ -325,6 +319,7 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
 
+# test trace append function
 def test_trace_append():
     trace = generate_test_trace(3)
     steps = generate_test_steps(4)
@@ -333,6 +328,7 @@ def test_trace_append():
     assert trace.actions == ['action 1', 'action 2', 'action 3', 'action 4']
     #assert trace.steps == steps
 
+# test trace clear function 
 def test_trace_clear():
     trace = generate_test_trace(3)
     trace.clear()
@@ -340,6 +336,7 @@ def test_trace_clear():
     assert trace.actions == []
     assert trace.steps == []
 
+# test trace extend function
 def test_trace_extend():
     trace = generate_test_trace(3)
     steps = generate_test_steps(7)
@@ -350,6 +347,7 @@ def test_trace_extend():
     'action 6', 'action 7']
     #assert trace.steps == steps
 
+# test trace insert function
 def test_trace_insert():
     trace = generate_test_trace(3)
     steps = generate_test_steps(4)
@@ -358,6 +356,7 @@ def test_trace_insert():
     assert trace.actions == ['action 1', 'action 2', 'action 3', 'action 4']
     #assert trace.steps == [steps[3], steps[0], steps[1], steps[2]]
 
+# test trace pop function
 def test_trace_pop():
     trace = generate_test_trace(3)
     steps = trace.steps.copy()
@@ -366,6 +365,7 @@ def test_trace_pop():
     assert trace.actions == ['action 1', 'action 2']
     #assert trace.steps == steps[:-1]
 
+# test trace remove function
 def test_trace_remove():
     trace = generate_test_trace(3)
     steps = trace.steps.copy()

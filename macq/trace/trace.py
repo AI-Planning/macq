@@ -124,10 +124,11 @@ class Trace:
 
     def __new_fluents_from_state(self, state: State):
         """
-        Retrieve
+        Retrieves any new fluents (fluents not yet in this trace's list of fluents)
+        from the given state.
 
         Args:
-            state (State): [description]
+            state (State): the state to extract new fluents from.
         """
         new = []
         for fluent in state.fluents:
@@ -137,20 +138,24 @@ class Trace:
         return new
 
     def __new_action_from_step(self, step: Step):
-        """AI is creating summary for __update_action_from_step
+        """
+        Retrieves the action from the given step if the action is new (not yet in this
+        trace's list of actions).
 
         Args:
-            step (Step): [description]
+            step (Step): the given step to extract the action from.
         """
         name = step.action.name
         if name not in self.actions:
             return name
         
     def __update_actions_and_fluents(self, step: Step):
-        """AI is creating summary for __update_after_add
+        """
+        Update this trace's actions and fluents after taking into account the action and
+        fluents of the step just added.
 
         Args:
-            step (Step): [description]
+            step (Step): the step just added to the trace.
         """
         new_fluents = self.__new_fluents_from_state(step.state)
         if new_fluents:
@@ -165,13 +170,6 @@ class Trace:
         for step in self.steps:
             self.__update_actions_and_fluents(step)
 
-    '''
-    def __update_after_delete(self):
-        """AI is creating summary for __update_after_delete
-        """
-        self.fluents = self.__initialize_base_fluents()
-        self.actions = self.__initialize_base_actions()
-    '''
     def get_prev_states(self, action: Action):
         """
         Returns a list of the states of the trace before this action took place.
