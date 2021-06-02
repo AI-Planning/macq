@@ -50,6 +50,7 @@ class TraceList:
                 string += f"    {line}\n"
         return string
 
+
     def __len__(self):
         return len(self.traces)
 
