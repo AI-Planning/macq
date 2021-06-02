@@ -1,4 +1,5 @@
 # MAcq: The Model Acquisition Toolkit
+![Tests](https://github.com/QuMuLab/macq/actions/workflows/tests.yml/badge.svg)
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
