@@ -1,6 +1,6 @@
-from typing import Iterable, List, Callable
-from . import Action
-from . import Trace
+from typing import Iterable, List, Callable, Type
+from . import Action, Trace, ObservationList
+from ..observation import Observation
 
 
 class TraceList:
@@ -40,7 +40,7 @@ class TraceList:
             generator (function):
                 Optional; The function used to generate the traces.
         """
-        self.traces: List[Trace] = traces
+        self.traces = traces
         self.generator = generator
 
     def __str__(self):
@@ -49,7 +49,6 @@ class TraceList:
             for line in str(trace).splitlines():
                 string += f"    {line}\n"
         return string
-
 
     def __len__(self):
         return len(self.traces)
@@ -137,3 +136,14 @@ class TraceList:
         for trace in self:
             usages.append(trace.get_usage(action))
         return usages
+
+    def tokenize(self, Token: Type[Observation], **kwargs):
+        """Tokenizes the steps in this trace.
+
+        Args:
+            Token (Observation):
+                A subclass of `Observation`, defining the method of tokenization
+                for the steps.
+        """
+
+        return ObservationList(self, Token, **kwargs)
