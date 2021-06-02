@@ -1,10 +1,9 @@
 # MAcq: The Model Acquisition Toolkit
 
 [![CI](https://github.com/QuMuLab/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/QuMuLab/macq/actions)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json)](https://github.com/QuMuLab/macq/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json?cacheSeconds=3600)](https://github.com/QuMuLab/macq/actions)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/QuMuLab/macq/blob/main/LICENSE)
-
 
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
@@ -63,7 +62,7 @@ model.actions[0].to_pddl()
 
 ```
 
-## Coverage <a name="coverage" />
+## Coverage <a name="coverage"></a>
 
 - [ ] [Rule Creation and Rule Learning through Environmental Exploration](https://www.ijcai.org/Proceedings/89-1/Papers/108.pdf) (IJCAI'89)
 - [ ] [Learning by Experimentation: The Operator Refinement Method](https://kilthub.cmu.edu/articles/journal_contribution/Learning_by_Experimentation_The_Operator_Refinement_Method/6622868/1) (MLBook'90)
