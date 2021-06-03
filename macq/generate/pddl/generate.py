@@ -27,15 +27,36 @@ class Generate:
         if problem_id == None:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
-            self.lang = self.problem.language
-            # ground the problem
-            operators = ground_problem_schemas_into_plain_operators(self.problem)
-            self.instance = GroundForwardSearchModel(self.problem, operators)
+
         else:
             # TODO: Get problem ID extraction working
-            # dom = requests.get(get_problem(problem_id)['domain_url']).text
-            # prob = requests.get(get_problem(problem_id)['prob_url']).text
-            pass
+            dom = requests.get(get_problem(problem_id)["domain_url"]).text
+            prob = requests.get(get_problem(problem_id)["problem_url"]).text
+            reader.parse_domain_string(dom)
+            self.problem = reader.parse_instance_string(prob)
+        self.lang = self.problem.language
+        # ground the problem
+        operators = ground_problem_schemas_into_plain_operators(self.problem)
+        self.instance = GroundForwardSearchModel(self.problem, operators)
+
+        # explore, try to get function stuff (see Function class)
+        print(self.lang.functions)
+        # got predicate typing!
+        for pred in self.lang.predicates:
+            print(type(pred.signature[0]))
+        # getting action typing!
+        print(
+            (
+                list(
+                    list(self.problem.actions.values())[0].parameters.variables.values()
+                )[0].sort
+            )
+        )
+        # getting effects from an action!
+        print(type(list(self.problem.actions.values())[0].effects[0].atom))
+
+        print(self.lang)
+
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
         parsing and stores the problem, language, and grounded instance for the child
@@ -180,10 +201,17 @@ class Generate:
         split : dict
             The parsed action or fluent, separating its name from its instantiated objects.
         """
-
+        print(raw)
         split = {}
+        # strip last parentheses
         raw = raw.strip(")")
+        # if the string is a regular action or fluent (not a function), this will retrieve its name
+        # (i.e. from clear(pos-03-05, get 'clear')
         name = raw.split("(")[0]
+        # if it fails, we know the name is on the other side of the parameter (i.e. from (number get
+        # 'number')
+        if name == "":
+            name = raw.split("(")[1]
         raw = raw.replace(" ", "")
         param_names = raw.split("(")[1].split(",")
         num_param = len(param_names)
