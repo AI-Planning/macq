@@ -418,8 +418,8 @@ def test_trace_remove():
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
-    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
+    dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=2, num_traces=1)
     # print(vanilla.traces)
 

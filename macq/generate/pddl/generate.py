@@ -13,6 +13,7 @@ from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.utils.helpers import parse_atom
+from tarski.fstrips.fstrips import AddEffect, DelEffect
 from collections import OrderedDict
 
 import requests
@@ -145,16 +146,16 @@ class Generate:
         effects = act.effects
         add = []
         delete = []
-
         # getting effects from an action!
         # print(type(list(self.problem.actions.values())[0].effects[0].atom))
-
         for effect in effects:
-            print("effect:")
-            print(effect)
-            print("values:")
-            print(effect.values())
-
+            fluent = self._tarski_fluent_to_macq(effect.atom)
+            if isinstance(effect, AddEffect):
+                add.append(fluent)
+            else:
+                delete.append(fluent)
+        print(add)
+        print(delete)
         return (add, delete)
 
     def _action_or_predicate_split(self, raw: str, is_action: bool):
@@ -213,7 +214,7 @@ class Generate:
         split["objects"] = obj_param
         return split
 
-    def _tarski_fluent_to_macq(self, raw: str):
+    def _tarski_fluent_to_macq(self, atom: Atom):
         """
         Takes a string representing either a fluent in the form of: fluent(*objects)
         and parses it to a dictionary that separates the name of the fluent from the objects it
@@ -232,13 +233,19 @@ class Generate:
         macq_fluent : Fluent
             The generated fluent.
         """
+
+        """
         # remove starting and ending parentheses, if necessary
         if raw[0] == "(":
             raw = raw[1:-1]
         test = raw.split(" ")
-        value = "not" not in test
         fluent = self._action_or_predicate_split(test[-1], False)
-        return Fluent(fluent["name"], fluent["objects"], value)
+        """
+        name = atom.predicate.name
+        terms = atom.subterms
+        objects = [CustomObject(term.name, term.sort) for term in terms]
+        fluent = Fluent(name, objects)
+        return fluent
 
     def _tarski_state_to_macq(self, tarski_state: tarski.model.Model):
         """
@@ -272,6 +279,7 @@ class Generate:
         macq_act : Action
             An action, defined using the macq Action class.
         """
+        (add, delete) = self.__effect_split(tarski_act)
         action_info = self._action_or_predicate_split(tarski_act.name, True)
         precond = []
         if type(tarski_act.precondition) == CompoundFormula:
@@ -282,5 +290,4 @@ class Generate:
             raw_precond = tarski_act.precondition
             precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
 
-        (add, delete) = self.__effect_split(tarski_act)
         return Action(action_info["name"], action_info["objects"], precond, add, delete)
