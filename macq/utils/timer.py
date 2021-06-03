@@ -3,6 +3,7 @@ from multiprocessing.pool import ThreadPool
 
 MAX_TIME = 10.0
 
+
 def set_timer(num_seconds):
     def timer(generator):
         """
@@ -14,6 +15,7 @@ def set_timer(num_seconds):
         generator : function reference
             The generator function to be wrapped with this time-checker.
         """
+
         def wrapper(*args, **kwargs):
             pool = ThreadPool(processes=1)
             # start the timer
@@ -21,25 +23,28 @@ def set_timer(num_seconds):
             current = begin
             thr = pool.apply_async(generator, args=args, kwds=kwargs)
             # continue counting time while the function has not completed
-            while not thr.ready(): 
+            while not thr.ready():
                 current = time.perf_counter()
                 # raise exception if the function takes too long
                 if current - begin > num_seconds:
                     raise TraceSearchTimeOut()
             # return a successful trace
             return thr.get()
+
         return wrapper
+
     return timer
 
-class TraceSearchTimeOut(Exception):
-        """
-        Raised when the time it takes to generate (or attempt to generate) a single trace is 
-        longer than the MAX_TIME constant. MAX_TIME is 30 seconds by default.
-        """
 
-        def __init__(
-            self,
-            message="The generator function took longer than MAX_TIME in its attempt to generate a trace." +
-            "MAX_TIME can be changed through macq.utils.timer.MAX_TIME."
-        ):
-            super().__init__(message)
+class TraceSearchTimeOut(Exception):
+    """
+    Raised when the time it takes to generate (or attempt to generate) a single trace is
+    longer than the MAX_TIME constant. MAX_TIME is 30 seconds by default.
+    """
+
+    def __init__(
+        self,
+        message="The generator function took longer than MAX_TIME in its attempt to generate a trace."
+        + "MAX_TIME can be changed through macq.utils.timer.MAX_TIME.",
+    ):
+        super().__init__(message)

@@ -6,11 +6,13 @@ from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
 import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
+
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
 # HELPER FUNCTIONS
+
 
 def generate_test_fluents(num_fluents: int):
     """
@@ -340,15 +342,17 @@ def test_trace_tokenize():
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
 
+
 # test the timer wrapper on vanilla trace generation
 def test_timer_vanilla_wrapper():
-    # exit out to the base macq folder so we can get to /tests 
+    # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    
+    dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
+
     with pytest.raises(TraceSearchTimeOut):
         vanilla = VanillaSampling(dom, prob, 10, 5)
+
 
 def generate_test_trace_list(length: int):
     from random import randint
@@ -380,12 +384,13 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
     print(trace_list)
-    
+
+
 if __name__ == "__main__":
-    # exit out to the base macq folder so we can get to /tests 
+    # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
+    dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
     vanilla = VanillaSampling(dom, prob, 5, 1)
     print(vanilla.traces)
     vanilla.traces[0].tokenize(IdentityObservation)

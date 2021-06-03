@@ -9,6 +9,7 @@ class InvalidPlanLength(Exception):
     ):
         super().__init__(message)
 
+
 class InvalidNumberOfTraces(Exception):
     """
     Raised when the user attempts to create an invalid number of traces.

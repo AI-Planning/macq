@@ -13,4 +13,3 @@ class Observation:
         """
         self.step = step
         self.index = step.index
-
