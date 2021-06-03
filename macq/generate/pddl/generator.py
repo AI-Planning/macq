@@ -157,7 +157,7 @@ class Generator:
             value = True
         fluent = self.__action_or_predicate_split(test[-1], False)
         macq_fluent = Fluent(fluent["name"], fluent["objects"])
-        return {'fluent': macq_fluent, 'value': value}
+        return {"fluent": macq_fluent, "value": value}
 
     def tarski_state_to_macq(self, tarski_state: tarski.model.Model):
         """
@@ -177,11 +177,15 @@ class Generator:
         fluents = {}
         for fluent in tarski_state:
             get_fluent = self.__tarski_fluent_to_macq(str(fluent))
-            fluents[get_fluent['fluent']] = get_fluent['value']
+            fluents[get_fluent["fluent"]] = get_fluent["value"]
         macq_state = State(fluents)
         return macq_state
 
-    def tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
+    def tarski_act_to_macq(
+        self,
+        tarski_act: tarski.fstrips.action.PlainOperator,
+        get_precond_effects: bool = False,
+    ):
         """
         Converts an action as defined by tarski to an action as defined by macq.
 
@@ -189,6 +193,8 @@ class Generator:
         ---------
         tarski_act : PlainOperator (from tarski.fstrips.action)
             The supplied action, defined using the tarski PlainOperator class.
+        get_precond_effects : bool
+            Determines if the generator wants to extract preconditions and effects as well.
 
         Returns
         -------
@@ -196,7 +202,28 @@ class Generator:
             An action, defined using the macq Action class.
         """
         action_info = self.__action_or_predicate_split(tarski_act.name, True)
-        macq_act = Action(
-            action_info["name"], action_info["objects"], {}, {}, {}
-        )
-        return macq_act
+        if get_precond_effects:
+            precond = []
+            if type(tarski_act.precondition) == CompoundFormula:
+                raw_precond = tarski_act.precondition.subformulas
+                for fluent in raw_precond:
+                    precond.append(self.__tarski_fluent_to_macq(str(fluent)))
+            else:
+                raw_precond = tarski_act.precondition
+                precond.append(self.__tarski_fluent_to_macq(str(raw_precond)))
+            (add, delete) = self.__effect_split(tarski_act)
+            return Action(
+                action_info["name"],
+                action_info["objects"],
+                precond=precond,
+                add=add,
+                delete=delete,
+            )
+        else:
+            return Action(
+                action_info["name"],
+                action_info["objects"],
+                precond=None,
+                add=None,
+                delete=None,
+            )
