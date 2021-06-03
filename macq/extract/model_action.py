@@ -11,6 +11,19 @@ class ModelAction:
         self.add = set()
         self.delete = set()
 
+    def __str__(self):
+        string = f"{self.name} {' '.join(map(str, self.obj_params))}"
+        return string
+
+    def __eq__(self, other):
+        if not isinstance(other, ModelAction):
+            return False
+        return self.name == other.name and self.obj_params == other.obj_params
+
+    def __hash__(self):
+        # Order of obj_params is important!
+        return hash(str(self))
+
     def update_precond(self, fluents: Set[Fluent]):
         """Adds preconditions to the action.
 
