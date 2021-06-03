@@ -1,6 +1,7 @@
+from typing import List, Set
 from collections import defaultdict
-from macq.extract.extract import IncompatibleObservationToken
-from typing import List
+from . import IncompatibleObservationToken
+from . import Extract
 from .model import Model
 from ..trace import ObservationList, Action
 from ..observation import Observation, IdentityObservation
@@ -57,19 +58,20 @@ class Observer:
         # If that remains the case, will need to wipe the action's attributes
         # here or earlier in Extract
 
-        # Get the unique actions
-        actions: Set[Action] = set()
-        trace: List[Observation]
-        for trace in observations:
-            for obs in trace:
+        # Get the unique actions and the relevant traces
+        actions = defaultdict(lambda: ObservationList())
+        trace_obs: List[Observation]
+        for trace_obs in observations:
+            for obs in trace_obs:
                 action = obs.step.action
                 if action is not None:  # Final step has no action
-                    actions.add(action)
+                    actions[action].append(trace_obs)
 
         # Create the ModelActions
         action_pre_states = defaultdict(set)
-        for action in actions:
-            sas_triples = trace.get_sas_triples(action)  # (S,A,S')
+        for action, observations in actions.items():
+            model_action = ModelAction(action)
+            sas_triples = Extract.get_transitions(action, observations)  # (S,A,S')
             for sas in sas_triples:
                 # Add all action pre-states to a set
                 action_pre_states[action].add(sas.pre_state)

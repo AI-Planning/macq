@@ -1,6 +1,16 @@
+from dataclasses import dataclass
+from typing import List, Set
 from enum import Enum, auto
 from .observer import Observer
-from ..trace import ObservationList
+from ..observation import Observation
+from ..trace import ObservationList, Action, State
+
+
+@dataclass
+class SAS:
+    pre_state: State
+    action: Action
+    post_state: State
 
 
 class IncompatibleObservationToken(Exception):
@@ -45,3 +55,16 @@ class Extract:
         """
         if mode == modes.OBSERVER:
             return Observer(observations)
+
+    @staticmethod
+    def get_transitions(action: Action, observations: ObservationList):
+        sas_triples = []
+        trace_obs: List[Observation]
+        for trace_obs in observations:
+            for obs in trace_obs:
+                if obs.step.action == action:
+                    triple = SAS(
+                        obs.step.state, action, trace_obs[obs.index + 1].step.state
+                    )
+                    sas_triples.append(triple)
+        return sas_triples
