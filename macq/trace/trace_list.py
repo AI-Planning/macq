@@ -1,5 +1,5 @@
-from typing import Iterable, List, Callable, Type
-from . import Action, Trace, ObservationList
+from typing import List, Callable, Type, Optional
+from . import Action, Trace
 from ..observation import Observation
 
 
@@ -150,3 +150,18 @@ class TraceList:
         """
 
         return ObservationList(self, Token, **kwargs)
+
+
+class ObservationList(TraceList):
+    traces: List[Observation]
+    # Disable methods
+    generate_more = property()
+    get_usage = property()
+    tokenize = property()
+
+    def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
+        super(ObservationList, self).__init__()
+        self.type = Token
+        for trace in traces:
+            observations = trace.tokenize(Token, **kwargs)
+            self.append(observations)
