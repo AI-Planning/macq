@@ -13,6 +13,9 @@ class CustomObject:
     def __eq__(self, other):
         return isinstance(other, CustomObject) and self.name == other.name
 
+    # def __hash__(self):
+    #    return self.name
+
 
 class Fluent:
     def __init__(self, name: str, objects: List[CustomObject], value: bool = True):

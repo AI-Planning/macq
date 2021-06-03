@@ -154,8 +154,7 @@ class Generate:
                 add.append(fluent)
             else:
                 delete.append(fluent)
-        print(add)
-        print(delete)
+
         return (add, delete)
 
     def _action_or_predicate_split(self, raw: str, is_action: bool):
@@ -241,10 +240,14 @@ class Generate:
         test = raw.split(" ")
         fluent = self._action_or_predicate_split(test[-1], False)
         """
-        name = atom.predicate.name
+        fluent_name = atom.predicate.name
         terms = atom.subterms
-        objects = [CustomObject(term.name, term.sort) for term in terms]
-        fluent = Fluent(name, objects)
+        objects = []
+        for term in terms:
+            if isinstance(fluent_name, BuiltinPredicateSymbol):
+                fluent_name = fluent_name.value
+            objects.append(CustomObject(term.sort.name, term.name))
+        fluent = Fluent(fluent_name, objects)
         return fluent
 
     def _tarski_state_to_macq(self, tarski_state: tarski.model.Model):
@@ -261,9 +264,7 @@ class Generate:
         macq_state : State
             A state, defined using the macq State class.
         """
-        return State(
-            [self._tarski_fluent_to_macq(str(f)) for f in tarski_state.as_atoms()]
-        )
+        return State([self._tarski_fluent_to_macq(f) for f in tarski_state.as_atoms()])
 
     def _tarski_act_to_macq(self, tarski_act: tarski.fstrips.action.PlainOperator):
         """
@@ -279,15 +280,20 @@ class Generate:
         macq_act : Action
             An action, defined using the macq Action class.
         """
-        (add, delete) = self.__effect_split(tarski_act)
-        action_info = self._action_or_predicate_split(tarski_act.name, True)
-        precond = []
-        if type(tarski_act.precondition) == CompoundFormula:
-            raw_precond = tarski_act.precondition.subformulas
-            for fluent in raw_precond:
-                precond.append(self._tarski_fluent_to_macq(str(fluent)))
-        else:
-            raw_precond = tarski_act.precondition
-            precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
 
-        return Action(action_info["name"], action_info["objects"], precond, add, delete)
+        precond = []
+        raw_precond = tarski_act.precondition.subformulas
+        for raw_p in raw_precond:
+            if isinstance(raw_p, CompoundFormula):
+                precond.append(self._tarski_fluent_to_macq(raw_p.subformulas[0]))
+            else:
+                precond.append(self._tarski_fluent_to_macq(raw_p))
+
+        action_info = self._action_or_predicate_split(tarski_act.name, True)
+        (add, delete) = self.__effect_split(tarski_act)
+        name = tarski_act.name.split("(")[0]
+        objs = set()
+        objs.update(set(fluent.objects) for fluent in add)
+        objs.update([fluent.objects for fluent in delete])
+        objs.update([fluent.objects for fluent in precond])
+        return Action(name, objs, precond, add, delete)
