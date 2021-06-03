@@ -68,8 +68,8 @@ class VanillaSampling(Generate):
                 # pick a random applicable action and apply it
                 act = random.choice(ls)
                 # create the trace and progress the state
-                macq_action = self._tarski_act_to_macq(act)
-                macq_state = self._tarski_state_to_macq(state)
+                macq_action = self.tarski_act_to_macq(act)
+                macq_state = self.tarski_state_to_macq(state)
                 step = Step(macq_action, macq_state)
                 trace.append(step)
                 state = progress(state, act)

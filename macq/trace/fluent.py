@@ -13,8 +13,8 @@ class CustomObject:
     def __eq__(self, other):
         return isinstance(other, CustomObject) and self.name == other.name
 
-    # def __hash__(self):
-    #    return self.name
+    def __hash__(self):
+        return hash(self.name)
 
 
 class Fluent:
