@@ -152,13 +152,30 @@ class Trace:
         self.steps.extend(steps)
 
     def _get_fluents(self):
-        fluents = set()
+        """
+        Retrieves the fluents used in this trace.
+
+        Returns
+        -------
+        set : set of fluent dicts
+            Returns a set of all the fluents used in this trace.
+        """
+
+        fluents_set = set()
         for step in self:
-            for fluent in step.state.fluents:
-                fluents.add(fluent)
-        return fluents
+            for fluent in step.state.keys():
+                fluents_set.add(fluent)
+        return fluents_set
 
     def _get_actions(self):
+        """
+        Retrieves the actions used in this trace.
+
+        Returns
+        -------
+        set : Action
+            Returns a set of all the actions used in this trace.
+        """
         actions = set()
         for step in self.steps:
             actions.add(step.action)

@@ -1,5 +1,6 @@
 from json import dump, dumps, loads
 from ..trace import Fluent, Action
+from typing import Set
 
 
 class Model:
@@ -17,7 +18,7 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: set[Fluent], actions: set[Action]):
+    def __init__(self, fluents: Set[Fluent], actions: Set[Action]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:

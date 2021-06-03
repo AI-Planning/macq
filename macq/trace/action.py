@@ -1,4 +1,5 @@
 from typing import List, Optional
+from typing import List, Set
 from .fluent import PlanningObject, Fluent
 
 
@@ -32,9 +33,9 @@ class Action:
         name: str,
         obj_params: List[PlanningObject],
         cost: int = 0,
-        precond: Optional[set[Fluent]] = None,
-        add: Optional[set[Fluent]] = None,
-        delete: Optional[set[Fluent]] = None,
+        precond: Optional[Set[Fluent]] = None,
+        add: Optional[Set[Fluent]] = None,
+        delete: Optional[Set[Fluent]] = None,
     ):
         """Initializes an Action with the parameters provided.
 
@@ -84,8 +85,9 @@ class Action:
         # Order of obj_params is important!
         return hash(str(self))
 
-    def update_precond(self, fluents: set[Fluent]):
-        """Adds preconditions to the action.
+    def update_precond(self, fluents: Set[Fluent]):
+        """
+        Adds the specified list of fluents to the action's preconditions.
 
         Args:
             fluents (set):
@@ -93,7 +95,7 @@ class Action:
         """
         self.precond.update(fluents)
 
-    def update_add(self, fluents: set[Fluent]):
+    def update_add(self, fluents: Set[Fluent]):
         """Adds add effects to the action.
 
         Args:
@@ -102,7 +104,7 @@ class Action:
         """
         self.add.update(fluents)
 
-    def update_delete(self, fluents: set[Fluent]):
+    def update_delete(self, fluents: Set[Fluent]):
         """Adds delete effects to the action.
 
         Args:

@@ -93,22 +93,29 @@ class VanillaSampling(Generator):
             trace.clear()
             # add more steps while the trace has not yet reached the desired length
             for j in range(self.plan_len):
-                # find the next applicable actions
-                app_act = self.instance.applicable(state)
-                # get items from generator
-                ls = []
-                for item in app_act:
-                    ls.append(item)
-                # if the trace reaches a dead lock, disregard this trace and try again
-                if ls == []:
-                    num_generated -= 1
-                    break
-                # pick a random applicable action and apply it
-                act = random.choice(ls)
-                # create the trace and progress the state
-                macq_state = self.tarski_state_to_macq(state)
-                macq_action = self.tarski_act_to_macq(act)
-                step = Step(macq_state, macq_action, num_generated)
+                # if we are not yet at the last step, find and apply an action
+                if j < self.plan_len - 1:
+                    # find the next applicable actions
+                    app_act = self.instance.applicable(state)
+                    # get items from generator
+                    ls = []
+                    for item in app_act:
+                        ls.append(item)
+                    # if the trace reaches a dead lock, disregard this trace and try again
+                    if ls == []:
+                        num_generated -= 1
+                        break
+                    # pick a random applicable action and apply it
+                    act = random.choice(ls)
+                    # create the trace and progress the state
+                    macq_state = self.tarski_state_to_macq(state)
+                    macq_action = self.tarski_act_to_macq(act)
+                    # create the step
+                    step = Step(macq_state, macq_action, num_generated)
+                else:
+                    # for the last step, do not apply an action
+                    macq_state = self.tarski_state_to_macq(state)
+                    step = Step(macq_state, None, num_generated)
                 trace.append(step)
                 state = progress(state, act)
 
