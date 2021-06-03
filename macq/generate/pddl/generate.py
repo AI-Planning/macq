@@ -11,6 +11,7 @@ from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_oper
 from tarski.grounding.errors import ReachabilityLPUnsolvable
 from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom
+from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.utils.helpers import parse_atom
 from collections import OrderedDict
 
@@ -40,22 +41,7 @@ class Generate:
         self.instance = GroundForwardSearchModel(self.problem, operators)
 
         # explore, try to get function stuff (see Function class)
-        print(self.lang.functions)
-        # got predicate typing!
-        for pred in self.lang.predicates:
-            print(type(pred.signature[0]))
-        # getting action typing!
-        print(
-            (
-                list(
-                    list(self.problem.actions.values())[0].parameters.variables.values()
-                )[0].sort
-            )
-        )
-        # getting effects from an action!
-        print(type(list(self.problem.actions.values())[0].effects[0].atom))
-
-        print(self.lang)
+        # print(self.lang.functions)
 
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
@@ -73,13 +59,13 @@ class Generate:
             The ID of the problem to access.
         """
 
-    def _extract_action_typing(self):
+    def __extract_action_typing(self):
         """
         Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
 
         i.e. given the standard blocks problem/domain, this function would return:
-        {'pick-up': ['block'], 'put-down': ['block'], 'stack': ['block', 'block'], 'unstack': ['block', 'block']}
+        {'pick-up': ['object'], 'put-down': ['object'], 'stack': ['object', 'object'], 'unstack': ['object', 'object']}
 
         Returns
         -------
@@ -87,34 +73,21 @@ class Generate:
             The dictionary that indicates the types of all the objects each action in
             the problem acts upon.
         """
-        # retrieve all actions (actions will be an OrderedDict of all actions in the domain)
-        actions = self.problem.actions
         extracted_act_types = {}
+        actions = self.problem.actions.values()
         for act in actions:
-            # retrieves each action; i.e. stack(?x: object,?y: object)
-            raw_types = str(actions[act])
-            # get the type/object the action is acting on; i.e. ?x: object,?y: object
-            raw_types = raw_types[len(act) + 1 : -1]
-            params = []
-            # only need to retrieve type information if this action takes parameters;
-            # otherwise the parameters will remain an empty list
-            if raw_types != "":
-                # split up the objects if they are multiple; i.e. ['?x: object', '?y: object']
-                raw_types = raw_types.split(",")
-                for raw_act in raw_types:
-                    # get the object types; i.e. retrieve ['object', 'object'] as stack takes two 'object' types
-                    params.append(raw_act.split(" ")[1])
-            # add this action and its typing to the dictionary
-            extracted_act_types[act] = params
+            types = [type.sort.name for type in act.parameters.variables.values()]
+            extracted_act_types[act.name] = types
         return extracted_act_types
 
-    def _extract_predicate_typing(self):
+    def __extract_predicate_typing(self):
         """
         Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
 
         i.e. given the standard blocks problem/domain, this function would return:
-        {'on': ['block', 'block'], 'ontable': ['block'], 'clear': ['block'], 'handempty': [''], 'holding': ['block']}
+        {'=': ['object', 'object'], '!=': ['object', 'object'], 'on': ['object', 'object'],
+        'ontable': ['object'], 'clear': ['object'], 'handempty': [], 'holding': ['object']}
 
         Returns
         -------
@@ -122,44 +95,17 @@ class Generate:
             The dictionary that indicates the types of all the objects each predicate in
             the problem acts upon.
         """
-        writer = FstripsWriter(self.problem)
+        predicates = self.lang.predicates
         extracted_pred_types = {}
-        # get all predicates and split them up to get them individually (will get something
-        # like (on ?x1 - block ?x2 - block) for each predicate)
-        raw_pred = writer.get_predicates().split("\n")
-        # loop through all predicates
-        for i in range(len(raw_pred)):
-            # remove starting and ending parentheses
-            raw_pred[i] = raw_pred[i].lstrip()[1:-1]
-            # split up the components of the predicate
-            raw_pred[i] = raw_pred[i].split(" ")
-            # the first component will be the name of the predicate, i.e. 'on'
-            name = raw_pred[i][0]
-            params = []
-            # loop through the rest of the components
-            for j in range(1, len(raw_pred[i])):
-                # if the component isn't a parameter (i.e. ?x1) or isn't a hyphen, then
-                # it is a type; add it to the list
-                if "-" not in raw_pred[i][j] and "?" not in raw_pred[i][j]:
-                    params.append(raw_pred[i][j])
-            # this predicate uses this list of types
-            extracted_pred_types[name] = params
+        for pred in predicates:
+            info = pred.signature
+            name = info[0]
+            if isinstance(name, BuiltinPredicateSymbol):
+                name = name.value
+            extracted_pred_types[name] = [type for type in info[1:]]
         return extracted_pred_types
 
     def _effect_split(self, act: tarski.fstrips.action.PlainOperator):
-        """
-        Converts the effects of an action as defined by tarski to fluents as defined by macq.
-
-        Arguments
-        ---------
-        act : PlainOperator (from tarski.fstrips.action)
-            The supplied action, defined using the tarski PlainOperator class.
-
-        Returns
-        -------
-        (add, delete) : tuple of Fluents
-            The lists of add and delete effects, in the form of macq Fluents.
-        """
         effects = act.effects
         add = []
         delete = []
@@ -182,6 +128,35 @@ class Generate:
                 delete.append(fluent)
         return (add, delete)
 
+    def __effect_split(self, act: tarski.fstrips.action.PlainOperator):
+        """
+        Converts the effects of an action as defined by tarski to fluents as defined by macq.
+
+        Arguments
+        ---------
+        act : PlainOperator (from tarski.fstrips.action)
+            The supplied action, defined using the tarski PlainOperator class.
+
+        Returns
+        -------
+        (add, delete) : tuple of Fluents
+            The lists of add and delete effects, in the form of macq Fluents.
+        """
+        effects = act.effects
+        add = []
+        delete = []
+
+        # getting effects from an action!
+        # print(type(list(self.problem.actions.values())[0].effects[0].atom))
+
+        for effect in effects:
+            print("effect:")
+            print(effect)
+            print("values:")
+            print(effect.values())
+
+        return (add, delete)
+
     def _action_or_predicate_split(self, raw: str, is_action: bool):
         """
         Takes a string representing either an action or fluent in the form of: action/fluent(*objects)
@@ -201,7 +176,6 @@ class Generate:
         split : dict
             The parsed action or fluent, separating its name from its instantiated objects.
         """
-        print(raw)
         split = {}
         # strip last parentheses
         raw = raw.strip(")")
@@ -215,6 +189,7 @@ class Generate:
         raw = raw.replace(" ", "")
         param_names = raw.split("(")[1].split(",")
         num_param = len(param_names)
+
         # handle case where the action or fluent has no parameters
         if len(param_names) == 1 and param_names[0] == "":
             num_param = 0
@@ -223,12 +198,13 @@ class Generate:
         if name == "=":
             types = ["object", "object"]
             name = "equal"
+
         else:
             if is_action:
-                act_types = self._extract_action_typing()
+                act_types = self.__extract_action_typing()
                 types = act_types[name]
             else:
-                fluent_types = self._extract_predicate_typing()
+                fluent_types = self.__extract_predicate_typing()
                 types = fluent_types[name]
 
         for i in range(num_param):
@@ -306,5 +282,5 @@ class Generate:
             raw_precond = tarski_act.precondition
             precond.append(self._tarski_fluent_to_macq(str(raw_precond)))
 
-        (add, delete) = self._effect_split(tarski_act)
+        (add, delete) = self.__effect_split(tarski_act)
         return Action(action_info["name"], action_info["objects"], precond, add, delete)
