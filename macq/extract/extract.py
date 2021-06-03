@@ -57,7 +57,7 @@ class Extract:
             return Observer(observations)
 
     @staticmethod
-    def get_transitions(action: Action, observations: ObservationList):
+    def get_transitions(action: Action, observations: List[List[Observation]]):
         sas_triples = []
         trace_obs: List[Observation]
         for trace_obs in observations:

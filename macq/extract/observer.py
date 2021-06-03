@@ -1,7 +1,6 @@
 from typing import List, Set
 from collections import defaultdict
-from . import IncompatibleObservationToken
-from . import Extract
+import macq.extract as extract
 from .model import Model
 from ..trace import ObservationList, Action
 from ..observation import Observation, IdentityObservation
@@ -33,7 +32,7 @@ class Observer:
                 Raised if the observations are not identity observation.
         """
         if observations.type is not IdentityObservation:
-            raise IncompatibleObservationToken(
+            raise extract.IncompatibleObservationToken(
                 "The Observer extraction technique only works with identity observations. Use `macq.observation.IdentityObservation` as the `Token` when tokenizing traces."
             )
         fluents = Observer._get_fluents(observations)
@@ -58,27 +57,30 @@ class Observer:
         # If that remains the case, will need to wipe the action's attributes
         # here or earlier in Extract
 
+        actions = set()
+
         # Get the unique actions and the relevant traces
-        actions = defaultdict(lambda: ObservationList())
+        action_obs = defaultdict(list)
         trace_obs: List[Observation]
         for trace_obs in observations:
             for obs in trace_obs:
                 action = obs.step.action
                 if action is not None:  # Final step has no action
-                    actions[action].append(trace_obs)
+                    action_obs[action].append(trace_obs)
 
+        print("here")
         # Create the ModelActions
         action_pre_states = defaultdict(set)
-        for action, observations in actions.items():
-            model_action = ModelAction(action)
-            sas_triples = Extract.get_transitions(action, observations)  # (S,A,S')
+        for action, obs in action_obs.items():
+            model_action = extract.ModelAction(action)
+            sas_triples = extract.Extract.get_transitions(action, obs)  # (S,A,S')
             for sas in sas_triples:
                 # Add all action pre-states to a set
-                action_pre_states[action].add(sas.pre_state)
+                action_pre_states[model_action].add(sas.pre_state)
                 # Directly add effects
                 delta = sas.pre_state.diff_from(sas.post_state)
-                action.update_add(delta.added)
-                action.update_delete(delta.deleted)
+                model_action.update_add(delta.added)
+                model_action.update_delete(delta.deleted)
 
         for action, pre_states in action_pre_states.items():
             # Find the (positive) intersection of the pre-states
