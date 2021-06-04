@@ -1,11 +1,14 @@
 from ...trace import TraceList, Trace, Step
 from ...generate.pddl.generator import Generator
-from ...utils.timer import set_timer, MAX_TIME
+from ...utils.timer import set_timer
 from tarski.search.operations import progress
 import random
 
+MAX_TRACE_TIME = 10.0
+
+
 class VanillaSampling(Generator):
-    def __init__(self, dom : str, prob : str, plan_len : int, num_traces : int):
+    def __init__(self, dom: str, prob: str, plan_len: int, num_traces: int):
         super().__init__(dom, prob)
         self.plan_len = plan_len
         self.num_traces = num_traces
@@ -32,7 +35,6 @@ class VanillaSampling(Generator):
             The list of traces generated.
         """
 
-    
     def generate_traces(self):
         """
         Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -45,16 +47,15 @@ class VanillaSampling(Generator):
         """
 
         traces = TraceList()
-        for i in range(self.num_traces):
-            trace = self.generate_single_trace()
-            traces.append(trace)
+        for _ in range(self.num_traces):
+            traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TIME)
+    @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
         """
         Generates a single trace using the uniform random sampling technique.
-        Loops until a valid trace is found. Wrapper does not allow the function 
+        Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
 
         Returns
@@ -63,7 +64,7 @@ class VanillaSampling(Generator):
             The valid trace generated.
         """
         trace = Trace()
-        
+
         state = self.problem.init
         valid_trace = False
 

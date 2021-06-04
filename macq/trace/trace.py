@@ -117,7 +117,6 @@ class Trace:
         self.update()
         return result
 
-
     def remove(self, value: Step):
         self.steps.remove(value)
         self.update()
@@ -310,7 +309,7 @@ class Trace:
         for step in self.steps:
             token = Token(step)
             self.observations.append(token)
-            
+
     def update(self):
         self.num_steps = len(self.steps)
         self.fluents = self.base_fluents()
