@@ -2,7 +2,8 @@ from . import State
 from . import Fluent
 from typing import List
 
-class PartiallyObservableState:
+
+class PartiallyObservableState(State):
     """
     Class for a Partial State, which is a State where the value of some fluents are unknown.
 
@@ -12,7 +13,5 @@ class PartiallyObservableState:
             A list of fluents representing the state.
     """
 
-    def __init__(self, fluents: List[Fluent]):    
+    def __init__(self, fluents: List[Fluent]):
         super().__init__(fluents)
-    #def random_subset(self):
-    
