@@ -7,7 +7,7 @@ NAME = "macq"
 DESCRIPTION = "Action model acquisition from state trace data."
 
 DEPENDENCIES = [
-    "tarski>=0.7.0",
+    "tarski@git+git://github.com/aig-upf/tarski.git@ffc7e53#egg=tarski",
 ]
 
 DEV_DEPENDENCIES = [
