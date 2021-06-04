@@ -1,5 +1,5 @@
-from typing import List, Optional
-from .fluent import PlanningObject, Fluent
+from typing import List
+from .fluent import PlanningObject
 
 
 class Action:
@@ -45,14 +45,14 @@ class Action:
         string = f"{self.name} {' '.join(map(str, self.obj_params))}"
         return string
 
+    def __hash__(self):
+        # Order of obj_params is important!
+        return hash(str(self))
+
     def __eq__(self, other):
         if not isinstance(other, Action):
             return False
         return self.name == other.name and self.obj_params == other.obj_params
-
-    def __hash__(self):
-        # Order of obj_params is important!
-        return hash(str(self))
 
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.

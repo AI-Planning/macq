@@ -1,4 +1,5 @@
-from .action import Action, Fluent, PlanningObject
+from .action import Action, PlanningObject
+from .fluent import Fluent
 from .state import State, DeltaState
 from .step import Step
 from .trace import Trace

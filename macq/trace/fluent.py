@@ -28,6 +28,12 @@ class PlanningObject:
     def __str__(self):
         return " ".join([self.obj_type, self.name])
 
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, PlanningObject) and self.name == other.name
+
     @classmethod
     def from_json(cls, data):
         """Converts a json object to a PlanningObject."""
