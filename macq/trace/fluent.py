@@ -10,9 +10,15 @@ class CustomObject:
         string = "Type: " + self.obj_type + ", Name: " + self.name
         return string
 
+    def __eq__(self, other):
+        return isinstance(other, CustomObject) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
 
 class Fluent:
-    def __init__(self, name: str, objects: List[CustomObject], value: bool):
+    def __init__(self, name: str, objects: List[CustomObject], value: bool = True):
         """
         Class to handle a predicate and the objects it is applied to.
 
