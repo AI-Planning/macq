@@ -4,11 +4,9 @@ from macq.trace import PlanningObject, Fluent, Action, Step, State, Trace, Trace
 from macq.observation import IdentityObservation
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
-import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
 
 InvalidCostRange = Trace.InvalidCostRange
-InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
 # HELPER FUNCTIONS
@@ -32,11 +30,7 @@ def generate_test_fluents(num_fluents: int):
     objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
         fluent_name = "fluent" + " " + str(i + 1)
-        if i % 2 == 0:
-            value = True
-        else:
-            value = False
-        fluent = Fluent(fluent_name, [objects[i]], value)
+        fluent = Fluent(fluent_name, [objects[i]])
         fluents.append(fluent)
     return fluents
 

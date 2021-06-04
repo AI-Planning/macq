@@ -1,5 +1,5 @@
 from typing import Set
-from ..trace import Action, Fluent
+from ..trace import Action, Fluent, PlanningObject
 
 
 class ModelAction:
@@ -50,3 +50,12 @@ class ModelAction:
                 The set of fluents to be added to the action's delete effects.
         """
         self.delete.update(fluents)
+
+    @classmethod
+    def from_json(cls, data):
+        """Converts a json object to an Action."""
+        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
+        precond = set(map(Fluent.from_json, data["precond"]))
+        add = set(map(Fluent.from_json, data["add"]))
+        delete = set(map(Fluent.from_json, data["delete"]))
+        return cls(data["name"], obj_params, data["cost"], precond, add, delete)
