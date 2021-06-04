@@ -12,6 +12,8 @@ DEPENDENCIES = [
 
 DEV_DEPENDENCIES = [
     "pytest",
+    "flake8",
+    "black",
 ]
 
 CLASSIFIERS = [

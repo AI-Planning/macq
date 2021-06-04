@@ -26,8 +26,6 @@ jobs:
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  python -m pip install black pytest
-                  if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
                   pip install -e .[dev]
             - name: Lint with black
               run: |
