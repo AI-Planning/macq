@@ -41,9 +41,6 @@ class Generate:
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
 
-        # TODO: explore, try to get function stuff (see Function class)
-        # print(self.lang.functions)
-
         """
         Class that handles creating a basic PDDL state trace generator. Handles all 
         parsing and stores the problem, language, and grounded instance for the child
@@ -147,6 +144,9 @@ class Generate:
         macq_fluent : Fluent
             A fluent, defined using the macq Fluent class.
         """
+        # ignore functions for now
+        if not isinstance(atom, Atom):
+            return None
         fluent_name = atom.predicate.name
         terms = atom.subterms
         objects = []
@@ -171,9 +171,14 @@ class Generate:
         macq_state : State
             A state, defined using the macq State class.
         """
-        return State(
-            [self.__tarski_atom_to_macq_fluent(f) for f in tarski_state.as_atoms()]
-        )
+
+        fluents = []
+        for f in tarski_state.as_atoms():
+            fluent = self.__tarski_atom_to_macq_fluent(f)
+            # ignore functions for now
+            if fluent:
+                fluents.append(fluent)
+        return State(fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator):
         """
