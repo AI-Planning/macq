@@ -9,21 +9,9 @@ Install for development by cloning the repository and running `pip install .[dev
 from macq import generate, extract
 from macq.observation import IdentityObservation
 
-# domain-specific generator: uses api.planning.domains problem_id
-blocks_gen = generate.pddl.Generator(problem_id = 123)
-
-# further configuration
-blocks_gen.configure(
-  {
-    'length': 20, # 20 steps long
-    'use_goal': True,
-    'diversity': True,
-    'method': generate.pddl.modes.MC
-  }
-)
-
-# generate 100 traces
-traces = generate.Generate(generator=blocks_gen, traces=100)
+# get a domain-specific generator: uses api.planning.domains problem_id/
+# generate 100 traces of length 20 using vanilla sampling
+traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100).traces
 
 more_traces = traces.generate_more(10)
 

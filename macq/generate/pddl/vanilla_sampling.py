@@ -4,12 +4,17 @@ from ...utils.timer import set_timer
 from tarski.search.operations import progress
 import random
 
-MAX_TRACE_TIME = 10.0
 
-
-class VanillaSampling(Generator):
-    def __init__(self, dom: str, prob: str, plan_len: int, num_traces: int):
-        super().__init__(dom, prob)
+class VanillaSampling(Generate):
+    def __init__(
+        self,
+        plan_len: int,
+        num_traces: int,
+        dom: str = "",
+        prob: str = "",
+        problem_id: int = None,
+    ):
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.plan_len = plan_len
         self.num_traces = num_traces
         self.traces = self.generate_traces()
@@ -65,31 +70,25 @@ class VanillaSampling(Generator):
         """
         trace = Trace()
 
-        state = self.problem.init
-        valid_trace = False
-
-        while not valid_trace:
+        # loop through while the desired number of traces has not yet been generated
+        while len(traces) < self.num_traces:
             trace.clear()
+            state = self.problem.init
             # add more steps while the trace has not yet reached the desired length
             for j in range(self.plan_len):
                 # find the next applicable actions
-                app_act = self.instance.applicable(state)
-                # get items from generator
-                ls = []
-                for item in app_act:
-                    ls.append(item)
+                ls = list(self.instance.applicable(state))
                 # if the trace reaches a dead lock, disregard this trace and try again
-                if ls == []:
+                if not ls:
                     break
                 # pick a random applicable action and apply it
                 act = random.choice(ls)
                 # create the trace and progress the state
-                macq_action = self._tarski_act_to_macq(act)
-                macq_state = self._tarski_state_to_macq(state)
+                macq_action = self.tarski_act_to_macq(act)
+                macq_state = self.tarski_state_to_macq(state)
                 step = Step(macq_action, macq_state)
                 trace.append(step)
                 state = progress(state, act)
-
-                if j == self.plan_len - 1:
-                    valid_trace = True
-        return trace
+            if ls:
+                traces.append(trace)
+        return traces

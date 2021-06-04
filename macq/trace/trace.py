@@ -1,6 +1,7 @@
 from typing import List, Type, Iterable, Callable
 from . import Action
 from . import Step
+from . import State
 from ..observation import Observation
 
 
@@ -29,10 +30,6 @@ class Trace:
 
         Attributes
         ----------
-        num_steps : int
-            The number of steps used.
-        num_fluents : int
-            The number of fluents used.
         fluents : List of str
             The list of the names of all fluents used.
             Information on the values of fluents are found in the steps.
@@ -43,15 +40,11 @@ class Trace:
             The set of observation tokens, tokenized from the steps.
         """
         self.steps = steps
-        self.num_steps = len(steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
-        self.num_fluents = len(self.fluents)
+        self.__reinit_actions_and_fluents()
         self.observations = []
 
     def __repr__(self):
-        string = "TRACE:\n\nAttributes:\n\nNumber of Steps: " + str(self.num_steps)
-        string += "\nNumber of Fluents: " + str(self.num_fluents)
+        string = "TRACE:\n\nAttributes:"
         string += "\n\nBase Fluents:\n"
         for fluent in self.fluents:
             string += fluent + "\n"
@@ -59,7 +52,7 @@ class Trace:
         for action in self.actions:
             string += action + "\n"
         string += "\n\nSteps:"
-        for i in range(self.num_steps):
+        for i in range(len(self.steps)):
             string += "\n\nSTEP " + str(i + 1) + ":\n\n" + str(self.steps[i]) + "\n"
         string += "\nObservations:\n"
         for obs in self.observations:
@@ -89,11 +82,12 @@ class Trace:
 
     def append(self, item: Step):
         self.steps.append(item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def clear(self):
         self.steps.clear()
-        self.update()
+        self.fluents = []
+        self.actions = []
 
     def copy(self):
         return self.steps.copy()
@@ -103,23 +97,24 @@ class Trace:
 
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
-        self.update()
+        for step in iterable:
+            self.__update_actions_and_fluents(step)
 
     def index(self, value: Step):
         return self.steps.index(value)
 
     def insert(self, index: int, item: Step):
         self.steps.insert(index, item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def pop(self):
         result = self.steps.pop()
-        self.update()
+        self.__reinit_actions_and_fluents()
         return result
 
     def remove(self, value: Step):
         self.steps.remove(value)
-        self.update()
+        self.__reinit_actions_and_fluents()
 
     def reverse(self):
         self.steps.reverse()
@@ -127,38 +122,53 @@ class Trace:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
 
-    def base_fluents(self):
+    def __new_fluents_from_state(self, state: State):
         """
-        Retrieves the names of all fluents used in this trace.
+        Retrieves any new fluents (fluents not yet in this trace's list of fluents)
+        from the given state.
 
-        Returns
-        -------
-        list : str
-            Returns a list of the names of all fluents used in this trace.
+        Args:
+            state (State): the state to extract new fluents from.
         """
-        fluents = []
+        new = []
+        for fluent in state.fluents:
+            name = fluent.name
+            if name not in self.fluents and name not in new:
+                new.append(name)
+        return new
+
+    def __new_action_from_step(self, step: Step):
+        """
+        Retrieves the action from the given step if the action is new (not yet in this
+        trace's list of actions).
+
+        Args:
+            step (Step): the given step to extract the action from.
+        """
+        name = step.action.name
+        if name not in self.actions:
+            return name
+
+    def __update_actions_and_fluents(self, step: Step):
+        """
+        Update this trace's actions and fluents after taking into account the action and
+        fluents of the step just added.
+
+        Args:
+            step (Step): the step just added to the trace.
+        """
+        new_fluents = self.__new_fluents_from_state(step.state)
+        if new_fluents:
+            self.fluents.extend(new_fluents)
+        new_act = self.__new_action_from_step(step)
+        if new_act:
+            self.actions.append(new_act)
+
+    def __reinit_actions_and_fluents(self):
+        self.fluents = []
+        self.actions = []
         for step in self.steps:
-            for fluent in step.state.fluents:
-                name = fluent.name
-                if name not in fluents:
-                    fluents.append(name)
-        return fluents
-
-    def base_actions(self):
-        """
-        Retrieves the names of all actions used in this trace.
-
-        Returns
-        -------
-        list : str
-            Returns a list of the names of all actions used in this trace.
-        """
-        actions = []
-        for step in self.steps:
-            name = step.action.name
-            if name not in actions:
-                actions.append(name)
-        return actions
+            self.__update_actions_and_fluents(step)
 
     def get_prev_states(self, action: Action):
         """
@@ -195,7 +205,7 @@ class Trace:
             A list of states after this action took place.
         """
         post_states = []
-        for i in range(self.num_steps - 1):
+        for i in range(len(self.steps) - 1):
             if self.steps[i].action == action:
                 post_states.append(self.steps[i + 1].state)
         return post_states
@@ -217,11 +227,11 @@ class Trace:
         """
         sas_triples = []
         triple = []
-        for i in range(self.num_steps):
+        for i in range(len(self.steps)):
             if self.steps[i].action == action:
                 triple.append(self.steps[i].state)
                 triple.append(action)
-                if i + 1 < self.num_steps:
+                if i + 1 < len(self.steps):
                     triple.append(self.steps[i + 1].state)
                 triple = tuple(triple)
                 sas_triples.append(triple)
@@ -261,7 +271,7 @@ class Trace:
             The total cost of all actions in the specified range.
         """
 
-        if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
+        if start < 1 or end < 1 or start > len(self.steps) or end > len(self.steps):
             raise self.InvalidCostRange(
                 "Range supplied goes out of the feasible range."
             )
@@ -295,7 +305,7 @@ class Trace:
         for step in self.steps:
             if step.action == action:
                 sum += 1
-        return sum / self.num_steps
+        return sum / len(self.steps)
 
     def tokenize(self, Token: Type[Observation]):
         """
@@ -309,9 +319,3 @@ class Trace:
         for step in self.steps:
             token = Token(step)
             self.observations.append(token)
-
-    def update(self):
-        self.num_steps = len(self.steps)
-        self.fluents = self.base_fluents()
-        self.actions = self.base_actions()
-        self.num_fluents = len(self.fluents)

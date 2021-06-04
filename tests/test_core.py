@@ -4,11 +4,14 @@ from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
 import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
+from macq.generate.pddl.planning_domains_api import get_problem
+
 InvalidCostRange = Trace.InvalidCostRange
 InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
 
 from typing import List
+from pathlib import Path
 import pytest
 
 # HELPER FUNCTIONS
@@ -41,7 +44,7 @@ def generate_test_fluents(num_fluents: int):
     return fluents
 
 
-def generate_test_actions(num_actions: int, objects: List[CustomObject]):
+def generate_test_actions(num_actions: int):
     """
     Generates basic actions to be used for testing.
 
@@ -49,17 +52,16 @@ def generate_test_actions(num_actions: int, objects: List[CustomObject]):
     ---------
     num_actions : int
         The number of actions to generate.
-    objects: List of CustomObjects
-        The objects available to these actions.
 
     Returns
     -------
     actions : List of Actions
         The list of testing actions generated.
     """
+    objects = [CustomObject("number", str(o)) for o in range(num_actions)]
     actions = []
     for i in range(num_actions):
-        action_name = "action" + " " + str(i + 1)
+        action_name = "action " + str(i + 1)
         # action 1 has a cost of 1, etc.
         action = Action(action_name, objects, [], [], [], i + 1)
         actions.append(action)
@@ -87,7 +89,7 @@ def get_fluent_obj(fluents: List[Fluent]):
     return objects
 
 
-def generate_test_states(num_states: int, fluents: List[Fluent]):
+def generate_test_states(num_states: int):
     """
     Generate states to be used for testing, using the given fluents (each state will add a fluent)
 
@@ -95,8 +97,6 @@ def generate_test_states(num_states: int, fluents: List[Fluent]):
     ---------
     num_states : int
         The number of states to generate.
-    fluents : List of Fluents
-        The fluents that will be used to make up the states.
 
     Returns
     -------
@@ -105,16 +105,16 @@ def generate_test_states(num_states: int, fluents: List[Fluent]):
     """
     states = []
     next_fluents = []
+    fluents = generate_test_fluents(num_states)
     for i in range(num_states):
-        state_name = "state" + " " + str(i + 1)
-        if i < len(fluents):
-            next_fluents.append(fluents[i])
+        state_name = "state " + str(i + 1)
+        next_fluents = fluents[: i + 1]
         state = State(next_fluents)
         states.append(state)
     return states
 
 
-def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
+def generate_test_steps(num_steps: int):
     """
     Generate steps to be used for testing, given the number of steps and possible actions and states.
 
@@ -122,10 +122,6 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
     ---------
     num_steps : int
         The number of steps to generate.
-    actions : List of Actions
-        The list of possible actions to be used for the generated steps.
-    states : List of States
-        The list of possible states to be used for the generated steps.
 
     Returns
     -------
@@ -133,20 +129,10 @@ def generate_test_steps(num_steps: int, actions: List[Action], states: List[Stat
         The list of testing steps generated.
     """
     steps = []
-    # indices for actions and states respectively
-    a_index = 0
-    s_index = 0
-    for _ in range(num_steps):
-        step = Step(actions[a_index], states[s_index])
-        # cycle through actions and states
-        if a_index < len(actions):
-            a_index += 1
-        else:
-            a_index = 0
-        if s_index < len(states):
-            s_index += 1
-        else:
-            s_index = 0
+    actions = generate_test_actions(num_steps)
+    states = generate_test_states(num_steps)
+    for i in range(num_steps):
+        step = Step(actions[i], states[i])
         steps.append(step)
     return steps
 
@@ -165,11 +151,7 @@ def generate_test_trace(complexity: int):
     trace : Trace
         The testing trace generated.
     """
-    fluents = generate_test_fluents(complexity)
-    actions = generate_test_actions(complexity, get_fluent_obj(fluents))
-    states = generate_test_states(complexity, fluents)
-    steps = generate_test_steps(complexity, actions, states)
-    trace = Trace(steps)
+    trace = Trace(generate_test_steps(complexity))
     return trace
 
 
@@ -234,30 +216,13 @@ def test_action_add_params():
 
 # TESTS FOR TRACE CLASS
 
-# test the functionality to add steps to a trace (NOT YET WORKING -- need equality dunders). pass for now
-def test_trace_add_steps():
-    """
-    objects = [CustomObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, [], [], [], 1)
-    fluent = Fluent("on table", [objects[0]], True)
-    state = State([fluent])
-    trace = generate_test_trace(3)
-    step4 = generate_test_steps(1, [action], [state])
-
-    result = copy.deepcopy(trace.steps)
-    result.append(step4)
-
-    trace.add_steps([step4])
-    assert trace.steps == result
-    """
-    pass
-
-
 # ensure that the Trace base_fluents() and base_actions() functions work correctly
 def test_trace_base():
     trace = generate_test_trace(3)
-    assert trace.base_fluents() == ["fluent 1", "fluent 2", "fluent 3"]
-    assert trace.base_actions() == ["action 1", "action 2", "action 3"]
+    print(trace.fluents)
+    print(trace.actions)
+    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3"]
+    assert trace.actions == ["action 1", "action 2", "action 3"]
 
 
 # test that the previous states are being retrieved correctly
@@ -349,21 +314,26 @@ def test_trace_tokenize():
     # test equality dunder by attempting to compare an object of a different type
     assert trace.observations != step1
 
+
 # test the timer wrapper on vanilla trace generation
 def test_timer_wrapper_vanilla():
-    # exit out to the base macq folder so we can get to /tests 
+    # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    
+    dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
+
     with pytest.raises(TraceSearchTimeOut):
         vanilla = VanillaSampling(dom, prob, 10, 5)
 
+
+# generate testing trace lists
 def generate_test_trace_list(length: int):
     trace = generate_test_trace(3)
     traces = [trace] * length
     return TraceList(traces)
-  
+
+
+# test trace lists
 def test_trace_list():
     trace_list = generate_test_trace_list(5)
 
@@ -383,13 +353,88 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
 
-    print(trace_list)
+
+# test trace append function
+def test_trace_append():
+    trace = generate_test_trace(3)
+    steps = generate_test_steps(4)
+    trace.append(steps[3])
+    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3", "fluent 4"]
+    assert trace.actions == ["action 1", "action 2", "action 3", "action 4"]
+    # assert trace.steps == steps
+
+
+# test trace clear function
+def test_trace_clear():
+    trace = generate_test_trace(3)
+    trace.clear()
+    assert trace.fluents == []
+    assert trace.actions == []
+    assert trace.steps == []
+
+
+# test trace extend function
+def test_trace_extend():
+    trace = generate_test_trace(3)
+    steps = generate_test_steps(7)
+    trace.extend(steps[3:])
+    assert trace.fluents == [
+        "fluent 1",
+        "fluent 2",
+        "fluent 3",
+        "fluent 4",
+        "fluent 5",
+        "fluent 6",
+        "fluent 7",
+    ]
+    assert trace.actions == [
+        "action 1",
+        "action 2",
+        "action 3",
+        "action 4",
+        "action 5",
+        "action 6",
+        "action 7",
+    ]
+    # assert trace.steps == steps
+
+
+# test trace insert function
+def test_trace_insert():
+    trace = generate_test_trace(3)
+    steps = generate_test_steps(4)
+    trace.insert(0, steps[3])
+    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3", "fluent 4"]
+    assert trace.actions == ["action 1", "action 2", "action 3", "action 4"]
+    # assert trace.steps == [steps[3], steps[0], steps[1], steps[2]]
+
+
+# test trace pop function
+def test_trace_pop():
+    trace = generate_test_trace(3)
+    steps = trace.steps.copy()
+    trace.pop()
+    assert trace.fluents == ["fluent 1", "fluent 2"]
+    assert trace.actions == ["action 1", "action 2"]
+    # assert trace.steps == steps[:-1]
+
+
+# test trace remove function
+def test_trace_remove():
+    trace = generate_test_trace(3)
+    steps = trace.steps.copy()
+    trace.remove(steps[1])
+    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3"]
+    assert trace.actions == ["action 1", "action 3"]
+    # assert trace.steps == [steps[0], steps[2]]
+
 
 if __name__ == "__main__":
-    # exit out to the base macq folder so we can get to /tests 
+    # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    dom = (base / 'tests/pddl_testing_files/playlist_domain.pddl').resolve()
-    prob = (base / 'tests/pddl_testing_files/playlist_problem.pddl').resolve()
-    vanilla = VanillaSampling(dom, prob, 5, 5)
+    dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
+    # vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=2, num_traces=1)
+    # print(vanilla.traces)
+    vanilla = VanillaSampling(problem_id=100, plan_len=3, num_traces=1)
     print(vanilla.traces)
-

@@ -83,11 +83,23 @@ class Action:
         valid = False
         for fluent in fluents:
             for obj in fluent.objects:
-                for param in self.obj_params:
-                    if obj == param:
-                        valid = True
-                if not valid:        
+                # if this fluent takes no parameters it is automatically valid
+                if (
+                    len(fluent.objects) == 1
+                    and fluent.objects[0].name == ""
+                    and fluent.objects[0].obj_type == ""
+                ):
+                    valid = True
+                else:
+                    for param in self.obj_params:
+                        if obj == param:
+                            valid = True
+                            # no need to check the rest
+                            break
+                if not valid:
                     raise self.InvalidFluent()
+                # reset flag
+                valid = False
         condition.extend(fluents)
 
     def add_precond(self, fluents: List[Fluent]):
