@@ -11,8 +11,7 @@ from macq.observation import IdentityObservation
 
 # get a domain-specific generator: uses api.planning.domains problem_id/
 # generate 100 traces of length 20 using vanilla sampling
-traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100)
-
+traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100).traces
 
 more_traces = traces.generate_more(10)
 
