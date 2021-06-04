@@ -28,8 +28,6 @@ class Trace:
             The set of fluents in the trace.
         actions (set):
             The set of actions in the trace.
-        observations (list):
-            A tokenized version of the steps list.
     """
 
     class InvalidCostRange(Exception):
@@ -50,7 +48,6 @@ class Trace:
         self.fluents = self._get_fluents()
         self.actions = self._get_actions()
         self.num_fluents = len(self.fluents)
-        self.observations = []
 
     def __str__(self):
         indent = " " * 2
@@ -91,6 +88,7 @@ class Trace:
 
     def __delitem__(self, key: int):
         del self.steps[key]
+        self.update()
 
     def __iter__(self):
         return iter(self.steps)
@@ -103,9 +101,11 @@ class Trace:
 
     def append(self, item: Step):
         self.steps.append(item)
+        self.update()
 
     def clear(self):
         self.steps.clear()
+        self.update()
 
     def copy(self):
         return self.steps.copy()
@@ -115,18 +115,23 @@ class Trace:
 
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
+        self.update()
 
     def index(self, value: Step):
         return self.steps.index(value)
 
     def insert(self, index: int, item: Step):
         self.steps.insert(index, item)
+        self.update()
 
     def pop(self):
-        return self.steps.pop()
+        result = self.steps.pop()
+        self.update()
+        return result
 
     def remove(self, value: Step):
         self.steps.remove(value)
+        self.update()
 
     def reverse(self):
         self.steps.reverse()
@@ -267,13 +272,25 @@ class Trace:
                 sum += 1
         return sum / len(self)
 
-    def tokenize(self, Token: Type[Observation]):
+    def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.
 
-        Arguments
-            A subclass of `Observation`, defining the method of tokenization
-            for the steps.
+        Args:
+            Token (Observation):
+                A subclass of `Observation`, defining the method of tokenization
+                for the steps.
         """
+
+        observations: List[Observation] = []
         for step in self.steps:
-            token = Token(step)
-            self.observations.append(token)
+            token = Token(step, **kwargs)
+            observations.append(token)
+        return observations
+
+    def update(self):
+        self.num_steps = len(self.steps)
+        self.fluents = self._get_fluents()
+        self.actions = self._get_actions()
+        self.num_fluents = len(self.fluents)
+        for i, step in enumerate(self):
+            step.index = i

@@ -1,10 +1,21 @@
 # MAcq: The Model Acquisition Toolkit
 
+[![CI](https://github.com/QuMuLab/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/QuMuLab/macq/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json?cacheSeconds=3600)](https://github.com/QuMuLab/macq/actions)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/QuMuLab/macq/blob/main/LICENSE)
+
+
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
-Install for development by cloning the repository and running `pip install .[dev]` (use `pip3` if you have python2 installed).
+- [Usage](#usage)
+- [Coverage](#coverage)
+- [Features / Assumptions](#features)
+- [Survey Papers](#survey)
+- [Citing](#citing)
+- [Contributing](#contributing)
 
-## Usage
+## Usage <a name="usage" />
 ```python
 from macq import generate, extract
 from macq.observation import IdentityObservation
@@ -106,7 +117,7 @@ Fluent:
       type: number
 ```
 
-## Coverage
+## Coverage <a name="coverage"></a>
 
 - [ ] [Rule Creation and Rule Learning through Environmental Exploration](https://www.ijcai.org/Proceedings/89-1/Papers/108.pdf) (IJCAI'89)
 - [ ] [Learning by Experimentation: The Operator Refinement Method](https://kilthub.cmu.edu/articles/journal_contribution/Learning_by_Experimentation_The_Operator_Refinement_Method/6622868/1) (MLBook'90)
@@ -132,6 +143,7 @@ Fluent:
 - [ ] [Robust planning with incomplete domain models](https://www.sciencedirect.com/science/article/pii/S0004370216301539) (AIJ'17)
 - [ ] [LOUGA: Learning Planning Operators Using Genetic Algorithms](https://www.springerprofessional.de/en/louga-learning-planning-operators-using-genetic-algorithms/15981308) (PRKAW'18)
 - [ ] [Learning STRIPS Action Models with Classical Planning](https://arxiv.org/abs/1903.01153) (ICAPS'18)
+- [ ] [Learning Planning Operators from Episodic Traces](https://aaai.org/ocs/index.php/SSS/SSS18/paper/view/17594/15530) (AAAI-SS'18)
 - [ ] [Learning action models with minimal observability](https://www.sciencedirect.com/science/article/abs/pii/S0004370218304259) (AIJ'19)
 - [ ] [Learning Action Models from Disordered and Noisy Plan Traces](https://arxiv.org/abs/1908.09800) (arXiv'19)
 - [ ] [Bridging the Gap: Providing Post-Hoc Symbolic Explanations for Sequential Decision-Making Problems with Black Box Simulators](https://arxiv.org/abs/2002.01080) (ICML-WS'20)
@@ -139,8 +151,9 @@ Fluent:
 - [ ] [Learning First-Order Symbolic Representations for Planning from the Structure of the State Space](https://arxiv.org/abs/1909.05546) (ECAI'20)
 - [ ] [Discovering Underlying Plans Based on Shallow Models](https://dl.acm.org/doi/abs/10.1145/3368270) (ACM TIST'20)
 - [ ] [Agent Interrogation Algorithm](https://github.com/AAIR-lab/AIA-AAAI21) (AAAI'21)
+- [ ] [Learning First-Order Representations for Planning from Black-Box States: New Results](https://arxiv.org/abs/2105.10830) (arXiv'21)
 
-## Features / Assumptions
+## Features / Assumptions <a name="features" />
 
 - Determinism:
   - Fully deterministic
@@ -169,14 +182,21 @@ Fluent:
   - Bounded
   - No
 
-## Requirements
-
-* Tarski
-
-## Survey Papers
+## Survey Papers <a name="survey" />
 
 * [A Review of Machine Learning for Automated Planning](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.4901&rep=rep1&type=pdf) (see Fig 2)
 * [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
 
-## Citing this work
+## Citing this work <a name="citing" />
 Coming soon...
+
+## Contributing <a name="contributing" />
+
+To install macq for local development:
+1. Clone the repository
+2. Install the library and its dev dependencies: `pip install .[dev]` or `python setup.py develop`
+	- We recommend installing in a virtual environment
+3. Enable the pre-commit formatting hook: `pre-commit install`
+
+
+Install for development by cloning the repository and running `pip install .[dev]` (use `pip3` if you have python2 installed).

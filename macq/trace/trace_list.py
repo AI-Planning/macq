@@ -1,6 +1,6 @@
-from typing import Iterable, List, Callable
-from . import Action
-from . import Trace
+from typing import List, Callable, Type, Optional
+from . import Action, Trace
+from ..observation import Observation
 
 
 class TraceList:
@@ -16,6 +16,9 @@ class TraceList:
         generator (function | None):
             The function used to generate the traces.
     """
+
+    # Allow child classes to have traces as a list of any type
+    traces: List
 
     class MissingGenerator(Exception):
         def __init__(
@@ -40,7 +43,7 @@ class TraceList:
             generator (function):
                 Optional; The function used to generate the traces.
         """
-        self.traces: List[Trace] = traces
+        self.traces = traces
         self.generator = generator
 
     def __str__(self):
@@ -68,10 +71,10 @@ class TraceList:
     def __reversed__(self):
         return reversed(self.traces)
 
-    def __contains__(self, item: Trace):
+    def __contains__(self, item):
         return item in self.traces
 
-    def append(self, item: Trace):
+    def append(self, item):
         self.traces.append(item)
 
     def clear(self):
@@ -80,22 +83,22 @@ class TraceList:
     def copy(self):
         return self.traces.copy()
 
-    def count(self, value: Trace):
+    def count(self, value):
         return self.traces.count(value)
 
-    def extend(self, iterable: Iterable[Trace]):
+    def extend(self, iterable):
         self.traces.extend(iterable)
 
-    def index(self, value: Trace):
+    def index(self, value):
         return self.traces.index(value)
 
-    def insert(self, index: int, item: Trace):
+    def insert(self, index: int, item):
         self.traces.insert(index, item)
 
     def pop(self):
         return self.traces.pop()
 
-    def remove(self, value: Trace):
+    def remove(self, value):
         self.traces.remove(value)
 
     def reverse(self):
@@ -136,3 +139,29 @@ class TraceList:
         for trace in self:
             usages.append(trace.get_usage(action))
         return usages
+
+    def tokenize(self, Token: Type[Observation], **kwargs):
+        """Tokenizes the steps in this trace.
+
+        Args:
+            Token (Observation):
+                A subclass of `Observation`, defining the method of tokenization
+                for the steps.
+        """
+
+        return ObservationList(self, Token, **kwargs)
+
+
+class ObservationList(TraceList):
+    traces: List[Observation]
+    # Disable methods
+    generate_more = property()
+    get_usage = property()
+    tokenize = property()
+
+    def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
+        super(ObservationList, self).__init__()
+        self.type = Token
+        for trace in traces:
+            observations = trace.tokenize(Token, **kwargs)
+            self.append(observations)
