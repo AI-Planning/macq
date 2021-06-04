@@ -2,7 +2,6 @@ from macq.trace import CustomObject, Fluent, Action, Step, State, Trace, TraceLi
 from macq.observation import IdentityObservation
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
-import macq.utils.timer
 from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.planning_domains_api import get_problem
 
@@ -229,9 +228,9 @@ def test_trace_base():
 def test_trace_prev_states():
     trace = generate_test_trace(3)
     # get the first and last action
-    (action1, action3) = (trace.steps[0].action, trace.steps[2].action)
+    (action1, action3) = (trace[0].action, trace[2].action)
     # get the first and last state
-    (state1, state3) = (trace.steps[0].state, trace.steps[2].state)
+    (state1, state3) = (trace[0].state, trace[2].state)
 
     assert trace.get_prev_states(action1) == [state1]
     assert trace.get_prev_states(action3) == [state3]
@@ -241,9 +240,9 @@ def test_trace_prev_states():
 def test_trace_post_states():
     trace = generate_test_trace(3)
     # get the first and last action
-    (action1, action3) = (trace.steps[0].action, trace.steps[2].action)
+    (action1, action3) = (trace[0].action, trace[2].action)
     # get the second state
-    state2 = trace.steps[1].state
+    state2 = trace[1].state
 
     assert trace.get_post_states(action1) == [state2]
     assert trace.get_post_states(action3) == []
@@ -253,9 +252,9 @@ def test_trace_post_states():
 def test_trace_get_sas_triples():
     trace = generate_test_trace(3)
     # get the second and last action
-    (action2, action3) = (trace.steps[1].action, trace.steps[2].action)
+    (action2, action3) = (trace[1].action, trace[2].action)
     # get the second and last state
-    (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
+    (state2, state3) = (trace[1].state, trace[2].state)
 
     assert trace.get_sas_triples(action2) == [(state2, action2, state3)]
     assert trace.get_sas_triples(action3) == [(state3, action3)]
@@ -289,14 +288,14 @@ def test_trace_invalid_cost_range():
 def test_trace_usage():
     trace = generate_test_trace(3)
     # get the first action
-    action1 = trace.steps[0].action
+    action1 = trace[0].action
     assert trace.get_usage(action1) == 1 / 3
 
 
 # test trace tokenize function
 def test_trace_tokenize():
     trace = generate_test_trace(3)
-    (step1, step2, step3) = (trace.steps[0], trace.steps[1], trace.steps[2])
+    (step1, step2, step3) = (trace[0], trace[1], trace[2])
     trace.tokenize(IdentityObservation)
     print(trace.observations)
     print(
@@ -323,7 +322,7 @@ def test_timer_wrapper_vanilla():
     prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
 
     with pytest.raises(TraceSearchTimeOut):
-        vanilla = VanillaSampling(dom, prob, 10, 5)
+        vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=5)
 
 
 # generate testing trace lists
@@ -416,7 +415,7 @@ def test_trace_pop():
     trace.pop()
     assert trace.fluents == ["fluent 1", "fluent 2"]
     assert trace.actions == ["action 1", "action 2"]
-    # assert trace.steps == steps[:-1]
+    # assert trace == steps[:-1]
 
 
 # test trace remove function
@@ -436,5 +435,5 @@ if __name__ == "__main__":
     prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
     # vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=2, num_traces=1)
     # print(vanilla.traces)
-    vanilla = VanillaSampling(problem_id=100, plan_len=3, num_traces=1)
+    vanilla = VanillaSampling(problem_id=123, plan_len=3, num_traces=1)
     print(vanilla.traces)

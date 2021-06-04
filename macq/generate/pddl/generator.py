@@ -16,7 +16,7 @@ import requests
 from macq.generate.pddl.planning_domains_api import get_problem
 
 
-class Generate:
+class Generator:
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)

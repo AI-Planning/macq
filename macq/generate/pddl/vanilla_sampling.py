@@ -4,8 +4,10 @@ from ...utils.timer import set_timer
 from tarski.search.operations import progress
 import random
 
+MAX_TRACE_TIME = 10.0
 
-class VanillaSampling(Generate):
+
+class VanillaSampling(Generator):
     def __init__(
         self,
         plan_len: int,
@@ -69,6 +71,7 @@ class VanillaSampling(Generate):
             The valid trace generated.
         """
         trace = Trace()
+        traces = TraceList()
 
         # loop through while the desired number of traces has not yet been generated
         while len(traces) < self.num_traces:
