@@ -6,9 +6,7 @@ NAME = "macq"
 
 DESCRIPTION = "Action model acquisition from state trace data."
 
-DEPENDENCIES = [
-    "tarski>=0.7.0",
-]
+DEPENDENCIES = ["tarski>=0.7.0", "requests"]
 
 DEV_DEPENDENCIES = [
     "pytest",
