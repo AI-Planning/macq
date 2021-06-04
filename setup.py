@@ -12,8 +12,10 @@ DEPENDENCIES = [
 
 DEV_DEPENDENCIES = [
     "pytest",
+    "pytest-cov",
     "flake8",
     "black",
+    "pre-commit",
 ]
 
 CLASSIFIERS = [
