@@ -28,6 +28,9 @@ class PlanningObject:
     def __str__(self):
         return " ".join([self.obj_type, self.name])
 
+    def __eq__(self, other: PlanningObject):
+        return self.name == other.name
+
     @classmethod
     def from_json(cls, data):
         """Converts a json object to a PlanningObject."""
@@ -64,6 +67,9 @@ class Fluent:
     def __hash__(self):
         # Order of objects is important!
         return hash(str(self))
+
+    def __eq__(self, other: Fluent):
+        return self.name == other.name and self.objects == other.objects
 
     @classmethod
     def from_json(cls, data):

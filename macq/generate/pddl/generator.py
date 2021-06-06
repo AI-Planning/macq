@@ -1,10 +1,19 @@
-from ...trace import Action, State, PlanningObject, Fluent
+from ...trace import Action, State, PlanningObject, Fluent, PlanningObject
 from tarski.io import PDDLReader, FstripsWriter
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
-from tarski.syntax.ops import CompoundFormula
-import tarski
-import random
+from tarski.grounding.errors import ReachabilityLPUnsolvable
+from tarski.syntax.ops import CompoundFormula, flatten
+from tarski.syntax.formulas import Atom
+from tarski.syntax.builtins import BuiltinPredicateSymbol
+from tarski.utils.helpers import parse_atom
+from tarski.fstrips.fstrips import AddEffect, DelEffect
+from tarski.fstrips.action import PlainOperator
+from tarski.model import Model
+from collections import OrderedDict
+
+import requests
+from macq.generate.pddl.planning_domains_api import get_problem
 
 
 class Generator:
@@ -14,28 +23,47 @@ class Generator:
     generators to easily access and use.
     """
 
-    def __init__(self, dom: str, prob: str):
-        """
-        Creates a Generator object by parsing the given domain and problem pddl files.
-
-        Args:
-            dom (str): The domain filename.
-            prob (str): The problem filename.
-        """
-
+    def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
-        reader.parse_domain(dom)
-        self.problem = reader.parse_instance(prob)
+
+        if problem_id == None:
+            reader.parse_domain(dom)
+            self.problem = reader.parse_instance(prob)
+        else:
+            dom = requests.get(get_problem(problem_id)["domain_url"]).text
+            prob = requests.get(get_problem(problem_id)["problem_url"]).text
+            reader.parse_domain_string(dom)
+            self.problem = reader.parse_instance_string(prob)
         self.lang = self.problem.language
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
 
-    def __extract_action_typing(self):
+        """
+        Class that handles creating a basic PDDL state trace generator. Handles all 
+        parsing and stores the problem, language, and grounded instance for the child
+        generators to easily access and use. Takes either the raw filenames of the 
+        domain and problem, or a problem ID.
+
+        Arguments
+        ---------
+        dom : str
+            The domain filename.
+        prob : str
+            The problem filename.
+        problem_id : int
+            The ID of the problem to access.
+        """
+
+    def extract_action_typing(self):
         """
         Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
+
+        i.e. given the standard blocks problem/domain, this function would return:
+        {'pick-up': ['object'], 'put-down': ['object'], 'stack': ['object', 'object'],
+        'unstack': ['object', 'object']}
 
         Returns
         -------
@@ -48,20 +76,20 @@ class Generator:
 
         actions = self.problem.actions
         extracted_act_types = {}
+        actions = self.problem.actions.values()
         for act in actions:
-            raw_types = str(actions[act])
-            raw_types = raw_types[len(act) + 1 : -1]
-            raw_types = raw_types.split(",")
-            params = []
-            for raw_act in raw_types:
-                params.append(raw_act.split(" ")[1])
-            extracted_act_types[act] = params
+            types = [type.sort.name for type in act.parameters.variables.values()]
+            extracted_act_types[act.name] = types
         return extracted_act_types
 
-    def __extract_predicate_typing(self):
+    def extract_predicate_typing(self):
         """
         Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
+
+        i.e. given the standard blocks problem/domain, this function would return:
+        {'=': ['object', 'object'], '!=': ['object', 'object'], 'on': ['object', 'object'],
+        'ontable': ['object'], 'clear': ['object'], 'handempty': [], 'holding': ['object']}
 
         Returns
         -------
@@ -69,103 +97,75 @@ class Generator:
             The dictionary that indicates the types of all the objects each predicate in
             the problem acts upon.
         """
-        writer = FstripsWriter(self.problem)
+        predicates = self.lang.predicates
         extracted_pred_types = {}
-        raw_pred = writer.get_predicates().split("\n")
-        for i in range(len(raw_pred)):
-            raw_pred[i] = raw_pred[i].lstrip()[1:-1]
-            raw_pred[i] = raw_pred[i].split(" ")
-            name = raw_pred[i][0]
-            params = []
-            for j in range(1, len(raw_pred[i])):
-                check_hyph = "-" in raw_pred[i][j]
-                if "-" not in raw_pred[i][j] and "?" not in raw_pred[i][j]:
-                    params.append(raw_pred[i][j])
-            extracted_pred_types[name] = params
+        for pred in predicates:
+            info = pred.signature
+            name = info[0]
+            if isinstance(name, BuiltinPredicateSymbol):
+                name = name.value
+            extracted_pred_types[name] = [type for type in info[1:]]
         return extracted_pred_types
 
-    def __action_or_predicate_split(self, raw: str, is_action: bool):
+    def __effect_split(self, act: PlainOperator):
         """
-        Takes a string representing either an action or fluent in the form of: action/fluent(*objects)
-        and parses it to a dictionary that separates the name of the action or fluent from the objects it
-        acts upon. The objects are also instantiated with the appropriate type/name.
-        Example: pick-up(f) is parsed to {'name': 'pick-up', 'objects': [Type: object, Name: f]}
+        Converts the effects of an action as defined by tarski to fluents as defined by macq.
 
         Arguments
         ---------
-        raw : str
-            The raw string containing the action or fluent.
-        is_action : bool
-            Determines if the string provided is either an action or a fluent.
+        act : PlainOperator (from tarski.fstrips.action)
+            The supplied action, defined using the tarski PlainOperator class.
 
         Returns
         -------
-        split : dict
-            The parsed action or fluent, separating its name from its instantiated objects.
+        (add, delete) : tuple of Fluents
+            The lists of add and delete effects, in the form of macq Fluents.
         """
-        split = {}
-        raw = raw.strip(")")
-        name = raw.split("(")[0]
-        raw = raw.replace(" ", "")
-        param_names = raw.split("(")[1].split(",")
-        num_param = len(param_names)
-        obj_param = []
-
-        if name == "=":
-            types = ["object", "object"]
-            name = "equal"
-        else:
-            if is_action:
-                act_types = self.__extract_action_typing()
-                types = act_types[name]
+        effects = act.effects
+        add = []
+        delete = []
+        for effect in effects:
+            fluent = self.__tarski_atom_to_macq_fluent(effect.atom)
+            if isinstance(effect, AddEffect):
+                add.append(fluent)
             else:
-                fluent_types = self.__extract_predicate_typing()
-                types = fluent_types[name]
+                delete.append(fluent)
+        return (add, delete)
 
-        for i in range(num_param):
-            obj_param.append(PlanningObject(types[i], param_names[i]))
-        split["name"] = name
-        split["objects"] = obj_param
-        return split
-
-    def __tarski_fluent_to_macq(self, raw: str):
+    def __tarski_atom_to_macq_fluent(self, atom: Atom):
         """
-        Takes a string representing either a fluent in the form of: fluent(*objects)
-        and parses it to a dictionary that separates the name of the fluent from the objects it
-        acts upon. The objects are also instantiated with the appropriate type/name.
-        If the fluent has a 'not' operator, the value of the Fluent is set to False.
-        Example: (not on-table(b)) is parsed to a Fluent with name 'on-table', object 'b', and
-        is set to False.
+        Converts a tarski Atom to a fluent as defined by macq.
 
         Arguments
         ---------
-        raw : str
-            The raw string containing the fluent.
+        atom : Atom
+            The supplied atom, defined using the tarski Atom class.
 
         Returns
         -------
         macq_fluent : Fluent
-            The generated fluent.
+            A fluent, defined using the macq Fluent class.
         """
-        # remove starting and ending parentheses, if necessary
-        if raw[0] == "(":
-            raw = raw[1 : len(raw) - 1]
-        test = raw.split(" ")
-        if "not" in test:
-            value = False
-        else:
-            value = True
-        fluent = self.__action_or_predicate_split(test[-1], False)
-        macq_fluent = Fluent(fluent["name"], fluent["objects"])
-        return {"fluent": macq_fluent, "value": value}
+        # ignore functions for now
+        if not isinstance(atom, Atom):
+            return None
+        fluent_name = atom.predicate.name
+        terms = atom.subterms
+        objects = []
+        for term in terms:
+            if isinstance(fluent_name, BuiltinPredicateSymbol):
+                fluent_name = fluent_name.value
+            objects.append(PlanningObject(term.sort.name, term.name))
+        fluent = Fluent(fluent_name, objects)
+        return fluent
 
-    def tarski_state_to_macq(self, tarski_state: tarski.model.Model):
+    def tarski_state_to_macq(self, tarski_state: Model):
         """
         Converts a state as defined by tarski to a state as defined by macq.
 
         Arguments
         ---------
-        tarski_state : Model (from tarski.model)
+        tarski_state : Model
             The supplied state, defined using the tarski Model class.
 
         Returns
@@ -173,25 +173,22 @@ class Generator:
         macq_state : State
             A state, defined using the macq State class.
         """
-        tarski_state = tarski_state.as_atoms()
-        fluents = {}
-        for fluent in tarski_state:
-            get_fluent = self.__tarski_fluent_to_macq(str(fluent))
-            fluents[get_fluent["fluent"]] = get_fluent["value"]
-        macq_state = State(fluents)
-        return macq_state
 
-    def tarski_act_to_macq(
-        self,
-        tarski_act: tarski.fstrips.action.PlainOperator,
-        get_precond_effects: bool = False,
-    ):
+        fluents = []
+        for f in tarski_state.as_atoms():
+            fluent = self.__tarski_atom_to_macq_fluent(f)
+            # ignore functions for now
+            if fluent:
+                fluents.append(fluent)
+        return State(fluents)
+
+    def tarski_act_to_macq(self, tarski_act: PlainOperator):
         """
         Converts an action as defined by tarski to an action as defined by macq.
 
         Arguments
         ---------
-        tarski_act : PlainOperator (from tarski.fstrips.action)
+        tarski_act : PlainOperator
             The supplied action, defined using the tarski PlainOperator class.
         get_precond_effects : bool
             Determines if the generator wants to extract preconditions and effects as well.
@@ -201,29 +198,25 @@ class Generator:
         macq_act : Action
             An action, defined using the macq Action class.
         """
-        action_info = self.__action_or_predicate_split(tarski_act.name, True)
-        if get_precond_effects:
-            precond = []
-            if type(tarski_act.precondition) == CompoundFormula:
-                raw_precond = tarski_act.precondition.subformulas
-                for fluent in raw_precond:
-                    precond.append(self.__tarski_fluent_to_macq(str(fluent)))
-            else:
-                raw_precond = tarski_act.precondition
-                precond.append(self.__tarski_fluent_to_macq(str(raw_precond)))
-            (add, delete) = self.__effect_split(tarski_act)
-            return Action(
-                action_info["name"],
-                action_info["objects"],
-                precond=precond,
-                add=add,
-                delete=delete,
-            )
+        precond = []
+        if isinstance(tarski_act.precondition, CompoundFormula):
+            raw_precond = tarski_act.precondition.subformulas
+            for raw_p in raw_precond:
+                if isinstance(raw_p, CompoundFormula):
+                    precond.append(
+                        self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
+                    )
+                else:
+                    precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
         else:
-            return Action(
-                action_info["name"],
-                action_info["objects"],
-                precond=None,
-                add=None,
-                delete=None,
-            )
+            precond.append(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
+        (add, delete) = self.__effect_split(tarski_act)
+        name = tarski_act.name.split("(")[0]
+        objs = set()
+        for fluent in add:
+            objs.update(set(fluent.objects))
+        for fluent in delete:
+            objs.update(set(fluent.objects))
+        for fluent in precond:
+            objs.update(set(fluent.objects))
+        return Action(name, objs, precond, add, delete)

@@ -45,11 +45,7 @@ class Trace:
                 `list`.
         """
         self.steps = steps
-        # trace is list-like, so is this neccessary? can do len(trace) instend
-        self.num_steps = len(steps)
-        self.fluents = self._get_fluents()
-        self.actions = self._get_actions()
-        self.num_fluents = len(self.fluents)
+        self.__reinit_actions_and_fluents()
         self.observations = []
 
     def __str__(self):
@@ -104,11 +100,12 @@ class Trace:
 
     def append(self, item: Step):
         self.steps.append(item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def clear(self):
         self.steps.clear()
-        self.update()
+        self.fluents = []
+        self.actions = []
 
     def copy(self):
         return self.steps.copy()
@@ -118,23 +115,24 @@ class Trace:
 
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
-        self.update()
+        for step in iterable:
+            self.__update_actions_and_fluents(step)
 
     def index(self, value: Step):
         return self.steps.index(value)
 
     def insert(self, index: int, item: Step):
         self.steps.insert(index, item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def pop(self):
         result = self.steps.pop()
-        self.update()
+        self.__reinit_actions_and_fluents()
         return result
 
     def remove(self, value: Step):
         self.steps.remove(value)
-        self.update()
+        self.__reinit_actions_and_fluents()
 
     def reverse(self):
         self.steps.reverse()
@@ -142,44 +140,51 @@ class Trace:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
 
-    def add_steps(self, steps: List[Step]):
-        """Adds steps to the trace.
+    def __new_fluents_from_state(self, state: State):
+        """
+        Retrieves any new fluents (fluents not yet in this trace's list of fluents)
+        from the given state.
 
         Args:
-            steps (list):
-                The ordered list of steps to append to this trace.
+            state (State): the state to extract new fluents from.
         """
-        self.steps.extend(steps)
+        new = []
+        for fluent in state.fluents:
+            if fluent not in self.fluents and fluent not in new:
+                new.append(fluent)
+        return new
 
-    def _get_fluents(self):
+    def __new_action_from_step(self, step: Step):
         """
-        Retrieves the fluents used in this trace.
+        Retrieves the action from the given step if the action is new (not yet in this
+        trace's list of actions).
 
-        Returns
-        -------
-        set : set of fluent dicts
-            Returns a set of all the fluents used in this trace.
+        Args:
+            step (Step): the given step to extract the action from.
         """
+        if step.action not in self.actions:
+            return step.action
 
-        fluents_set = set()
-        for step in self:
-            for fluent in step.state.keys():
-                fluents_set.add(fluent)
-        return fluents_set
-
-    def _get_actions(self):
+    def __update_actions_and_fluents(self, step: Step):
         """
-        Retrieves the actions used in this trace.
+        Update this trace's actions and fluents after taking into account the action and
+        fluents of the step just added.
 
-        Returns
-        -------
-        set : Action
-            Returns a set of all the actions used in this trace.
+        Args:
+            step (Step): the step just added to the trace.
         """
-        actions = set()
+        new_fluents = self.__new_fluents_from_state(step.state)
+        if new_fluents:
+            self.fluents.extend(new_fluents)
+        new_act = self.__new_action_from_step(step)
+        if new_act:
+            self.actions.append(new_act)
+
+    def __reinit_actions_and_fluents(self):
+        self.fluents = []
+        self.actions = []
         for step in self.steps:
-            actions.add(step.action)
-        return actions
+            self.__update_actions_and_fluents(step)
 
     def get_pre_states(self, action: Action):
         """Retrieves the list of states prior to the action in this trace.
@@ -260,7 +265,7 @@ class Trace:
             The total cost of the slice of the trace.
         """
 
-        if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
+        if start < 1 or end < 1 or start > len(self.steps) or end > len(self.steps):
             raise self.InvalidCostRange(
                 "Range supplied goes out of the feasible range."
             )
@@ -304,11 +309,3 @@ class Trace:
         for step in self.steps:
             token = Token(step=step, **kwargs)
             self.observations.append(token)
-
-    def update(self):
-        self.num_steps = len(self.steps)
-        self.fluents = self._get_fluents()
-        self.actions = self._get_actions()
-        self.num_fluents = len(self.fluents)
-        for i, step in enumerate(self):
-            step.index = i
