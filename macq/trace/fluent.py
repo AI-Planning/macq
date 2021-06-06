@@ -28,8 +28,14 @@ class PlanningObject:
     def __str__(self):
         return " ".join([self.obj_type, self.name])
 
-    def __eq__(self, other: PlanningObject):
-        return self.name == other.name
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            return self.name == other.name
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(self.name)
 
     @classmethod
     def from_json(cls, data):
@@ -68,8 +74,11 @@ class Fluent:
         # Order of objects is important!
         return hash(str(self))
 
-    def __eq__(self, other: Fluent):
-        return self.name == other.name and self.objects == other.objects
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            return self.name == other.name and self.objects == other.objects
+        else:
+            return False
 
     @classmethod
     def from_json(cls, data):

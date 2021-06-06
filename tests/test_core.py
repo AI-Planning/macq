@@ -475,8 +475,9 @@ def test_trace_remove():
     trace = generate_test_trace(3)
     steps = trace.steps.copy()
     trace.remove(steps[1])
-    assert trace.fluents == ["fluent 1", "fluent 2", "fluent 3"]
-    assert trace.actions == ["action 1", "action 3"]
+    (fluent_names, action_names) = get_trace_fluent_action_names(trace)
+    assert fluent_names == ["fluent 1", "fluent 2", "fluent 3"]
+    assert action_names == ["action 1", "action 3"]
     # assert trace.steps == [steps[0], steps[2]]
 
 
