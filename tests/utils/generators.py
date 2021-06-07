@@ -91,7 +91,7 @@ def generate_test_steps(num_steps: int):
     actions = generate_test_actions(num_steps)
     states = generate_test_states(num_steps)
     for i in range(num_steps):
-        step = Step(actions[i], states[i])
+        step = Step(actions[i], states[i], i)
         steps.append(step)
     return steps
 
