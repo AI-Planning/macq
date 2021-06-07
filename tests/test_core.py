@@ -1,5 +1,6 @@
 import pytest
 from typing import List, Dict
+from tests.utils.generators import *
 from macq.trace import (
     PlanningObject,
     Fluent,
@@ -18,75 +19,6 @@ from macq.generate.pddl import VanillaSampling
 InvalidCostRange = Trace.InvalidCostRange
 # InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
-
-# HELPER FUNCTIONS
-
-
-def generate_test_fluents(num_fluents: int):
-    """
-    Generates basic fluents to be used for testing.
-
-    Arguments
-    ---------
-    num_fluents : int
-        The number of fluents to generate.
-
-    Returns
-    -------
-    fluents : List of Fluents
-        The list of testing fluents generated.
-    """
-    fluents = []
-    objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
-    for i in range(num_fluents):
-        fluent_name = "fluent" + " " + str(i + 1)
-        fluent = Fluent(fluent_name, [objects[i]])
-        fluents.append(fluent)
-    return fluents
-
-
-def generate_fluent_dicts(fluents: List[Fluent]):
-    """
-    Generates fluent dictionaries to be used for testing.
-
-    Args:
-        fluents (List[Fluent]): The list of fluents to create dictionaries from.
-
-    Returns:
-        fluents_dict (dict): The dictionary of fluent names mapped to boolean values.
-    """
-    fluents_dict = {}
-    for i in range(len(fluents)):
-        if i % 2 == 0:
-            fluents_dict[fluents[i]] = True
-        else:
-            fluents_dict[fluents[i]] = False
-    return fluents_dict
-
-
-def generate_test_actions(num_actions: int, objects: List[PlanningObject]):
-    """
-    Generates basic actions to be used for testing.
-
-    Arguments
-    ---------
-    num_actions : int
-        The number of actions to generate.
-    objects: List of CustomObjects
-        The objects available to these actions.
-
-    Returns
-    -------
-    actions : List of Actions
-        The list of testing actions generated.
-    """
-    actions = []
-    for i in range(num_actions):
-        action_name = "action" + " " + str(i + 1)
-        # action 1 has a cost of 1, etc.
-        action = Action(action_name, objects, i + 1)
-        actions.append(action)
-    return actions
 
 
 def get_fluent_obj(fluents: List[Fluent]):
@@ -108,111 +40,6 @@ def get_fluent_obj(fluents: List[Fluent]):
         for obj in fluent.objects:
             objects.append(obj)
     return objects
-
-
-def generate_test_states(num_states: int, fluents: Dict[Fluent, bool] = {}):
-    """
-    Generate states to be used for testing, using the given fluents (each state will add a fluent)
-
-    Arguments
-    ---------
-    num_states : int
-        The number of states to generate.
-    fluents : dict of Fluents
-        The fluents that will be used to make up the states.
-
-    Returns
-    -------
-    states : List of States
-        The list of testing states generated.
-    """
-    states = []
-    next_fluents = {}
-    for i in range(num_states):
-        if i < len(list(fluents.keys())):
-            current_fluent = list(fluents.keys())[i]
-            next_fluents[current_fluent] = fluents[current_fluent]
-        state = State(next_fluents.copy())
-        states.append(state)
-    return states
-
-
-def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
-    """
-    Generate steps to be used for testing, given the number of steps and possible actions and states.
-
-    Arguments
-    ---------
-    num_steps : int
-        The number of steps to generate.
-    actions : List of Actions
-        The list of possible actions to be used for the generated steps.
-    states : List of States
-        The list of possible states to be used for the generated steps.
-
-    Returns
-    -------
-    steps : List of Steps
-        The list of testing steps generated.
-    """
-    steps = []
-    # indices for actions and states respectively
-    a_index = 0
-    s_index = 0
-    for i in range(num_steps):
-        step = Step(states[a_index], actions[s_index], i)
-        # cycle through actions and states
-        if a_index < len(actions):
-            a_index += 1
-        else:
-            a_index = 0
-        if s_index < len(states):
-            s_index += 1
-        else:
-            s_index = 0
-        steps.append(step)
-    return steps
-
-
-def generate_test_trace(complexity: int):
-    """
-    Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
-
-    Arguments
-    ---------
-    complexity : int
-        The number of number of actions, fluents, states, and steps to use in this trace.
-
-    Returns
-    -------
-    trace : Trace
-        The testing trace generated.
-    """
-    fluents = generate_test_fluents(complexity)
-    actions = generate_test_actions(complexity, get_fluent_obj(fluents))
-    fluents_dict = generate_fluent_dicts(fluents)
-    states = generate_test_states(complexity, fluents_dict)
-    steps = generate_test_steps(complexity, actions, states)
-    trace = Trace(steps)
-    return trace
-
-
-# TESTS FOR ACTION CLASS
-
-# ensure that invalid fluents can't be added to actions.
-# NOTE: DEBATING RAISING AN ERROR VS. JUST PRINTING A WARNING.
-"""
-def test_action_errors():
-    objects = [PlanningObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, [], [], [], 1)
-    other = PlanningObject("other", "10")
-    fluent_other = Fluent("put down other", [other])
-
-    with pytest.raises(InvalidFluent):
-        action.update_precond([fluent_other])
-        action.update_add([fluent_other])
-        action.update_delete([fluent_other])
-"""
 
 
 # ensure that valid object parameters can be added and subsequently referenced
@@ -348,17 +175,6 @@ def test_trace_tokenize():
 
 #     with pytest.raises(TraceSearchTimeOut):
 #         VanillaSampling(dom, prob, 10, 5)
-
-
-def generate_test_trace_list(length: int):
-    from random import randint
-
-    traces = []
-    for _ in range(length):
-        comp = randint(1, 3)
-        trace = generate_test_trace(comp)
-        traces.append(trace)
-    return TraceList(traces)
 
 
 def test_trace_list():

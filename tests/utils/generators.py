@@ -1,3 +1,4 @@
+from typing import List
 from macq.trace import *
 
 
@@ -15,12 +16,12 @@ def generate_test_fluents(num_fluents: int):
     fluents : List of Fluents
         The list of testing fluents generated.
     """
-    fluents = []
+    fluents = {}
     objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
     for i in range(num_fluents):
         fluent_name = "fluent" + " " + str(i + 1)
         fluent = Fluent(fluent_name, [objects[i]])
-        fluents.append(fluent)
+        fluents[fluent] = i % 2 == 0
     return fluents
 
 
@@ -63,11 +64,9 @@ def generate_test_states(num_states: int):
         The list of testing states generated.
     """
     states = []
-    next_fluents = []
-    fluents = generate_test_fluents(num_states)
+    fluents = list(generate_test_fluents(num_states).items())
     for i in range(num_states):
-        state_name = "state " + str(i + 1)
-        next_fluents = fluents[: i + 1]
+        next_fluents = dict(fluents[: i + 1])
         state = State(next_fluents)
         states.append(state)
     return states
@@ -91,7 +90,7 @@ def generate_test_steps(num_steps: int):
     actions = generate_test_actions(num_steps)
     states = generate_test_states(num_steps)
     for i in range(num_steps):
-        step = Step(actions[i], states[i], i)
+        step = Step(states[i], actions[i], i)
         steps.append(step)
     return steps
 
@@ -112,3 +111,14 @@ def generate_test_trace(complexity: int):
     """
     trace = Trace(generate_test_steps(complexity))
     return trace
+
+
+def generate_test_trace_list(length: int):
+    from random import randint
+
+    traces = []
+    for _ in range(length):
+        comp = randint(1, 3)
+        trace = generate_test_trace(comp)
+        traces.append(trace)
+    return TraceList(traces)

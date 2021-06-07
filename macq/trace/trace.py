@@ -136,6 +136,7 @@ class Trace:
         self.steps.sort(reverse=reverse, key=key)
 
     def __update_actions_and_fluents(self, step: Step):
+        print(type(step.state))
         self.fluents.update(step.state.keys())
         new_act = step.action
         if new_act is not None:
