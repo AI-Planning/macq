@@ -53,12 +53,6 @@ class Observer:
     @staticmethod
     def _get_actions(observations: ObservationList):
         """Retrieves and augments the set of actions in the observations."""
-        # Generator code already augments actions
-        # If that remains the case, will need to wipe the action's attributes
-        # here or earlier in Extract
-
-        actions = set()
-
         # Get the unique actions and the relevant traces
         action_obs = defaultdict(list)
         trace_obs: List[Observation]
@@ -68,7 +62,6 @@ class Observer:
                 if action is not None:  # Final step has no action
                     action_obs[action].append(trace_obs)
 
-        print("here")
         # Create the ModelActions
         action_pre_states = defaultdict(set)
         for action, obs in action_obs.items():

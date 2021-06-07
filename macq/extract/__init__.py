@@ -1,6 +1,5 @@
-from .model import Model
+from .model import Model, ModelAction
 from .extract import Extract, modes, IncompatibleObservationToken
-from .model_action import ModelAction
 
 __all__ = [
     "Model",

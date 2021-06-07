@@ -1,6 +1,6 @@
 from json import dump, dumps, loads
-from ..trace import Fluent, Action
-from . import ModelAction
+from .model_action import ModelAction
+from ..trace import Fluent
 from typing import Set
 
 

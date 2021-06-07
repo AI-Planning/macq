@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Set
+from typing import List
 from enum import Enum, auto
 from .observer import Observer
 from ..observation import Observation
