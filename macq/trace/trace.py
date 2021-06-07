@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Type, Iterable, Callable
+from typing import List, Type, Iterable, Callable, Set
 from inspect import cleandoc
 from . import Action, Step, State
 from ..observation import Observation
@@ -11,6 +11,9 @@ class SAS:
     action: Action
     post_state: State
 
+    def __hash__(self):
+        return hash(str(self.pre_state) + str(self.action) + str(self.post_state))
+
 
 class Trace:
     """A state trace of a planning problem.
@@ -20,10 +23,6 @@ class Trace:
     Attributes:
         steps (list):
             The list of Step objcts constituting the trace.
-        num_steps (int):
-            The number of steps in the trace.
-        num_fluents (int):
-            The number of fluents in the trace.
         fluents (set):
             The set of fluents in the trace.
         actions (set):
@@ -43,21 +42,17 @@ class Trace:
                 `list`.
         """
         self.steps = steps
-        # trace is list-like, so is this neccessary? can do len(trace) instend
-        self.num_steps = len(steps)
-        self.fluents = self._get_fluents()
-        self.actions = self._get_actions()
-        self.num_fluents = len(self.fluents)
+        self.__reinit_actions_and_fluents()
 
     def __str__(self):
         indent = " " * 2
-        # Attribute summary
+        # Summarize class attributes
         string = cleandoc(
             f"""
             Trace:
             {indent}Attributes:
-            {indent*2}{self.num_steps} steps
-            {indent*2}{self.num_fluents} fluents
+            {indent*2}{len(self)} steps
+            {indent*2}{len(self.fluents)} fluents
             {indent}Steps:
             """
         )
@@ -88,7 +83,6 @@ class Trace:
 
     def __delitem__(self, key: int):
         del self.steps[key]
-        self.update()
 
     def __iter__(self):
         return iter(self.steps)
@@ -101,11 +95,12 @@ class Trace:
 
     def append(self, item: Step):
         self.steps.append(item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def clear(self):
         self.steps.clear()
-        self.update()
+        self.fluents = set()
+        self.actions = set()
 
     def copy(self):
         return self.steps.copy()
@@ -115,23 +110,24 @@ class Trace:
 
     def extend(self, iterable: Iterable[Step]):
         self.steps.extend(iterable)
-        self.update()
+        for step in iterable:
+            self.__update_actions_and_fluents(step)
 
     def index(self, value: Step):
         return self.steps.index(value)
 
     def insert(self, index: int, item: Step):
         self.steps.insert(index, item)
-        self.update()
+        self.__update_actions_and_fluents(item)
 
     def pop(self):
         result = self.steps.pop()
-        self.update()
+        self.__reinit_actions_and_fluents()
         return result
 
     def remove(self, value: Step):
         self.steps.remove(value)
-        self.update()
+        self.__reinit_actions_and_fluents()
 
     def reverse(self):
         self.steps.reverse()
@@ -139,27 +135,17 @@ class Trace:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
 
-    def add_steps(self, steps: List[Step]):
-        """Adds steps to the trace.
+    def __update_actions_and_fluents(self, step: Step):
+        self.fluents.update(step.state.keys())
+        new_act = step.action
+        if new_act is not None:
+            self.actions.add(new_act)
 
-        Args:
-            steps (list):
-                The ordered list of steps to append to this trace.
-        """
-        self.steps.extend(steps)
-
-    def _get_fluents(self):
-        fluents = set()
-        for step in self:
-            for fluent in step.state.fluents:
-                fluents.add(fluent)
-        return fluents
-
-    def _get_actions(self):
-        actions = set()
+    def __reinit_actions_and_fluents(self):
+        self.fluents = set()
+        self.actions = set()
         for step in self.steps:
-            actions.add(step.action)
-        return actions
+            self.__update_actions_and_fluents(step)
 
     def get_pre_states(self, action: Action):
         """Retrieves the list of states prior to the action in this trace.
@@ -169,13 +155,13 @@ class Trace:
                 The action to retrieve pre-states for.
 
         Returns:
-            The list of states prior to the action being performed in this
+            The set of states prior to the action being performed in this
             trace.
         """
-        prev_states = []
+        prev_states = set()
         for step in self:
             if step.action == action:
-                prev_states.append(step.state)
+                prev_states.add(step.state)
         return prev_states
 
     def get_post_states(self, action: Action):
@@ -186,15 +172,15 @@ class Trace:
                 The action to retrieve post-states for.
 
         Returns:
-            The list of states after the action was performed in this trace.
+            The set of states after the action was performed in this trace.
         """
-        post_states = []
+        post_states = set()
         for i, step in enumerate(self):
             if step.action == action:
-                post_states.append(self[i + 1].state)
+                post_states.add(self[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action) -> List[SAS]:
+    def get_sas_triples(self, action: Action) -> Set[SAS]:
         """Retrieves the list of (S,A,S') triples for the action in this trace.
 
         In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
@@ -208,11 +194,11 @@ class Trace:
             A `SAS` object, containing the `pre_state`, `action`, and
             `post_state`.
         """
-        sas_triples = []
+        sas_triples = set()
         for i, step in enumerate(self):
             if step.action == action:
                 triple = SAS(step.state, action, self[i + 1].state)
-                sas_triples.append(triple)
+                sas_triples.add(triple)
         return sas_triples
 
     def get_total_cost(self):
@@ -240,7 +226,7 @@ class Trace:
             The total cost of the slice of the trace.
         """
 
-        if start < 1 or end < 1 or start > self.num_steps or end > self.num_steps:
+        if start < 1 or end < 1 or start > len(self) or end > len(self):
             raise self.InvalidCostRange(
                 "Range supplied goes out of the feasible range."
             )
@@ -279,6 +265,10 @@ class Trace:
             Token (Observation):
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
+
+        Returns:
+            A list of observation tokens, corresponding to the steps in the
+            trace.
         """
 
         observations: List[Observation] = []
@@ -286,11 +276,3 @@ class Trace:
             token = Token(step, **kwargs)
             observations.append(token)
         return observations
-
-    def update(self):
-        self.num_steps = len(self.steps)
-        self.fluents = self._get_fluents()
-        self.actions = self._get_actions()
-        self.num_fluents = len(self.fluents)
-        for i, step in enumerate(self):
-            step.index = i

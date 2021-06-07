@@ -1,14 +1,12 @@
 import time
 from multiprocessing.pool import ThreadPool
 
-MAX_TIME = 10.0
-
 
 def set_timer(num_seconds):
     def timer(generator):
         """
-        Checks that a trace is generated within the time indicated by the MAX_TIME
-        constant.
+        Checks that a trace is generated within the time indicated by the MAX_TRACE_TIME
+        constant in the respective generator.
 
         Arguments
         ---------
