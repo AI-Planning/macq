@@ -1,4 +1,4 @@
-from .generate import Generate
+from .generator import Generator
 from .vanilla_sampling import VanillaSampling
 
-__all__ = ["Generate", "VanillaSampling"]
+__all__ = ["Generator", "VanillaSampling"]

@@ -83,7 +83,7 @@ class Trace:
     def append(self, item: Step):
         self.steps.append(item)
         self.__update_actions_and_fluents(item)
-        
+
     def clear(self):
         self.steps.clear()
         self.fluents = []
@@ -148,7 +148,7 @@ class Trace:
         name = step.action.name
         if name not in self.actions:
             return name
-        
+
     def __update_actions_and_fluents(self, step: Step):
         """
         Update this trace's actions and fluents after taking into account the action and

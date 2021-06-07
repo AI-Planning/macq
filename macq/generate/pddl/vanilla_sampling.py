@@ -1,11 +1,13 @@
-from macq.trace import TraceList, Trace, Step
-from macq.generate.pddl.generate import Generate
+from ...trace import TraceList, Trace, Step
+from ...generate.pddl.generator import Generator
+from ...utils.timer import set_timer
 from tarski.search.operations import progress
-from pathlib import Path
 import random
 
+MAX_TRACE_TIME = 10.0
 
-class VanillaSampling(Generate):
+
+class VanillaSampling(Generator):
     def __init__(
         self,
         plan_len: int,
@@ -52,14 +54,33 @@ class VanillaSampling(Generate):
         """
 
         traces = TraceList()
+        for _ in range(self.num_traces):
+            traces.append(self.generate_single_trace())
+        return traces
+
+    @set_timer(num_seconds=MAX_TRACE_TIME)
+    def generate_single_trace(self):
+        """
+        Generates a single trace using the uniform random sampling technique.
+        Loops until a valid trace is found. Wrapper does not allow the function
+        to run past the time specified by the time specified.
+
+        Returns
+        -------
+        trace : Trace
+            The valid trace generated.
+        """
         trace = Trace()
 
-        # loop through while the desired number of traces has not yet been generated
-        while len(traces) < self.num_traces:
+        state = self.problem.init
+        valid_trace = False
+
+        while not valid_trace:
             trace.clear()
-            state = self.problem.init
             # add more steps while the trace has not yet reached the desired length
             for j in range(self.plan_len):
+                # find the next applicable actions
+                app_act = self.instance.applicable(state)
                 # find the next applicable actions
                 ls = list(self.instance.applicable(state))
                 # if the trace reaches a dead lock, disregard this trace and try again
@@ -73,6 +94,7 @@ class VanillaSampling(Generate):
                 step = Step(macq_action, macq_state)
                 trace.append(step)
                 state = progress(state, act)
-            if ls:
-                traces.append(trace)
-        return traces
+
+                if j == self.plan_len - 1:
+                    valid_trace = True
+        return trace

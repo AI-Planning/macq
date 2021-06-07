@@ -5,7 +5,7 @@ from .fluent import CustomObject, Fluent
 class Action:
     class InvalidFluent(Exception):
         """
-        The Exception raised when the user attempts to add fluents (to a precondition or effect) that act on objects
+        Raised when the user attempts to add fluents (to a precondition or effect) that act on objects
         outside of the parameters supplied to the action.
         """
 
@@ -84,15 +84,19 @@ class Action:
         for fluent in fluents:
             for obj in fluent.objects:
                 # if this fluent takes no parameters it is automatically valid
-                if len(fluent.objects) == 1 and fluent.objects[0].name == '' and fluent.objects[0].obj_type == '':
+                if (
+                    len(fluent.objects) == 1
+                    and fluent.objects[0].name == ""
+                    and fluent.objects[0].obj_type == ""
+                ):
                     valid = True
                 else:
                     for param in self.obj_params:
                         if obj == param:
                             valid = True
-                            #no need to check the rest
+                            # no need to check the rest
                             break
-                if not valid:        
+                if not valid:
                     raise self.InvalidFluent()
                 # reset flag
                 valid = False

@@ -1,12 +1,6 @@
-# from ..trace import TraceList, Trace
-import random
-from macq.trace import TraceList, Trace, Step, Action, State, CustomObject, Fluent
-from pathlib import Path
-import tarski
+from ...trace import Action, State, CustomObject, Fluent
 from tarski.io import PDDLReader, FstripsWriter
 from tarski.search import GroundForwardSearchModel
-from tarski.search.operations import progress, is_applicable
-from tarski.grounding import LPGroundingStrategy
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
 from tarski.grounding.errors import ReachabilityLPUnsolvable
 from tarski.syntax.ops import CompoundFormula, flatten
@@ -22,9 +16,8 @@ import requests
 from macq.generate.pddl.planning_domains_api import get_problem
 
 
-class Generate:
+class Generator:
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
-        # dom = requests.get(get_problem(problem_id)['domain_url']).text
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
 
