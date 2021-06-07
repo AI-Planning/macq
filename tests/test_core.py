@@ -262,8 +262,8 @@ def test_trace_pre_states():
 
     assert isinstance(action1, Action)
     assert isinstance(action2, Action)
-    assert trace.get_pre_states(action1) == [state1]
-    assert trace.get_pre_states(action2) == [state2]
+    assert trace.get_pre_states(action1) == {state1}
+    assert trace.get_pre_states(action2) == {state2}
 
 
 # test that the post states are being retrieved correctly
@@ -276,8 +276,8 @@ def test_trace_post_states():
 
     assert isinstance(action1, Action)
     assert isinstance(action2, Action)
-    assert trace.get_post_states(action1) == [state2]
-    assert trace.get_post_states(action2) == [state3]
+    assert trace.get_post_states(action1) == {state2}
+    assert trace.get_post_states(action2) == {state3}
 
 
 # test trace SAS triples function
@@ -289,7 +289,7 @@ def test_trace_get_sas_triples():
     (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
 
     assert isinstance(action2, Action)
-    assert trace.get_sas_triples(action2) == [SAS(state2, action2, state3)]
+    assert trace.get_sas_triples(action2) == {SAS(state2, action2, state3)}
 
 
 # test that the total cost is working correctly

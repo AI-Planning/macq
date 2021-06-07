@@ -11,6 +11,9 @@ class SAS:
     action: Action
     post_state: State
 
+    def __hash__(self):
+        return hash(str(self.pre_state) + str(self.action) + str(self.post_state))
+
 
 class Trace:
     """A state trace of a planning problem.
