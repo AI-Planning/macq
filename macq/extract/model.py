@@ -1,5 +1,7 @@
 from json import dump, dumps, loads
 from ..trace import Fluent, Action
+from . import ModelAction
+from typing import Set
 
 
 class Model:
@@ -17,7 +19,7 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: set[Fluent], actions: set[Action]):
+    def __init__(self, fluents: Set[Fluent], actions: Set[ModelAction]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -94,5 +96,5 @@ class Model:
     @classmethod
     def _from_json(cls, data: dict):
         fluents = set(map(Fluent.from_json, data["fluents"]))
-        actions = set(map(Action.from_json, data["actions"]))
+        actions = set(map(ModelAction.from_json, data["actions"]))
         return cls(fluents, actions)
