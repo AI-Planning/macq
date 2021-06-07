@@ -131,7 +131,7 @@ def generate_test_steps(num_steps: int):
     actions = generate_test_actions(num_steps)
     states = generate_test_states(num_steps)
     for i in range(num_steps):
-        step = Step(actions[i], states[i])
+        step = Step(actions[i], states[i], i + 1)
         steps.append(step)
     return steps
 
@@ -315,6 +315,8 @@ def test_trace_tokenize():
 
 
 # test the timer wrapper on vanilla trace generation
+
+
 def test_timer_wrapper_vanilla():
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
@@ -433,7 +435,7 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
-    # vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=2, num_traces=1)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=3, num_traces=2)
     # print(vanilla.traces)
-    vanilla = VanillaSampling(problem_id=123, plan_len=3, num_traces=1)
+    # vanilla = VanillaSampling(problem_id=123, plan_len=3, num_traces=1)
     print(vanilla.traces)

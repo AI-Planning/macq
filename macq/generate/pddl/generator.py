@@ -120,7 +120,6 @@ class Generator:
                 add.append(fluent)
             else:
                 delete.append(fluent)
-
         return (add, delete)
 
     def __tarski_atom_to_macq_fluent(self, atom: Atom):

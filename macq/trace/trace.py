@@ -70,6 +70,7 @@ class Trace:
 
     def __delitem__(self, key: int):
         del self.steps[key]
+        self.update()
 
     def __iter__(self):
         return iter(self.steps)
@@ -307,7 +308,7 @@ class Trace:
                 sum += 1
         return sum / len(self.steps)
 
-    def tokenize(self, Token: Type[Observation]):
+    def tokenize(self, Token: Type[Observation], **kwargs):
         """
         Creates the observation tokens using the token provided by the Observation.
 
@@ -316,6 +317,7 @@ class Trace:
         Token : Observation subclass
             An `Observation` subclass.
         """
+
         for step in self.steps:
-            token = Token(step)
+            token = Token(step=step, **kwargs)
             self.observations.append(token)

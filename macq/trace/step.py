@@ -8,7 +8,7 @@ class Step:
     in a trace.
     """
 
-    def __init__(self, action: Action, state: State):
+    def __init__(self, action: Action, state: State, index: int):
         """
         Creates a Step object. This stores action, and state prior to the
         action.
@@ -19,9 +19,12 @@ class Step:
             The action taken in this step.
         state : State
             The state (list of fluents) at this step.
+        index : int
+            The placement of this step within the trace.
         """
         self.action = action
         self.state = state
+        self.index = index
 
     def __repr__(self):
         string = str(self.action) + "\n\n" + str(self.state)

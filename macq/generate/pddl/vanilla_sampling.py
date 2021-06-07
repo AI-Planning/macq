@@ -91,7 +91,7 @@ class VanillaSampling(Generator):
                 # create the trace and progress the state
                 macq_action = self.tarski_act_to_macq(act)
                 macq_state = self.tarski_state_to_macq(state)
-                step = Step(macq_action, macq_state)
+                step = Step(macq_action, macq_state, j + 1)
                 trace.append(step)
                 state = progress(state, act)
 
