@@ -1,4 +1,4 @@
-from typing import List, Callable, Type, Optional
+from typing import List, Callable, Type
 from . import Action, Trace
 from ..observation import Observation
 
