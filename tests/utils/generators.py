@@ -1,5 +1,6 @@
-from typing import List
 from macq.trace import *
+from macq.observation import IdentityObservation
+from macq.extract import Extract, modes
 
 
 def generate_test_fluents(num_fluents: int):
@@ -87,7 +88,8 @@ def generate_test_steps(num_steps: int):
         The list of testing steps generated.
     """
     steps = []
-    actions = generate_test_actions(num_steps)
+    actions = generate_test_actions(num_steps - 1)
+    actions.append(None)
     states = generate_test_states(num_steps)
     for i in range(num_steps):
         step = Step(states[i], actions[i], i)
@@ -122,3 +124,10 @@ def generate_test_trace_list(length: int):
         trace = generate_test_trace(comp)
         traces.append(trace)
     return TraceList(traces)
+
+
+def generate_observer_model():
+    traces = generate_test_trace_list(2)
+    observations = traces.tokenize(IdentityObservation)
+    model = Extract(observations, modes.OBSERVER)
+    return model

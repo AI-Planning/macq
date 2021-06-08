@@ -210,7 +210,8 @@ class Trace:
         """
         sum = 0
         for step in self.steps:
-            sum += step.action.cost
+            if step.action is not None:
+                sum += step.action.cost
         return sum
 
     def get_slice_cost(self, start: int, end: int):
@@ -238,7 +239,8 @@ class Trace:
 
         sum = 0
         for i in range(start - 1, end):
-            sum += self.steps[i].action.cost
+            if self[i].action is not None:
+                sum += self[i].action.cost
         return sum
 
     def get_usage(self, action: Action):
