@@ -38,10 +38,12 @@ class PartialObservabilityToken(Observation):
         new_fluents = {}
         while len(new_fluents) < num_new_fluents:
             ran_fluent = random.choice(list(fluents.keys()))
-            new_fluents[ran_fluent] = fluents[ran_fluent]
-        new_state = PartialState(new_fluents)
-        return Step(new_state, step.action, step.index)
+            new_fluents[ran_fluent] = step.state[ran_fluent]
+        return Step(PartialState(new_fluents), step.action, step.index)
 
-    def same_subset(self):
+    def same_subset(self, step: Step, hide_fluents: Set[Fluent]):
         new_fluents = {}
-        pass
+        for fluent in step.state.fluents:
+            if fluent not in hide_fluents:
+                new_fluents[fluent] = step.state[fluent]
+        return Step(PartialState(new_fluents), step.action, step.index)
