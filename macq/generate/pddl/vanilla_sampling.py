@@ -82,7 +82,7 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    # @set_timer(num_seconds=MAX_TRACE_TIME)
+    @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
         """
         Generates a single trace using the uniform random sampling technique.
