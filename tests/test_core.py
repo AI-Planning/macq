@@ -437,6 +437,7 @@ if __name__ == "__main__":
     # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=3)
     print(vanilla.traces)
 
+    # test tokenization
     random_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,

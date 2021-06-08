@@ -12,7 +12,7 @@ __all__ = [
     "Fluent",
     "PlanningObject",
     "State",
-    "PartiallyObservableState",
+    "PartialState",
     "DeltaState",
     "Step",
     "Trace",
