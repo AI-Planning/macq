@@ -1,5 +1,5 @@
-from ...trace import Action, State, PlanningObject, Fluent
-from .planning_domains_api import get_problem
+import requests
+from macq.trace import Action, State, Fluent, PlanningObject
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
@@ -9,17 +9,12 @@ from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
 from tarski.model import Model
-import requests
+from macq.generate.pddl.planning_domains_api import get_problem
 
 
-class Generator:
-    """
-    A Generator handles creating a basic PDDL state trace generator. Handles all
-    parsing and stores the problem, language, and grounded instance for the child
-    generators to easily access and use.
-    """
-
+class Generate:
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
+        # dom = requests.get(get_problem(problem_id)['domain_url']).text
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
 
@@ -122,6 +117,7 @@ class Generator:
                 add.append(fluent)
             else:
                 delete.append(fluent)
+
         return (add, delete)
 
     def __tarski_atom_to_macq_fluent(self, atom: Atom):
@@ -165,12 +161,13 @@ class Generator:
         macq_state : State
             A state, defined using the macq State class.
         """
-        fluents = {}
+
+        fluents = []
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                fluents[fluent.name] = True
+                fluents.append(fluent)
         return State(fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator):
@@ -181,8 +178,6 @@ class Generator:
         ---------
         tarski_act : PlainOperator
             The supplied action, defined using the tarski PlainOperator class.
-        get_precond_effects : bool
-            Determines if the generator wants to extract preconditions and effects as well.
 
         Returns
         -------

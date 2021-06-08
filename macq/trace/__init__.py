@@ -1,9 +1,10 @@
-from .action import Action, Fluent, PlanningObject
+from .action import Action, PlanningObject
+from .fluent import Fluent
 from .state import State, DeltaState
+from .partially_observable_state import PartiallyObservableState
 from .step import Step
 from .trace import Trace, SAS
-from .trace_list import TraceList
-from .partially_observable_state import PartiallyObservableState
+from .trace_list import TraceList, ObservationList
 
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "Trace",
     "SAS",
     "TraceList",
+    "ObservationList",
 ]

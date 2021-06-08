@@ -78,6 +78,8 @@ def generate_test_actions(num_actions: int):
     ---------
     num_actions : int
         The number of actions to generate.
+    objects: List of CustomObjects
+        The objects available to these actions.
 
     Returns
     -------
@@ -87,9 +89,9 @@ def generate_test_actions(num_actions: int):
     objects = [PlanningObject("number", str(o)) for o in range(num_actions)]
     actions = []
     for i in range(num_actions):
-        action_name = "action " + str(i + 1)
+        action_name = "action" + " " + str(i + 1)
         # action 1 has a cost of 1, etc.
-        action = Action(action_name, objects, i + 1, None, None, None)
+        action = Action(action_name, objects, i + 1)
         actions.append(action)
     return actions
 
@@ -140,7 +142,7 @@ def generate_test_states(num_states: int):
     return states
 
 
-def generate_test_steps(num_steps: int):
+def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
     """
     Generate steps to be used for testing, given the number of steps and possible actions and states.
 
@@ -148,6 +150,10 @@ def generate_test_steps(num_steps: int):
     ---------
     num_steps : int
         The number of steps to generate.
+    actions : List of Actions
+        The list of possible actions to be used for the generated steps.
+    states : List of States
+        The list of possible states to be used for the generated steps.
 
     Returns
     -------
@@ -155,8 +161,9 @@ def generate_test_steps(num_steps: int):
         The list of testing steps generated.
     """
     steps = []
-    actions = generate_test_actions(num_steps)
-    states = generate_test_states(num_steps)
+    # indices for actions and states respectively
+    a_index = 0
+    s_index = 0
     for i in range(num_steps):
         step = Step(states[i], actions[i], i + 1)
         steps.append(step)
@@ -214,48 +221,21 @@ def test_action_errors():
         action.update_delete([fluent_other])
 """
 
-# ensure that valid fluents can be added as action preconditions
-def test_action_update_preconditions():
-    fluents = generate_test_fluents(3)
-    (fl1, fl2, fl3) = tuple(fluents)
-    action = Action("put down", get_fluent_obj(fluents), 1, None, None, None)
-
-    action.update_precond({fl1})
-    assert action.precond == {fl1}
-    action.update_precond({fl2, fl3})
-    assert action.precond == {fl1, fl2, fl3}
-
-
-# ensure that valid fluents can be added as action effects
-def test_action_add_effects():
-    fluents = generate_test_fluents(6)
-    (fl1, fl2, fl3, fl4, fl5, fl6) = tuple(fluents)
-    action = Action("put down", get_fluent_obj(fluents), 1, None, None, None)
-
-    action.update_add({fl4})
-    assert action.add == {fl4}
-    action.update_add({fl5, fl6})
-    assert action.add == {fl4, fl5, fl6}
-    action.update_delete({fl1})
-    assert action.delete == {fl1}
-    action.update_delete({fl2, fl3})
-    assert action.delete == {fl1, fl2, fl3}
-
 
 # ensure that valid object parameters can be added and subsequently referenced
-def test_action_add_params():
-    objects = [PlanningObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, 1, None, None, None)
-    other = PlanningObject("other", "other")
-    fluent_other = Fluent("put down other", [other])
+# def test_action_add_params():
+#     objects = [PlanningObject("number", str(o)) for o in range(6)]
+#     action = Action("put down", objects, 1)
+#     other = PlanningObject("other", "other")
+#     fluent_other = Fluent("put down other", [other])
 
-    action.add_parameter(other)
-    action.update_precond([fluent_other])
-    action.update_add([fluent_other])
-    action.update_delete([fluent_other])
-    assert action.precond == {fluent_other}
-    assert action.add == {fluent_other}
-    assert action.delete == {fluent_other}
+#     action.add_parameter(other)
+# action.update_precond([fluent_other])
+# action.update_add([fluent_other])
+# action.update_delete([fluent_other])
+# assert action.precond == {fluent_other}
+# assert action.add == {fluent_other}
+# assert action.delete == {fluent_other}
 
 
 # TESTS FOR TRACE CLASS
@@ -272,12 +252,14 @@ def test_trace_base():
 def test_trace_pre_states():
     trace = generate_test_trace(3)
     # get the first and last action
-    (action1, action3) = (trace[0].action, trace[2].action)
+    (action1, action2) = (trace[0].action, trace[1].action)
     # get the first and last state
-    (state1, state3) = (trace[0].state, trace[2].state)
+    (state1, state2) = (trace[0].state, trace[1].state)
 
-    assert trace.get_pre_states(action1) == [state1]
-    assert trace.get_pre_states(action3) == [state3]
+    assert isinstance(action1, Action)
+    assert isinstance(action2, Action)
+    assert trace.get_pre_states(action1) == {state1}
+    assert trace.get_pre_states(action2) == {state2}
 
 
 # test that the post states are being retrieved correctly
@@ -288,19 +270,22 @@ def test_trace_post_states():
     # get the second state
     (state2, state3) = (trace[1].state, trace[2].state)
 
-    assert trace.get_post_states(action1) == [state2]
-    assert trace.get_post_states(action2) == [state3]
+    assert isinstance(action1, Action)
+    assert isinstance(action2, Action)
+    assert trace.get_post_states(action1) == {state2}
+    assert trace.get_post_states(action2) == {state3}
 
 
 # test trace SAS triples function
 def test_trace_get_sas_triples():
     trace = generate_test_trace(3)
-    # get the second and last action
-    (action2, action3) = (trace[1].action, trace[2].action)
+    # get the second action
+    action2 = trace.steps[1].action
     # get the second and last state
-    (state2, state3) = (trace[1].state, trace[2].state)
+    (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
 
-    assert trace.get_sas_triples(action2) == [SAS(state2, action2, state3)]
+    assert isinstance(action2, Action)
+    assert trace.get_sas_triples(action2) == {SAS(state2, action2, state3)}
 
 
 # test that the total cost is working correctly
@@ -331,30 +316,23 @@ def test_trace_invalid_cost_range():
 def test_trace_usage():
     trace = generate_test_trace(3)
     # get the first action
-    action1 = trace[0].action
+    action1 = trace.steps[0].action
+    assert isinstance(action1, Action)
     assert trace.get_usage(action1) == 1 / 3
 
 
 # test trace tokenize function
 def test_trace_tokenize():
     trace = generate_test_trace(3)
-    (step1, step2, step3) = (trace[0], trace[1], trace[2])
-    trace.tokenize(IdentityObservation)
-    print(trace.observations)
-    print(
-        [
-            IdentityObservation(step1),
-            IdentityObservation(step2),
-            IdentityObservation(step3),
-        ]
-    )
-    assert trace.observations == [
+    (step1, step2, step3) = (trace.steps[0], trace.steps[1], trace.steps[2])
+    observations = trace.tokenize(IdentityObservation)
+    assert observations == [
         IdentityObservation(step1),
         IdentityObservation(step2),
         IdentityObservation(step3),
     ]
     # test equality dunder by attempting to compare an object of a different type
-    assert trace.observations != step1
+    assert observations != step1
 
 
 # test the timer wrapper on vanilla trace generation
@@ -363,9 +341,8 @@ def test_timer_wrapper_vanilla():
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/playlist_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/playlist_problem.pddl").resolve()
-
     with pytest.raises(TraceSearchTimeOut):
-        vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=5)
+        VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=5)
 
 
 # generate testing trace lists
@@ -380,7 +357,6 @@ def generate_test_trace_list(length: int):
     return TraceList(traces)
 
 
-# test trace lists
 def test_trace_list():
     trace_list = generate_test_trace_list(5)
 

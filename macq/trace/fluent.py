@@ -28,14 +28,11 @@ class PlanningObject:
     def __str__(self):
         return " ".join([self.obj_type, self.name])
 
-    def __eq__(self, other):
-        if self.__class__ == other.__class__:
-            return self.name == other.name
-        else:
-            return False
-
     def __hash__(self):
         return hash(self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, PlanningObject) and self.name == other.name
 
     @classmethod
     def from_json(cls, data):
