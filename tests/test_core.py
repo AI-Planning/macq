@@ -1,9 +1,8 @@
 import pytest
-from typing import List, Dict
+from typing import List
 from macq.trace import (
     PlanningObject,
     Fluent,
-    PlanningObject,
     Action,
     Step,
     State,
@@ -11,19 +10,14 @@ from macq.trace import (
     SAS,
     TraceList,
 )
-from macq.observation import IdentityObservation
+from macq.observation import IdentityObservation, PartialObservabilityToken
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
 from macq.generate.pddl import VanillaSampling
-from macq.generate.pddl.planning_domains_api import get_problem
 
 InvalidCostRange = Trace.InvalidCostRange
 # InvalidFluent = Action.InvalidFluent
 MissingGenerator = TraceList.MissingGenerator
-
-from typing import List
-from pathlib import Path
-import pytest
 
 # HELPER FUNCTIONS
 
@@ -94,27 +88,6 @@ def generate_test_actions(num_actions: int):
         action = Action(action_name, objects, i + 1)
         actions.append(action)
     return actions
-
-
-def get_fluent_obj(fluents: List[Fluent]):
-    """
-    Extracts the objects used by the given fluents.
-
-    Arguments
-    ---------
-    fluents : List of Fluents
-        The fluents to extract the objects from.
-
-    Returns
-    -------
-    objects : List of PlanningObjects
-        The list of objects used by the given fluents.
-    """
-    objects = []
-    for fluent in fluents:
-        for obj in fluent.objects:
-            objects.append(obj)
-    return objects
 
 
 def generate_test_states(num_states: int):
@@ -459,7 +432,16 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=2)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
     # print(vanilla.traces)
-    # vanilla = VanillaSampling(problem_id=123, plan_len=3, num_traces=3)
+    # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=3)
     print(vanilla.traces)
+    tokens = vanilla.traces[0].tokenize(
+        PartialObservabilityToken,
+        method=PartialObservabilityToken.random_subset,
+        percent_missing=50,
+    )
+    for token in tokens:
+        print(token.index)
+        print(token.step)
+        print()

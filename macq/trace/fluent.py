@@ -72,7 +72,7 @@ class Fluent:
         return hash(str(self))
 
     def __eq__(self, other):
-        if self.__class__ == other.__class__:
+        if isinstance(other, Fluent):
             return self.name == other.name and self.objects == other.objects
         else:
             return False

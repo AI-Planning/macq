@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import Dict
 from . import Fluent
 
 
@@ -20,7 +21,7 @@ class State:
             A mapping of `Fluent` objects to their value in this state.
     """
 
-    def __init__(self, fluents: dict[Fluent, bool] = {}):
+    def __init__(self, fluents: Dict[Fluent, bool] = {}):
         """Initializes State with an optional fluent-value mapping.
 
         Args:
