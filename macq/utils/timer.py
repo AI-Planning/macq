@@ -19,6 +19,7 @@ def set_timer(num_seconds):
             # start the timer
             begin = time.perf_counter()
             current = begin
+
             thr = pool.apply_async(generator, args=args, kwds=kwargs)
             # continue counting time while the function has not completed
             while not thr.ready():

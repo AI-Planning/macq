@@ -28,14 +28,17 @@ class VanillaSampling(Generator):
 
         Arguments
         ---------
-        dom : str
-            The domain filename.
-        prob : str
-            The problem filename.
         plan_len : int
             The length of each generated trace.
         num_traces : int
             The number of traces to generate.
+        dom : str
+            The domain filename.
+        prob : str
+            The problem filename.
+        problem_id : int
+            The ID of the problem to access.
+        
 
         Attributes
         -------
@@ -79,7 +82,7 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TRACE_TIME)
+    # @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
         """
         Generates a single trace using the uniform random sampling technique.
