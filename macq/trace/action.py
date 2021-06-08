@@ -1,5 +1,5 @@
-from typing import List
-from .fluent import PlanningObject
+from typing import List, Set
+from .fluent import Fluent, PlanningObject
 
 
 class Action:

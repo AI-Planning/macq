@@ -137,33 +137,26 @@ def generate_test_states(num_states: int):
     for i in range(num_states):
         state_name = "state " + str(i + 1)
         next_fluents = fluents[: i + 1]
-        state = State(next_fluents)
+        state = State(generate_fluent_dicts(next_fluents))
         states.append(state)
     return states
 
 
-def generate_test_steps(num_steps: int, actions: List[Action], states: List[State]):
+def generate_test_steps(num_steps: int):
     """
     Generate steps to be used for testing, given the number of steps and possible actions and states.
-
     Arguments
     ---------
     num_steps : int
         The number of steps to generate.
-    actions : List of Actions
-        The list of possible actions to be used for the generated steps.
-    states : List of States
-        The list of possible states to be used for the generated steps.
-
     Returns
     -------
     steps : List of Steps
         The list of testing steps generated.
     """
     steps = []
-    # indices for actions and states respectively
-    a_index = 0
-    s_index = 0
+    actions = generate_test_actions(num_steps)
+    states = generate_test_states(num_steps)
     for i in range(num_steps):
         step = Step(states[i], actions[i], i + 1)
         steps.append(step)
@@ -199,8 +192,10 @@ def get_trace_fluent_action_names(trace: Trace):
         (fluent_names, action_names) (tuple of Lists): the names of the fluents and actions
         in this trace.
     """
-    fluent_names = [fluent.name for fluent in trace.fluents]
-    action_names = [action.name for action in trace.actions]
+    fluent_names = set()
+    action_names = set()
+    fluent_names.update(fluent.name for fluent in trace.fluents)
+    action_names.update(action.name for action in trace.actions)
     return (fluent_names, action_names)
 
 
@@ -244,8 +239,8 @@ def test_action_errors():
 def test_trace_base():
     trace = generate_test_trace(3)
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == ["fluent 1", "fluent 2", "fluent 3"]
-    assert action_names == ["action 1", "action 2", "action 3"]
+    assert fluent_names == {"fluent 1", "fluent 2", "fluent 3"}
+    assert action_names == {"action 1", "action 2", "action 3"}
 
 
 # test that the previous states are being retrieved correctly
@@ -280,9 +275,9 @@ def test_trace_post_states():
 def test_trace_get_sas_triples():
     trace = generate_test_trace(3)
     # get the second action
-    action2 = trace.steps[1].action
+    action2 = trace[1].action
     # get the second and last state
-    (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
+    (state2, state3) = (trace[1].state, trace[2].state)
 
     assert isinstance(action2, Action)
     assert trace.get_sas_triples(action2) == {SAS(state2, action2, state3)}
@@ -316,7 +311,7 @@ def test_trace_invalid_cost_range():
 def test_trace_usage():
     trace = generate_test_trace(3)
     # get the first action
-    action1 = trace.steps[0].action
+    action1 = trace[0].action
     assert isinstance(action1, Action)
     assert trace.get_usage(action1) == 1 / 3
 
@@ -324,7 +319,7 @@ def test_trace_usage():
 # test trace tokenize function
 def test_trace_tokenize():
     trace = generate_test_trace(3)
-    (step1, step2, step3) = (trace.steps[0], trace.steps[1], trace.steps[2])
+    (step1, step2, step3) = (trace[0], trace[1], trace[2])
     observations = trace.tokenize(IdentityObservation)
     assert observations == [
         IdentityObservation(step1),
@@ -383,8 +378,8 @@ def test_trace_append():
     steps = generate_test_steps(4)
     trace.append(steps[3])
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == ["fluent 1", "fluent 2", "fluent 3", "fluent 4"]
-    assert action_names == ["action 1", "action 2", "action 3", "action 4"]
+    assert fluent_names == {"fluent 1", "fluent 2", "fluent 3", "fluent 4"}
+    assert action_names == {"action 1", "action 2", "action 3", "action 4"}
     # assert trace.steps == steps
 
 
@@ -392,8 +387,8 @@ def test_trace_append():
 def test_trace_clear():
     trace = generate_test_trace(3)
     trace.clear()
-    assert trace.fluents == []
-    assert trace.actions == []
+    assert trace.fluents == set()
+    assert trace.actions == set()
     assert trace.steps == []
 
 
@@ -403,7 +398,7 @@ def test_trace_extend():
     steps = generate_test_steps(7)
     trace.extend(steps[3:])
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == [
+    assert fluent_names == {
         "fluent 1",
         "fluent 2",
         "fluent 3",
@@ -411,8 +406,9 @@ def test_trace_extend():
         "fluent 5",
         "fluent 6",
         "fluent 7",
-    ]
-    assert action_names == [
+    }
+
+    assert action_names == {
         "action 1",
         "action 2",
         "action 3",
@@ -420,7 +416,8 @@ def test_trace_extend():
         "action 5",
         "action 6",
         "action 7",
-    ]
+    }
+
     # assert trace.steps == steps
 
 
@@ -430,8 +427,8 @@ def test_trace_insert():
     steps = generate_test_steps(4)
     trace.insert(0, steps[3])
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == ["fluent 1", "fluent 2", "fluent 3", "fluent 4"]
-    assert action_names == ["action 1", "action 2", "action 3", "action 4"]
+    assert fluent_names == {"fluent 1", "fluent 2", "fluent 3", "fluent 4"}
+    assert action_names == {"action 1", "action 2", "action 3", "action 4"}
     # assert trace.steps == [steps[3], steps[0], steps[1], steps[2]]
 
 
@@ -441,8 +438,8 @@ def test_trace_pop():
     steps = trace.steps.copy()
     trace.pop()
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == ["fluent 1", "fluent 2"]
-    assert action_names == ["action 1", "action 2"]
+    assert fluent_names == {"fluent 1", "fluent 2"}
+    assert action_names == {"action 1", "action 2"}
     # assert trace == steps[:-1]
 
 
@@ -452,8 +449,8 @@ def test_trace_remove():
     steps = trace.steps.copy()
     trace.remove(steps[1])
     (fluent_names, action_names) = get_trace_fluent_action_names(trace)
-    assert fluent_names == ["fluent 1", "fluent 2", "fluent 3"]
-    assert action_names == ["action 1", "action 3"]
+    assert fluent_names == {"fluent 1", "fluent 2", "fluent 3"}
+    assert action_names == {"action 1", "action 3"}
     # assert trace.steps == [steps[0], steps[2]]
 
 
