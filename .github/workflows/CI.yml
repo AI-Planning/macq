@@ -25,6 +25,26 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install -e .[dev]
                   sudo apt install gringo
+            - if: ${{ matrix.python-version == '3.9' }}
+              name: Get branch name
+              run: |
+                  REF=${{ github.ref }}
+                  echo "github.ref: $REF"
+                  IFS='/' read -ra PATHS <<< "$REF"
+                  BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
+                  echo $BRANCH_NAME
+                  echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
+            - if: ${{ matrix.python-version == '3.9' }}
+              name: Create placeholder coverage badge
+              uses: schneegans/dynamic-badges-action@v1.0.0
+              with:
+                  auth: ${{ secrets.GIST_SECRET }}
+                  gistID: 03ac305b42d7c9ad4ef3213341bf3f2f
+                  filename: macq__${{ env.BRANCH }}.json
+                  label: Coverage
+                  message: n/a
+                  color: red
+                  namedLogo: pytest
             - name: Linting
               run: |
                   flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -39,12 +59,6 @@ jobs:
                   TOKENS=($SUMMARY)
                   echo $SUMMARY
                   echo "COVERAGE=$(echo ${TOKENS[3]})" >> $GITHUB_ENV
-                  REF=${{ github.ref }}
-                  echo "github.ref: $REF"
-                  IFS='/' read -ra PATHS <<< "$REF"
-                  BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
-                  echo $BRANCH_NAME
-                  echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
             - if: ${{ matrix.python-version == '3.9' }}
               name: Create coverage badge
               uses: schneegans/dynamic-badges-action@v1.0.0
