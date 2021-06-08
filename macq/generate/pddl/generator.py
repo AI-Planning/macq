@@ -1,19 +1,15 @@
-from ...trace import Action, State, PlanningObject, Fluent, PlanningObject
-from tarski.io import PDDLReader, FstripsWriter
+from ...trace import Action, State, PlanningObject, Fluent
+from .planning_domains_api import get_problem
+from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
-from tarski.grounding.errors import ReachabilityLPUnsolvable
-from tarski.syntax.ops import CompoundFormula, flatten
+from tarski.syntax.ops import CompoundFormula
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
-from tarski.utils.helpers import parse_atom
-from tarski.fstrips.fstrips import AddEffect, DelEffect
+from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
 from tarski.model import Model
-from collections import OrderedDict
-
 import requests
-from macq.generate.pddl.planning_domains_api import get_problem
 
 
 class Generator:
@@ -173,13 +169,12 @@ class Generator:
         macq_state : State
             A state, defined using the macq State class.
         """
-
-        fluents = []
+        fluents = {}
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                fluents.append(fluent)
+                fluents[fluent.name] = True
         return State(fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator):

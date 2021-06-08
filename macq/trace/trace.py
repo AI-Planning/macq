@@ -55,8 +55,8 @@ class Trace:
             f"""
             Trace:
             {indent}Attributes:
-            {indent*2}{self.num_steps} steps
-            {indent*2}{self.num_fluents} fluents
+            {indent*2}{len(self.steps)} steps
+            {indent*2}{len(self.fluents)} fluents
             {indent}Steps:
             """
         )
