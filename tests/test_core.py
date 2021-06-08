@@ -437,7 +437,7 @@ if __name__ == "__main__":
     # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=3)
     print(vanilla.traces)
 
-    tokens_ = vanilla.traces[0].tokenize(
+    random_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,
         percent_missing=50,
@@ -445,13 +445,13 @@ if __name__ == "__main__":
 
     hide_fluents = list(vanilla.traces[0].fluents)[:2]
     print("hiding: " + str(hide_fluents))
-    tokens = vanilla.traces[0].tokenize(
+    same_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.same_subset,
         hide_fluents=hide_fluents,
     )
 
-    for token in tokens:
+    for token in random_tokens:
         print(token.index)
         print(token.step)
         print()
