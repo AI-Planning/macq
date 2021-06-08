@@ -33,7 +33,7 @@ class Trace:
         def __init__(self, message):
             super().__init__(message)
 
-    def __init__(self, steps: List[Step] = []):
+    def __init__(self, steps: List[Step] = None):
         """Initializes a Trace with an optional list of steps.
 
         Args:
@@ -41,7 +41,7 @@ class Trace:
                 Optional; The list of steps in the trace. Defaults to an empty
                 `list`.
         """
-        self.steps = steps
+        self.steps = steps if steps is not None else []
         self.__reinit_actions_and_fluents()
 
     def __str__(self):

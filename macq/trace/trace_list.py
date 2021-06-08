@@ -32,7 +32,7 @@ class TraceList:
 
     def __init__(
         self,
-        traces: List[Trace] = [],
+        traces: List[Trace] = None,
         generator: Callable = None,
     ):
         """Initializes a TraceList with a list of traces and a generator.
@@ -43,7 +43,7 @@ class TraceList:
             generator (function):
                 Optional; The function used to generate the traces.
         """
-        self.traces = traces
+        self.traces = traces if traces is not None else []
         self.generator = generator
 
     def __str__(self):
