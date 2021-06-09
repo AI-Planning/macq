@@ -72,10 +72,11 @@ class Fluent:
         return hash(str(self))
 
     def __eq__(self, other):
-        if isinstance(other, Fluent):
-            return self.name == other.name and self.objects == other.objects
-        else:
-            return False
+        return (
+            isinstance(other, Fluent)
+            and self.name == other.name
+            and self.objects == other.objects
+        )
 
     @classmethod
     def from_json(cls, data):

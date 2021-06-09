@@ -428,6 +428,10 @@ def test_trace_remove():
 
 
 if __name__ == "__main__":
+    action = generate_test_actions(1)[0]
+    step = generate_test_steps(1)[0]
+    val = action == step
+
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
