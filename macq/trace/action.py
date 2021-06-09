@@ -52,34 +52,6 @@ class Action:
         # Order of obj_params is important!
         return hash(str(self))
 
-    def update_precond(self, fluents: Set[Fluent]):
-        """
-        Adds the specified list of fluents to the action's preconditions.
-
-        Args:
-            fluents (set):
-                The set of fluents to be added to the action's preconditions.
-        """
-        self.precond.update(fluents)
-
-    def update_add(self, fluents: Set[Fluent]):
-        """Adds add effects to the action.
-
-        Args:
-            fluents (set):
-                The set of fluents to be added to the action's add effects.
-        """
-        self.add.update(fluents)
-
-    def update_delete(self, fluents: Set[Fluent]):
-        """Adds delete effects to the action.
-
-        Args:
-            fluents (set):
-                The set of fluents to be added to the action's delete effects.
-        """
-        self.delete.update(fluents)
-
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.
         Args:
