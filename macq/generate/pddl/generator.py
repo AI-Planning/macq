@@ -173,7 +173,7 @@ class Generator:
                 fluents[fluent.name] = True
         return State(fluents)
 
-    def tarski_act_to_macq(self, tarski_act: PlainOperator, get_precond_effects: bool):
+    def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool):
         """
         Converts an action as defined by tarski to an action as defined by macq.
 
@@ -181,7 +181,7 @@ class Generator:
         ---------
         tarski_act : PlainOperator
             The supplied action, defined using the tarski PlainOperator class.
-        get_precond_effects : bool
+        fully_observable : bool
             Determines if the generator wants to extract preconditions and effects as well.
 
         Returns
@@ -191,7 +191,7 @@ class Generator:
         """
         name = tarski_act.name.split("(")[0]
         objs = set()
-        if get_precond_effects:
+        if fully_observable:
             precond = []
             if isinstance(tarski_act.precondition, CompoundFormula):
                 raw_precond = tarski_act.precondition.subformulas
