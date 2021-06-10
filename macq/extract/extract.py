@@ -52,8 +52,12 @@ class Extract:
             A Model object. The model's characteristics are determined by the
             extraction technique used.
         """
-        if mode == modes.OBSERVER:
-            return Observer(observations)
+
+        techniques = {
+            modes.OBSERVER: Observer,
+        }
+
+        return techniques[mode](observations)
 
     @staticmethod
     def get_transitions(action: Action, observations: List[List[Observation]]):
