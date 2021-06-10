@@ -16,9 +16,9 @@ class IdentityObservation(Observation):
         step : Step
             The step associated with this observation.
         """
-        super().__init__(step)
+        super().__init__(step.index)
 
-    def __eq__(self, value):
-        if isinstance(value, IdentityObservation):
-            return self.step == value.step
-        return False
+    # def __eq__(self, value):
+    #     if isinstance(value, IdentityObservation):
+    #         return self.step == value.step
+    #     return False
