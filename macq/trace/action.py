@@ -50,9 +50,6 @@ class Action:
             return False
         return self.name == other.name and self.obj_params == other.obj_params
 
-    def clone(self):
-        return Action(self.name, self.obj_params, self.cost)
-
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.
         Args:
