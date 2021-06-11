@@ -9,6 +9,20 @@ MAX_TRACE_TIME = 10.0
 
 
 class VanillaSampling(Generator):
+    """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
+
+    A basic state trace generator that Generates traces randomly by uniformly sampling applicable actions to find plans
+    of the given length.
+
+    Attributes:
+        plan_len (int):
+            The length of the traces to be generated.
+        num_traces (int):
+            The number of traces to be generated.
+        traces (TraceList):
+            The list of traces generated.
+    """
+
     def __init__(
         self,
         plan_len: int,
@@ -17,43 +31,37 @@ class VanillaSampling(Generator):
         prob: str = "",
         problem_id: int = None,
     ):
+        """
+        Initializes a vanilla state trace sampler using the plan length, number of traces,
+        and the domain and problem.
+
+        Args:
+            plan_len (int):
+                The length of each generated trace.
+            num_traces (int):
+                The number of traces to generate.
+            dom (str):
+                The domain filename.
+            prob (str):
+                The problem filename.
+            problem_id (int):
+                The ID of the problem to access.
+        """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.plan_len = plan_len
         self.num_traces = num_traces
         self.traces = self.generate_traces()
 
-        """
-        Generates traces randomly by uniformly sampling applicable actions to find plans
-        of the given length.
-
-        Arguments
-        ---------
-        plan_len : int
-            The length of each generated trace.
-        num_traces : int
-            The number of traces to generate.
-        dom : str
-            The domain filename.
-        prob : str
-            The problem filename.
-        problem_id : int
-            The ID of the problem to access.
-        
-
-        Attributes
-        -------
-        traces : TraceList
-            The list of traces generated.
-        """
-
     def set_num_traces(self, num_traces: int):
-        """AI is creating summary for set_num_traces
+        """Checks the validity of the number of traces and then sets it.
 
         Args:
-            num_traces (int): [description]
+            num_traces (int):
+                The number of traces to set.
 
         Raises:
-            InvalidNumberOfTraces: [description]
+            InvalidNumberOfTraces:
+                The exception raised when the number of traces provided is invalid.
         """
         if num_traces > 0:
             self.num_traces = num_traces
@@ -61,20 +69,27 @@ class VanillaSampling(Generator):
             raise InvalidNumberOfTraces()
 
     def set_plan_length(self, plan_len: int):
+        """Checks the validity of the plan length and then sets it.
+
+        Args:
+            plan_len (int):
+                The plan length to set.
+
+        Raises:
+            InvalidPlanLength:
+                The exception raised when the plan length provided is invalid.
+        """
         if plan_len > 0:
             self.plan_len = plan_len
         else:
             raise InvalidPlanLength()
 
     def generate_traces(self):
-        """
-        Generates traces randomly by uniformly sampling applicable actions to find plans
+        """Generates traces randomly by uniformly sampling applicable actions to find plans
         of the given length.
 
-        Returns
-        -------
-        traces : TraceList
-            The list of traces generated.
+        Returns:
+            A TraceList object with the list of traces generated.
         """
 
         traces = TraceList()
@@ -84,15 +99,12 @@ class VanillaSampling(Generator):
 
     @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
-        """
-        Generates a single trace using the uniform random sampling technique.
+        """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
 
-        Returns
-        -------
-        trace : Trace
-            The valid trace generated.
+        Returns:
+            A Trace object (the valid trace generated).
         """
         trace = Trace()
 

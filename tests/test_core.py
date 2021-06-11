@@ -456,7 +456,7 @@ if __name__ == "__main__":
         hide_fluents=hide_fluents,
     )
 
-    for token in random_tokens:
-        print(token.index)
-        print(token.step)
-        print()
+    # for token in random_tokens:
+    #     print(token.index)
+    #     print(token.step)
+    #     print()

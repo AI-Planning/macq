@@ -13,16 +13,34 @@ import requests
 
 
 class Generator:
-    """
-    A Generator handles creating a basic PDDL state trace generator. Handles all
-    parsing and stores the problem, language, and grounded instance for the child
-    generators to easily access and use.
+    """A Generator.
+
+    A basic PDDL state trace generator. Handles all parsing and stores the problem,
+    language, and grounded instance for the child generators to easily access and use.
+
+    Attributes:
+        problem (tarski.fstrips.problem.Problem):
+            The problem definition.
+        lang (tarski.fol.FirstOrderLanguage):
+            The language definition.
+        instance (tarski.search.model.GroundForwardSearchModel):
+            The grounded instance of the problem.
     """
 
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
+        """Creates a basic PDDL state trace generator. Takes either the raw filenames
+        of the domain and problem, or a problem ID.
+
+        Args:
+            dom (str):
+                The domain filename.
+            prob (str):
+                The problem filename.
+            problem_id (int):
+                The ID of the problem to access.
+        """
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
-
         if problem_id == None:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
@@ -36,34 +54,15 @@ class Generator:
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
 
-        """
-        Class that handles creating a basic PDDL state trace generator. Handles all
-        parsing and stores the problem, language, and grounded instance for the child
-        generators to easily access and use. Takes either the raw filenames of the
-        domain and problem, or a problem ID.
-
-        Arguments
-        ---------
-        dom : str
-            The domain filename.
-        prob : str
-            The problem filename.
-        problem_id : int
-            The ID of the problem to access.
-        """
-
     def extract_action_typing(self):
-        """
-        Retrieves a dictionary mapping all of this problem's actions and the types
+        """Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
 
         i.e. given the standard blocks problem/domain, this function would return:
         {'pick-up': ['object'], 'put-down': ['object'], 'stack': ['object', 'object'],
         'unstack': ['object', 'object']}
 
-        Returns
-        -------
-        extracted_act_types : dict
+        Returns:
             The dictionary that indicates the types of all the objects each action in
             the problem acts upon.
         """
@@ -75,17 +74,14 @@ class Generator:
         return extracted_act_types
 
     def extract_predicate_typing(self):
-        """
-        Retrieves a dictionary mapping all of this problem's predicates and the types
+        """Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
 
         i.e. given the standard blocks problem/domain, this function would return:
         {'=': ['object', 'object'], '!=': ['object', 'object'], 'on': ['object', 'object'],
         'ontable': ['object'], 'clear': ['object'], 'handempty': [], 'holding': ['object']}
 
-        Returns
-        -------
-        extracted_pred_types : dict
+        Returns:
             The dictionary that indicates the types of all the objects each predicate in
             the problem acts upon.
         """
@@ -100,18 +96,14 @@ class Generator:
         return extracted_pred_types
 
     def __effect_split(self, act: PlainOperator):
-        """
-        Converts the effects of an action as defined by tarski to fluents as defined by macq.
+        """Converts the effects of an action as defined by tarski to fluents as defined by macq.
 
-        Arguments
-        ---------
-        act : PlainOperator (from tarski.fstrips.action)
-            The supplied action, defined using the tarski PlainOperator class.
+        Args:
+            act (PlainOperator (from tarski.fstrips.action)):
+                The supplied action, defined using the tarski PlainOperator class.
 
-        Returns
-        -------
-        (add, delete) : tuple of Fluents
-            The lists of add and delete effects, in the form of macq Fluents.
+        Returns:
+            The lists of add and delete effects, in the form of a tuple macq Fluents (add, delete).
         """
         effects = act.effects
         add = []
@@ -125,17 +117,13 @@ class Generator:
         return (add, delete)
 
     def __tarski_atom_to_macq_fluent(self, atom: Atom):
-        """
-        Converts a tarski Atom to a fluent as defined by macq.
+        """Converts a tarski Atom to a fluent as defined by macq.
 
-        Arguments
-        ---------
-        atom : Atom
-            The supplied atom, defined using the tarski Atom class.
+        Args:
+            atom (Atom):
+                The supplied atom, defined using the tarski Atom class.
 
-        Returns
-        -------
-        macq_fluent : Fluent
+        Returns:
             A fluent, defined using the macq Fluent class.
         """
         # ignore functions for now
@@ -152,17 +140,13 @@ class Generator:
         return fluent
 
     def tarski_state_to_macq(self, tarski_state: Model):
-        """
-        Converts a state as defined by tarski to a state as defined by macq.
+        """Converts a state as defined by tarski to a state as defined by macq.
 
-        Arguments
-        ---------
-        tarski_state : Model
-            The supplied state, defined using the tarski Model class.
+        Args:
+            tarski_state (Model):
+                The supplied state, defined using the tarski Model class.
 
-        Returns
-        -------
-        macq_state : State
+        Returns:
             A state, defined using the macq State class.
         """
         fluents = {}
@@ -174,19 +158,15 @@ class Generator:
         return State(fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool):
-        """
-        Converts an action as defined by tarski to an action as defined by macq.
+        """Converts an action as defined by tarski to an action as defined by macq.
 
-        Arguments
-        ---------
-        tarski_act : PlainOperator
-            The supplied action, defined using the tarski PlainOperator class.
-        fully_observable : bool
-            Determines if the generator wants to extract preconditions and effects as well.
+        Args:
+            tarski_act (PlainOperator):
+                The supplied action, defined using the tarski PlainOperator class.
+            fully_observable (bool):
+                Determines if the generator wants to extract preconditions and effects as well.
 
-        Returns
-        -------
-        macq_act : Action
+        Returns:
             An action, defined using the macq Action class.
         """
         name = tarski_act.name.split("(")[0]
