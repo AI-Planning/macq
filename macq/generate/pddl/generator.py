@@ -149,12 +149,22 @@ class Generator:
         Returns:
             A state, defined using the macq State class.
         """
+        # print((self.lang.predicates[3].name))
         fluents = {}
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
+            state = State([fluent])
+            print(fluent in state)
+            print(state[fluent])
             # ignore functions for now
             if fluent:
-                fluents[fluent.name] = True
+                fluents[fluent] = True
+        for fluent in self.lang.predicates:
+            name = fluent.name
+            if name not in fluents.keys() and not isinstance(
+                name, BuiltinPredicateSymbol
+            ):
+                fluents[name] = False
         return State(fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool):

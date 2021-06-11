@@ -406,18 +406,18 @@ def test_trace_remove():
 
 
 if __name__ == "__main__":
-    action = generate_test_actions(1)[0]
-    step = generate_test_steps(1)[0]
-    val = action == step
+    state = generate_test_states(1)[0]
+    fluents = state.keys()
+    print(fluents)
 
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=1, num_traces=1)
     # print(vanilla.traces)
-    # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=3)
-    print(vanilla.traces)
+    # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=5)
+    # print(vanilla.traces)
 
     # test tokenization
     random_tokens = vanilla.traces[0].tokenize(

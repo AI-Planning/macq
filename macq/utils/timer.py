@@ -30,7 +30,9 @@ def set_timer(num_seconds):
                 if current - begin > num_seconds:
                     raise TraceSearchTimeOut()
             # return a successful trace
-            return thr.get()
+            result = thr.get()
+            pool.close()
+            return result
 
         return wrapper
 
