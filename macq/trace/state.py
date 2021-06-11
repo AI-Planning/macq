@@ -30,6 +30,11 @@ class State:
         """
         self.fluents = fluents
 
+    def __eq__(self, other):
+        if not isinstance(other, State):
+            return False
+        return self.fluents == other.fluents
+
     def __str__(self):
         string = ""
         for fluent, value in self.items():

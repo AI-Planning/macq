@@ -328,15 +328,11 @@ def test_trace_usage():
 # test trace tokenize function
 def test_trace_tokenize():
     trace = generate_test_trace(3)
-    (step1, step2, step3) = (trace.steps[0], trace.steps[1], trace.steps[2])
     observations = trace.tokenize(IdentityObservation)
-    assert observations == [
-        IdentityObservation(step1),
-        IdentityObservation(step2),
-        IdentityObservation(step3),
-    ]
+    for i, obs in enumerate(observations):
+        assert obs == IdentityObservation(step=trace[i])
     # test equality dunder by attempting to compare an object of a different type
-    assert observations != step1
+    assert observations != trace[0]
 
 
 # test the timer wrapper on vanilla trace generation
