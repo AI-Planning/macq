@@ -8,10 +8,12 @@ def set_timer(num_seconds):
         Checks that a trace is generated within the time indicated by the MAX_TRACE_TIME
         constant in the respective generator.
 
-        Arguments
-        ---------
-        generator : function reference
-            The generator function to be wrapped with this time-checker.
+        Args:
+            generator (function reference):
+                The generator function to be wrapped with this time-checker.
+
+        Returns:
+            The wrapped generator function.
         """
 
         def wrapper(*args, **kwargs):

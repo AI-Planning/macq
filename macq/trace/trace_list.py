@@ -9,7 +9,6 @@ class TraceList:
     A `list`-like object, where each element is a `Trace` of the same planning
     problem.
 
-
     Attributes:
         traces (list):
             The list of `Trace` objects.

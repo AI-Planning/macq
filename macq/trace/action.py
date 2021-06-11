@@ -4,9 +4,11 @@ from .fluent import Fluent, PlanningObject
 
 class Action:
     """Grounded action.
+
     An Action represents a grounded action in a Trace or a Model. The action's
     `precond`, `add`, and `delete` attributes characterize a Model, and are
     found during model extraction.
+
     Attributes:
         name (str):
             The name of the action.
@@ -25,6 +27,7 @@ class Action:
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
         Model deserialization.
+
         Args:
             name (str):
                 The name of the action.
@@ -54,6 +57,7 @@ class Action:
 
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.
+
         Args:
             obj (PlanningObject):
                 The object to be added to the action's object parameters.

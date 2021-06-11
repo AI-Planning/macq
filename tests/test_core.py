@@ -23,17 +23,13 @@ MissingGenerator = TraceList.MissingGenerator
 
 
 def generate_test_fluents(num_fluents: int):
-    """
-    Generates basic fluents to be used for testing.
+    """Generates basic fluents to be used for testing.
 
-    Arguments
-    ---------
-    num_fluents : int
-        The number of fluents to generate.
+    Args:
+        num_fluents (int):
+            The number of fluents to generate.
 
-    Returns
-    -------
-    fluents : List of Fluents
+    Returns:
         The list of testing fluents generated.
     """
     fluents = []
@@ -46,14 +42,14 @@ def generate_test_fluents(num_fluents: int):
 
 
 def generate_fluent_dicts(fluents: List[Fluent]):
-    """
-    Generates fluent dictionaries to be used for testing.
+    """Generates fluent dictionaries to be used for testing.
 
     Args:
-        fluents (List[Fluent]): The list of fluents to create dictionaries from.
+        fluents (List[Fluent]):
+            The list of fluents to create dictionaries from.
 
     Returns:
-        fluents_dict (dict): The dictionary of fluent names mapped to boolean values.
+        The dictionary of fluent names mapped to boolean values.
     """
     fluents_dict = {}
     for i in range(len(fluents)):
@@ -65,19 +61,13 @@ def generate_fluent_dicts(fluents: List[Fluent]):
 
 
 def generate_test_actions(num_actions: int):
-    """
-    Generates basic actions to be used for testing.
+    """Generates basic actions to be used for testing.
 
-    Arguments
-    ---------
-    num_actions : int
+    Args:
+    num_actions (int):
         The number of actions to generate.
-    objects: List of CustomObjects
-        The objects available to these actions.
 
-    Returns
-    -------
-    actions : List of Actions
+    Returns:
         The list of testing actions generated.
     """
     objects = [PlanningObject("number", str(o)) for o in range(num_actions)]
@@ -91,17 +81,13 @@ def generate_test_actions(num_actions: int):
 
 
 def generate_test_states(num_states: int):
-    """
-    Generate states to be used for testing, using the given fluents (each state will add a fluent)
+    """Generate states to be used for testing, using the given fluents (each state will add a fluent)
 
-    Arguments
-    ---------
-    num_states : int
+    Args:
+    num_states : (int)
         The number of states to generate.
 
-    Returns
-    -------
-    states : List of States
+    Returns:
         The list of testing states generated.
     """
     states = []
@@ -116,15 +102,13 @@ def generate_test_states(num_states: int):
 
 
 def generate_test_steps(num_steps: int):
-    """
-    Generate steps to be used for testing, given the number of steps and possible actions and states.
-    Arguments
-    ---------
-    num_steps : int
-        The number of steps to generate.
-    Returns
-    -------
-    steps : List of Steps
+    """Generate steps to be used for testing, given the number of steps and possible actions and states.
+
+    Args:
+        num_steps (int):
+            The number of steps to generate.
+
+    Returns:
         The list of testing steps generated.
     """
     steps = []
@@ -137,17 +121,13 @@ def generate_test_steps(num_steps: int):
 
 
 def generate_test_trace(complexity: int):
-    """
-    Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
+    """Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
 
-    Arguments
-    ---------
-    complexity : int
-        The number of number of actions, fluents, states, and steps to use in this trace.
+    Args:
+        complexity (int):
+            The number of number of actions, fluents, states, and steps to use in this trace.
 
-    Returns
-    -------
-    trace : Trace
+    Returns:
         The testing trace generated.
     """
     trace = Trace(generate_test_steps(complexity))
@@ -155,15 +135,13 @@ def generate_test_trace(complexity: int):
 
 
 def get_trace_fluent_action_names(trace: Trace):
-    """
-    Retrieves the names of fluents and actions in a trace.
+    """Retrieves the names of fluents and actions in a trace.
 
     Args:
         trace (Trace): the trace to extract the names from.
 
     Returns:
-        (fluent_names, action_names) (tuple of Lists): the names of the fluents and actions
-        in this trace.
+        A tuple of the names of the fluents and actions in this trace (fluent_names, action_names).
     """
     fluent_names = set()
     action_names = set()

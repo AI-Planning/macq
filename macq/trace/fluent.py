@@ -2,7 +2,7 @@ from typing import List
 
 
 class PlanningObject:
-    """Objects of a planning domain.
+    """An object of a planning domain.
 
     Attributes:
         obj_type (str):
@@ -56,10 +56,10 @@ class Fluent:
         """Initializes a Fluent with a name and a list of objects.
 
         Args:
-        name (str):
-            The name of the fluent.
-        objects (list):
-            The objects this fluent applies to.
+            name (str):
+                The name of the fluent.
+            objects (list):
+                The objects this fluent applies to.
         """
         self.name = name
         self.objects = objects

@@ -30,6 +30,8 @@ class Trace:
     """
 
     class InvalidCostRange(Exception):
+        """Raised when an invalid range to retrieve costs is provided."""
+
         def __init__(self, message):
             super().__init__(message)
 
@@ -136,12 +138,22 @@ class Trace:
         self.steps.sort(reverse=reverse, key=key)
 
     def __update_actions_and_fluents(self, step: Step):
+        """Updates the actions and fluents stored in this trace with any new ones from
+        the provided step.
+
+        Args:
+            step (Step):
+                The step to extract the possible new fluents and actions from.
+        """
         self.fluents.update(step.state.keys())
         new_act = step.action
         if new_act is not None:
             self.actions.add(new_act)
 
     def __reinit_actions_and_fluents(self):
+        """Reinitializes the actions and fluents stored in this trace, taking all current
+        steps into account.
+        """
         self.fluents = set()
         self.actions = set()
         for step in self.steps:
@@ -218,7 +230,7 @@ class Trace:
         Args:
             start (int):
                 The start of the slice range. 1 <= start <= end.
-            end: int
+            end (int):
                 The end of the slice range. start <= end <= n, where n is the
                 length of the trace (number of steps).
 
