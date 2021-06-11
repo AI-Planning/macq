@@ -99,7 +99,7 @@ class Generator:
         """Converts the effects of an action as defined by tarski to fluents as defined by macq.
 
         Args:
-            act (PlainOperator (from tarski.fstrips.action)):
+            act (PlainOperator from tarski.fstrips.action):
                 The supplied action, defined using the tarski PlainOperator class.
 
         Returns:

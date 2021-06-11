@@ -277,6 +277,8 @@ class Trace:
             Token (Observation):
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
+            **kwargs (keyword arguments):
+                Keyword arguments to pass into the Token function as parameters.
 
         Returns:
             A list of observation tokens, corresponding to the steps in the

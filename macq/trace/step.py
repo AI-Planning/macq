@@ -14,6 +14,8 @@ class Step:
             The state in this step.
         action (Action | None):
             The action taken from the state in this step.
+        index (int):
+            The "place" of the step in the trace.
     """
 
     def __init__(self, state: State, action: Optional[Action], index: int):
