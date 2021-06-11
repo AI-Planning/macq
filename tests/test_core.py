@@ -406,18 +406,13 @@ def test_trace_remove():
 
 
 if __name__ == "__main__":
-    state = generate_test_states(1)[0]
-    fluents = state.keys()
-    print(fluents)
-
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=1, num_traces=1)
-    # print(vanilla.traces)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=5)
     # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=5)
-    # print(vanilla.traces)
+    print(vanilla.traces)
 
     # test tokenization
     random_tokens = vanilla.traces[0].tokenize(
@@ -427,7 +422,7 @@ if __name__ == "__main__":
     )
 
     hide_fluents = list(vanilla.traces[0].fluents)[:2]
-    print("hiding: " + str(hide_fluents))
+    # print("hiding: " + str(hide_fluents))
     same_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.same_subset,

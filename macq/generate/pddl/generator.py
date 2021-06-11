@@ -2,7 +2,10 @@ from ...trace import Action, State, PlanningObject, Fluent
 from .planning_domains_api import get_problem
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
-from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
+from tarski.grounding.lp_grounding import (
+    ground_problem_schemas_into_plain_operators,
+    LPGroundingStrategy,
+)
 from tarski.syntax.ops import CompoundFormula
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
@@ -25,6 +28,8 @@ class Generator:
             The language definition.
         instance (tarski.search.model.GroundForwardSearchModel):
             The grounded instance of the problem.
+        grounded_fluents (list):
+            A list of all grounded (macq) fluents extracted from the given problem definition.
     """
 
     def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
@@ -53,6 +58,7 @@ class Generator:
         # ground the problem
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
+        self.grounded_fluents = self.__get_all_grounded_fluents()
 
     def extract_action_typing(self):
         """Retrieves a dictionary mapping all of this problem's actions and the types
@@ -94,6 +100,16 @@ class Generator:
                 name = name.value
             extracted_pred_types[name] = [type for type in info[1:]]
         return extracted_pred_types
+
+    def __get_all_grounded_fluents(self):
+        return [
+            self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
+            for grounded_fluent in LPGroundingStrategy(
+                self.problem, include_variable_inequalities=True
+            )
+            .ground_state_variables()
+            .objects
+        ]
 
     def __effect_split(self, act: PlainOperator):
         """Converts the effects of an action as defined by tarski to fluents as defined by macq.
@@ -149,13 +165,16 @@ class Generator:
         Returns:
             A state, defined using the macq State class.
         """
-        fluents = {}
+        state_fluents = {}
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                fluents[fluent] = True
-        return State(fluents)
+                state_fluents[fluent] = True
+        for grounded_fluent in self.grounded_fluents:
+            if grounded_fluent not in state_fluents.keys():
+                state_fluents[grounded_fluent] = False
+        return State(state_fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool):
         """Converts an action as defined by tarski to an action as defined by macq.
