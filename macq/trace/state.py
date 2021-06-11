@@ -41,6 +41,9 @@ class State:
             string += f"{fluent} ({value}), "
         return string[:-2]
 
+    def __hash__(self):
+        return hash(str(self))
+
     def __len__(self):
         return len(self.fluents)
 
