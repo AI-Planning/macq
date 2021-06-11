@@ -76,6 +76,9 @@ class State:
     def items(self):
         return self.fluents.items()
 
+    def clone(self):
+        return State(self.fluents)
+
     def diff_from(self, other: State):
         """Determines the delta-state between this state and `other`.
 

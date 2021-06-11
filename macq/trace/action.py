@@ -55,6 +55,9 @@ class Action:
         # Order of obj_params is important!
         return hash(str(self))
 
+    def clone(self):
+        return Action(self.name, self.obj_params, self.cost)
+
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.
 
