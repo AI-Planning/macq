@@ -6,9 +6,11 @@ import random
 
 
 class PartialObservabilityToken(Observation):
-    """
+    """The Partial Observability Token.
+
     The partial observability token stores the step where some of the values of
-    the fluents in the step's state are unknown.
+    the fluents in the step's state are unknown. Inherits the base Observation
+    class.
     """
 
     def __init__(
@@ -20,14 +22,13 @@ class PartialObservabilityToken(Observation):
         """
         Creates an PartialObservabilityToken object, storing the step.
 
-        Attributes
-        ----------
-        step : Step
-            The step associated with this observation.
-        method : Callable function
-            The method to be used to tokenize the step.
-        **method_kwargs : keyword arguments
-            The arguments to be passed to the corresponding method function.
+        Args:
+            step (Step):
+                The step associated with this observation.
+            method (function reference):
+                The method to be used to tokenize the step.
+            **method_kwargs (keyword arguments):
+                The arguments to be passed to the corresponding method function.
         """
         super().__init__(method(self, step, **method_kwargs))
 
@@ -40,11 +41,13 @@ class PartialObservabilityToken(Observation):
         """Method of tokenization that picks a random subset of fluents to hide.
 
         Args:
-            step (Step): The step to tokenize.
-            percent_missing (int): The percentage of fluents to hide.
+            step (Step):
+                The step to tokenize.
+            percent_missing (int):
+                The percentage of fluents to hide.
 
         Returns:
-            [Step]: The new step created using a PartialState that takes the hidden fluents into account.
+            The new step created using a PartialState that takes the hidden fluents into account.
         """
         fluents = step.state.fluents
         num_new_fluents = int(len(fluents) * (percent_missing / 100))
@@ -58,11 +61,13 @@ class PartialObservabilityToken(Observation):
         """Method of tokenization that hides the same subset of fluents every time.
 
         Args:
-            step (Step): The step to tokenize.
-            hide_fluents (Set[Fluent]): The set of fluents that will be hidden each time.
+            step (Step):
+                The step to tokenize.
+            hide_fluents (Set[Fluent]):
+                The set of fluents that will be hidden each time.
 
         Returns:
-            [Step]: The new step created using a PartialState that takes the hidden fluents into account.
+            The new step created using a PartialState that takes the hidden fluents into account.
         """
         new_fluents = {}
         for fluent in step.state.fluents:
