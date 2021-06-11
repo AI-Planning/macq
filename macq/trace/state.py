@@ -34,7 +34,8 @@ class State:
     def __str__(self):
         string = ""
         for fluent, value in self.items():
-            string += f"{fluent} ({value}), "
+            if value:
+                string += f"{fluent}, "
         return string[:-2]
 
     def __len__(self):
