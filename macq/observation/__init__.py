@@ -1,4 +1,4 @@
-from .observation import Observation
+from .observation import Observation, InvalidQueryParameter
 from .identity_observation import IdentityObservation
 
-__all__ = ["Observation", "IdentityObservation"]
+__all__ = ["Observation", "IdentityObservation", "InvalidQueryParameter"]

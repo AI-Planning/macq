@@ -41,11 +41,11 @@ class Observer:
     def _get_fluents(observations: ObservationList):
         """Retrieves the set of fluents in the observations."""
         fluents = set()
-        trace: List[Observation]
+        trace: List[IdentityObservation]
         for trace in observations:
             for obs in trace:
                 # Update fluents with the fluents in this observation
-                fluents.update(list(obs.step.state.keys()))
+                fluents.update(list(obs.state.keys()))
         return fluents
 
     @staticmethod
@@ -53,23 +53,24 @@ class Observer:
         """Retrieves and augments the set of actions in the observations."""
         # Get the unique actions and the relevant traces
         action_obs = defaultdict(list)
-        trace_obs: List[Observation]
+        trace_obs: List[IdentityObservation]
         for trace_obs in observations:
             for obs in trace_obs:
-                action = obs.step.action
+                action = obs.action
                 if action is not None:  # Final step has no action
                     action_obs[action].append(trace_obs)
 
         # Create the ModelActions
         action_pre_states = defaultdict(set)
-        for action, obs in action_obs.items():
+        action_transitions = observations.get_all_transitions()
+        for action, transitions in action_transitions.items():
             model_action = extract.ModelAction(action)
-            sas_triples = extract.Extract.get_transitions(action, obs)  # (S,A,S')
-            for sas in sas_triples:
+            print(transitions)
+            for pre, post in transitions:
                 # Add all action pre-states to a set
-                action_pre_states[model_action].add(sas.pre_state)
+                action_pre_states[model_action].add(pre.state)
                 # Directly add effects
-                delta = sas.pre_state.diff_from(sas.post_state)
+                delta = pre.state.diff_from(post.state)  # This is why I love python
                 model_action.update_add(delta.added)
                 model_action.update_delete(delta.deleted)
 
