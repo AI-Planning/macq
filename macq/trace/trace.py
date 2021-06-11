@@ -270,9 +270,8 @@ class Trace:
             A list of observation tokens, corresponding to the steps in the
             trace.
         """
-
         observations: List[Observation] = []
         for step in self.steps:
-            token = Token(step, **kwargs)
+            token = Token(step=step, **kwargs)
             observations.append(token)
         return observations
