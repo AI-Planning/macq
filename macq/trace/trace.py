@@ -90,12 +90,12 @@ class Trace:
     def __reversed__(self):
         return reversed(self.steps)
 
-    def __contains__(self, item: Step):
-        return item in self.steps
+    def __contains__(self, step: Step):
+        return step in self.steps
 
-    def append(self, item: Step):
-        self.steps.append(item)
-        self.__update_actions_and_fluents(item)
+    def append(self, step: Step):
+        self.steps.append(step)
+        self.__update_actions_and_fluents(step)
 
     def clear(self):
         self.steps.clear()
