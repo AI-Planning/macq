@@ -1,4 +1,4 @@
-from json import dump, dumps, loads
+from json import dumps, loads
 from .model_action import ModelAction
 from ..trace import Fluent
 from typing import Set
@@ -7,14 +7,14 @@ from typing import Set
 class Model:
     """Action model.
 
-    An action model representing a planning problem. The characteristics of the
+    An action model representing a planning domain. The characteristics of the
     model are dependent on the extraction technique used to obtain the model.
 
     Attributes:
         fluents (set):
-            The set of fluents in the problem.
+            The set of fluents in the domain.
         actions (set):
-            The set of actions in the problem. Actions include their
+            The set of actions in the domain. Actions include their
             preconditions, add effects, and delete effects. The nature of the
             action attributes characterize the model.
     """
