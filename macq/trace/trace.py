@@ -12,7 +12,9 @@ class SAS:
     post_state: State
 
     def __hash__(self):
-        return hash(str(self.pre_state) + str(self.action) + str(self.post_state))
+        return hash(
+            self.pre_state.details() + self.action.details() + self.post_state.details()
+        )
 
 
 class Trace:
@@ -44,7 +46,7 @@ class Trace:
         self.steps = steps if steps is not None else []
         self.__reinit_actions_and_fluents()
 
-    def __str__(self):
+    def details(self):
         indent = " " * 2
         # Summarize class attributes
         string = cleandoc(
@@ -59,15 +61,15 @@ class Trace:
         string += "\n"
 
         # Dynamically get the spacing, 2n time
-        state_len = max([len(str(step.state)) for step in self]) + 4
+        state_len = max([len(step.state.details()) for step in self]) + 4
         string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
         string += "\n"
 
         # Create step string representation here, so formatting is consistent
         for i, step in enumerate(self):
             string += (
-                f"{indent*2}{i+1:<5} {str(step.state):<{state_len}} "
-                f"{str(step.action):<8}\n"
+                f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
+                f"{step.action.details() if step.action is not None else '':<8}\n"
             )
 
         return string

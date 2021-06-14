@@ -32,6 +32,6 @@ class Step:
         self.action = action
         self.index = index
 
-    def __str__(self):
-        string = str(self.action) + "\n\n" + str(self.state)
+    def details(self):
+        string = self.action.details() + "\n\n" + self.state.details()
         return string

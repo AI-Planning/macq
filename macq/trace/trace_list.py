@@ -47,13 +47,6 @@ class TraceList:
         self.traces = traces if traces is not None else []
         self.generator = generator
 
-    def __str__(self):
-        string = "TraceList:\n"
-        for trace in self:
-            for line in str(trace).splitlines():
-                string += f"    {line}\n"
-        return string
-
     def __len__(self):
         return len(self.traces)
 
@@ -107,6 +100,13 @@ class TraceList:
 
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
         self.traces.sort(reverse=reverse, key=key)
+
+    def print(self):
+        string = "TraceList:\n"
+        for trace in self:
+            for line in trace.details().splitlines():
+                string += f"    {line}\n"
+        print(string)
 
     def generate_more(self, num: int):
         """Generates more traces using the generator function.
@@ -189,7 +189,7 @@ class ObservationList(TraceList):
         return windows
 
     def get_transitions(self, action: Action):
-        query = {"action": action.name}
+        query = {"action": action.details()}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):

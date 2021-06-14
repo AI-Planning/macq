@@ -31,12 +31,12 @@ class Model:
         self.fluents = fluents
         self.actions = actions
 
-    def __str__(self):
+    def details(self):
         # Set the indent width
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
+        string += f"{indent}Fluents: {', '.join([f.details() for f in self.fluents])}\n"
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
         string += f"{indent}Actions:\n"
@@ -49,16 +49,16 @@ class Model:
         indent = " " * 2
         details = ""
         for action in self.actions:
-            details += str(action) + ":\n"
+            details += action.details() + ":\n"
             details += f"{indent}precond:\n"
             for f in action.precond:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
             details += f"{indent}add:\n"
             for f in action.add:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
             details += f"{indent}delete:\n"
             for f in action.delete:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
 
         return details
 
