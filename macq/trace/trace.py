@@ -240,6 +240,23 @@ class Trace:
             sum += self.steps[i].action.cost
         return sum
 
+    def get_steps(self, action: Action):
+        """Retrieves all the Steps in the trace that use the specified action.
+
+        Args:
+            action (Action):
+                The Action to retrieve corresponding steps for.
+
+        Returns:
+            The set of steps that use the specified action.
+
+        """
+        steps = set()
+        for step in self:
+            if step.action == action:
+                steps.add(action)
+        return steps
+
     def get_usage(self, action: Action):
         """Calculates how often an action was performed in this trace.
 
@@ -252,11 +269,7 @@ class Trace:
             as the number of occurences of the action divided by the length of
             the trace (number of steps).
         """
-        sum = 0
-        for step in self:
-            if step.action == action:
-                sum += 1
-        return sum / len(self)
+        return len(self.get_steps(action)) / len(self)
 
     def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.
