@@ -65,12 +65,11 @@ class Observer:
         action_transitions = observations.get_all_transitions()
         for action, transitions in action_transitions.items():
             model_action = extract.ModelAction(action)
-            print(transitions)
             for pre, post in transitions:
                 # Add all action pre-states to a set
                 action_pre_states[model_action].add(pre.state)
-                # Directly add effects
-                delta = pre.state.diff_from(post.state)  # This is why I love python
+                # Update the action's effects
+                delta = pre.state.diff_from(post.state)
                 model_action.update_add(delta.added)
                 model_action.update_delete(delta.deleted)
 

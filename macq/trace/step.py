@@ -25,6 +25,8 @@ class Step:
             action (Action | None):
                 The action taken from the state in this step. Must provide a
                 value, but value can be None.
+            index (int):
+                The index of this step in the trace.
         """
         self.state = state
         self.action = action
@@ -33,17 +35,3 @@ class Step:
     def __str__(self):
         string = str(self.action) + "\n\n" + str(self.state)
         return string
-
-    def base_fluents(self):
-        # Is this useful? Not used anywhere
-        # Each extract method has its own "get fluents"
-        # if we want a general get fluents shouldn't it be on TraceList?
-        fluents = []
-        for fluent in self.state.fluents:
-            fluents.append(fluent.name)
-        return fluents
-
-    def base_action(self):
-        # Is this useful? Not used anywhere
-        # could just do trace[i].action.name
-        return self.action.name
