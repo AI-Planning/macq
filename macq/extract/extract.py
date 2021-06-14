@@ -58,16 +58,3 @@ class Extract:
         }
 
         return techniques[mode](observations)
-
-    @staticmethod
-    def get_transitions(action: Action, observations: List[List[Observation]]):
-        sas_triples = []
-        trace_obs: List[Observation]
-        for trace_obs in observations:
-            for obs in trace_obs:
-                if obs.step.action == action:
-                    triple = SAS(
-                        obs.step.state, action, trace_obs[obs.index + 1].step.state
-                    )
-                    sas_triples.append(triple)
-        return sas_triples

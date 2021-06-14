@@ -31,12 +31,20 @@ class State:
         """
         self.fluents = fluents
 
+    def __eq__(self, other):
+        if not isinstance(other, State):
+            return False
+        return self.fluents == other.fluents
+
     def __str__(self):
         string = ""
         for fluent, value in self.items():
             if value:
                 string += f"{fluent}, "
         return string[:-2]
+
+    def __hash__(self):
+        return hash(str(self))
 
     def __len__(self):
         return len(self.fluents)
@@ -54,7 +62,7 @@ class State:
         return iter(self.fluents)
 
     def __contains__(self, key):
-        return self.fluents.__contains__(key)
+        return self.fluents[key]
 
     def clear(self):
         return self.fluents.clear()
@@ -79,6 +87,11 @@ class State:
 
     def clone(self):
         return State(self.fluents)
+
+    def holds(self, fluent: str):
+        fluents = dict(map(lambda f: (f.name, f), self.keys()))
+        if fluent in fluents.keys():
+            return self[fluents[fluent]]
 
     def diff_from(self, other: State):
         """Determines the delta-state between this state and `other`.

@@ -1,4 +1,5 @@
-from typing import List, Callable, Type
+from collections import defaultdict
+from typing import List, Callable, Type, Set
 from . import Action, Trace
 from ..observation import Observation
 
@@ -152,7 +153,7 @@ class TraceList:
 
 
 class ObservationList(TraceList):
-    traces: List[Observation]
+    traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
     get_usage = property()
@@ -161,6 +162,41 @@ class ObservationList(TraceList):
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
         super(ObservationList, self).__init__()
         self.type = Token
-        for trace in traces:
-            observations = trace.tokenize(Token, **kwargs)
-            self.append(observations)
+        for i, trace in enumerate(traces):
+            tokens = trace.tokenize(Token, trace_num=i, **kwargs)
+            self.append(tokens)
+
+    def fetch_observations(self, query: dict):
+        matches = list()
+        trace: List[Observation]
+        for i, trace in enumerate(self):
+            matches.append(set())
+            for obs in trace:
+                if obs.matches(query):  # if no matches, set can be empty
+                    matches[i].add(obs)
+        return matches  # list of sets of matching fluents from each trace
+
+    def fetch_observation_windows(self, query: dict, left: int, right: int):
+        windows = []
+        matches = self.fetch_observations(query)
+        trace: Set[Observation]
+        for i, trace in enumerate(matches):  # i corresponds to trace index in self
+            for obs in trace:
+                start = obs.index - left
+                end = obs.index + right + 1
+                windows.append(self[i][start:end])
+        return windows
+
+    def get_transitions(self, action: Action):
+        query = {"action": action.name}
+        return self.fetch_observation_windows(query, 0, 1)
+
+    def get_all_transitions(self):
+        actions = set()
+        for trace in self:
+            for obs in trace:
+                action = obs.action
+                if action is not None:
+                    actions.add(action)
+
+        return dict(map(lambda action: (action, self.get_transitions(action)), actions))
