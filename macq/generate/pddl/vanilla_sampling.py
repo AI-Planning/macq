@@ -5,7 +5,7 @@ from ..trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 from tarski.search.operations import progress
 import random
 
-MAX_TRACE_TIME = 10.0
+MAX_TRACE_TIME = 30.0
 
 
 class VanillaSampling(Generator):
@@ -97,7 +97,7 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TRACE_TIME)
+    # @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
@@ -137,4 +137,5 @@ class VanillaSampling(Generator):
                     step = Step(state=macq_state, action=None, index=j + 1)
                     trace.append(step)
                     valid_trace = True
+        print("trace generated")
         return trace

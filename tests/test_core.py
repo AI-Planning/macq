@@ -406,10 +406,11 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=5)
-    # vanilla = VanillaSampling(problem_id=123, plan_len=5, num_traces=5)
-    print(vanilla.traces)
+    # vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=100)
+    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
+    # print(vanilla.traces)
 
+    """
     # test tokenization
     random_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
@@ -425,7 +426,8 @@ if __name__ == "__main__":
         hide_fluents=hide_fluents,
     )
 
-    # for token in random_tokens:
-    #     print(token.index)
-    #     print(token.step)
-    #     print()
+    for token in random_tokens:
+        print(token.index)
+        print(token.step)
+        print()
+    """

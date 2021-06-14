@@ -23,6 +23,7 @@ def set_timer(num_seconds):
             current = begin
 
             thr = pool.apply_async(generator, args=args, kwds=kwargs)
+            pool.close()
             # continue counting time while the function has not completed
             while not thr.ready():
                 current = time.perf_counter()
@@ -31,7 +32,8 @@ def set_timer(num_seconds):
                     raise TraceSearchTimeOut()
             # return a successful trace
             result = thr.get()
-            pool.close()
+
+            pool.terminate()
             return result
 
         return wrapper
