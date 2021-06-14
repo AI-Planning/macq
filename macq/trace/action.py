@@ -37,18 +37,18 @@ class Action:
         self.obj_params = obj_params
         self.cost = cost
 
-    def __str__(self):
-        string = f"{self.name} {' '.join(map(str, self.obj_params))}"
-        return string
-
     def __hash__(self):
         # Order of obj_params is important!
-        return hash(str(self))
+        return hash(self.details())
 
     def __eq__(self, other):
         if not isinstance(other, Action):
             return False
         return self.name == other.name and self.obj_params == other.obj_params
+
+    def details(self):
+        string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+        return string
 
     def clone(self):
         return Action(self.name, self.obj_params, self.cost)

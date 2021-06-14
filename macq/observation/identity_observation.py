@@ -20,11 +20,8 @@ class IdentityObservation(Observation):
         self.state = step.state.clone()
         self.action = None if step.action is None else step.action.clone()
 
-    def __str__(self):
-        return str(self.index) + str(self.action) + str(self.state)
-
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details())
 
     def __eq__(self, other):
         if not isinstance(other, IdentityObservation):
@@ -35,8 +32,11 @@ class IdentityObservation(Observation):
         if key == "action":
             if self.action is None:
                 return value is None
-            return self.action.name == value
+            return self.action.details() == value
         elif key == "fluent_holds":
             return self.state.holds(value)  # whatever this needs to look like
         else:
             raise InvalidQueryParameter(IdentityObservation, key)
+
+    def details(self):
+        return str(self.index) + self.action.details() + self.state.details()

@@ -12,7 +12,9 @@ class SAS:
     post_state: State
 
     def __hash__(self):
-        return hash(str(self.pre_state) + str(self.action) + str(self.post_state))
+        return hash(
+            self.pre_state.details() + self.action.details() + self.post_state.details()
+        )
 
 
 class Trace:
@@ -44,7 +46,7 @@ class Trace:
         self.steps = steps if steps is not None else []
         self.__reinit_actions_and_fluents()
 
-    def __str__(self):
+    def details(self):
         indent = " " * 2
         # Summarize class attributes
         string = cleandoc(
@@ -59,15 +61,15 @@ class Trace:
         string += "\n"
 
         # Dynamically get the spacing, 2n time
-        state_len = max([len(str(step.state)) for step in self]) + 4
+        state_len = max([len(step.state.details()) for step in self]) + 4
         string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
         string += "\n"
 
         # Create step string representation here, so formatting is consistent
         for i, step in enumerate(self):
             string += (
-                f"{indent*2}{i+1:<5} {str(step.state):<{state_len}} "
-                f"{str(step.action):<8}\n"
+                f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
+                f"{step.action.details() if step.action is not None else '':<8}\n"
             )
 
         return string
@@ -90,12 +92,12 @@ class Trace:
     def __reversed__(self):
         return reversed(self.steps)
 
-    def __contains__(self, item: Step):
-        return item in self.steps
+    def __contains__(self, step: Step):
+        return step in self.steps
 
-    def append(self, item: Step):
-        self.steps.append(item)
-        self.__update_actions_and_fluents(item)
+    def append(self, step: Step):
+        self.steps.append(step)
+        self.__update_actions_and_fluents(step)
 
     def clear(self):
         self.steps.clear()
@@ -240,6 +242,23 @@ class Trace:
             sum += self.steps[i].action.cost
         return sum
 
+    def get_steps(self, action: Action):
+        """Retrieves all the Steps in the trace that use the specified action.
+
+        Args:
+            action (Action):
+                The Action to retrieve corresponding steps for.
+
+        Returns:
+            The set of steps that use the specified action.
+
+        """
+        steps = set()
+        for step in self:
+            if step.action == action:
+                steps.add(action)
+        return steps
+
     def get_usage(self, action: Action):
         """Calculates how often an action was performed in this trace.
 
@@ -252,11 +271,7 @@ class Trace:
             as the number of occurences of the action divided by the length of
             the trace (number of steps).
         """
-        sum = 0
-        for step in self:
-            if step.action == action:
-                sum += 1
-        return sum / len(self)
+        return len(self.get_steps(action)) / len(self)
 
     def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.

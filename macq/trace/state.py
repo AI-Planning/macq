@@ -35,14 +35,8 @@ class State:
             return False
         return self.fluents == other.fluents
 
-    def __str__(self):
-        string = ""
-        for fluent, value in self.items():
-            string += f"{fluent} ({value}), "
-        return string[:-2]
-
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details())
 
     def __len__(self):
         return len(self.fluents)
@@ -82,6 +76,12 @@ class State:
 
     def items(self):
         return self.fluents.items()
+
+    def details(self):
+        string = ""
+        for fluent, value in self.items():
+            string += f"{fluent.details()} ({value}), "
+        return string[:-2]
 
     def clone(self):
         return State(self.fluents)
