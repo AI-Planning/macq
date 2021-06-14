@@ -406,8 +406,8 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    # vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=100)
-    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=100)
+    # vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
     # print(vanilla.traces)
 
     """

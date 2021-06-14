@@ -91,13 +91,12 @@ class VanillaSampling(Generator):
         Returns:
             A TraceList object with the list of traces generated.
         """
-
         traces = TraceList()
         for _ in range(self.num_traces):
             traces.append(self.generate_single_trace())
         return traces
 
-    # @set_timer(num_seconds=MAX_TRACE_TIME)
+    @set_timer(num_seconds=MAX_TRACE_TIME)
     def generate_single_trace(self):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function

@@ -1,4 +1,3 @@
-import time
 from multiprocessing.pool import ThreadPool
 
 
@@ -18,23 +17,17 @@ def set_timer(num_seconds):
 
         def wrapper(*args, **kwargs):
             pool = ThreadPool(processes=1)
-            # start the timer
-            begin = time.perf_counter()
-            current = begin
 
             thr = pool.apply_async(generator, args=args, kwds=kwargs)
-            pool.close()
-            # continue counting time while the function has not completed
-            while not thr.ready():
-                current = time.perf_counter()
-                # raise exception if the function takes too long
-                if current - begin > num_seconds:
-                    raise TraceSearchTimeOut()
-            # return a successful trace
-            result = thr.get()
-
-            pool.terminate()
-            return result
+            # run the function for the specified seconds
+            thr.wait(num_seconds)
+            # return a successful trace, if ready
+            if thr.ready():
+                pool.terminate()
+                return thr.get()
+            else:
+                # otherwise, raise an exception if the function takes too long
+                raise TraceSearchTimeOut()
 
         return wrapper
 
