@@ -17,13 +17,10 @@ def generate_test_fluents(num_fluents: int):
     fluents : List of Fluents
         The list of testing fluents generated.
     """
-    fluents = {}
     objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
-    for i in range(num_fluents):
-        fluent_name = "fluent" + " " + str(i + 1)
-        fluent = Fluent(fluent_name, [objects[i]])
-        fluents[fluent] = i % 2 == 0
-    return fluents
+    return {
+        Fluent(f"fluent {str(i+1)}", [objects[i]]): i % 2 for i in range(num_fluents)
+    }
 
 
 def generate_test_actions(num_actions: int):
