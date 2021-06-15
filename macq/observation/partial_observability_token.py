@@ -30,7 +30,8 @@ class PartialObservabilityToken(Observation):
             **method_kwargs (keyword arguments):
                 The arguments to be passed to the corresponding method function.
         """
-        super().__init__(method(self, step, **method_kwargs))
+        super().__init__(index=step.index)
+        self.step = method(self, step, **method_kwargs)
 
     def __eq__(self, value):
         if isinstance(value, PartialObservabilityToken):

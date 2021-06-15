@@ -1,9 +1,26 @@
+"""
 from ...trace import TraceList, Trace, Step
 from ...generate.pddl.generator import Generator
 from ...utils.timer import set_timer
 from ..trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+"""
 from tarski.search.operations import progress
 import random
+
+from macq.trace import (
+    PlanningObject,
+    Fluent,
+    Action,
+    Step,
+    State,
+    Trace,
+    SAS,
+    TraceList,
+)
+from macq.generate.pddl import Generator
+from macq.utils.timer import set_timer
+from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+
 
 MAX_TRACE_TIME = 30.0
 
@@ -109,7 +126,7 @@ class VanillaSampling(Generator):
 
         state = self.problem.init
         valid_trace = False
-
+        index = 0
         while not valid_trace:
             trace.clear()
             # add more steps while the trace has not yet reached the desired length
@@ -117,14 +134,14 @@ class VanillaSampling(Generator):
                 # if we have not yet reached the last step
                 if j < self.plan_len - 1:
                     # find the next applicable actions
-                    app_act = self.instance.applicable(state)
-                    # find the next applicable actions
-                    ls = list(self.instance.applicable(state))
+                    app_act = list(self.instance.applicable(state))
                     # if the trace reaches a dead lock, disregard this trace and try again
-                    if not ls:
+                    if not app_act:
+                        index += 1
+                        print(index)
                         break
                     # pick a random applicable action and apply it
-                    act = random.choice(ls)
+                    act = random.choice(app_act)
                     # create the trace and progress the state
                     macq_action = self.tarski_act_to_macq(act, False)
                     macq_state = self.tarski_state_to_macq(state)
@@ -136,5 +153,14 @@ class VanillaSampling(Generator):
                     step = Step(state=macq_state, action=None, index=j + 1)
                     trace.append(step)
                     valid_trace = True
-        print("trace generated")
         return trace
+
+
+if __name__ == "__main__":
+    # exit out to the base macq folder so we can get to /tests
+    from pathlib import Path
+
+    base = Path(__file__).parent.parent
+    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
+    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)

@@ -50,7 +50,6 @@ class Generator:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
         else:
-            print(get_problem(problem_id)["problem_url"])
             dom = requests.get(get_problem(problem_id)["domain_url"]).text
             prob = requests.get(get_problem(problem_id)["problem_url"]).text
             reader.parse_domain_string(dom)
