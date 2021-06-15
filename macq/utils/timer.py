@@ -1,4 +1,3 @@
-import time
 from multiprocessing.pool import ThreadPool
 
 
@@ -8,26 +7,27 @@ def set_timer(num_seconds):
         Checks that a trace is generated within the time indicated by the MAX_TRACE_TIME
         constant in the respective generator.
 
-        Arguments
-        ---------
-        generator : function reference
-            The generator function to be wrapped with this time-checker.
+        Args:
+            generator (function reference):
+                The generator function to be wrapped with this time-checker.
+
+        Returns:
+            The wrapped generator function.
         """
 
         def wrapper(*args, **kwargs):
             pool = ThreadPool(processes=1)
-            # start the timer
-            begin = time.perf_counter()
-            current = begin
+
             thr = pool.apply_async(generator, args=args, kwds=kwargs)
-            # continue counting time while the function has not completed
-            while not thr.ready():
-                current = time.perf_counter()
-                # raise exception if the function takes too long
-                if current - begin > num_seconds:
-                    raise TraceSearchTimeOut()
-            # return a successful trace
-            return thr.get()
+            # run the function for the specified seconds
+            thr.wait(num_seconds)
+            # return a successful trace, if ready
+            if thr.ready():
+                pool.terminate()
+                return thr.get()
+            else:
+                # otherwise, raise an exception if the function takes too long
+                raise TraceSearchTimeOut()
 
         return wrapper
 
@@ -46,3 +46,11 @@ class TraceSearchTimeOut(Exception):
         + "MAX_TIME can be changed through macq.utils.timer.MAX_TIME.",
     ):
         super().__init__(message)
+
+
+if __name__ == "__main__":
+    # exit out to the base macq folder so we can get to /tests
+    from pathlib import Path
+    from macq.generate.pddl import VanillaSampling
+
+    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
