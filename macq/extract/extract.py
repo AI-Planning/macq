@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 from enum import Enum, auto
 from .observer import Observer
+from .slaf import Slaf
 from ..observation import Observation
 from ..trace import ObservationList, Action, State
 
@@ -27,6 +28,7 @@ class modes(Enum):
     """
 
     OBSERVER = auto()
+    SLAF = auto()
 
 
 class Extract:
@@ -55,6 +57,7 @@ class Extract:
 
         techniques = {
             modes.OBSERVER: Observer,
+            modes.SLAF: Slaf,
         }
 
         return techniques[mode](observations)

@@ -1,5 +1,5 @@
 from .model import Model, ModelAction
-from .extract import Extract, modes, IncompatibleObservationToken
+from .extract import Extract, modes, IncompatibleObservationToken, Slaf
 
 __all__ = [
     "Model",
@@ -7,4 +7,5 @@ __all__ = [
     "modes",
     "IncompatibleObservationToken",
     "ModelAction",
+    "Slaf",
 ]
