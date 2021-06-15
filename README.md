@@ -17,8 +17,7 @@ This library is a collection of tools for planning-like action model acquisition
 
 ## Usage <a name="usage" />
 ```python
-from macq import generate, extract
-from macq.observation import IdentityObservation
+from macq import generate
 
 # get a domain-specific generator: uses api.planning.domains problem_id/
 # generate 100 traces of length 20 using vanilla sampling
@@ -34,8 +33,6 @@ trace.actions
 trace.get_prev_states(action) # get the state before each occurance of action
 trace.get_post_states(action) # state after each occurance of action
 trace.get_total_cost()
-trace.tokenize(IdentityObservation)
-trace.tokens
 
 step = trace[0]
 step.base_fluents()
@@ -44,65 +41,28 @@ step.base_action()
 ######################################################################
 # Model Extraction
 ######################################################################
-model = extract.Extract(traces, extract.modes.OBSERVER)
-model.serialize()
+from macq import extract
+from macq.observation import IdentityObservation
+observations = traces.tokenize(IdentityObservation)
+model = extract.Extract(observations, extract.modes.OBSERVER)
+model.details()
 
-{
-  "fluents": [
-    {
-      "name": "fluent 1",
-      "objects": [
-        {
-          "obj_type": "number",
-          "name": "0"
-        }
-      ],
-      "value": true
-    }
-  ],
-  "actions": [
-    {
-      "name": "action 1",
-      "obj_params": [
-        {
-          "obj_type": "number",
-          "name": "0"
-        }
-      ],
-      "precond": [],
-      "add": [],
-      "delete": [],
-      "cost": 1
-    }
-  ]
-}
+Model:
+  Fluents: on table block A, holding block B, on table block B, clear block A, holding block A, on block A block B, on block A block B, clear block B
+  Actions:
+    pick up block A:
+      precond:
+        on table block B
+        clear block A
+      add:
+        holding block A
+        clear block B
+      delete:
+        on table block A
+        on block A block B
+    stack block B block A:
+...
 
-model2 = extract.Model.deserialize(json_model)
-
-for fluent in model2.fluents:
-     print(str(fluent))
-
-Fluent:
-  name: fluent 3
-  value: True
-  objects:
-    Object:
-      name: 2
-      type: number
-Fluent:
-  name: fluent 1
-  value: True
-  objects:
-    Object:
-      name: 0
-      type: number
-Fluent:
-  name: fluent 2
-  value: False
-  objects:
-    Object:
-      name: 1
-      type: number
 ```
 
 ## Coverage <a name="coverage"></a>

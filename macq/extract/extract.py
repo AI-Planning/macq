@@ -14,10 +14,9 @@ class SAS:
 
 
 class IncompatibleObservationToken(Exception):
-    def __init__(
-        self,
-        message="The observations are not compatible with the extraction technique.",
-    ):
+    def __init__(self, token, technique, message=None):
+        if message is None:
+            message = f"Observations of type {token.__name__} are not compatible with the {technique.__name__} extraction technique."
         super().__init__(message)
 
 
@@ -53,18 +52,8 @@ class Extract:
             A Model object. The model's characteristics are determined by the
             extraction technique used.
         """
-        if mode == modes.OBSERVER:
-            return Observer(observations)
+        techniques = {
+            modes.OBSERVER: Observer,
+        }
 
-    @staticmethod
-    def get_transitions(action: Action, observations: List[List[Observation]]):
-        sas_triples = []
-        trace_obs: List[Observation]
-        for trace_obs in observations:
-            for obs in trace_obs:
-                if obs.step.action == action:
-                    triple = SAS(
-                        obs.step.state, action, trace_obs[obs.index + 1].step.state
-                    )
-                    sas_triples.append(triple)
-        return sas_triples
+        return techniques[mode](observations)
