@@ -1,6 +1,6 @@
 import bauhaus
 from bauhaus import Encoding, proposition, constraint
-from nnf import Var
+from nnf import Var, true
 import macq.extract as extract
 from ..observation import PartialObservabilityTokenPropositions
 from ..trace import ObservationList, Action
@@ -21,6 +21,28 @@ class Slaf:
         """
         if observations.type is not PartialObservabilityTokenPropositions:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
+        Slaf.get_initial_fluent_factored(observations)
+
+    @staticmethod
+    def get_initial_fluent_factored(observations: ObservationList):
+        fluent_factored = None
+        for obs in observations:
+            for token in obs:
+                for f in token.step.state:
+                    if fluent_factored and f in fluent_factored.vars():
+                        continue
+                    if not f.true:
+                        f = ~f
+                    conj = (~f | true) & (f | true) & true
+                    print(conj)
+                    conj = conj.make_smooth()
+                    print(conj)
+                    if fluent_factored:
+                        fluent_factored = fluent_factored & conj
+                    else:
+                        fluent_factored = conj
+        print(fluent_factored)
+        return fluent_factored
 
     @proposition(e)
     class ActionPrecondition(object):
