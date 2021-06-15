@@ -10,7 +10,11 @@ from macq.trace import (
     SAS,
     TraceList,
 )
-from macq.observation import IdentityObservation, PartialObservabilityToken
+from macq.observation import (
+    IdentityObservation,
+    PartialObservabilityToken,
+    PartialObservabilityTokenPropositions,
+)
 from pathlib import Path
 from macq.utils.timer import TraceSearchTimeOut
 from macq.generate.pddl import VanillaSampling
@@ -410,22 +414,23 @@ if __name__ == "__main__":
     # vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
     # print(vanilla.traces)
 
+    """
     # test tokenization
     random_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,
         percent_missing=50,
     )
-
+    """
     hide_fluents = list(vanilla.traces[0].fluents)[:2]
     # print("hiding: " + str(hide_fluents))
     same_tokens = vanilla.traces[0].tokenize(
-        PartialObservabilityToken,
+        PartialObservabilityTokenPropositions,
         method=PartialObservabilityToken.same_subset,
         hide_fluents=hide_fluents,
     )
 
-    for token in random_tokens:
+    for token in same_tokens:
         print(token.index)
         print(token.step.state.details())
         print(token.step.action)
