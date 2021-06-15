@@ -1,4 +1,4 @@
-from json import dump, dumps, loads
+from json import dumps, loads
 from .model_action import ModelAction
 from ..trace import Fluent
 from typing import Set
@@ -7,14 +7,14 @@ from typing import Set
 class Model:
     """Action model.
 
-    An action model representing a planning problem. The characteristics of the
+    An action model representing a planning domain. The characteristics of the
     model are dependent on the extraction technique used to obtain the model.
 
     Attributes:
         fluents (set):
-            The set of fluents in the problem.
+            The set of fluents in the domain.
         actions (set):
-            The set of actions in the problem. Actions include their
+            The set of actions in the domain. Actions include their
             preconditions, add effects, and delete effects. The nature of the
             action attributes characterize the model.
     """
@@ -31,12 +31,12 @@ class Model:
         self.fluents = fluents
         self.actions = actions
 
-    def __str__(self):
+    def details(self):
         # Set the indent width
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        string += f"{indent}Fluents: {', '.join(map(str, self.fluents))}\n"
+        string += f"{indent}Fluents: {', '.join([f.details() for f in self.fluents])}\n"
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
         string += f"{indent}Actions:\n"
@@ -49,16 +49,16 @@ class Model:
         indent = " " * 2
         details = ""
         for action in self.actions:
-            details += str(action) + ":\n"
+            details += action.details() + ":\n"
             details += f"{indent}precond:\n"
             for f in action.precond:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
             details += f"{indent}add:\n"
             for f in action.add:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
             details += f"{indent}delete:\n"
             for f in action.delete:
-                details += f"{indent * 2}{f}\n"
+                details += f"{indent * 2}{f.details()}\n"
 
         return details
 
@@ -73,12 +73,11 @@ class Model:
         Returns:
             A string in json format representing the model.
         """
+        serial = dumps(self, indent=2, default=lambda o: o.__dict__)
         if filepath is not None:
             with open(filepath, "w") as fp:
-                dump(self, fp=fp, indent=2, default=lambda o: o.__dict__)
-
-        # BROKEN
-        return dumps(self, indent=2, default=lambda o: o.__dict__)
+                fp.write(serial)
+        return serial
 
     @staticmethod
     def deserialize(string: str):

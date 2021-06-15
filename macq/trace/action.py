@@ -53,7 +53,11 @@ class Action:
 
     def __hash__(self):
         # Order of obj_params is important!
-        return hash(str(self))
+        return hash(self.details())
+
+    def details(self):
+        string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+        return string
 
     def clone(self):
         return Action(self.name, self.obj_params, self.cost)
