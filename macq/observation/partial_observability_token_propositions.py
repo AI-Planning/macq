@@ -12,14 +12,17 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
         **method_kwargs
     ):
         super().__init__(step, method, **method_kwargs)
-        self.step = self.convert_to_propositions()
+        self.step.state = self.convert_to_propositions()
 
     def convert_to_propositions(self):
         formula = None
-        for fluent in self.step.state:
+        state = self.step.state
+        for fluent in state:
             next = nnf.Var(fluent.details())
+            if not state[fluent]:
+                next = ~next
             if formula:
-                formula = formula & next
+                formula = (formula & next).simplify()
             else:
                 formula = next
         return formula

@@ -432,6 +432,6 @@ if __name__ == "__main__":
 
     for token in same_tokens:
         print(token.index)
-        print(token.step.state.details())
+        print(token.step.state)
         print(token.step.action)
         print()
