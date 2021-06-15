@@ -1,4 +1,4 @@
-from ...trace import Action, State, CustomObject, Fluent
+from ...trace import Action, State, PlanningObject, Fluent
 from tarski.io import PDDLReader, FstripsWriter
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import ground_problem_schemas_into_plain_operators
@@ -35,9 +35,9 @@ class Generator:
         self.instance = GroundForwardSearchModel(self.problem, operators)
 
         """
-        Class that handles creating a basic PDDL state trace generator. Handles all 
+        Class that handles creating a basic PDDL state trace generator. Handles all
         parsing and stores the problem, language, and grounded instance for the child
-        generators to easily access and use. Takes either the raw filenames of the 
+        generators to easily access and use. Takes either the raw filenames of the
         domain and problem, or a problem ID.
 
         Arguments
@@ -145,7 +145,7 @@ class Generator:
         for term in terms:
             if isinstance(fluent_name, BuiltinPredicateSymbol):
                 fluent_name = fluent_name.value
-            objects.append(CustomObject(term.sort.name, term.name))
+            objects.append(PlanningObject(term.sort.name, term.name))
         fluent = Fluent(fluent_name, objects)
         return fluent
 
@@ -207,4 +207,4 @@ class Generator:
             objs.update(set(fluent.objects))
         for fluent in precond:
             objs.update(set(fluent.objects))
-        return Action(name, objs, precond, add, delete)
+        return Action(name, objs)

@@ -17,8 +17,7 @@ This library is a collection of tools for planning-like action model acquisition
 
 ## Usage <a name="usage" />
 ```python
-from macq import generate, extract
-from macq.observation import IdentityObservation
+from macq import generate
 
 # get a domain-specific generator: uses api.planning.domains problem_id/
 # generate 100 traces of length 20 using vanilla sampling
@@ -34,19 +33,35 @@ trace.actions
 trace.get_prev_states(action) # get the state before each occurance of action
 trace.get_post_states(action) # state after each occurance of action
 trace.get_total_cost()
-trace.tokenize(IdentityObservation)
-trace.tokens
 
 step = trace[0]
 step.base_fluents()
 step.base_action()
 
-model = extract.Extract(traces, extract.modes.OBSERVER)
+######################################################################
+# Model Extraction
+######################################################################
+from macq import extract
+from macq.observation import IdentityObservation
+observations = traces.tokenize(IdentityObservation)
+model = extract.Extract(observations, extract.modes.OBSERVER)
+model.details()
 
-model.actions
+Model:
+  Fluents: on table block A, holding block B, on table block B, clear block A, holding block A, on block A block B, on block A block B, clear block B
+  Actions:
+    pick up block A:
+      precond:
+        on table block B
+        clear block A
+      add:
+        holding block A
+        clear block B
+      delete:
+        on table block A
+        on block A block B
+    stack block B block A:
 ...
-
-model.actions[0].to_pddl()
 
 ```
 
