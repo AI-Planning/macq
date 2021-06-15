@@ -46,11 +46,3 @@ class TraceSearchTimeOut(Exception):
         + "MAX_TIME can be changed through macq.utils.timer.MAX_TIME.",
     ):
         super().__init__(message)
-
-
-if __name__ == "__main__":
-    # exit out to the base macq folder so we can get to /tests
-    from pathlib import Path
-    from macq.generate.pddl import VanillaSampling
-
-    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
