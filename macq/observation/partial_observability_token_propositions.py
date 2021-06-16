@@ -1,7 +1,8 @@
 from . import PartialObservabilityToken
 from typing import Callable, Union, Set
 from ..trace import Step, Fluent
-import nnf
+import bauhaus
+from bauhaus import Encoding, proposition
 
 
 class PartialObservabilityTokenPropositions(PartialObservabilityToken):
@@ -15,14 +16,19 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
         self.step.state = self.convert_to_propositions()
 
     def convert_to_propositions(self):
-        formula = None
+        e = Encoding()
+
+        @proposition(e)
+        class fluent(object):
+            # instantiate with name to be given to the proposition
+            def __init__(self, name):
+                self.name = name
+
         state = self.step.state
-        for fluent in state:
-            next = nnf.Var(fluent.details())
-            if not state[fluent]:
-                next = ~next
-            if formula:
-                formula = (formula & next).simplify()
+        for f in state:
+            next = fluent(f.details())
+            if state[f]:
+                e.add_constraint(next)
             else:
-                formula = next
-        return formula
+                e.add_constraint(~next)
+        return e
