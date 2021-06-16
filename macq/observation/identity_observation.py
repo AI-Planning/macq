@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-from json import dumps
 from ..trace import Step
 from . import Observation, InvalidQueryParameter
 
@@ -69,6 +68,3 @@ class IdentityObservation(Observation):
 
     def details(self):
         return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
-
-    def serialize(self):
-        return dumps(self)

@@ -1,5 +1,5 @@
 from logging import warn
-from ..trace import Step
+from json import dumps
 
 
 class InvalidQueryParameter(Exception):
@@ -29,3 +29,6 @@ class Observation:
 
     def matches(self, query: dict):
         return all([self._matches(key, value) for key, value in query.items()])
+
+    def serialize(self):
+        return dumps(self, default=lambda o: o.__dict__, indent=2)
