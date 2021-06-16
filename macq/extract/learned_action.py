@@ -1,9 +1,11 @@
-from typing import Set
-from ..trace import Action, Fluent, PlanningObject
+from __future__ import annotations
+from macq.trace.action import Action
+from typing import Set, List
+from ..trace import Fluent, PlanningObject
 
 
 class LearnedAction:
-    def __init__(self, name: str, obj_params: str, **kwargs):
+    def __init__(self, name: str, obj_params: List[str], **kwargs):
         self.name = name
         self.obj_params = obj_params
         if "cost" in kwargs:
@@ -53,11 +55,25 @@ class LearnedAction:
         """
         self.delete.update(fluents)
 
+    def compare(self, orig_action: LearnedAction):
+        """Compares the learned action to an original, ground truth action."""
+        precond_diff = orig_action.precond.difference(self.precond)
+        add_diff = orig_action.add.difference(self.add)
+        delete_diff = orig_action.delete.difference(self.delete)
+        return precond_diff, add_diff, delete_diff
+
     @classmethod
     def from_json(cls, data):
         """Converts a json object to an Action."""
-        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
+        obj_params = list(map(str, data["obj_params"]))
         precond = set(map(Fluent.from_json, data["precond"]))
         add = set(map(Fluent.from_json, data["add"]))
         delete = set(map(Fluent.from_json, data["delete"]))
-        return cls(data["name"], obj_params, data["cost"], precond, add, delete)
+        return cls(
+            data["name"],
+            obj_params,
+            cost=data["cost"],
+            precond=precond,
+            add=add,
+            delete=delete,
+        )
