@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from typing import Optional
 from ..trace import Step
 from . import Observation, InvalidQueryParameter
 
@@ -6,6 +8,28 @@ class IdentityObservation(Observation):
     """
     The identity observation stores the step unmodified.
     """
+
+    @dataclass
+    class IdentityState:
+        state: dict[str, bool]
+
+        def __str__(self):
+            return str(self.state)
+
+        def __hash__(self):
+            return hash(str(self))
+
+    @dataclass
+    class IdentityAction:
+        name: str
+        obj_params: list[str]
+        cost: Optional[int]
+
+        def __str__(self):
+            return self.name + str(self.obj_params) + str(self.cost)
+
+        def __hash__(self):
+            return hash(str(self))
 
     def __init__(self, step: Step, **kwargs):
         """
@@ -17,8 +41,18 @@ class IdentityObservation(Observation):
             The step associated with this observation.
         """
         super().__init__(index=step.index, **kwargs)
-        self.state = {fluent.details(): value for fluent, value in step.state.items()}
-        self.action = None if step.action is None else step.action.details()
+        self.state = self.IdentityState(
+            {fluent.details(): value for fluent, value in step.state.items()}
+        )
+        self.action = (
+            None
+            if step.action is None
+            else self.IdentityAction(
+                step.action.name,
+                list(map(lambda o: o.details(), step.action.obj_params)),
+                step.action.cost,
+            )
+        )
 
     def __hash__(self):
         return hash(self.details())
