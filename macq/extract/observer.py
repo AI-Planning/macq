@@ -45,7 +45,7 @@ class Observer:
         for trace in observations:
             for obs in trace:
                 # Update fluents with the fluents in this observation
-                fluents.update(list(obs.state.state.keys()))
+                fluents.update(list(obs.state.keys()))
         return fluents
 
     @staticmethod
@@ -72,7 +72,7 @@ class Observer:
                 # Add all action pre-states to a set
                 action_pre_states[model_action].add(pre.state)
                 # Update the action's effects
-                delta = Observer.get_delta(pre.state.state, post.state.state)
+                delta = Observer.get_delta(pre.state, post.state)
                 model_action.update_add(delta.added)
                 model_action.update_delete(delta.deleted)
 
@@ -112,7 +112,7 @@ class Observer:
     def _filter_positive(state):
         """Returns the set of true fluents in a state."""
         true_fluents = set()
-        for fluent, is_true in state.state.items():
+        for fluent, is_true in state.items():
             if is_true:
                 true_fluents.add(fluent)
         return true_fluents

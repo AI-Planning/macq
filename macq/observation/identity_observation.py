@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from json import dumps
 from ..trace import Step
 from . import Observation, InvalidQueryParameter
 
@@ -9,15 +10,9 @@ class IdentityObservation(Observation):
     The identity observation stores the step unmodified.
     """
 
-    @dataclass
-    class IdentityState:
-        state: dict[str, bool]
-
-        def __str__(self):
-            return str(self.state)
-
+    class IdentityState(dict):
         def __hash__(self):
-            return hash(str(self))
+            return hash(tuple(sorted(self.items())))
 
     @dataclass
     class IdentityAction:
@@ -74,3 +69,6 @@ class IdentityObservation(Observation):
 
     def details(self):
         return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
+
+    def serialize(self):
+        return dumps(self)
