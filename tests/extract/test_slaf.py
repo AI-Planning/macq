@@ -14,6 +14,8 @@ if __name__ == "__main__":
         method=PartialObservabilityToken.random_subset,
         percent_missing=30,
     )
-    traces.print()
+    # traces.print()
+    for f in traces.get_fluents():
+        print(f.details())
     model = Extract(observations, modes.SLAF)
     print(model.details())

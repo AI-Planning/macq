@@ -140,6 +140,18 @@ class TraceList:
             usages.append(trace.get_usage(action))
         return usages
 
+    def get_fluents(self):
+        """Retrieves a set of all fluents used in child traces.
+
+        Returns:
+            A set of all fluents used in child traces.
+        """
+        fluents = set()
+        for trace in self.traces:
+            for step in trace:
+                fluents.update(step.state.fluents)
+        return fluents
+
     def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.
 
@@ -158,6 +170,7 @@ class ObservationList(TraceList):
     generate_more = property()
     get_usage = property()
     tokenize = property()
+    get_fluents = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
         super(ObservationList, self).__init__()
