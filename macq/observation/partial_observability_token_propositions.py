@@ -27,7 +27,7 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
                 formula = next
         return formula
 
-    def get_base_fluents(self):
+    def get_base_true_fluents(self):
         fluents = set()
         fluents.update(f if f.true else ~f for f in self.step.state.children)
         return fluents
