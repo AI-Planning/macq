@@ -69,7 +69,7 @@ class Trace:
         for i, step in enumerate(self):
             string += (
                 f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
-                f"{step.action.details() if step.action is not None else '':<8}\n"
+                f"{step.action.details() if step.action else '':<8}\n"
             )
 
         return string
@@ -138,11 +138,9 @@ class Trace:
         self.steps.sort(reverse=reverse, key=key)
 
     def __update_actions_and_fluents(self, step: Step):
-        print(type(step.state))
         self.fluents.update(step.state.keys())
-        new_act = step.action
-        if new_act is not None:
-            self.actions.add(new_act)
+        if step.action:
+            self.actions.add(step.action)
 
     def __reinit_actions_and_fluents(self):
         self.fluents = set()
@@ -212,7 +210,7 @@ class Trace:
         """
         sum = 0
         for step in self.steps:
-            if step.action is not None:
+            if step.action:
                 sum += step.action.cost
         return sum
 
@@ -241,7 +239,7 @@ class Trace:
 
         sum = 0
         for i in range(start - 1, end):
-            if self[i].action is not None:
+            if self[i].action:
                 sum += self[i].action.cost
         return sum
 
