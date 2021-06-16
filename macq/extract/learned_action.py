@@ -2,17 +2,19 @@ from typing import Set
 from ..trace import Action, Fluent, PlanningObject
 
 
-class ModelAction:
-    def __init__(self, name: str, obj_params: str, cost: int):
+class LearnedAction:
+    def __init__(self, name: str, obj_params: str, **kwargs):
         self.name = name
         self.obj_params = obj_params
-        self.cost = cost
-        self.precond = set()
-        self.add = set()
-        self.delete = set()
+        if "cost" in kwargs:
+            self.cost = kwargs["cost"]
+
+        self.precond = set() if "precond" not in kwargs else kwargs["precond"]
+        self.add = set() if "add" not in kwargs else kwargs["add"]
+        self.delete = set() if "delete" not in kwargs else kwargs["delete"]
 
     def __eq__(self, other):
-        if not isinstance(other, ModelAction):
+        if not isinstance(other, LearnedAction):
             return False
         return self.name == other.name and self.obj_params == other.obj_params
 

@@ -64,9 +64,9 @@ class Observer:
         # Get transitions for each action
         action_transitions = observations.get_all_transitions()
         for action, transitions in action_transitions.items():
-            # Create a ModelAction for the current action
-            model_action = extract.ModelAction(
-                action.name, action.obj_params, action.cost
+            # Create a LearnedAction for the current action
+            model_action = extract.LearnedAction(
+                action.name, action.obj_params, cost=action.cost
             )
             for pre, post in transitions:
                 # Add all action pre-states to a set
