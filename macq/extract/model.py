@@ -19,7 +19,7 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[Fluent], actions: Set[ModelAction]):
+    def __init__(self, fluents: Set[str], actions: Set[ModelAction]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -36,7 +36,7 @@ class Model:
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        string += f"{indent}Fluents: {', '.join([f.details() for f in self.fluents])}\n"
+        string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
         string += f"{indent}Actions:\n"
@@ -52,13 +52,13 @@ class Model:
             details += action.details() + ":\n"
             details += f"{indent}precond:\n"
             for f in action.precond:
-                details += f"{indent * 2}{f.details()}\n"
+                details += f"{indent * 2}{f}\n"
             details += f"{indent}add:\n"
             for f in action.add:
-                details += f"{indent * 2}{f.details()}\n"
+                details += f"{indent * 2}{f}\n"
             details += f"{indent}delete:\n"
             for f in action.delete:
-                details += f"{indent * 2}{f.details()}\n"
+                details += f"{indent * 2}{f}\n"
 
         return details
 

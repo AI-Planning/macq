@@ -3,10 +3,10 @@ from ..trace import Action, Fluent, PlanningObject
 
 
 class ModelAction:
-    def __init__(self, action: Action):
-        self.name = action.name
-        self.obj_params = action.obj_params
-        self.cost = action.cost
+    def __init__(self, name: str, obj_params: str, cost: int):
+        self.name = name
+        self.obj_params = obj_params
+        self.cost = cost
         self.precond = set()
         self.add = set()
         self.delete = set()
@@ -21,7 +21,7 @@ class ModelAction:
         return hash(self.details())
 
     def details(self):
-        string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+        string = f"{self.name} {' '.join([o for o in self.obj_params])}"
         return string
 
     def update_precond(self, fluents: Set[Fluent]):
