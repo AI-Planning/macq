@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 from ..trace import Step
 from . import Observation, InvalidQueryParameter
 
@@ -16,7 +16,7 @@ class IdentityObservation(Observation):
     @dataclass
     class IdentityAction:
         name: str
-        obj_params: list[str]
+        obj_params: List[str]
         cost: Optional[int]
 
         def __str__(self):
