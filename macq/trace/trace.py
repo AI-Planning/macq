@@ -35,7 +35,7 @@ class Trace:
         def __init__(self, message):
             super().__init__(message)
 
-    def __init__(self, steps: List[Step] = None):
+    def __init__(self, steps: List[Step] = []):
         """Initializes a Trace with an optional list of steps.
 
         Args:
@@ -43,7 +43,7 @@ class Trace:
                 Optional; The list of steps in the trace. Defaults to an empty
                 `list`.
         """
-        self.steps = steps if steps is not None else []
+        self.steps = steps
         self.__reinit_actions_and_fluents()
 
     def details(self):
@@ -69,7 +69,7 @@ class Trace:
         for i, step in enumerate(self):
             string += (
                 f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
-                f"{step.action.details() if step.action is not None else '':<8}\n"
+                f"{step.action.details() if step.action else '':<8}\n"
             )
 
         return string
@@ -139,9 +139,8 @@ class Trace:
 
     def __update_actions_and_fluents(self, step: Step):
         self.fluents.update(step.state.keys())
-        new_act = step.action
-        if new_act is not None:
-            self.actions.add(new_act)
+        if step.action:
+            self.actions.add(step.action)
 
     def __reinit_actions_and_fluents(self):
         self.fluents = set()
@@ -211,7 +210,8 @@ class Trace:
         """
         sum = 0
         for step in self.steps:
-            sum += step.action.cost
+            if step.action:
+                sum += step.action.cost
         return sum
 
     def get_slice_cost(self, start: int, end: int):
@@ -239,7 +239,8 @@ class Trace:
 
         sum = 0
         for i in range(start - 1, end):
-            sum += self.steps[i].action.cost
+            if self[i].action:
+                sum += self[i].action.cost
         return sum
 
     def get_steps(self, action: Action):

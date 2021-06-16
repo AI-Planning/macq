@@ -34,7 +34,7 @@ class IdentityObservation(Observation):
                 return value is None
             return self.action.details() == value
         elif key == "fluent_holds":
-            return self.state.holds(value)  # whatever this needs to look like
+            return self.state.holds(value)
         else:
             raise InvalidQueryParameter(IdentityObservation, key)
 
