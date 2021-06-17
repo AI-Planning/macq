@@ -161,7 +161,7 @@ class ObservationList(TraceList):
     tokenize = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
-        super(ObservationList, self).__init__(traces=[])
+        super(ObservationList, self).__init__()
         self.type = Token
         for i, trace in enumerate(traces):
             tokens = trace.tokenize(Token, trace_num=i, **kwargs)
