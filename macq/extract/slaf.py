@@ -15,23 +15,46 @@ class BauhausFluent(object):
     def __init__(self, details: str):
         self.details = details
 
+    def __repr__(self):
+        return self.details
+
 
 @proposition(e)
 class ActPrecond(object):
-    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
+    def __init__(
+        self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
+    ):
         if action:
             action = action.name
         self.action = action
         self.fluent = fluent
+        self.fluent_val = fluent_val
+
+    def __repr__(self):
+        return (
+            f"{self.fluent} is a precondition of {self.action}"
+            if self.fluent_val
+            else f"~{self.fluent} is a precondition of {self.action}"
+        )
 
 
 @proposition(e)
 class ActEff(object):
-    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
+    def __init__(
+        self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
+    ):
         if action:
             action = action.name
         self.action = action
         self.fluent = fluent
+        self.fluent_val = fluent_val
+
+    def __repr__(self):
+        return (
+            f"{self.action} causes {self.fluent}"
+            if self.fluent_val
+            else f"{self.action} causes ~{self.fluent}"
+        )
 
 
 @proposition(e)
@@ -42,17 +65,26 @@ class ActNeutral(object):
         self.action = action
         self.fluent = fluent
 
+    def __repr__(self):
+        return f"{self.action} has no effect on {self.fluent}"
+
 
 @proposition(e)
 class FalseConstr(object):
     def __init__(self):
         self.fluent = False
 
+    def __repr__(self):
+        return "false"
+
 
 @proposition(e)
 class TrueConstr(object):
     def __init__(self):
         self.fluent = True
+
+    def __repr__(self):
+        return "true"
 
 
 class Slaf:
@@ -106,10 +138,10 @@ class Slaf:
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
-                    pos_precond = ActPrecond(a, f)  # .compile()
-                    neg_precond = ActPrecond(a, ~f)  # .compile()
-                    pos_effect = ActEff(a, f)  # .compile()
-                    neg_effect = ActEff(a, ~f)  # .compile()
+                    pos_precond = ActPrecond(a, f, True)  # .compile()
+                    neg_precond = ActPrecond(a, f, False)  # .compile()
+                    pos_effect = ActEff(a, f, True)  # .compile()
+                    neg_effect = ActEff(a, f, False)  # .compile()
                     neutral = ActNeutral(a, f)  # .compile()
                     phi["neutral"] = (
                         (~pos_precond | phi["pos expl"])
@@ -144,6 +176,5 @@ class Slaf:
                 e.add_constraint(
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
-        print(type(e))
         e = e.compile()
         print(e)
