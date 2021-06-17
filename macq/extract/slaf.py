@@ -24,9 +24,12 @@ class ActPrecond(object):
     def __init__(
         self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
     ):
+        act_str = None
         if action:
-            action = action.name
-        self.action = action
+            act_str = f"{action.name}"
+            if action.obj_params:
+                act_str += f" {action.obj_params}"
+        self.action = act_str
         self.fluent = fluent
         self.fluent_val = fluent_val
 
@@ -43,9 +46,12 @@ class ActEff(object):
     def __init__(
         self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
     ):
+        act_str = None
         if action:
-            action = action.name
-        self.action = action
+            act_str = f"{action.name}"
+            if action.obj_params:
+                act_str += f" {action.obj_params}"
+        self.action = act_str
         self.fluent = fluent
         self.fluent_val = fluent_val
 
@@ -60,9 +66,12 @@ class ActEff(object):
 @proposition(e)
 class ActNeutral(object):
     def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
+        act_str = None
         if action:
-            action = action.name
-        self.action = action
+            act_str = f"{action.name}"
+            if action.obj_params:
+                act_str += f" {action.obj_params}"
+        self.action = act_str
         self.fluent = fluent
 
     def __repr__(self):
@@ -133,6 +142,10 @@ class Slaf:
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
+                try:
+                    print(a.obj_params)
+                except:
+                    print()
                 all_o = [BauhausFluent(f) for f in token.step.state.fluents]
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF
@@ -177,4 +190,6 @@ class Slaf:
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
         e = e.compile()
-        print(e)
+        e = e.simplify()
+        # print(e)
+        # print(e.solve())
