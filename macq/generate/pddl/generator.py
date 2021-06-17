@@ -176,7 +176,7 @@ class Generator:
                 state_fluents[grounded_fluent] = False
         return State(state_fluents)
 
-    def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool):
+    def tarski_act_to_macq(self, tarski_act: PlainOperator, fully_observable: bool = True):
         """Converts an action as defined by tarski to an action as defined by macq.
 
         Args:
