@@ -18,6 +18,9 @@ class BauhausFluent(object):
     def __repr__(self):
         return self.details
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 @proposition(e)
 class ActPrecond(object):
@@ -27,8 +30,8 @@ class ActPrecond(object):
         act_str = None
         if action:
             act_str = f"{action.name}"
-            if action.obj_params:
-                act_str += f" {action.obj_params}"
+            for obj in action.obj_params:
+                act_str += f" {obj.details()}"
         self.action = act_str
         self.fluent = fluent
         self.fluent_val = fluent_val
@@ -40,6 +43,9 @@ class ActPrecond(object):
             else f"~{self.fluent} is a precondition of {self.action}"
         )
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 @proposition(e)
 class ActEff(object):
@@ -49,8 +55,8 @@ class ActEff(object):
         act_str = None
         if action:
             act_str = f"{action.name}"
-            if action.obj_params:
-                act_str += f" {action.obj_params}"
+            for obj in action.obj_params:
+                act_str += f" {obj.details()}"
         self.action = act_str
         self.fluent = fluent
         self.fluent_val = fluent_val
@@ -62,6 +68,9 @@ class ActEff(object):
             else f"{self.action} causes ~{self.fluent}"
         )
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 @proposition(e)
 class ActNeutral(object):
@@ -69,13 +78,16 @@ class ActNeutral(object):
         act_str = None
         if action:
             act_str = f"{action.name}"
-            if action.obj_params:
-                act_str += f" {action.obj_params}"
+            for obj in action.obj_params:
+                act_str += f" {obj.details()}"
         self.action = act_str
         self.fluent = fluent
 
     def __repr__(self):
         return f"{self.action} has no effect on {self.fluent}"
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 @proposition(e)
@@ -86,6 +98,9 @@ class FalseConstr(object):
     def __repr__(self):
         return "false"
 
+    def __hash__(self):
+        return hash(str(self))
+
 
 @proposition(e)
 class TrueConstr(object):
@@ -94,6 +109,9 @@ class TrueConstr(object):
 
     def __repr__(self):
         return "true"
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class Slaf:
@@ -135,6 +153,11 @@ class Slaf:
         global e
         true = TrueConstr()
         false = FalseConstr()
+        # sets to hold action propositions
+        precond = set()
+        effects = set()
+        neut = set()
+
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
@@ -142,34 +165,36 @@ class Slaf:
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
-                try:
-                    print(a.obj_params)
-                except:
-                    print()
                 all_o = [BauhausFluent(f) for f in token.step.state.fluents]
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF
-                for phi in raw_fluent_factored:
-                    f = phi["fluent"]
-                    pos_precond = ActPrecond(a, f, True)  # .compile()
-                    neg_precond = ActPrecond(a, f, False)  # .compile()
-                    pos_effect = ActEff(a, f, True)  # .compile()
-                    neg_effect = ActEff(a, f, False)  # .compile()
-                    neutral = ActNeutral(a, f)  # .compile()
-                    phi["neutral"] = (
-                        (~pos_precond | phi["pos expl"])
-                        & (~neg_precond | phi["neg expl"])
-                        & phi["neutral"]
-                    )
-                    phi["pos expl"] = pos_effect | (
-                        neutral & ~neg_precond & phi["pos expl"]
-                    )
-                    phi["neg expl"] = neg_effect | (
-                        neutral & ~pos_precond & phi["neg expl"]
-                    )
-                    # apply the constraints to this action and all fluents (Section 5.2, 1-3)
-                    constraint.add_exactly_one(e, pos_effect, neg_effect, neutral)
-                    constraint.add_at_most_one(e, pos_precond, neg_precond)
+                if a:
+                    for phi in raw_fluent_factored:
+                        f = phi["fluent"]
+                        pos_precond = ActPrecond(a, f, True)
+                        neg_precond = ActPrecond(a, f, False)
+                        pos_effect = ActEff(a, f, True)
+                        neg_effect = ActEff(a, f, False)
+                        neutral = ActNeutral(a, f)
+                        precond.update([pos_precond])
+                        precond.update([neg_precond])
+                        effects.update([pos_effect])
+                        effects.update([neg_effect])
+                        neut.update([neutral])
+                        phi["neutral"] = (
+                            (~pos_precond | phi["pos expl"])
+                            & (~neg_precond | phi["neg expl"])
+                            & phi["neutral"]
+                        )
+                        phi["pos expl"] = pos_effect | (
+                            neutral & ~neg_precond & phi["pos expl"]
+                        )
+                        phi["neg expl"] = neg_effect | (
+                            neutral & ~pos_precond & phi["neg expl"]
+                        )
+                        # apply the constraints to this action and all fluents (Section 5.2, 1-3)
+                        constraint.add_exactly_one(e, pos_effect, neg_effect, neutral)
+                        constraint.add_at_most_one(e, pos_precond, neg_precond)
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
@@ -190,6 +215,8 @@ class Slaf:
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
         e = e.compile()
-        e = e.simplify()
-        # print(e)
-        # print(e.solve())
+        e = e.simplify(merge_nodes=True)
+        f = open("output.txt", "w")
+        f.write(str(precond))
+        f.close()
+        print(e.solve())
