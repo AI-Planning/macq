@@ -5,17 +5,17 @@ from macq.observation import IdentityObservation
 
 def generate_traces():
     traces = generate.pddl.VanillaSampling(
-        problem_id=123, plan_len=20, num_traces=100
+        problem_id=123, plan_len=20, num_traces=1
     ).traces
 
-    traces.generate_more(10)
+    # traces.generate_more(10)
 
     return traces
 
 
 def test_readme():
     traces = generate_traces()
-    assert len(traces) == 110
+    assert len(traces) == 1
 
     action = traces[0][0].action
     traces.get_usage(action)
@@ -30,3 +30,7 @@ def test_readme():
     observations = traces.tokenize(IdentityObservation)
     model = extract.Extract(observations, extract.modes.OBSERVER)
     model.details()
+
+
+if __name__ == "__main__":
+    test_readme()

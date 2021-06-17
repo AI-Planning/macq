@@ -68,6 +68,7 @@ class Observer:
             model_action = extract.LearnedAction(
                 action.name, action.obj_params, cost=action.cost
             )
+
             for pre, post in transitions:
                 # Add all action pre-states to a set
                 action_pre_states[model_action].add(pre.state)
