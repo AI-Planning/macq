@@ -80,8 +80,6 @@ class VanillaSampling(Generator):
             # add more steps while the trace has not yet reached the desired length
             for j in range(self.plan_len):
                 # find the next applicable actions
-                app_act = self.instance.applicable(state)
-                # find the next applicable actions
                 ls = list(self.instance.applicable(state))
                 # if the trace reaches a dead lock, disregard this trace and try again
                 if not ls:
@@ -91,7 +89,7 @@ class VanillaSampling(Generator):
                 # create the trace and progress the state
                 macq_action = self.tarski_act_to_macq(act)
                 macq_state = self.tarski_state_to_macq(state)
-                step = Step(macq_action, macq_state, j + 1)
+                step = Step(macq_state, macq_action, j + 1)
                 trace.append(step)
                 state = progress(state, act)
 
