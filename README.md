@@ -141,10 +141,14 @@ Coming soon...
 ## Contributing <a name="contributing" />
 
 To install macq for local development:
+
 1. Clone the repository
 2. Install the library and its dev dependencies: `pip install .[dev]` or `python setup.py develop`
 	- We recommend installing in a virtual environment
 3. Enable the pre-commit formatting hook: `pre-commit install`
 
-
 Install for development by cloning the repository and running `pip install .[dev]` (use `pip3` if you have python2 installed).
+
+### For checking typing
+
+`mypy -p macq`
