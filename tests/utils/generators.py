@@ -94,7 +94,7 @@ def generate_test_steps(num_steps: int):
     return steps
 
 
-def generate_test_trace(complexity: int):
+def generate_test_trace(complexity: int = 1):
     """
     Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
 
