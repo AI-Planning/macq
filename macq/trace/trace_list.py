@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Callable, Type, Set
+from typing import List, Callable, Type, Set, Optional
 from . import Action, Trace
 from ..observation import Observation
 
@@ -34,7 +34,7 @@ class TraceList:
     def __init__(
         self,
         traces: List[Trace] = None,
-        generator: Callable = None,
+        generator: Optional[Callable] = None,
     ):
         """Initializes a TraceList with a list of traces and a generator.
 
@@ -122,7 +122,7 @@ class TraceList:
         if self.generator is None:
             raise self.MissingGenerator(self)
 
-        self.traces.extend(self.generator(num))
+        self.traces.extend([self.generator() for _ in range(num)])
 
     def get_usage(self, action: Action):
         """Calculates how often an action was performed in each of the traces.
@@ -168,7 +168,7 @@ class ObservationList(TraceList):
             self.append(tokens)
 
     def fetch_observations(self, query: dict):
-        matches = list()
+        matches: List[Set[Observation]] = list()
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())

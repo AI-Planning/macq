@@ -54,6 +54,7 @@ class VanillaSampling(Generator):
         """
 
         traces = TraceList()
+        traces.generator = self.generate_single_trace
         for _ in range(self.num_traces):
             traces.append(self.generate_single_trace())
         return traces
