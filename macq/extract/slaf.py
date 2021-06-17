@@ -9,6 +9,33 @@ from ..trace import Action, ObservationList
 e = Encoding()
 
 
+@proposition(e)
+class ActPrecond(object):
+    def __init__(self, action: Union[Action, None], fluent: Var):
+        if action:
+            action = action.name
+        self.action = action
+        self.fluent = fluent
+
+
+@proposition(e)
+class ActEff(object):
+    def __init__(self, action: Union[Action, None], fluent: Var):
+        if action:
+            action = action.name
+        self.action = action
+        self.fluent = fluent
+
+
+@proposition(e)
+class ActNeutral(object):
+    def __init__(self, action: Union[Action, None], fluent: Var):
+        if action:
+            action = action.name
+        self.action = action
+        self.fluent = fluent
+
+
 class Slaf:
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
@@ -23,30 +50,6 @@ class Slaf:
         if observations.type is not PartialObservabilityTokenPropositions:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
         Slaf.as_strips_slaf(observations)
-
-    @proposition(e)
-    class ActPrecond(object):
-        def __init__(self, action: Union[Action, None], fluent: Var):
-            if action:
-                action = action.name
-            self.action = action
-            self.fluent = fluent
-
-    @proposition(e)
-    class ActEff(object):
-        def __init__(self, action: Union[Action, None], fluent: Var):
-            if action:
-                action = action.name
-            self.action = action
-            self.fluent = fluent
-
-    @proposition(e)
-    class ActNeutral(object):
-        def __init__(self, action: Union[Action, None], fluent: Var):
-            if action:
-                action = action.name
-            self.action = action
-            self.fluent = fluent
 
     @staticmethod
     def get_initial_fluent_factored(observation: Observation):
@@ -68,9 +71,6 @@ class Slaf:
     @staticmethod
     def as_strips_slaf(observations: ObservationList):
         global e
-        ActPrecond = Slaf.ActPrecond
-        ActEff = Slaf.ActEff
-        ActNeutral = Slaf.ActNeutral
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace

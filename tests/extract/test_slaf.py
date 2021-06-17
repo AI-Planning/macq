@@ -4,7 +4,8 @@ from macq.observation import (
     PartialObservabilityToken,
 )
 from macq.trace import *
-from tests.utils.realistic_trace import real_trace_list
+
+# from tests.utils.realistic_trace import real_trace_list
 from macq.generate.pddl import VanillaSampling
 from pathlib import Path
 
