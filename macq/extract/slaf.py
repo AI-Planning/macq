@@ -1,17 +1,24 @@
 import bauhaus
 import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
-from nnf import Var, true, false
 from typing import Union
 from ..observation import PartialObservabilityTokenPropositions, Observation
+
+# from ..observation.partial_observability_token_propositions import fluent
 from ..trace import Action, ObservationList
 
 e = Encoding()
 
 
 @proposition(e)
+class BauhausFluent(object):
+    def __init__(self, details: str):
+        self.details = details
+
+
+@proposition(e)
 class ActPrecond(object):
-    def __init__(self, action: Union[Action, None], fluent: Var):
+    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
         if action:
             action = action.name
         self.action = action
@@ -20,7 +27,7 @@ class ActPrecond(object):
 
 @proposition(e)
 class ActEff(object):
-    def __init__(self, action: Union[Action, None], fluent: Var):
+    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
         if action:
             action = action.name
         self.action = action
@@ -29,11 +36,23 @@ class ActEff(object):
 
 @proposition(e)
 class ActNeutral(object):
-    def __init__(self, action: Union[Action, None], fluent: Var):
+    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
         if action:
             action = action.name
         self.action = action
         self.fluent = fluent
+
+
+@proposition(e)
+class FalseConstr(object):
+    def __init__(self):
+        self.fluent = False
+
+
+@proposition(e)
+class TrueConstr(object):
+    def __init__(self):
+        self.fluent = True
 
 
 class Slaf:
@@ -52,16 +71,18 @@ class Slaf:
         Slaf.as_strips_slaf(observations)
 
     @staticmethod
-    def get_initial_fluent_factored(observation: Observation):
+    def __get_initial_fluent_factored(observation: Observation):
         raw_fluent_factored = []
         fluents = set()
         fluents.update(
             f for token in observation for f in token.get_base_true_fluents()
         )
+
         # set up the initial fluent factored form for the problem
         for f in fluents:
             phi = {}
-            phi["fluent"] = f
+            phi["fluent"] = BauhausFluent(f)
+            true = TrueConstr()
             phi["pos expl"] = true
             phi["neg expl"] = true
             phi["neutral"] = true
@@ -71,23 +92,25 @@ class Slaf:
     @staticmethod
     def as_strips_slaf(observations: ObservationList):
         global e
+        true = TrueConstr()
+        false = FalseConstr()
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
-            raw_fluent_factored = Slaf.get_initial_fluent_factored(obs)
+            raw_fluent_factored = Slaf.__get_initial_fluent_factored(obs)
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
-                all_o = token.step.state.children
+                all_o = [BauhausFluent(f) for f in token.step.state.fluents]
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
-                    pos_precond = ActPrecond(a, f).compile()
-                    neg_precond = ActPrecond(a, ~f).compile()
-                    pos_effect = ActEff(a, f).compile()
-                    neg_effect = ActEff(a, ~f).compile()
-                    neutral = ActNeutral(a, f).compile()
+                    pos_precond = ActPrecond(a, f)  # .compile()
+                    neg_precond = ActPrecond(a, ~f)  # .compile()
+                    pos_effect = ActEff(a, f)  # .compile()
+                    neg_effect = ActEff(a, ~f)  # .compile()
+                    neutral = ActNeutral(a, f)  # .compile()
                     phi["neutral"] = (
                         (~pos_precond | phi["pos expl"])
                         & (~neg_precond | phi["neg expl"])

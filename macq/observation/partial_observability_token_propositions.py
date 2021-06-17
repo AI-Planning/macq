@@ -1,7 +1,10 @@
 from . import PartialObservabilityToken
-from typing import Callable, Union, Set
 from ..trace import Step, Fluent
-from nnf import Var
+from typing import Callable, Union, Set
+from bauhaus import Encoding, proposition
+from bauhaus.core import CustomNNF
+
+# e = Encoding()
 
 
 class PartialObservabilityTokenPropositions(PartialObservabilityToken):
@@ -12,22 +15,30 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
         **method_kwargs
     ):
         super().__init__(step, method, **method_kwargs)
-        self.step.state = self.convert_to_propositions()
+        # self.step.state = self.convert_to_encoding()
 
-    def convert_to_propositions(self):
-        formula = None
+    """
+    def convert_to_encoding(self):
+        global e
         state = self.step.state
-        for fluent in state:
-            next = Var(fluent.details())
-            if not state[fluent]:
+        for f in state:
+            next = fluent(f.details()) 
+            if not state[f]:
                 next = ~next
-            if formula:
-                formula = (formula & next).simplify()
-            else:
-                formula = next
-        return formula
+            e.add_constraint(next)
+        return e
+    """
 
     def get_base_true_fluents(self):
         fluents = set()
-        fluents.update(f if f.true else ~f for f in self.step.state.children)
+        """
+        #fluents.update(f if not f._var.true else ~f for f in self.step.state._custom_constraints)
+        for f in self.step.state._custom_constraints:
+            if isinstance(f, CustomNNF):
+                fluents.update([f if f.typ != "not" else ~f])
+            else:
+                fluents.update([f if f._var.true else ~f])
+        return fluents
+        """
+        fluents.update(f.details() for f in self.step.state.fluents)
         return fluents
