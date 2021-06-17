@@ -1,6 +1,6 @@
 import pytest
 from macq.trace import TraceList
-from tests.utils.generators import generate_test_trace_list
+from tests.utils.generators import generate_test_trace_list, generate_test_trace
 
 MissingGenerator = TraceList.MissingGenerator
 
@@ -14,7 +14,7 @@ def test_trace_list():
         trace_list.generate_more(5)
 
     first = trace_list[0]
-    trace_list.generator = generate_test_trace_list
+    trace_list.generator = generate_test_trace
     trace_list.generate_more(5)
     assert len(trace_list) == 10
     assert trace_list[0] is first
