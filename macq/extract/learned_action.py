@@ -1,18 +1,22 @@
-from typing import Set
-from ..trace import Action, Fluent, PlanningObject
+from __future__ import annotations
+from macq.trace.action import Action
+from typing import Set, List
+from ..trace import Fluent, PlanningObject
 
 
-class ModelAction:
-    def __init__(self, action: Action):
-        self.name = action.name
-        self.obj_params = action.obj_params
-        self.cost = action.cost
-        self.precond = set()
-        self.add = set()
-        self.delete = set()
+class LearnedAction:
+    def __init__(self, name: str, obj_params: List[str], **kwargs):
+        self.name = name
+        self.obj_params = obj_params
+        if "cost" in kwargs:
+            self.cost = kwargs["cost"]
+
+        self.precond = set() if "precond" not in kwargs else kwargs["precond"]
+        self.add = set() if "add" not in kwargs else kwargs["add"]
+        self.delete = set() if "delete" not in kwargs else kwargs["delete"]
 
     def __eq__(self, other):
-        if not isinstance(other, ModelAction):
+        if not isinstance(other, LearnedAction):
             return False
         return self.name == other.name and self.obj_params == other.obj_params
 
@@ -21,7 +25,7 @@ class ModelAction:
         return hash(self.details())
 
     def details(self):
-        string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+        string = f"{self.name} {' '.join([o for o in self.obj_params])}"
         return string
 
     def update_precond(self, fluents: Set[Fluent]):
@@ -51,11 +55,25 @@ class ModelAction:
         """
         self.delete.update(fluents)
 
+    def compare(self, orig_action: LearnedAction):
+        """Compares the learned action to an original, ground truth action."""
+        precond_diff = orig_action.precond.difference(self.precond)
+        add_diff = orig_action.add.difference(self.add)
+        delete_diff = orig_action.delete.difference(self.delete)
+        return precond_diff, add_diff, delete_diff
+
     @classmethod
     def from_json(cls, data):
         """Converts a json object to an Action."""
-        obj_params = list(map(PlanningObject.from_json, data["obj_params"]))
+        obj_params = list(map(str, data["obj_params"]))
         precond = set(map(Fluent.from_json, data["precond"]))
         add = set(map(Fluent.from_json, data["add"]))
         delete = set(map(Fluent.from_json, data["delete"]))
-        return cls(data["name"], obj_params, data["cost"], precond, add, delete)
+        return cls(
+            data["name"],
+            obj_params,
+            cost=data["cost"],
+            precond=precond,
+            add=add,
+            delete=delete,
+        )

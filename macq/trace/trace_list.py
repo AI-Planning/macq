@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import List, Callable, Type, Set, Optional
 from . import Action, Trace
 from ..observation import Observation
@@ -163,6 +162,7 @@ class ObservationList(TraceList):
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
         super(ObservationList, self).__init__()
         self.type = Token
+        trace: Trace
         for i, trace in enumerate(traces):
             tokens = trace.tokenize(Token, trace_num=i, **kwargs)
             self.append(tokens)
@@ -189,7 +189,7 @@ class ObservationList(TraceList):
         return windows
 
     def get_transitions(self, action: Action):
-        query = {"action": action.details()}
+        query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
@@ -197,7 +197,7 @@ class ObservationList(TraceList):
         for trace in self:
             for obs in trace:
                 action = obs.action
-                if action is not None:
+                if action:
                     actions.add(action)
 
         return dict(map(lambda action: (action, self.get_transitions(action)), actions))
