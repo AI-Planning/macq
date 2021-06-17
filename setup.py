@@ -9,6 +9,7 @@ DESCRIPTION = "Action model acquisition from state trace data."
 DEPENDENCIES = [
     "tarski@git+git://github.com/aig-upf/tarski.git@ffc7e53#egg=tarski",
     "requests",
+    "numpy",
 ]
 
 DEV_DEPENDENCIES = [
