@@ -121,7 +121,6 @@ class VanillaSampling(Generator):
 
         state = self.problem.init
         valid_trace = False
-        index = 0
         while not valid_trace:
             trace.clear()
             # add more steps while the trace has not yet reached the desired length
@@ -132,7 +131,6 @@ class VanillaSampling(Generator):
                     app_act = list(self.instance.applicable(state))
                     # if the trace reaches a dead lock, disregard this trace and try again
                     if not app_act:
-                        index += 1
                         break
                     # pick a random applicable action and apply it
                     act = random.choice(app_act)
