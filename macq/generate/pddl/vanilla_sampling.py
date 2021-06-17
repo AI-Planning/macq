@@ -103,6 +103,7 @@ class VanillaSampling(Generator):
             A TraceList object with the list of traces generated.
         """
         traces = TraceList()
+        traces.generator = self.generate_single_trace
         for _ in range(self.num_traces):
             traces.append(self.generate_single_trace())
         return traces
@@ -132,7 +133,6 @@ class VanillaSampling(Generator):
                     # if the trace reaches a dead lock, disregard this trace and try again
                     if not app_act:
                         index += 1
-                        print(index)
                         break
                     # pick a random applicable action and apply it
                     act = random.choice(app_act)
