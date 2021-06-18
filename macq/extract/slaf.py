@@ -142,9 +142,10 @@ class Slaf:
     def __get_initial_fluent_factored(observation: Observation):
         raw_fluent_factored = []
         fluents = set()
-        fluents.update(
-            f for token in observation for f in token.get_base_true_fluents()
-        )
+
+        all_fluents = [f for token in observation for f in token.get_all_base_fluents()]
+        for f in all_fluents:
+            fluents.add(f)
 
         # set up the initial fluent factored form for the problem
         for f in fluents:
@@ -190,23 +191,8 @@ class Slaf:
 
                         # sometimes pos_precond doesn't change...?
 
-                        # print(len(precond))
-                        # print(hash(str(pos_precond)))
-                        if pos_precond in precond:
-                            print("already in")
                         precond.add((pos_precond))
-                        # print(len(precond))
-                        if neg_precond in precond:
-                            print("already in")
                         precond.add((neg_precond))
-                        # print(len(precond))
-
-                        # print(precond)
-                        # print(pos_precond)
-                        # print(neg_precond)
-
-                        # print(precond)
-                        # print()
 
                         phi["neutral"] = (
                             (~pos_precond | phi["pos expl"])
@@ -241,13 +227,13 @@ class Slaf:
                 e.add_constraint(
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
-            # print(precond)
-
-        e = e.compile()
-        e = e.simplify(merge_nodes=True)
+        # print(precond)
         precond = list(precond)
         precond = [str(pre) for pre in precond]
         precond.sort()
+        e = e.compile()
+        e = e.simplify(merge_nodes=True)
+
         f = open("output.txt", "w")
         for pre in precond:
             f.write(pre)

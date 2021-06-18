@@ -29,7 +29,7 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
         return e
     """
 
-    def get_base_true_fluents(self):
+    def get_all_base_fluents(self):
         fluents = set()
         """
         #fluents.update(f if not f._var.true else ~f for f in self.step.state._custom_constraints)

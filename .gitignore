@@ -6,3 +6,4 @@ dist/
 macq.egg-info/
 .pytest_cache/
 .coverage
+output.txt
