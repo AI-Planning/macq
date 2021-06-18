@@ -173,7 +173,7 @@ class Slaf:
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
-                all_o = [BauhausFluent(f) for f in token.step.state.fluents]
+
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF
                 if a:
@@ -185,14 +185,12 @@ class Slaf:
                         neg_effect = ActEff(a, f, False)
                         neutral = ActNeutral(a, f)
 
-                        # objects are registering as unique even though they ARE NOT.
-                        # try to find a spot where a duplicate is about to be added, then compare their strings and hashes?
-                        # those that have the same string should have the SAME HASH.
-
-                        # sometimes pos_precond doesn't change...?
+                        # for every single token/step, the variables are doubling!
+                        # but that's expected, because we have the same fluents, different action.
+                        # so, make sure there's no dupes from within a SINGLE trace.
 
                         precond.add((pos_precond))
-                        precond.add((neg_precond))
+                        # precond.add((neg_precond))
 
                         phi["neutral"] = (
                             (~pos_precond | phi["pos expl"])
@@ -209,6 +207,7 @@ class Slaf:
                         constraint.add_exactly_one(e, pos_effect, neg_effect, neutral)
                         constraint.add_at_most_one(e, pos_precond, neg_precond)
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
+                all_o = [BauhausFluent(f) for f in token.step.state.fluents]
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
                     if f in all_o:
