@@ -21,14 +21,14 @@ def extract_model(traces):
 
 def test_readme():
     traces = generate_traces()
-    assert len(traces) == 2
+    assert len(traces) == 4
 
     action1 = traces[0][0].action
     action1_usage = traces.get_usage(action1)
-    assert action1_usage == [0.05] * len(traces)
+    assert action1_usage == [0.2] * len(traces)
 
     trace = traces[0]
-    assert len(trace) == 20
+    assert len(trace) == 5
 
     trace.fluents
     trace.actions
