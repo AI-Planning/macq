@@ -6,7 +6,7 @@ from macq.observation import IdentityObservation
 
 def generate_traces():
     traces = generate.pddl.VanillaSampling(
-        problem_id=123, plan_len=20, num_traces=1, seed=42
+        problem_id=2336, plan_len=5, num_traces=3, seed=42
     ).traces
     traces.generate_more(1)
 
