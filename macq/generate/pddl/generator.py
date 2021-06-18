@@ -166,46 +166,54 @@ class Generator:
             A state, defined using the macq State class.
         """
         state_fluents = {}
+        true_fluents = []
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                state_fluents[fluent] = True
+                true_fluents.append(fluent.details())
         for grounded_fluent in self.grounded_fluents:
-            if grounded_fluent not in state_fluents.keys():
-                state_fluents[grounded_fluent] = False
+            state_fluents[grounded_fluent] = (
+                False if grounded_fluent.details() not in true_fluents else True
+            )
         return State(state_fluents)
 
-    def tarski_act_to_macq(self, tarski_act: PlainOperator):
+    def tarski_act_to_macq(
+        self, tarski_act: PlainOperator, fully_observable: bool = True
+    ):
         """Converts an action as defined by tarski to an action as defined by macq.
 
         Args:
             tarski_act (PlainOperator):
                 The supplied action, defined using the tarski PlainOperator class.
+            fully_observable (bool):
+                Determines if the generator wants to extract preconditions and effects as well.
 
         Returns:
             An action, defined using the macq Action class.
         """
         name = tarski_act.name.split("(")[0]
         objs = set()
-
-        precond = []
-        if isinstance(tarski_act.precondition, CompoundFormula):
-            raw_precond = tarski_act.precondition.subformulas
-            for raw_p in raw_precond:
-                if isinstance(raw_p, CompoundFormula):
-                    precond.append(
-                        self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
-                    )
-                else:
-                    precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
-        else:
-            precond.append(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
-        (add, delete) = self.__effect_split(tarski_act)
-        for fluent in add:
-            objs.update(set(fluent.objects))
-        for fluent in delete:
-            objs.update(set(fluent.objects))
-        for fluent in precond:
-            objs.update(set(fluent.objects))
+        if fully_observable:
+            precond = []
+            if isinstance(tarski_act.precondition, CompoundFormula):
+                raw_precond = tarski_act.precondition.subformulas
+                for raw_p in raw_precond:
+                    if isinstance(raw_p, CompoundFormula):
+                        precond.append(
+                            self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
+                        )
+                    else:
+                        precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
+            else:
+                precond.append(
+                    self.__tarski_atom_to_macq_fluent(tarski_act.precondition)
+                )
+            (add, delete) = self.__effect_split(tarski_act)
+            for fluent in add:
+                objs.update(set(fluent.objects))
+            for fluent in delete:
+                objs.update(set(fluent.objects))
+            for fluent in precond:
+                objs.update(set(fluent.objects))
         return Action(name, objs)
