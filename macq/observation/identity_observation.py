@@ -8,7 +8,7 @@ class IdentityObservation(Observation):
     The identity observation stores the step unmodified. Inherits the base Observation
     class.
     """
-    
+
     def __init__(self, step: Step, **kwargs):
         """
         Creates an IdentityObservation object, storing the step.
@@ -36,7 +36,7 @@ class IdentityObservation(Observation):
                 return value is None
             return self.action.details() == value
         elif key == "fluent_holds":
-            return self.state.holds(value)  # whatever this needs to look like
+            return self.state.holds(value)
         else:
             raise InvalidQueryParameter(IdentityObservation, key)
 

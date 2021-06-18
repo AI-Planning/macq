@@ -32,7 +32,9 @@ class Observer:
                 Raised if the observations are not identity observation.
         """
         if observations.type is not IdentityObservation:
-            raise extract.IncompatibleObservationToken(observations.type, Observer)
+            raise extract.IncompatibleObservationToken(
+                "The Observer extraction technique only works with identity observations. Use `macq.observation.IdentityObservation` as the `Token` when tokenizing traces."
+            )
         fluents = Observer._get_fluents(observations)
         actions = Observer._get_actions(observations)
         return Model(fluents, actions)
