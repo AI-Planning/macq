@@ -37,11 +37,7 @@ class State:
         return self.fluents == other.fluents
 
     def __str__(self):
-        string = ""
-        for fluent, value in self.items():
-            if value:
-                string += f"{fluent}, "
-        return string[:-2]
+        return ", ".join([str(fluent) for (fluent, value) in self.items() if value])
 
     def __hash__(self):
         return hash(self.details())
