@@ -14,7 +14,6 @@ def generate_traces():
     traces = generate.pddl.VanillaSampling(
         dom=dom, prob=prob, plan_len=5, num_traces=5  # type: ignore
     ).traces  # traces.generate_more(1)
-    print(traces[0][2].state.details())
 
     return traces
 

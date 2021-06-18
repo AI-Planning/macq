@@ -160,11 +160,11 @@ class ObservationList(TraceList):
     tokenize = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
-        super(ObservationList, self).__init__()
+        self.traces = []
         self.type = Token
         trace: Trace
-        for i, trace in enumerate(traces):
-            tokens = trace.tokenize(Token, trace_num=i, **kwargs)
+        for trace in traces:
+            tokens = trace.tokenize(Token, **kwargs)
             self.append(tokens)
 
     def fetch_observations(self, query: dict):
