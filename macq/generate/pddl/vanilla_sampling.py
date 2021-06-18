@@ -41,6 +41,7 @@ class VanillaSampling(Generator):
         dom: str = "",
         prob: str = "",
         problem_id: int = None,
+        seed: int = None,
     ):
         """
         Initializes a vanilla state trace sampler using the plan length, number of traces,
@@ -62,6 +63,8 @@ class VanillaSampling(Generator):
         self.plan_len = plan_len
         self.num_traces = num_traces
         self.traces = self.generate_traces()
+        if seed:
+            random.seed(seed)
 
     def set_num_traces(self, num_traces: int):
         """Checks the validity of the number of traces and then sets it.
