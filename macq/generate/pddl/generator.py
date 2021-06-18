@@ -178,9 +178,7 @@ class Generator:
             )
         return State(state_fluents)
 
-    def tarski_act_to_macq(
-        self, tarski_act: PlainOperator, fully_observable: bool = True
-    ):
+    def tarski_act_to_macq(self, tarski_act: PlainOperator):
         """Converts an action as defined by tarski to an action as defined by macq.
 
         Args:
@@ -194,26 +192,23 @@ class Generator:
         """
         name = tarski_act.name.split("(")[0]
         objs = set()
-        if fully_observable:
-            precond = []
-            if isinstance(tarski_act.precondition, CompoundFormula):
-                raw_precond = tarski_act.precondition.subformulas
-                for raw_p in raw_precond:
-                    if isinstance(raw_p, CompoundFormula):
-                        precond.append(
-                            self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
-                        )
-                    else:
-                        precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
-            else:
-                precond.append(
-                    self.__tarski_atom_to_macq_fluent(tarski_act.precondition)
-                )
-            (add, delete) = self.__effect_split(tarski_act)
-            for fluent in add:
-                objs.update(set(fluent.objects))
-            for fluent in delete:
-                objs.update(set(fluent.objects))
-            for fluent in precond:
-                objs.update(set(fluent.objects))
+        precond = []
+        if isinstance(tarski_act.precondition, CompoundFormula):
+            raw_precond = tarski_act.precondition.subformulas
+            for raw_p in raw_precond:
+                if isinstance(raw_p, CompoundFormula):
+                    precond.append(
+                        self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
+                    )
+                else:
+                    precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
+        else:
+            precond.append(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
+        (add, delete) = self.__effect_split(tarski_act)
+        for fluent in add:
+            objs.update(set(fluent.objects))
+        for fluent in delete:
+            objs.update(set(fluent.objects))
+        for fluent in precond:
+            objs.update(set(fluent.objects))
         return Action(name, objs)
