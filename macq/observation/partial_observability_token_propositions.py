@@ -40,5 +40,6 @@ class PartialObservabilityTokenPropositions(PartialObservabilityToken):
                 fluents.update([f if f._var.true else ~f])
         return fluents
         """
-        fluents.update(f.details() for f in self.step.state.fluents)
+        for f in self.step.state.fluents:
+            fluents.add(f.details())
         return fluents

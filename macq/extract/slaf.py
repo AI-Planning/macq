@@ -19,7 +19,7 @@ class BauhausFluent(object):
         return self.details
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details)
 
 
 @proposition(e)
@@ -36,15 +36,18 @@ class ActPrecond(object):
         self.fluent = fluent
         self.fluent_val = fluent_val
 
-    def __repr__(self):
+    def details(self):
         return (
             f"{self.fluent} is a precondition of {self.action}"
             if self.fluent_val
             else f"~{self.fluent} is a precondition of {self.action}"
         )
 
+    def __repr__(self):
+        return self.details()
+
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details())
 
 
 @proposition(e)
@@ -61,15 +64,18 @@ class ActEff(object):
         self.fluent = fluent
         self.fluent_val = fluent_val
 
-    def __repr__(self):
+    def details(self):
         return (
             f"{self.action} causes {self.fluent}"
             if self.fluent_val
             else f"{self.action} causes ~{self.fluent}"
         )
 
+    def __repr__(self):
+        return self.details()
+
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details())
 
 
 @proposition(e)
@@ -83,11 +89,14 @@ class ActNeutral(object):
         self.action = act_str
         self.fluent = fluent
 
-    def __repr__(self):
+    def details(self):
         return f"{self.action} has no effect on {self.fluent}"
 
+    def __repr__(self):
+        return self.details()
+
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.details())
 
 
 @proposition(e)
@@ -99,7 +108,7 @@ class FalseConstr(object):
         return "false"
 
     def __hash__(self):
-        return hash(str(self))
+        return hash("false")
 
 
 @proposition(e)
@@ -111,7 +120,7 @@ class TrueConstr(object):
         return "true"
 
     def __hash__(self):
-        return hash(str(self))
+        return hash("true")
 
 
 class Slaf:
@@ -155,8 +164,6 @@ class Slaf:
         false = FalseConstr()
         # sets to hold action propositions
         precond = set()
-        effects = set()
-        neut = set()
 
         # iterate through every observation in the list of observations/traces
         for obs in observations:
@@ -176,11 +183,31 @@ class Slaf:
                         pos_effect = ActEff(a, f, True)
                         neg_effect = ActEff(a, f, False)
                         neutral = ActNeutral(a, f)
-                        precond.update([pos_precond])
-                        precond.update([neg_precond])
-                        effects.update([pos_effect])
-                        effects.update([neg_effect])
-                        neut.update([neutral])
+
+                        # objects are registering as unique even though they ARE NOT.
+                        # try to find a spot where a duplicate is about to be added, then compare their strings and hashes?
+                        # those that have the same string should have the SAME HASH.
+
+                        # sometimes pos_precond doesn't change...?
+
+                        # print(len(precond))
+                        # print(hash(str(pos_precond)))
+                        if pos_precond in precond:
+                            print("already in")
+                        precond.add((pos_precond))
+                        # print(len(precond))
+                        if neg_precond in precond:
+                            print("already in")
+                        precond.add((neg_precond))
+                        # print(len(precond))
+
+                        # print(precond)
+                        # print(pos_precond)
+                        # print(neg_precond)
+
+                        # print(precond)
+                        # print()
+
                         phi["neutral"] = (
                             (~pos_precond | phi["pos expl"])
                             & (~neg_precond | phi["neg expl"])
@@ -214,9 +241,17 @@ class Slaf:
                 e.add_constraint(
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
+            # print(precond)
+
         e = e.compile()
         e = e.simplify(merge_nodes=True)
+        precond = list(precond)
+        precond = [str(pre) for pre in precond]
+        precond.sort()
         f = open("output.txt", "w")
-        f.write(str(precond))
+        for pre in precond:
+            f.write(pre)
+            f.write("\n")
+        # f.write(str(e))
         f.close()
         print(e.solve())

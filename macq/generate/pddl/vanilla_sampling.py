@@ -1,9 +1,3 @@
-"""
-from ...trace import TraceList, Trace, Step
-from ...generate.pddl.generator import Generator
-from ...utils.timer import set_timer
-from ..trace_errors import InvalidNumberOfTraces, InvalidPlanLength
-"""
 from tarski.search.operations import progress
 import random
 
@@ -109,6 +103,7 @@ class VanillaSampling(Generator):
             A TraceList object with the list of traces generated.
         """
         traces = TraceList()
+        traces.generator = self.generate_single_trace
         for _ in range(self.num_traces):
             traces.append(self.generate_single_trace())
         return traces
@@ -151,13 +146,3 @@ class VanillaSampling(Generator):
                     trace.append(step)
                     valid_trace = True
         return trace
-
-
-if __name__ == "__main__":
-    # exit out to the base macq folder so we can get to /tests
-    from pathlib import Path
-
-    base = Path(__file__).parent.parent
-    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
-    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(problem_id=123, plan_len=20, num_traces=100)
