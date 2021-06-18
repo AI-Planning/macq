@@ -2,7 +2,7 @@ from typing import List, Set
 from collections import defaultdict
 import macq.extract as extract
 from .model import Model
-from ..trace import ObservationList, Action
+from ..trace import ObservationList, DeltaState
 from ..observation import Observation, IdentityObservation
 
 
@@ -62,16 +62,19 @@ class Observer:
                 if action is not None:  # Final step has no action
                     action_obs[action].append(trace_obs)
 
-        # Create the ModelActions
         action_pre_states = defaultdict(set)
+        # Get transitions for each action
         action_transitions = observations.get_all_transitions()
         for action, transitions in action_transitions.items():
-            model_action = extract.ModelAction(action)
+            # Create a LearnedAction for the current action
+            model_action = extract.LearnedAction(
+                action.name, action.obj_params, cost=action.cost
+            )
             for pre, post in transitions:
                 # Add all action pre-states to a set
                 action_pre_states[model_action].add(pre.state)
                 # Update the action's effects
-                delta = pre.state.diff_from(post.state)
+                delta = Observer.get_delta(pre.state, post.state)
                 model_action.update_add(delta.added)
                 model_action.update_delete(delta.deleted)
 
@@ -80,7 +83,32 @@ class Observer:
             precond = set.intersection(*map(Observer._filter_positive, pre_states))
             action.update_precond(precond)
 
-        return {action for action in action_pre_states.keys()}
+        return {action for action in action_pre_states}
+
+    @staticmethod
+    def get_delta(pre: dict, post: dict):
+        """Determines the delta-state between pre and post.
+
+        Args:
+            pre (dict):
+                The pre-state to compare.
+            post (dict):
+                The post-state to compare.
+
+        Returns:
+            A `DeltaState` object, containing two sets: `added` and `deleted`.
+            The added set contains the list of fluents that were False in this
+            state and True in `other`. The deleted set contains the list of
+            fluents that were True in this state and False in `other`.
+        """
+        added = set()
+        deleted = set()
+        for f in pre:
+            if pre[f] and not post[f]:  # true pre, false post -> deleted
+                deleted.add(f)
+            elif not pre[f] and post[f]:  # false pre, true post -> added
+                added.add(f)
+        return DeltaState(added, deleted)
 
     @staticmethod
     def _filter_positive(state):
