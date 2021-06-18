@@ -24,12 +24,16 @@ from macq.observation import IdentityObservation
 # generate 100 traces of length 20 using vanilla sampling
 traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100).traces
 
-more_traces = traces.generate_more(10)
+traces.generate_more(10)
 
-action = traces[0][0].action
-traces.get_usage(action)
+action1 = traces[0][0].action
+traces.get_usage(action1)
+[0.05, 0.05, ..., 0.05]
 
 trace = traces[0]
+len(trace)
+20
+
 trace.fluents
 trace.actions
 trace.get_pre_states(action) # get the state before each occurance of action
@@ -44,21 +48,24 @@ model = extract.Extract(observations, extract.modes.OBSERVER)
 model.details()
 
 Model:
-  Fluents: on table block A, holding block B, on table block B, clear block A, holding block A, on block A block B, on block A block B, clear block B
+  Fluents: at stone stone-03 location pos-04-06, at stone stone-01 location pos-04-06, at stone stone-02 location pos-05-06, at stone stone-06 location pos-07-04, at stone stone-11 ...
   Actions:
-    pick up block A:
+    push-to-goal stone stone-04 location pos-04-05 location pos-04-06 direction dir-up location pos-04-04 player player-01:
       precond:
-        on table block B
-        clear block A
+        at player player-01 location pos-04-06
+        at stone stone-04 location pos-04-05
+        clear location pos-05-06
+        ...
       add:
-        holding block A
-        clear block B
+        at stone stone-04 location pos-04-04
+        clear location pos-04-06
+        at-goal stone stone-04
+        at player player-01 location pos-04-05
       delete:
-        on table block A
-        on block A block B
-    stack block B block A:
-...
-
+        at stone stone-04 location pos-04-05
+        clear location pos-04-04
+        at player player-01 location pos-04-06
+  ...
 ```
 
 ## Coverage <a name="coverage"></a>
