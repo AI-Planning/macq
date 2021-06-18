@@ -414,7 +414,7 @@ if __name__ == "__main__":
     random_tokens = vanilla.traces[0].tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,
-        percent_missing=50,
+        percent_missing=0.5,
     )
 
     hide_fluents = list(vanilla.traces[0].fluents)[:2]

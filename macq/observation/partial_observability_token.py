@@ -5,6 +5,16 @@ from typing import Callable, Union, Set
 import random
 
 
+class PercentError(Exception):
+    """Raised when the user attempts to supply an invalid percentage of fluents to hide."""
+
+    def __init__(
+        self,
+        message="The percentage supplied is invalid.",
+    ):
+        super().__init__(message)
+
+
 class PartialObservabilityToken(Observation):
     """The Partial Observability Token.
 
@@ -38,24 +48,32 @@ class PartialObservabilityToken(Observation):
             return self.step == value.step
         return False
 
-    def random_subset(self, step: Step, percent_missing: int):
+    def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.
 
         Args:
             step (Step):
                 The step to tokenize.
-            percent_missing (int):
+            percent_missing (float):
                 The percentage of fluents to hide.
 
         Returns:
             The new step created using a PartialState that takes the hidden fluents into account.
         """
+        if percent_missing > 1 or percent_missing < 0:
+            raise PercentError()
+
         fluents = step.state.fluents
-        num_new_fluents = int(len(fluents) * (percent_missing / 100))
+        num_new_fluents = int(len(fluents) * (percent_missing))
+
         new_fluents = {}
-        while len(new_fluents) < num_new_fluents:
-            ran_fluent = random.choice(list(fluents.keys()))
-            new_fluents[ran_fluent] = step.state[ran_fluent]
+        # shuffle keys and take an appropriate subset of them
+        fluents_list = list(fluents)
+        random.shuffle(fluents_list)
+        fluents_list = fluents_list[:num_new_fluents]
+        # get new dict
+        for f in fluents_list:
+            new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def same_subset(self, step: Step, hide_fluents: Set[Fluent]):
