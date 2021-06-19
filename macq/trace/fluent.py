@@ -2,7 +2,7 @@ from typing import List
 
 
 class PlanningObject:
-    """Objects of a planning domain.
+    """An object of a planning domain.
 
     Attributes:
         obj_type (str):
@@ -56,10 +56,10 @@ class Fluent:
         """Initializes a Fluent with a name and a list of objects.
 
         Args:
-        name (str):
-            The name of the fluent.
-        objects (list):
-            The objects this fluent applies to.
+            name (str):
+                The name of the fluent.
+            objects (list):
+                The objects this fluent applies to.
         """
         self.name = name
         self.objects = objects
@@ -70,6 +70,13 @@ class Fluent:
 
     def details(self):
         return f"{self.name} {' '.join([o.details() for o in self.objects])}"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Fluent)
+            and self.name == other.name
+            and self.objects == other.objects
+        )
 
     @classmethod
     def from_json(cls, data):

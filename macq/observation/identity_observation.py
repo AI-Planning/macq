@@ -5,8 +5,10 @@ from . import Observation, InvalidQueryParameter
 
 
 class IdentityObservation(Observation):
-    """
-    The identity observation stores the step unmodified.
+    """The Identity Observation Token.
+
+    The identity observation stores the step unmodified. Inherits the base Observation
+    class.
     """
 
     class IdentityState(dict):
@@ -29,10 +31,10 @@ class IdentityObservation(Observation):
         """
         Creates an IdentityObservation object, storing the step.
 
-        Attributes
-        ----------
-        step : Step
-            The step associated with this observation.
+
+        Args:
+            step (Step):
+                The step associated with this observation.
         """
         super().__init__(index=step.index, **kwargs)
         self.state = self.IdentityState(

@@ -15,9 +15,7 @@ from macq.generate.pddl import Generator
 from macq.utils.timer import set_timer
 from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 
-
 MAX_TRACE_TIME = 30.0
-
 
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
@@ -138,7 +136,7 @@ class VanillaSampling(Generator):
                     # pick a random applicable action and apply it
                     act = random.choice(app_act)
                     # create the trace and progress the state
-                    macq_action = self.tarski_act_to_macq(act)
+                    macq_action = self.tarski_act_to_macq(act, False)
                     macq_state = self.tarski_state_to_macq(state)
                     step = Step(macq_state, macq_action, j + 1)
                     trace.append(step)
