@@ -185,9 +185,6 @@ class ObservationList(TraceList):
                 start = obs.index - left - 1
                 end = obs.index + right
                 windows.append(self[i][start:end])
-        for window in windows:
-            if len(window) != 2:
-                print(query)
         return windows
 
     def get_transitions(self, action: Action):
