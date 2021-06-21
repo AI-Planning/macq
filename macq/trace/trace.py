@@ -114,40 +114,50 @@ class Trace:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
 
-    def details(self):
+    def details(self, wrap=False):
         indent = " " * 2
         # Summarize class attributes
-        string = cleandoc(
-            f"""
-            Trace:
-            {indent}Attributes:
-            {indent*2}{len(self)} steps
-            {indent*2}{len(self.fluents)} fluents
-            {indent}Steps:
+        details = Table.grid(expand=True)
+        details.title = "Trace"
+        details.add_column()
+        details.add_row(
+            cleandoc(
+                f"""
+            Attributes:
+            {indent}{len(self)} steps
+            {indent}{len(self.fluents)} fluents
             """
-        )
-        string += "\n"
-
-        # Dynamically get the spacing, 2n time
-        state_len = max([len(step.state.details()) for step in self]) + 4
-        string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
-        string += "\n"
-
-        # Create step string representation here, so formatting is consistent
-        for i, step in enumerate(self):
-            string += (
-                f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
-                f"{step.action.details() if step.action else '':<8}\n"
             )
+        )
+        steps = Table(
+            title="Steps", box=None, show_edge=False, pad_edge=False, expand=True
+        )
+        steps.add_column("Step", justify="right", width=8)
+        steps.add_column(
+            "State",
+            justify="center",
+            overflow="ellipsis",
+            max_width=100,
+            no_wrap=(not wrap),
+        )
+        steps.add_column("Action", overflow="ellipsis", no_wrap=(not wrap))
 
-        return string
+        for step in self:
+            action = step.action.details() if step.action else ""
+            steps.add_row(str(step.index), step.state.details(), action)
 
-    def colorgrid(self, filter_func=lambda _: True):
+        details.add_row(steps)
+
+        return details
+
+    def colorgrid(self, filter_func=lambda _: True, wrap=True):
         colorgrid = Table(
             title="Trace", box=None, show_edge=False, pad_edge=False, expand=False
         )
         colorgrid.add_column("Fluent", justify="right")
-        colorgrid.add_column(header=Text("Step", justify="center"), overflow="fold")
+        colorgrid.add_column(
+            header=Text("Step", justify="center"), overflow="fold", no_wrap=(not wrap)
+        )
         colorgrid.add_row(
             "",
             "".join(
