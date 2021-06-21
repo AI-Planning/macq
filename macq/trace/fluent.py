@@ -66,10 +66,10 @@ class Fluent:
 
     def __hash__(self):
         # Order of objects is important!
-        return hash(self.details())
+        return hash(str(self))
 
-    def details(self):
-        return f"{self.name} {' '.join([o.details() for o in self.objects])}"
+    def __str__(self):
+        return f"({self.name} {' '.join([o.details() for o in self.objects])})"
 
     def __eq__(self, other):
         return (
