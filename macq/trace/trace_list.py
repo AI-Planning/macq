@@ -100,7 +100,7 @@ class TraceList:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
-    def print(self, view="details"):
+    def print(self, view="details", filter_func=lambda _: True):
         """Pretty prints the trace list in the specified view.
 
         Arguments:
@@ -126,8 +126,9 @@ class TraceList:
             from rich.console import Console
 
             console = Console()
-            colorgrids = [trace.colorgrid() for trace in self]
+            colorgrids = [trace.colorgrid(filter_func=filter_func) for trace in self]
             for colorgrid in colorgrids:
+                print()
                 console.print(colorgrid)
 
     def generate_more(self, num: int):

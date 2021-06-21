@@ -1,7 +1,9 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Type, Iterable, Callable, Set
 from inspect import cleandoc
 from rich.table import Table
+from rich.text import Text
 from . import Action, Step, State
 from ..observation import Observation
 
@@ -48,56 +50,6 @@ class Trace:
         """
         self.steps = steps
         self.__reinit_actions_and_fluents()
-
-    def details(self):
-        indent = " " * 2
-        # Summarize class attributes
-        string = cleandoc(
-            f"""
-            Trace:
-            {indent}Attributes:
-            {indent*2}{len(self)} steps
-            {indent*2}{len(self.fluents)} fluents
-            {indent}Steps:
-            """
-        )
-        string += "\n"
-
-        # Dynamically get the spacing, 2n time
-        state_len = max([len(step.state.details()) for step in self]) + 4
-        string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
-        string += "\n"
-
-        # Create step string representation here, so formatting is consistent
-        for i, step in enumerate(self):
-            string += (
-                f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
-                f"{step.action.details() if step.action else '':<8}\n"
-            )
-
-        return string
-
-    def colorgrid(self):
-        indent = " " * 2
-        colorgrid = Table(
-            title="Trace", box=None, expand=False, show_edge=False, pad_edge=True
-        )
-        colorgrid.add_column("Fluent")
-        colorgrid.add_column("Step", no_wrap=True, justify="center")
-
-        fluents = list(self.fluents)
-
-        for fluent in fluents:
-            step_str = ""
-            for step in self:
-                if step.state[fluent]:
-                    step_str += "[green]■"
-                else:
-                    step_str += "[red]■"
-
-            colorgrid.add_row(str(fluent), step_str)
-
-        return colorgrid
 
     def __len__(self):
         return len(self.steps)
@@ -161,6 +113,84 @@ class Trace:
 
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
         self.steps.sort(reverse=reverse, key=key)
+
+    def details(self):
+        indent = " " * 2
+        # Summarize class attributes
+        string = cleandoc(
+            f"""
+            Trace:
+            {indent}Attributes:
+            {indent*2}{len(self)} steps
+            {indent*2}{len(self.fluents)} fluents
+            {indent}Steps:
+            """
+        )
+        string += "\n"
+
+        # Dynamically get the spacing, 2n time
+        state_len = max([len(step.state.details()) for step in self]) + 4
+        string += f"{indent*2}{'Step':<5} {'State':^{state_len}} {'Action':<8}"
+        string += "\n"
+
+        # Create step string representation here, so formatting is consistent
+        for i, step in enumerate(self):
+            string += (
+                f"{indent*2}{i+1:<5} {step.state.details():<{state_len}} "
+                f"{step.action.details() if step.action else '':<8}\n"
+            )
+
+        return string
+
+    def colorgrid(self, filter_func=lambda _: True):
+        colorgrid = Table(
+            title="Trace", box=None, show_edge=False, pad_edge=False, expand=False
+        )
+        colorgrid.add_column("Fluent", justify="right")
+        colorgrid.add_column(header=Text("Step", justify="center"), overflow="fold")
+        colorgrid.add_row(
+            "",
+            "".join(
+                [
+                    "|" if i < len(self) and (i + 1) % 5 == 0 else " "
+                    for i in range(len(self))
+                ]
+            ),
+        )
+
+        static = self.get_static_fluents()
+        fluents = list(
+            filter(
+                filter_func,
+                sorted(self.fluents, key=lambda f: float("inf") if f in static else f),
+            )
+        )
+
+        for fluent in fluents:
+            step_str = ""
+            for step in self:
+                if step.state[fluent]:
+                    step_str += "[green]"
+                else:
+                    step_str += "[red]"
+                step_str += "■"
+
+            colorgrid.add_row(str(fluent), step_str)
+
+        return colorgrid
+
+    def get_static_fluents(self):
+        fstates = defaultdict(list)
+        for step in self:
+            for f, v in step.state.items():
+                fstates[f].append(v)
+
+        static = set()
+        for f, states in fstates.items():
+            if all(states) or not any(states):
+                static.add(f)
+
+        return static
 
     def __update_actions_and_fluents(self, step: Step):
         """Updates the actions and fluents stored in this trace with any new ones from
