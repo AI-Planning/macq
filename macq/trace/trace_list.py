@@ -1,5 +1,4 @@
-from logging import warn
-from typing import List, Callable, Type, Set
+from typing import List, Callable, Type, Set, Optional
 from . import Action, Trace
 from ..observation import Observation
 
@@ -33,7 +32,7 @@ class TraceList:
     def __init__(
         self,
         traces: List[Trace] = None,
-        generator: Callable = None,
+        generator: Optional[Callable] = None,
     ):
         """Initializes a TraceList with a list of traces and a generator.
 
@@ -144,7 +143,7 @@ class TraceList:
         if self.generator is None:
             raise self.MissingGenerator(self)
 
-        self.traces.extend(self.generator(num))
+        self.traces.extend([self.generator() for _ in range(num)])
 
     def get_usage(self, action: Action):
         """Calculates how often an action was performed in each of the traces.
@@ -183,15 +182,15 @@ class ObservationList(TraceList):
     tokenize = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
-        super(ObservationList, self).__init__()
+        self.traces = []
         self.type = Token
         trace: Trace
-        for i, trace in enumerate(traces):
-            tokens = trace.tokenize(Token, trace_num=i, **kwargs)
+        for trace in traces:
+            tokens = trace.tokenize(Token, **kwargs)
             self.append(tokens)
 
     def fetch_observations(self, query: dict):
-        matches = list()
+        matches: List[Set[Observation]] = list()
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())
@@ -206,8 +205,8 @@ class ObservationList(TraceList):
         trace: Set[Observation]
         for i, trace in enumerate(matches):  # i corresponds to trace index in self
             for obs in trace:
-                start = obs.index - left
-                end = obs.index + right + 1
+                start = obs.index - left - 1
+                end = obs.index + right
                 windows.append(self[i][start:end])
         return windows
 
@@ -217,10 +216,18 @@ class ObservationList(TraceList):
 
     def get_all_transitions(self):
         actions = set()
+        actions_str = set()
         for trace in self:
             for obs in trace:
                 action = obs.action
+                action_str = str(action)
                 if action:
                     actions.add(action)
+                    actions_str.add(action_str)
 
-        return dict(map(lambda action: (action, self.get_transitions(action)), actions))
+        return dict(
+            map(
+                lambda a: (a[0], self.get_transitions(a[1])),
+                zip(actions, actions_str),
+            )
+        )

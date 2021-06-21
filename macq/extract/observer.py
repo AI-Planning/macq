@@ -32,9 +32,7 @@ class Observer:
                 Raised if the observations are not identity observation.
         """
         if observations.type is not IdentityObservation:
-            raise extract.IncompatibleObservationToken(
-                "The Observer extraction technique only works with identity observations. Use `macq.observation.IdentityObservation` as the `Token` when tokenizing traces."
-            )
+            raise extract.IncompatibleObservationToken(observations.type, Observer)
         fluents = Observer._get_fluents(observations)
         actions = Observer._get_actions(observations)
         return Model(fluents, actions)
@@ -70,6 +68,7 @@ class Observer:
             model_action = extract.LearnedAction(
                 action.name, action.obj_params, cost=action.cost
             )
+
             for pre, post in transitions:
                 # Add all action pre-states to a set
                 action_pre_states[model_action].add(pre.state)

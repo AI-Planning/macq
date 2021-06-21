@@ -1,14 +1,21 @@
-from ...trace import TraceList, Trace, Step
-from ...generate.pddl.generator import Generator
-from ...utils.timer import set_timer
-from ..trace_errors import InvalidNumberOfTraces, InvalidPlanLength
-
 from tarski.search.operations import progress
 import random
 
+from macq.trace import (
+    PlanningObject,
+    Fluent,
+    Action,
+    Step,
+    State,
+    Trace,
+    SAS,
+    TraceList,
+)
+from macq.generate.pddl import Generator
+from macq.utils.timer import set_timer
+from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 
 MAX_TRACE_TIME = 30.0
-
 
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
@@ -32,6 +39,7 @@ class VanillaSampling(Generator):
         dom: str = "",
         prob: str = "",
         problem_id: int = None,
+        seed: int = None,
     ):
         """
         Initializes a vanilla state trace sampler using the plan length, number of traces,
@@ -53,6 +61,8 @@ class VanillaSampling(Generator):
         self.plan_len = plan_len
         self.num_traces = num_traces
         self.traces = self.generate_traces()
+        if seed:
+            random.seed(seed)
 
     def set_num_traces(self, num_traces: int):
         """Checks the validity of the number of traces and then sets it.
@@ -94,6 +104,7 @@ class VanillaSampling(Generator):
             A TraceList object with the list of traces generated.
         """
         traces = TraceList()
+        traces.generator = self.generate_single_trace
         for _ in range(self.num_traces):
             traces.append(self.generate_single_trace())
         return traces
@@ -125,7 +136,7 @@ class VanillaSampling(Generator):
                     # pick a random applicable action and apply it
                     act = random.choice(app_act)
                     # create the trace and progress the state
-                    macq_action = self.tarski_act_to_macq(act, False)
+                    macq_action = self.tarski_act_to_macq(act)
                     macq_state = self.tarski_state_to_macq(state)
                     step = Step(macq_state, macq_action, j + 1)
                     trace.append(step)

@@ -38,7 +38,7 @@ class IdentityObservation(Observation):
         """
         super().__init__(index=step.index, **kwargs)
         self.state = self.IdentityState(
-            {fluent.details(): value for fluent, value in step.state.items()}
+            {str(fluent): value for fluent, value in step.state.items()}
         )
         self.action = (
             None
@@ -62,7 +62,7 @@ class IdentityObservation(Observation):
         if key == "action":
             if self.action is None:
                 return value is None
-            return self.action == value
+            return str(self.action) == value
         elif key == "fluent_holds":
             return self.state[value]
         else:
