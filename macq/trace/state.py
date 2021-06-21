@@ -41,7 +41,7 @@ class State:
         return ", ".join([str(fluent) for (fluent, value) in self.items() if value])
 
     def __hash__(self):
-        return hash(self.details())
+        return hash(str(self.details()))
 
     def __len__(self):
         return len(self.fluents)

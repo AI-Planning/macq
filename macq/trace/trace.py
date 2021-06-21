@@ -16,7 +16,9 @@ class SAS:
 
     def __hash__(self):
         return hash(
-            self.pre_state.details() + self.action.details() + self.post_state.details()
+            str(self.pre_state.details())
+            + self.action.details()
+            + str(self.post_state.details())
         )
 
 
