@@ -84,7 +84,7 @@ class State:
     def details(self):
         string = ""
         for fluent, value in self.items():
-            string += f"{fluent.details()} ({value}), "
+            string += f"{str(fluent)} ({value}), "
         return string[:-2]
 
     def clone(self):

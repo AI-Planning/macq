@@ -171,9 +171,9 @@ class Generator:
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                true_fluents.add(fluent.details())
+                true_fluents.add(str(fluent))
         for grounded_fluent in self.grounded_fluents:
-            state_fluents[grounded_fluent] = grounded_fluent.details() in true_fluents
+            state_fluents[grounded_fluent] = str(grounded_fluent) in true_fluents
 
         return State(state_fluents)
 
