@@ -1,3 +1,4 @@
+from logging import warn
 from typing import List, Callable, Type, Set
 from . import Action, Trace
 from ..observation import Observation
@@ -99,12 +100,35 @@ class TraceList:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
-    def print(self):
-        string = "TraceList:\n"
-        for trace in self:
-            for line in trace.details().splitlines():
-                string += f"    {line}\n"
-        print(string)
+    def print(self, view="details"):
+        """Pretty prints the trace list in the specified view.
+
+        Arguments:
+            view ("details" | "color"):
+                Specifies the view format to print in. "details" provides a
+                detailed summary of each step in a trace. "color" provides a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value.
+        """
+        output = "TraceList:\n"
+        views = ["details", "color"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        if view == "details":
+            for trace in self:
+                for line in trace.details().splitlines():
+                    output += f"    {line}\n"
+            print(output)
+
+        elif view == "color":
+            from rich.console import Console
+
+            console = Console()
+            colorgrids = [trace.colorgrid() for trace in self]
+            for colorgrid in colorgrids:
+                console.print(colorgrid)
 
     def generate_more(self, num: int):
         """Generates more traces using the generator function.

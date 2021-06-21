@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Type, Iterable, Callable, Set
 from inspect import cleandoc
+from rich.table import Table
 from . import Action, Step, State
 from ..observation import Observation
 
@@ -75,6 +76,28 @@ class Trace:
             )
 
         return string
+
+    def colorgrid(self):
+        indent = " " * 2
+        colorgrid = Table(
+            title="Trace", box=None, expand=False, show_edge=False, pad_edge=True
+        )
+        colorgrid.add_column("Fluent")
+        colorgrid.add_column("Step", no_wrap=True, justify="center")
+
+        fluents = list(self.fluents)
+
+        for fluent in fluents:
+            step_str = ""
+            for step in self:
+                if step.state[fluent]:
+                    step_str += "[green]■"
+                else:
+                    step_str += "[red]■"
+
+            colorgrid.add_row(str(fluent), step_str)
+
+        return colorgrid
 
     def __len__(self):
         return len(self.steps)
