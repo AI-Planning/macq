@@ -78,6 +78,11 @@ class Fluent:
             and self.objects == other.objects
         )
 
+    def __lt__(self, other):
+        if not isinstance(other, Fluent) and other != float("inf"):
+            raise TypeError(f"Cannot compare Fluent to {other.__name__}.")
+        return str(self) < str(other)
+
     @classmethod
     def from_json(cls, data):
         """Converts a json object to a Fluent."""
