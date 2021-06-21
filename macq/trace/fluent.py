@@ -79,7 +79,7 @@ class Fluent:
         )
 
     def __lt__(self, other):
-        if not isinstance(other, Fluent) and other != float("inf"):
+        if not isinstance(other, Fluent):
             raise TypeError(f"Cannot compare Fluent to {other.__name__}.")
         return str(self) < str(other)
 

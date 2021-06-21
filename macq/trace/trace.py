@@ -162,7 +162,10 @@ class Trace:
         fluents = list(
             filter(
                 filter_func,
-                sorted(self.fluents, key=lambda f: float("inf") if f in static else f),
+                sorted(
+                    self.fluents,
+                    key=lambda f: float("inf") if f in static else len(str(f)),
+                ),
             )
         )
 
