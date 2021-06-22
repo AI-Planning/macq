@@ -3,8 +3,6 @@ import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
 from typing import Union
 from ..observation import PartialObservabilityTokenPropositions, Observation
-
-# from ..observation.partial_observability_token_propositions import fluent
 from ..trace import Action, ObservationList
 
 e = Encoding()
@@ -126,6 +124,10 @@ class TrueConstr(object):
         return hash("true")
 
 
+true = TrueConstr()
+false = FalseConstr()
+
+
 class Slaf:
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
@@ -143,6 +145,7 @@ class Slaf:
 
     @staticmethod
     def __get_initial_fluent_factored(observation: Observation):
+        global true
         raw_fluent_factored = []
         fluents = set()
 
@@ -154,7 +157,6 @@ class Slaf:
         for f in fluents:
             phi = {}
             phi["fluent"] = BauhausFluent(f)
-            true = TrueConstr()
             phi["pos expl"] = true
             phi["neg expl"] = true
             phi["neutral"] = true
@@ -163,13 +165,11 @@ class Slaf:
 
     @staticmethod
     def as_strips_slaf(observations: ObservationList):
-        global e
-        true = TrueConstr()
-        false = FalseConstr()
-        # sets to hold action propositions
-        precond = set()
-        actions = set()
-
+        global e, true, false
+        # dicts to hold action propositions
+        precond = {}
+        effects = {}
+        neutrals = {}
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
@@ -184,8 +184,7 @@ class Slaf:
                 -(side steps the weird hashing issue entirely, so only one of each pos_precond, etc. are made)
                 -this assumes that a given redundant step that takes the same action into account is not needed (is it?)
                 -without it, the formula is significantly shortened"""
-                if a and a not in actions:
-                    actions.add(a)
+                if a:
                     for phi in raw_fluent_factored:
                         f = phi["fluent"]
                         pos_precond = ActPrecond(a, f, True)
@@ -193,35 +192,38 @@ class Slaf:
                         pos_effect = ActEff(a, f, True)
                         neg_effect = ActEff(a, f, False)
                         neutral = ActNeutral(a, f)
-
-                        # dupes do happen with a single trace. it happens when an action is repeated?
-                        # print the trace to find out. but even still...
-                        # could prevent by adding action details to a set...? but i still want to know why it's breaking.
-                        # OK it is definitely shorter now, but the part where you make the actual formula
-                        # (for phi in raw_fluent_factored) is probably still making it longer than it needs to be.
-                        # should also have a set of fluents!!! and this will affect the observation formula below too...
-                        # in other words...only update what you need.
-                        # BUT maybe this is going to negatively affect the formula? because now you're not getting
-                        # as much information as you need... need to review the algorithm.
-                        # TLDR, clean up your code, organize yourself, then ask Muise...
-
-                        precond.add((pos_precond))
-                        # precond.add((neg_precond))
+                        pos_pre_det = pos_precond.details()
+                        neg_pre_det = neg_precond.details()
+                        pos_eff_det = pos_effect.details()
+                        neg_eff_det = neg_effect.details()
+                        neut_det = neutral.details()
+                        precond[pos_pre_det] = pos_precond
+                        precond[neg_pre_det] = neg_precond
+                        effects[pos_eff_det] = pos_effect
+                        effects[neg_eff_det] = neg_effect
+                        neutrals[neut_det] = neutral
 
                         phi["neutral"] = (
-                            (~pos_precond | phi["pos expl"])
-                            & (~neg_precond | phi["neg expl"])
+                            (~precond[pos_pre_det] | phi["pos expl"])
+                            & (~precond[neg_pre_det] | phi["neg expl"])
                             & phi["neutral"]
                         )
-                        phi["pos expl"] = pos_effect | (
-                            neutral & ~neg_precond & phi["pos expl"]
+                        phi["pos expl"] = effects[pos_eff_det] | (
+                            neutrals[neut_det] & ~precond[neg_pre_det] & phi["pos expl"]
                         )
-                        phi["neg expl"] = neg_effect | (
-                            neutral & ~pos_precond & phi["neg expl"]
+                        phi["neg expl"] = effects[neg_eff_det] | (
+                            neutrals[neut_det] & ~precond[pos_pre_det] & phi["neg expl"]
                         )
                         # apply the constraints to this action and all fluents (Section 5.2, 1-3)
-                        constraint.add_exactly_one(e, pos_effect, neg_effect, neutral)
-                        constraint.add_at_most_one(e, pos_precond, neg_precond)
+                        constraint.add_exactly_one(
+                            e,
+                            effects[pos_eff_det],
+                            effects[neg_eff_det],
+                            neutrals[neut_det],
+                        )
+                        constraint.add_at_most_one(
+                            e, precond[pos_pre_det], precond[neg_pre_det]
+                        )
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
                 # NEED TO CHECK THE VALUE OF THE FLUENT HERE
                 all_o = [
@@ -253,17 +255,15 @@ class Slaf:
                     (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
                 )
 
-        # print(precond)
-        precond = list(precond)
-        precond = [str(pre) for pre in precond]
-        precond.sort()
         e = e.compile()
-        e = e.simplify(merge_nodes=True)
-
+        # e = e.simplify()
+        e = e.solve()
         f = open("output.txt", "w")
-        # for pre in precond:
-        #     f.write(pre)
-        #     f.write("\n")
-        f.write(str(e))
+        keys = list(e.keys())
+        keys = [str(f) for f in keys]
+        keys.sort()
+        # for key, val in e.items():
+        #    f.write(str(key) + ": " + str(val) + "\n")
+        for key in keys:
+            f.write(str(key) + "\n")
         f.close()
-        print(e.solve())
