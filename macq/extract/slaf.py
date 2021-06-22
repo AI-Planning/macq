@@ -200,6 +200,7 @@ class Slaf:
         for f in all_fluents:
             fluents.add(f)
 
+        # get previous fluents
         old_fluents = set()
         for f in raw_fluent_factored:
             old_fluents.add(f["fluent"].details)
@@ -262,6 +263,7 @@ class Slaf:
                         neg_eff_det = neg_effect.details()
                         neut_det = neutral.details()
 
+                        # only update the dictionaries if necessary
                         keys = precond.keys()
                         if pos_pre_det not in keys:
                             precond[pos_pre_det] = pos_precond
@@ -276,6 +278,7 @@ class Slaf:
                         if neut_det not in keys:
                             neutrals[neut_det] = neutral
 
+                        # apply appropriate changes
                         phi["neutral"] = (
                             (~precond[pos_pre_det] | phi["pos expl"])
                             & (~precond[neg_pre_det] | phi["neg expl"])
@@ -330,15 +333,13 @@ class Slaf:
 
         e = e.compile()
         # e = e.simplify()
-        # e = e.solve()
+        e = e.solve()
         f = open("output.txt", "w")
         # keys = list(e.keys())
         # keys = [str(f) for f in keys]
         # keys.sort()
-        # for key, val in e.items():
-        #    f.write(str(key) + ": " + str(val) + "\n")
+        for key, val in e.items():
+            f.write(str(key) + ": " + str(val) + "\n")
         # for key in keys:
         #    f.write(str(key) + "\n")
-        for child in e.children:
-            f.write(str(child) + "\n")
         f.close()
