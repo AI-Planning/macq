@@ -56,10 +56,8 @@ jobs:
               name: Get coverage
               run: |
                   REPORT="$(pytest --cov=macq)"
-                  SUMMARY="$($REPORT | tail -4 | head -1)"
-                  TOKENS=($SUMMARY)
                   for line in "${REPORT[@]}"; do echo "$line"; done
-                  echo "COVERAGE=$(echo ${TOKENS[3]})" >> $GITHUB_ENV
+                  echo "COVERAGE=$(echo $REPORT | tail -c85 | head -c3)" >> $GITHUB_ENV
             - if: ${{ matrix.python-version == '3.9' }}
               name: Create coverage badge
               uses: schneegans/dynamic-badges-action@v1.0.0
