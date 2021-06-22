@@ -222,10 +222,10 @@ class Slaf:
         global e
         true = Slaf.true
         false = Slaf.false
-        # dicts to hold action propositions
-        precond = {}
-        effects = {}
-        neutrals = {}
+        # sets to hold action propositions
+        precond = set()
+        effects = set()
+        neutrals = set()
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
@@ -244,16 +244,26 @@ class Slaf:
                         pos_effect = ActEff(a, f, True)
                         neg_effect = ActEff(a, f, False)
                         neutral = ActNeutral(a, f)
+
                         pos_pre_det = pos_precond.details()
                         neg_pre_det = neg_precond.details()
                         pos_eff_det = pos_effect.details()
                         neg_eff_det = neg_effect.details()
                         neut_det = neutral.details()
-                        precond[pos_pre_det] = pos_precond
-                        precond[neg_pre_det] = neg_precond
-                        effects[pos_eff_det] = pos_effect
-                        effects[neg_eff_det] = neg_effect
-                        neutrals[neut_det] = neutral
+
+                        keys = precond.keys()
+                        if pos_pre_det not in keys:
+                            precond[pos_pre_det] = pos_precond
+                        if neg_pre_det not in keys:
+                            precond[neg_pre_det] = neg_precond
+                        keys = effects.keys()
+                        if pos_eff_det not in keys:
+                            effects[pos_eff_det] = pos_effect
+                        if neg_eff_det not in keys:
+                            effects[neg_eff_det] = neg_effect
+                        keys = neutrals.keys()
+                        if neut_det not in keys:
+                            neutrals[neut_det] = neutral
 
                         phi["neutral"] = (
                             (~precond[pos_pre_det] | phi["pos expl"])
