@@ -34,9 +34,7 @@ class PartialObservabilityToken(Observation):
         self.step = method(self, step, **method_kwargs)
 
     def __eq__(self, value):
-        if isinstance(value, PartialObservabilityToken):
-            return self.step == value.step
-        return False
+        return isinstance(value, PartialObservabilityToken) and self.step == value.step
 
     def random_subset(self, step: Step, percent_missing: int):
         """Method of tokenization that picks a random subset of fluents to hide.
@@ -77,6 +75,7 @@ class PartialObservabilityToken(Observation):
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def get_all_base_fluents(self):
+        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
         fluents = set()
         for f in self.step.state.fluents:
             fluents.add(f.details())

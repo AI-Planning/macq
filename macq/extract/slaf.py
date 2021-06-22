@@ -10,7 +10,15 @@ e = Encoding()
 
 @proposition(e)
 class BauhausFluent(object):
+    """The proposition that allows basic fluents to be used in the bauhaus encoding."""
+
     def __init__(self, details: str):
+        """Creates a bauhaus fluent.
+
+        Args:
+            details (str):
+                Describes the fluent/its objects (the value of the fluent, however, is not held by the fluent itself.)
+        """
         self.details = details
 
     def __repr__(self):
@@ -25,9 +33,21 @@ class BauhausFluent(object):
 
 @proposition(e)
 class ActPrecond(object):
+    """The proposition that allows action preconditions to be used in the bauhaus encoding."""
+
     def __init__(
         self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
     ):
+        """Creates an action precondition proposition.
+
+        Args:
+            action (Union[Action, None]):
+                The relevant action.
+            fluent (BauhausFluent):
+                The fluent to be set as a precondition of the action.
+            fluent_val (bool):
+                The True/False value of the fluent. If the value is False, then the negation of the fluent is set to the precondition of the action.
+        """
         act_str = None
         if action:
             act_str = f"{action.name}"
@@ -38,6 +58,7 @@ class ActPrecond(object):
         self.fluent_val = fluent_val
 
     def details(self):
+        """Returns a string with the action proposition's details."""
         return (
             f"{self.fluent} is a precondition of {self.action}"
             if self.fluent_val
@@ -50,9 +71,21 @@ class ActPrecond(object):
 
 @proposition(e)
 class ActEff(object):
+    """The proposition that allows action effects to be used in the bauhaus encoding."""
+
     def __init__(
         self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
     ):
+        """Creates an action effect proposition.
+
+        Args:
+            action (Union[Action, None]):
+                The relevant action.
+            fluent (BauhausFluent):
+                The fluent to be set as an effect of the action.
+            fluent_val (bool):
+                The True/False value of the fluent. If the value is False, then the negation of the fluent is set to the effect of the action.
+        """
         act_str = None
         if action:
             act_str = f"{action.name}"
@@ -63,6 +96,7 @@ class ActEff(object):
         self.fluent_val = fluent_val
 
     def details(self):
+        """Returns a string with the action proposition's details."""
         return (
             f"{self.action} causes {self.fluent}"
             if self.fluent_val
@@ -75,7 +109,17 @@ class ActEff(object):
 
 @proposition(e)
 class ActNeutral(object):
+    """The proposition that allows neutral actions (actions that have no effect on propositions) to be used in the bauhaus encoding."""
+
     def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
+        """Creates an neutral action effect proposition.
+
+        Args:
+            action (Union[Action, None]):
+                The relevant action.
+            fluent (BauhausFluent):
+                The fluent to be set as a neutral effect of the action (that is, the action, has no effect on the fluent).
+        """
         act_str = None
         if action:
             act_str = f"{action.name}"
@@ -85,6 +129,7 @@ class ActNeutral(object):
         self.fluent = fluent
 
     def details(self):
+        """Returns a string with the action proposition's details."""
         return f"{self.action} has no effect on {self.fluent}"
 
     def __repr__(self):
@@ -92,28 +137,32 @@ class ActNeutral(object):
 
 
 @proposition(e)
-class FalseConstr(object):
+class FalseProp(object):
+    """Proposition that is always false (bottom symbol)."""
+
     def __init__(self):
-        self.fluent = False
+        self.prop = False
 
     def __repr__(self):
         return "false"
 
 
 @proposition(e)
-class TrueConstr(object):
+class TrueProp(object):
+    """Proposition that is always true."""
+
     def __init__(self):
-        self.fluent = True
+        self.prop = True
 
     def __repr__(self):
         return "true"
 
 
-true = TrueConstr()
-false = FalseConstr()
-
-
 class Slaf:
+    # only need one true and one false
+    true = TrueProp()
+    false = FalseProp()
+
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
 
@@ -130,7 +179,17 @@ class Slaf:
 
     @staticmethod
     def __get_initial_fluent_factored(observation: Observation):
-        global true
+        """Gets the initial fluent-factored formula of an observation/trace.
+
+        Args:
+            observation (Observation):
+                The observation to extract the fluent-factored formula from.
+
+        Returns:
+            A list of dictionaries that holds the fluent-factored formula.
+        """
+        true = Slaf.true
+        false = Slaf.false
         raw_fluent_factored = []
         fluents = set()
 
@@ -150,7 +209,19 @@ class Slaf:
 
     @staticmethod
     def as_strips_slaf(observations: ObservationList):
-        global e, true, false
+        """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
+        Iterates through the action/observation pairs of each observation/trace, returning
+        a fluent-factored transition belief formula that filters according to that action/observation.
+        The transition belif formulas for each trace/observation are conjoined to get one final formula,
+        which is then solved using a SAT solver to extract models.
+
+        Args:
+            observations (ObservationList):
+                The list of observations/traces to apply the filtering algorithm to.
+        """
+        global e
+        true = Slaf.true
+        false = Slaf.false
         # dicts to hold action propositions
         precond = {}
         effects = {}
