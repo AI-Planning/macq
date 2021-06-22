@@ -75,3 +75,9 @@ class PartialObservabilityToken(Observation):
             if fluent not in hide_fluents:
                 new_fluents[fluent] = step.state[fluent]
         return Step(PartialState(new_fluents), step.action, step.index)
+
+    def get_all_base_fluents(self):
+        fluents = set()
+        for f in self.step.state.fluents:
+            fluents.add(f.details())
+        return fluents

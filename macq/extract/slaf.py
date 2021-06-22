@@ -2,7 +2,7 @@ import bauhaus
 import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
 from typing import Union
-from ..observation import PartialObservabilityTokenPropositions, Observation
+from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
 e = Encoding()
@@ -16,11 +16,11 @@ class BauhausFluent(object):
     def __repr__(self):
         return self.details
 
-    def __hash__(self):
-        return hash(self.details)
-
     def __eq__(self, other):
         return other.__class__ == self.__class__ and other.details == self.details
+
+    def __hash__(self):
+        return hash(self.details)
 
 
 @proposition(e)
@@ -47,9 +47,6 @@ class ActPrecond(object):
     def __repr__(self):
         return self.details()
 
-    def __hash__(self):
-        return hash(self.details())
-
 
 @proposition(e)
 class ActEff(object):
@@ -75,9 +72,6 @@ class ActEff(object):
     def __repr__(self):
         return self.details()
 
-    def __hash__(self):
-        return hash(self.details())
-
 
 @proposition(e)
 class ActNeutral(object):
@@ -96,9 +90,6 @@ class ActNeutral(object):
     def __repr__(self):
         return self.details()
 
-    def __hash__(self):
-        return hash(self.details())
-
 
 @proposition(e)
 class FalseConstr(object):
@@ -108,9 +99,6 @@ class FalseConstr(object):
     def __repr__(self):
         return "false"
 
-    def __hash__(self):
-        return hash("false")
-
 
 @proposition(e)
 class TrueConstr(object):
@@ -119,9 +107,6 @@ class TrueConstr(object):
 
     def __repr__(self):
         return "true"
-
-    def __hash__(self):
-        return hash("true")
 
 
 true = TrueConstr()
@@ -139,7 +124,7 @@ class Slaf:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if observations.type is not PartialObservabilityTokenPropositions:
+        if observations.type is not PartialObservabilityToken:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
         Slaf.as_strips_slaf(observations)
 
@@ -177,13 +162,9 @@ class Slaf:
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
-                """iterate through every fluent in the fluent-factored transition belief formula
-                -steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
-                -"if a" ensures that the action is not None (happens on the last step of a trace)
-                -"a not in actions" prevents redundant steps where the same action is accounted for multiple times
-                -(side steps the weird hashing issue entirely, so only one of each pos_precond, etc. are made)
-                -this assumes that a given redundant step that takes the same action into account is not needed (is it?)
-                -without it, the formula is significantly shortened"""
+                # iterate through every fluent in the fluent-factored transition belief formula
+                # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
+                # "if a" ensures that the action is not None (happens on the last step of a trace)
                 if a:
                     for phi in raw_fluent_factored:
                         f = phi["fluent"]
