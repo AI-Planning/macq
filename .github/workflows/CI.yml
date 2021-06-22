@@ -55,9 +55,10 @@ jobs:
             - if: ${{ matrix.python-version == '3.9' }}
               name: Get coverage
               run: |
-                  SUMMARY="$(pytest --cov=macq | tail -4 | head -1)"
+                  REPORT="$(pytest --cov=macq)"
+                  SUMMARY="$($REPORT | tail -4 | head -1)"
                   TOKENS=($SUMMARY)
-                  echo $SUMMARY
+                  echo $REPORT
                   echo "COVERAGE=$(echo ${TOKENS[3]})" >> $GITHUB_ENV
             - if: ${{ matrix.python-version == '3.9' }}
               name: Create coverage badge
