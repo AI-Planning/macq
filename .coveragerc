@@ -1,0 +1,3 @@
+[run]
+omit =
+    macq/generate/pddl/planning_domains_api.py
