@@ -59,5 +59,10 @@ class Extract:
             modes.OBSERVER: Observer,
             modes.SLAF: Slaf,
         }
+        if mode == modes.SLAF:
+            # only allow one trace
+            assert (
+                len(observations) == 1
+            ), "Only 1 trace is allowed with the current implementation."
 
         return techniques[mode](observations)

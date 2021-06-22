@@ -1,7 +1,9 @@
 import bauhaus
 import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
-from typing import Union, List
+from bauhaus.core import CustomNNF, Or, And
+from typing import Union, List, Set
+from nnf import Var
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
@@ -190,7 +192,7 @@ class Slaf:
         """
         if observations.type is not PartialObservabilityToken:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
-        Slaf.as_strips_slaf(observations)
+        Slaf.as_strips_slaf(observations, True)
 
     @staticmethod
     def __get_initial_fluent_factored(
@@ -232,7 +234,25 @@ class Slaf:
         return raw_fluent_factored
 
     @staticmethod
-    def as_strips_slaf(observations: ObservationList):
+    def __print_nested_formula(formula, strings: Set = None):
+        """Unravels a nested formula and returns a set with a simple string representation of it.
+
+        Args:
+            formula (type And, Or, Var, or CustomNNF):
+                The formula to unravel and form a simplified string version of.
+        """
+        if not strings:
+            strings = set()
+        formula = formula.simplify()
+        for f in formula.children:
+            if not isinstance(f, Var):
+                Slaf.__print_nested_formula(f, strings)
+            else:
+                strings.add(str(f) + ": " + str(f.true))
+        return strings
+
+    @staticmethod
+    def as_strips_slaf(observations: ObservationList, debug: bool = True):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -243,6 +263,7 @@ class Slaf:
             observations (ObservationList):
                 The list of observations/traces to apply the filtering algorithm to.
         """
+        # get global variables
         global e
         true = Slaf.true
         false = Slaf.false
@@ -250,6 +271,7 @@ class Slaf:
         precond = {}
         effects = {}
         neutrals = {}
+
         raw_fluent_factored = None
         # iterate through every observation in the list of observations/traces
         for obs in observations:
@@ -257,6 +279,24 @@ class Slaf:
             raw_fluent_factored = Slaf.__get_initial_fluent_factored(
                 obs, raw_fluent_factored
             )
+            if debug:
+                all_f_details = [f["fluent"].details for f in raw_fluent_factored]
+                all_f_details.sort()
+                for f in all_f_details:
+                    print(f)
+                to_obs = []
+                user_input = ""
+                while user_input != "x":
+                    user_input = input(
+                        "Which fluents do you want to observe? Enter 'x' when you are finished.\n"
+                    )
+                    if user_input in all_f_details:
+                        to_obs.append(user_input)
+                        print(user_input + " added to the debugging list.")
+                    else:
+                        if user_input != "x":
+                            print("The fluent you entered is invalid.")
+
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
@@ -275,7 +315,7 @@ class Slaf:
                             phi["pos expl"] = true
                             phi["neg expl"] = false
                             phi["neutral"] = phi["neutral"] & phi["pos expl"]
-                        if isinstance(o, bauhaus.core.CustomNNF):
+                        if isinstance(o, CustomNNF):
                             if (~f).compile() == o.compile():
                                 phi["pos expl"] = ~f | false
                                 phi["neg expl"] = f | true
@@ -336,6 +376,44 @@ class Slaf:
                         constraint.add_at_most_one(
                             e, precond[pos_pre_det], precond[neg_pre_det]
                         )
+                if debug:
+                    print("-" * 100)
+                    if a:
+                        print("\nAction taken: " + a.details() + "\n")
+                    for obj in to_obs:
+                        for phi in raw_fluent_factored:
+                            f_str = phi["fluent"].details
+                            if f_str == obj:
+                                print("\nfluent: " + f_str)
+                                print("\nexpl. for fluent being true:")
+                                strings = list(
+                                    Slaf.__print_nested_formula(
+                                        phi["pos expl"].compile()
+                                    )
+                                )
+                                strings.sort()
+                                for s in strings:
+                                    print(s)
+                                print("\nexpl. for fluent being false:")
+                                strings = list(
+                                    Slaf.__print_nested_formula(
+                                        phi["neg expl"].compile()
+                                    )
+                                )
+                                strings.sort()
+                                for s in strings:
+                                    print(s)
+                                print("\nexpl. for fluent being unaffected:")
+                                strings = list(
+                                    Slaf.__print_nested_formula(
+                                        phi["neutral"].compile()
+                                    )
+                                )
+                                strings.sort()
+                                for s in strings:
+                                    print(s)
+                    print()
+                    user_input = input("Hit enter to continue.")
 
             # convert to formula once you have stepped through the whole observation/trace and applied all transformations
             # add as constraints to e here
