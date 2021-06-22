@@ -223,9 +223,9 @@ class Slaf:
         true = Slaf.true
         false = Slaf.false
         # sets to hold action propositions
-        precond = set()
-        effects = set()
-        neutrals = set()
+        precond = {}
+        effects = {}
+        neutrals = {}
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
