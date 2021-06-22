@@ -68,6 +68,9 @@ class ActPrecond(object):
     def __repr__(self):
         return self.details()
 
+    def __hash__(self):
+        return hash(self.details())
+
 
 @proposition(e)
 class ActEff(object):
@@ -106,6 +109,9 @@ class ActEff(object):
     def __repr__(self):
         return self.details()
 
+    def __hash__(self):
+        return hash(self.details())
+
 
 @proposition(e)
 class ActNeutral(object):
@@ -135,6 +141,9 @@ class ActNeutral(object):
     def __repr__(self):
         return self.details()
 
+    def __hash__(self):
+        return hash(self.details())
+
 
 @proposition(e)
 class FalseProp(object):
@@ -146,6 +155,9 @@ class FalseProp(object):
     def __repr__(self):
         return "false"
 
+    def __hash__(self):
+        return hash("false")
+
 
 @proposition(e)
 class TrueProp(object):
@@ -156,6 +168,9 @@ class TrueProp(object):
 
     def __repr__(self):
         return "true"
+
+    def __hash__(self):
+        return hash("true")
 
 
 class Slaf:
@@ -244,10 +259,31 @@ class Slaf:
             )
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
-                a = token.step.action
+                # steps 1. (d)-(e) of AS-STRIPS-SLAF
+                # NEED TO CHECK THE VALUE OF THE FLUENT HERE
+                all_o = [
+                    BauhausFluent(f.details())
+                    if token.step.state[f]
+                    else ~BauhausFluent(f.details())
+                    for f in token.step.state.fluents
+                ]
+                for phi in raw_fluent_factored:
+                    f = phi["fluent"]
+                    for o in all_o:
+                        # "negated" fluents are of type CustomNNF, and all f are of type BauhausFluent
+                        if f == o:
+                            phi["pos expl"] = true
+                            phi["neg expl"] = false
+                            phi["neutral"] = phi["neutral"] & phi["pos expl"]
+                        if isinstance(o, bauhaus.core.CustomNNF):
+                            if (~f).compile() == o.compile():
+                                phi["pos expl"] = ~f | false
+                                phi["neg expl"] = f | true
+                                phi["neutral"] = phi["neutral"] & phi["neg expl"]
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
                 # "if a" ensures that the action is not None (happens on the last step of a trace)
+                a = token.step.action
                 if a:
                     for phi in raw_fluent_factored:
                         f = phi["fluent"]
@@ -300,28 +336,7 @@ class Slaf:
                         constraint.add_at_most_one(
                             e, precond[pos_pre_det], precond[neg_pre_det]
                         )
-                # steps 1. (d)-(e) of AS-STRIPS-SLAF
-                # NEED TO CHECK THE VALUE OF THE FLUENT HERE
-                all_o = [
-                    BauhausFluent(f.details())
-                    if token.step.state[f]
-                    else ~BauhausFluent(f.details())
-                    for f in token.step.state.fluents
-                ]
 
-                for phi in raw_fluent_factored:
-                    f = phi["fluent"]
-                    for o in all_o:
-                        # "negated" fluents are of type CustomNNF, and all f are of type BauhausFluent
-                        if f == o:
-                            phi["pos expl"] = true
-                            phi["neg expl"] = false
-                            phi["neutral"] = phi["neutral"] & phi["pos expl"]
-                        if isinstance(o, bauhaus.core.CustomNNF):
-                            if (~f).compile() == o.compile():
-                                phi["pos expl"] = ~f | false
-                                phi["neg expl"] = f | true
-                                phi["neutral"] = phi["neutral"] & phi["neg expl"]
             # convert to formula once you have stepped through the whole observation/trace and applied all transformations
             # add as constraints to e here
             for phi in raw_fluent_factored:
