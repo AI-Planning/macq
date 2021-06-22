@@ -1,7 +1,7 @@
 import bauhaus
 import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
-from typing import Union
+from typing import Union, List
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
@@ -178,7 +178,9 @@ class Slaf:
         Slaf.as_strips_slaf(observations)
 
     @staticmethod
-    def __get_initial_fluent_factored(observation: Observation):
+    def __get_initial_fluent_factored(
+        observation: Observation, raw_fluent_factored: Union[List, None]
+    ):
         """Gets the initial fluent-factored formula of an observation/trace.
 
         Args:
@@ -190,21 +192,27 @@ class Slaf:
         """
         true = Slaf.true
         false = Slaf.false
-        raw_fluent_factored = []
+        if not raw_fluent_factored:
+            raw_fluent_factored = []
         fluents = set()
 
         all_fluents = [f for token in observation for f in token.get_all_base_fluents()]
         for f in all_fluents:
             fluents.add(f)
 
+        old_fluents = set()
+        for f in raw_fluent_factored:
+            old_fluents.add(f["fluent"].details)
+
         # set up the initial fluent factored form for the problem
         for f in fluents:
-            phi = {}
-            phi["fluent"] = BauhausFluent(f)
-            phi["pos expl"] = true
-            phi["neg expl"] = true
-            phi["neutral"] = true
-            raw_fluent_factored.append(phi)
+            if f not in old_fluents:
+                phi = {}
+                phi["fluent"] = BauhausFluent(f)
+                phi["pos expl"] = true
+                phi["neg expl"] = true
+                phi["neutral"] = true
+                raw_fluent_factored.append(phi)
         return raw_fluent_factored
 
     @staticmethod
@@ -226,10 +234,13 @@ class Slaf:
         precond = {}
         effects = {}
         neutrals = {}
+        raw_fluent_factored = None
         # iterate through every observation in the list of observations/traces
         for obs in observations:
             # get the fluent factored formula for this observation/trace
-            raw_fluent_factored = Slaf.__get_initial_fluent_factored(obs)
+            raw_fluent_factored = Slaf.__get_initial_fluent_factored(
+                obs, raw_fluent_factored
+            )
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
                 a = token.step.action
@@ -319,13 +330,15 @@ class Slaf:
 
         e = e.compile()
         # e = e.simplify()
-        e = e.solve()
+        # e = e.solve()
         f = open("output.txt", "w")
-        keys = list(e.keys())
-        keys = [str(f) for f in keys]
-        keys.sort()
+        # keys = list(e.keys())
+        # keys = [str(f) for f in keys]
+        # keys.sort()
         # for key, val in e.items():
         #    f.write(str(key) + ": " + str(val) + "\n")
-        for key in keys:
-            f.write(str(key) + "\n")
+        # for key in keys:
+        #    f.write(str(key) + "\n")
+        for child in e.children:
+            f.write(str(child) + "\n")
         f.close()
