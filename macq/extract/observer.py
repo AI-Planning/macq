@@ -11,8 +11,8 @@ from ..observation import Observation, IdentityObservation
 
 @dataclass
 class DeltaObservation:
-    added: set[Fluent]
-    deleted: set[Fluent]
+    added: Set[Fluent]
+    deleted: Set[Fluent]
 
 
 class Observer:
