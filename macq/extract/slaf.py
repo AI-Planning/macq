@@ -379,14 +379,11 @@ class Slaf:
                             neutrals[neut_det] = neutral
 
                         # simplify/parse the formulas in phi before using them?
-                        formula = (
+                        e.add_constraint(
                             (~precond[pos_pre_det] | phi["pos expl"])
                             & (~precond[neg_pre_det] | phi["neg expl"])
                             & phi["neutral"]
                         )
-                        print(type(formula))
-                        print(formula)
-                        e.add_constraint(formula)
                         formula = e.compile().simplify()
                         phi["neutral"] = formula
                         clear_encoding(e)
@@ -400,7 +397,6 @@ class Slaf:
                             )
                         )
                         formula = e.compile().simplify()
-                        print(formula)
                         phi["pos expl"] = formula
                         clear_encoding(e)
 
@@ -413,7 +409,6 @@ class Slaf:
                             )
                         )
                         formula = e.compile().simplify()
-                        print(formula)
                         phi["neg expl"] = formula
 
                         # MOVE TO LATER
