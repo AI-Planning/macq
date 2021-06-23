@@ -13,7 +13,7 @@ This library is a collection of tools for planning-like action model acquisition
 - [Features / Assumptions](#features)
 - [Survey Papers](#survey)
 - [Citing](#citing)
-- [Contributing](#contributing)
+- [Contributing](CONTRIBUTING.md)
 
 ## Usage <a name="usage" />
 ```python
@@ -72,7 +72,7 @@ Model:
 
 - [ ] [Rule Creation and Rule Learning through Environmental Exploration](https://www.ijcai.org/Proceedings/89-1/Papers/108.pdf) (IJCAI'89)
 - [ ] [Learning by Experimentation: The Operator Refinement Method](https://kilthub.cmu.edu/articles/journal_contribution/Learning_by_Experimentation_The_Operator_Refinement_Method/6622868/1) (MLBook'90)
-- [ ] [Learning Planning Operators by Observation and Practice](https://aaai.org/Papers/AIPS/1994/AIPS94-057.pdf) (AIPS'94)
+- [x] [Learning Planning Operators by Observation and Practice](https://aaai.org/Papers/AIPS/1994/AIPS94-057.pdf) (AIPS'94)
 - [ ] [Learning by Experimentation: Incremental Refinement of Incomplete Planning Domains](https://www.sciencedirect.com/science/article/pii/B9781558603356500192) (ICML'94)
 - [ ] [Learning Probabilistic Relational Planning Rules](https://people.csail.mit.edu/lpk/papers/2005/zpk-aaai05.pdf) (ICAPS'04)
 - [ ] [Learning Action Models from Plan Examples with Incomplete Knowledge](https://www.aaai.org/Papers/ICAPS/2005/ICAPS05-025.pdf) (ICAPS'05)
@@ -141,17 +141,3 @@ Model:
 ## Citing this work <a name="citing" />
 Coming soon...
 
-## Contributing <a name="contributing" />
-
-To install macq for local development:
-
-1. Clone the repository
-2. Install the library and its dev dependencies: `pip install .[dev]` or `python setup.py develop`
-	- We recommend installing in a virtual environment
-3. Enable the pre-commit formatting hook: `pre-commit install`
-
-Install for development by cloning the repository and running `pip install .[dev]` (use `pip3` if you have python2 installed).
-
-### For checking typing
-
-`mypy -p macq`
