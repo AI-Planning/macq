@@ -148,37 +148,37 @@ class ActNeutral(object):
 
 
 @proposition(e)
-class FalseProp(object):
+class Bottom(object):
     """Proposition that is always false (bottom symbol)."""
 
     def __init__(self):
         self.prop = False
 
     def __repr__(self):
-        return "false"
+        return "bottom"
 
     def __hash__(self):
-        return hash("false")
+        return hash("bottom")
 
 
 @proposition(e)
-class TrueProp(object):
-    """Proposition that is always true."""
+class Top(object):
+    """Proposition that is always true (top symbol)."""
 
     def __init__(self):
         self.prop = True
 
     def __repr__(self):
-        return "true"
+        return "top"
 
     def __hash__(self):
-        return hash("true")
+        return hash("top")
 
 
 class Slaf:
     # only need one true and one false
-    true = TrueProp()
-    false = FalseProp()
+    top = Top()
+    bottom = Bottom()
 
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
@@ -207,8 +207,8 @@ class Slaf:
         Returns:
             A list of dictionaries that holds the fluent-factored formula.
         """
-        true = Slaf.true
-        false = Slaf.false
+        top = Slaf.top
+        bottom = Slaf.bottom
         if not raw_fluent_factored:
             raw_fluent_factored = []
         fluents = set()
@@ -227,9 +227,9 @@ class Slaf:
             if f not in old_fluents:
                 phi = {}
                 phi["fluent"] = BauhausFluent(f)
-                phi["pos expl"] = true
-                phi["neg expl"] = true
-                phi["neutral"] = true
+                phi["pos expl"] = top
+                phi["neg expl"] = top
+                phi["neutral"] = top
                 raw_fluent_factored.append(phi)
         return raw_fluent_factored
 
@@ -265,8 +265,8 @@ class Slaf:
         """
         # get global variables
         global e
-        true = Slaf.true
-        false = Slaf.false
+        top = Slaf.top
+        bottom = Slaf.bottom
         # sets to hold action propositions
         precond = {}
         effects = {}
@@ -312,13 +312,13 @@ class Slaf:
                     for o in all_o:
                         # "negated" fluents are of type CustomNNF, and all f are of type BauhausFluent
                         if f == o:
-                            phi["pos expl"] = true
-                            phi["neg expl"] = false
+                            phi["pos expl"] = top
+                            phi["neg expl"] = bottom
                             phi["neutral"] = phi["neutral"] & phi["pos expl"]
                         if isinstance(o, CustomNNF):
                             if (~f).compile() == o.compile():
-                                phi["pos expl"] = ~f | false
-                                phi["neg expl"] = f | true
+                                phi["pos expl"] = ~f | bottom
+                                phi["neg expl"] = f | top
                                 phi["neutral"] = phi["neutral"] & phi["neg expl"]
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
