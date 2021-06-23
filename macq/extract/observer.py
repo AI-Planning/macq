@@ -1,9 +1,18 @@
+from macq.trace.fluent import Fluent
 from typing import List, Set
 from collections import defaultdict
+
+from attr import dataclass
 import macq.extract as extract
 from .model import Model
-from ..trace import ObservationList, DeltaState
+from ..trace import ObservationList
 from ..observation import Observation, IdentityObservation
+
+
+@dataclass
+class DeltaObservation:
+    added: set[Fluent]
+    deleted: set[Fluent]
 
 
 class Observer:
@@ -107,7 +116,7 @@ class Observer:
                 deleted.add(f)
             elif not pre[f] and post[f]:  # false pre, true post -> added
                 added.add(f)
-        return DeltaState(added, deleted)
+        return DeltaObservation(added, deleted)
 
     @staticmethod
     def _filter_positive(state):

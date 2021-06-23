@@ -4,12 +4,6 @@ from typing import Dict
 from . import Fluent
 
 
-@dataclass
-class DeltaState:
-    added: set[Fluent]
-    deleted: set[Fluent]
-
-
 class State:
     """State in a trace.
 
@@ -94,27 +88,3 @@ class State:
         fluents = dict(map(lambda f: (f.name, f), self.keys()))
         if fluent in fluents.keys():
             return self[fluents[fluent]]
-
-    def diff_from(self, other: State):
-        """Determines the delta-state between this state and `other`.
-
-        Args:
-            other (State):
-                The state to compare this one to.
-
-        Returns:
-            A `DeltaState` object, containing two sets: `added` and `deleted`.
-            The added set contains the list of fluents that were False in this
-            state and True in `other`. The deleted set contains the list of
-            fluents that were True in this state and False in `other`.
-        """
-        added = set()
-        deleted = set()
-        fluents = list(self.keys())
-        fluents.extend(list(other.keys()))
-        for f in fluents:
-            if self[f] and not other[f]:  # true pre, false post -> deleted
-                deleted.add(f)
-            elif not self[f] and other[f]:  # false pre, true post -> added
-                added.add(f)
-        return DeltaState(added, deleted)
