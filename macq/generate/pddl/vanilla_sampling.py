@@ -17,6 +17,7 @@ from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 
 MAX_TRACE_TIME = 30.0
 
+
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
 
@@ -58,8 +59,8 @@ class VanillaSampling(Generator):
                 The ID of the problem to access.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
-        self.plan_len = plan_len
-        self.num_traces = num_traces
+        self.plan_len = self.set_plan_length(plan_len)
+        self.num_traces = self.set_num_traces(num_traces)
         self.traces = self.generate_traces()
         if seed:
             random.seed(seed)
