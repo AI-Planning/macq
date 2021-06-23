@@ -59,8 +59,8 @@ class VanillaSampling(Generator):
                 The ID of the problem to access.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
-        self.plan_len = self.set_plan_length(plan_len)
-        self.num_traces = self.set_num_traces(num_traces)
+        self.set_plan_length(plan_len)
+        self.set_num_traces(num_traces)
         self.traces = self.generate_traces()
         if seed:
             random.seed(seed)
