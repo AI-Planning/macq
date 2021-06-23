@@ -8,6 +8,7 @@ from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
 e = Encoding()
+other = Encoding()
 
 
 @proposition(e)
@@ -192,7 +193,7 @@ class Slaf:
         """
         if observations.type is not PartialObservabilityToken:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
-        Slaf.as_strips_slaf(observations, True)
+        Slaf.as_strips_slaf(observations, False)
 
     @staticmethod
     def __get_initial_fluent_factored(
@@ -252,6 +253,16 @@ class Slaf:
         return strings
 
     @staticmethod
+    def clear_encoding(e: Encoding):
+        top = Slaf.top
+        bottom = Slaf.bottom
+        e.clear_constraints()
+        e.clear_debug_constraints()
+        # e.purge_propositions()
+        e._custom_constraints = set()
+        e.add_constraint(top & ~bottom)
+
+    @staticmethod
     def as_strips_slaf(observations: ObservationList, debug: bool = True):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
@@ -267,6 +278,7 @@ class Slaf:
         global e
         top = Slaf.top
         bottom = Slaf.bottom
+        clear_encoding = Slaf.clear_encoding
         # sets to hold action propositions
         precond = {}
         effects = {}
@@ -309,23 +321,35 @@ class Slaf:
                 ]
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
+
                     for o in all_o:
+                        clear_encoding(e)
                         # "negated" fluents are of type CustomNNF, and all f are of type BauhausFluent
                         if f == o:
                             phi["pos expl"] = top
                             phi["neg expl"] = bottom
-                            phi["neutral"] = phi["neutral"] & phi["pos expl"]
-                        if isinstance(o, CustomNNF):
+                            e.add_constraint(phi["neutral"])
+                            e.add_constraint(phi["pos expl"])
+                            neutral_form = e.compile().simplify()
+                            phi["neutral"] = neutral_form
+                            # phi["neutral"] = phi["neutral"] & phi["pos expl"]
+                        elif isinstance(o, CustomNNF):
                             if (~f).compile() == o.compile():
-                                phi["pos expl"] = ~f | bottom
-                                phi["neg expl"] = f | top
-                                phi["neutral"] = phi["neutral"] & phi["neg expl"]
+                                phi["pos expl"] = bottom
+                                phi["neg expl"] = top
+                                e.add_constraint(phi["neutral"])
+                                e.add_constraint(phi["neg expl"])
+                                neutral_form = e.compile().simplify()
+                                phi["neutral"] = neutral_form
+
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
                 # "if a" ensures that the action is not None (happens on the last step of a trace)
                 a = token.step.action
                 if a:
                     for phi in raw_fluent_factored:
+                        clear_encoding(e)
+
                         f = phi["fluent"]
                         pos_precond = ActPrecond(a, f, True)
                         neg_precond = ActPrecond(a, f, False)
@@ -354,18 +378,46 @@ class Slaf:
                         if neut_det not in keys:
                             neutrals[neut_det] = neutral
 
-                        # apply appropriate changes
-                        phi["neutral"] = (
+                        # simplify/parse the formulas in phi before using them?
+                        formula = (
                             (~precond[pos_pre_det] | phi["pos expl"])
                             & (~precond[neg_pre_det] | phi["neg expl"])
                             & phi["neutral"]
                         )
-                        phi["pos expl"] = effects[pos_eff_det] | (
-                            neutrals[neut_det] & ~precond[neg_pre_det] & phi["pos expl"]
+                        print(type(formula))
+                        print(formula)
+                        e.add_constraint(formula)
+                        formula = e.compile().simplify()
+                        phi["neutral"] = formula
+                        clear_encoding(e)
+
+                        e.add_constraint(
+                            effects[pos_eff_det]
+                            | (
+                                neutrals[neut_det]
+                                & ~precond[neg_pre_det]
+                                & phi["pos expl"]
+                            )
                         )
-                        phi["neg expl"] = effects[neg_eff_det] | (
-                            neutrals[neut_det] & ~precond[pos_pre_det] & phi["neg expl"]
+                        formula = e.compile().simplify()
+                        print(formula)
+                        phi["pos expl"] = formula
+                        clear_encoding(e)
+
+                        e.add_constraint(
+                            effects[neg_eff_det]
+                            | (
+                                neutrals[neut_det]
+                                & ~precond[pos_pre_det]
+                                & phi["neg expl"]
+                            )
                         )
+                        formula = e.compile().simplify()
+                        print(formula)
+                        phi["neg expl"] = formula
+
+                        # MOVE TO LATER
+                        """
                         # apply the constraints to this action and all fluents (Section 5.2, 1-3)
                         constraint.add_exactly_one(
                             e,
@@ -376,6 +428,7 @@ class Slaf:
                         constraint.add_at_most_one(
                             e, precond[pos_pre_det], precond[neg_pre_det]
                         )
+                        """
                 if debug:
                     print("-" * 100)
                     if a:
