@@ -73,7 +73,11 @@ class Model:
         Returns:
             A string in json format representing the model.
         """
-        serial = dumps(self, indent=2, default=lambda o: o.__dict__)
+        serial = dumps(
+            self,
+            indent=2,
+            default=lambda o: str(o) if "__dict__" not in dir(o) else o.__dict__,
+        )
         if filepath is not None:
             with open(filepath, "w") as fp:
                 fp.write(serial)
@@ -94,6 +98,8 @@ class Model:
 
     @classmethod
     def _from_json(cls, data: dict):
-        fluents = set(map(Fluent.from_json, data["fluents"]))
+        fluents = data["fluents"]
+        print(fluents)
+        print(fluents.split(","))
         actions = set(map(LearnedAction.from_json, data["actions"]))
         return cls(fluents, actions)
