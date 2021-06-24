@@ -182,7 +182,6 @@ class ObservationList(TraceList):
         trace: Set[Observation]
         for i, trace in enumerate(matches):  # i corresponds to trace index in self
             for obs in trace:
-                print(obs.index)
                 start = obs.index - left - 1
                 end = obs.index + right
                 windows.append(self[i][start:end])

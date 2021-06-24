@@ -6,7 +6,7 @@ from attr import dataclass
 import macq.extract as extract
 from .model import Model
 from ..trace import ObservationList
-from ..observation import Observation, IdentityObservation
+from ..observation import IdentityObservation
 
 
 @dataclass
@@ -66,7 +66,7 @@ class Observer:
         for trace_obs in observations:
             for obs in trace_obs:
                 action = obs.action
-                if action is not None:  # Final step has no action
+                if action:  # Final step has no action
                     action_obs[action].append(trace_obs)
 
         action_pre_states = defaultdict(set)

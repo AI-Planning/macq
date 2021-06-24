@@ -1,7 +1,6 @@
 from __future__ import annotations
-from macq.trace.action import Action
 from typing import Set, List
-from ..trace import Fluent, PlanningObject
+from ..trace import Fluent
 
 
 class LearnedAction:
