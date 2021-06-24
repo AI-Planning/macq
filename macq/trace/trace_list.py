@@ -182,29 +182,22 @@ class ObservationList(TraceList):
         trace: Set[Observation]
         for i, trace in enumerate(matches):  # i corresponds to trace index in self
             for obs in trace:
+                print(obs.index)
                 start = obs.index - left - 1
                 end = obs.index + right
                 windows.append(self[i][start:end])
         return windows
 
-    def get_transitions(self, action: Action):
+    def get_transitions(self, action: str):
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
         actions = set()
-        actions_str = set()
         for trace in self:
             for obs in trace:
                 action = obs.action
-                action_str = str(action)
                 if action:
                     actions.add(action)
-                    actions_str.add(action_str)
 
-        return dict(
-            map(
-                lambda a: (a[0], self.get_transitions(a[1])),
-                zip(actions, actions_str),
-            )
-        )
+        return {action: self.get_transitions(str(action)) for action in actions}
