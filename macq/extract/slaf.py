@@ -1,9 +1,9 @@
 import bauhaus
 import macq.extract as extract
 from bauhaus import Encoding, proposition, constraint
-from bauhaus.core import CustomNNF, Or, And
+from bauhaus.core import CustomNNF
 from typing import Union, List, Set
-from nnf import Var
+from nnf import Var, Or, And
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
@@ -181,8 +181,8 @@ class Slaf:
     # bottom = Var("bottom")
     from nnf import true, false
 
-    top = false
-    bottom = true
+    top = true
+    bottom = false
 
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
@@ -231,9 +231,9 @@ class Slaf:
             if f not in old_fluents:
                 phi = {}
                 phi["fluent"] = Var(f)
-                phi["pos expl"] = [top]
-                phi["neg expl"] = [top]
-                phi["neutral"] = [top]
+                phi["pos expl"] = top
+                phi["neg expl"] = top
+                phi["neutral"] = top
                 raw_fluent_factored.append(phi)
         return raw_fluent_factored
 
@@ -263,6 +263,7 @@ class Slaf:
         global e
         top = Slaf.top
         bottom = Slaf.bottom
+        validity_constraints = set()
 
         raw_fluent_factored = None
         # iterate through every observation in the list of observations/traces
@@ -305,24 +306,18 @@ class Slaf:
                         if f == o:
                             phi["pos expl"] = top
                             phi["neg expl"] = bottom
-                            phi["neutral"] = And(
-                                {
-                                    *[n for n in phi["neutral"]],
-                                    *[p for p in phi["pos expl"]],
-                                }
+                            phi["neutral"] = (
+                                (phi["neutral"] & phi["pos expl"]).simplify().to_CNF()
                             )
-                            # phi["neutral"] = (phi["neutral"] & phi["pos expl"])
                         elif isinstance(o, CustomNNF):
                             if (~f).compile() == o.compile():
                                 phi["pos expl"] = bottom
                                 phi["neg expl"] = top
-                                phi["neutral"] = And(
-                                    {
-                                        *[n for n in phi["neutral"]],
-                                        *[n for n in phi["neg expl"]],
-                                    }
+                                phi["neutral"] = (
+                                    (phi["neutral"] & phi["neg expl"])
+                                    .simplify()
+                                    .to_CNF()
                                 )
-                                # phi["neutral"] = (phi["neutral"] & phi["neg expl"])
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -338,36 +333,36 @@ class Slaf:
                         neg_effect = Var(f"{a.details()} causes ~{f}")
                         neutral = Var(f"{a.details()} has no effect on {f}")
 
-                        phi_pos_expl = And({*[p for p in phi["pos expl"]]})
-                        phi_neg_expl = And({*[n for n in phi["neg expl"]]})
+                        phi["neutral"] = (
+                            (
+                                (~pos_precond | phi["pos expl"])
+                                & (~neg_precond | phi["neg expl"])
+                                & phi["neutral"]
+                            )
+                            .simplify()
+                            .to_CNF()
+                        )
+                        phi["pos expl"] = (
+                            pos_effect
+                            | (neutral & ~neg_precond & phi["pos expl"])
+                            .simplify()
+                            .to_CNF()
+                        )
 
-                        # phi["neutral"] = (~pos_precond | phi["pos expl"]) & (~neg_precond | phi["neg expl"]) & phi["neutral"]
-                        phi["pos expl"] = pos_effect | (
-                            neutral & ~neg_precond & phi["pos expl"]
-                        )
-                        phi["neg expl"] = neg_effect | (
-                            neutral & ~pos_precond & phi["neg expl"]
-                        )
-
-                        phi["neutral"].append(~pos_precond | phi["pos expl"])
-                        phi["neutral"].append(~neg_precond | phi["neg expl"])
-                        phi["pos expl"] = pos_effect | (
-                            neutral & ~neg_precond & phi_pos_expl
+                        phi["neg expl"] = (
+                            neg_effect
+                            | (neutral & ~pos_precond & phi["neg expl"])
+                            .simplify()
+                            .to_CNF()
                         )
 
-                        # MOVE TO LATER
-                        """
-                        # apply the constraints to this action and all fluents (Section 5.2, 1-3)
-                        constraint.add_exactly_one(
-                            e,
-                            pos_effect,
-                            neg_effect,
-                            neutral,
+                        validity_constraints.add(pos_effect | neg_effect | neutral)
+                        validity_constraints.add(
+                            (~pos_effect | ~neg_effect)
+                            & (~neg_effect | ~neutral)
+                            & (~pos_effect | ~neutral)
                         )
-                        constraint.add_at_most_one(
-                            e, pos_precond, neg_precond
-                        )
-                        """
+                        validity_constraints.add(~pos_precond | ~neg_precond)
                 if debug:
                     print("-" * 100)
                     if a:
@@ -386,24 +381,26 @@ class Slaf:
                     print()
                     user_input = input("Hit enter to continue.")
 
-            # convert to formula once you have stepped through the whole observation/trace and applied all transformations
-            # add as constraints to e here
-            for phi in raw_fluent_factored:
-                f = phi["fluent"]
-                # convert to formula for each fluent
-                e.add_constraint(
-                    (~f | phi["pos expl"]) & (f | phi["neg expl"]) & phi["neutral"]
-                )
+        formula = []
+        # convert to formula once you have stepped through the whole observation/trace and applied all transformations
+        # add as constraints to e here
+        for phi in raw_fluent_factored:
+            f = phi["fluent"]
+            # convert to formula for each fluent
+            formula.append(~f | phi["pos expl"])
+            formula.append(f | phi["neg expl"])
+            formula.append(phi["neutral"])
+        formula.extend(validity_constraints)
+        full_formula = And({*[f for f in formula]})
+        solution = full_formula.solve()
 
-        e = e.compile()
-        # e = e.simplify()
-        e = e.solve()
         f = open("output.txt", "w")
-        # keys = list(e.keys())
-        # keys = [str(f) for f in keys]
-        # keys.sort()
-        for key, val in e.items():
-            f.write(str(key) + ": " + str(val) + "\n")
-        # for key in keys:
-        #    f.write(str(key) + "\n")
+        keys = list(solution.keys())
+        keys = [str(f) for f in keys]
+        keys.sort()
+        for key in keys:
+            try:
+                f.write(str(key) + ": " + str(solution[key]) + "\n")
+            except:
+                f.write("aux\n")
         f.close()
