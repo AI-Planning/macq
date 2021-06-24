@@ -8,7 +8,6 @@ from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 
 e = Encoding()
-other = Encoding()
 
 
 @proposition(e)
@@ -178,8 +177,12 @@ class Top(object):
 
 class Slaf:
     # only need one true and one false
-    top = Top()
-    bottom = Bottom()
+    # top = Var("top")
+    # bottom = Var("bottom")
+    from nnf import true, false
+
+    top = false
+    bottom = true
 
     def __new__(cls, observations: ObservationList):
         """Creates a new Model object.
@@ -193,7 +196,7 @@ class Slaf:
         """
         if observations.type is not PartialObservabilityToken:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
-        Slaf.as_strips_slaf(observations, False)
+        Slaf.as_strips_slaf(observations)
 
     @staticmethod
     def __get_initial_fluent_factored(
@@ -227,30 +230,12 @@ class Slaf:
         for f in fluents:
             if f not in old_fluents:
                 phi = {}
-                phi["fluent"] = BauhausFluent(f)
-                phi["pos expl"] = top
-                phi["neg expl"] = top
-                phi["neutral"] = top
+                phi["fluent"] = Var(f)
+                phi["pos expl"] = [top]
+                phi["neg expl"] = [top]
+                phi["neutral"] = [top]
                 raw_fluent_factored.append(phi)
         return raw_fluent_factored
-
-    @staticmethod
-    def __print_nested_formula(formula, strings: Set = None):
-        """Unravels a nested formula and returns a set with a simple string representation of it.
-
-        Args:
-            formula (type And, Or, Var, or CustomNNF):
-                The formula to unravel and form a simplified string version of.
-        """
-        if not strings:
-            strings = set()
-        formula = formula.simplify()
-        for f in formula.children:
-            if not isinstance(f, Var):
-                Slaf.__print_nested_formula(f, strings)
-            else:
-                strings.add(str(f) + ": " + str(f.true))
-        return strings
 
     @staticmethod
     def clear_encoding(e: Encoding):
@@ -263,7 +248,7 @@ class Slaf:
         e.add_constraint(top & ~bottom)
 
     @staticmethod
-    def as_strips_slaf(observations: ObservationList, debug: bool = True):
+    def as_strips_slaf(observations: ObservationList, debug: bool = False):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -278,11 +263,6 @@ class Slaf:
         global e
         top = Slaf.top
         bottom = Slaf.bottom
-        clear_encoding = Slaf.clear_encoding
-        # sets to hold action propositions
-        precond = {}
-        effects = {}
-        neutrals = {}
 
         raw_fluent_factored = None
         # iterate through every observation in the list of observations/traces
@@ -292,7 +272,7 @@ class Slaf:
                 obs, raw_fluent_factored
             )
             if debug:
-                all_f_details = [f["fluent"].details for f in raw_fluent_factored]
+                all_f_details = [f["fluent"].name for f in raw_fluent_factored]
                 all_f_details.sort()
                 for f in all_f_details:
                     print(f)
@@ -314,33 +294,35 @@ class Slaf:
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
                 # NEED TO CHECK THE VALUE OF THE FLUENT HERE
                 all_o = [
-                    BauhausFluent(f.details())
-                    if token.step.state[f]
-                    else ~BauhausFluent(f.details())
+                    Var(f.details()) if token.step.state[f] else ~Var(f.details())
                     for f in token.step.state.fluents
                 ]
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
 
                     for o in all_o:
-                        clear_encoding(e)
-                        # "negated" fluents are of type CustomNNF, and all f are of type BauhausFluent
+                        # "negated" fluents are of type CustomNNF, and all f are of type Var
                         if f == o:
                             phi["pos expl"] = top
                             phi["neg expl"] = bottom
-                            e.add_constraint(phi["neutral"])
-                            e.add_constraint(phi["pos expl"])
-                            neutral_form = e.compile().simplify()
-                            phi["neutral"] = neutral_form
-                            # phi["neutral"] = phi["neutral"] & phi["pos expl"]
+                            phi["neutral"] = And(
+                                {
+                                    *[n for n in phi["neutral"]],
+                                    *[p for p in phi["pos expl"]],
+                                }
+                            )
+                            # phi["neutral"] = (phi["neutral"] & phi["pos expl"])
                         elif isinstance(o, CustomNNF):
                             if (~f).compile() == o.compile():
                                 phi["pos expl"] = bottom
                                 phi["neg expl"] = top
-                                e.add_constraint(phi["neutral"])
-                                e.add_constraint(phi["neg expl"])
-                                neutral_form = e.compile().simplify()
-                                phi["neutral"] = neutral_form
+                                phi["neutral"] = And(
+                                    {
+                                        *[n for n in phi["neutral"]],
+                                        *[n for n in phi["neg expl"]],
+                                    }
+                                )
+                                # phi["neutral"] = (phi["neutral"] & phi["neg expl"])
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -348,80 +330,42 @@ class Slaf:
                 a = token.step.action
                 if a:
                     for phi in raw_fluent_factored:
-                        clear_encoding(e)
-
                         f = phi["fluent"]
-                        pos_precond = ActPrecond(a, f, True)
-                        neg_precond = ActPrecond(a, f, False)
-                        pos_effect = ActEff(a, f, True)
-                        neg_effect = ActEff(a, f, False)
-                        neutral = ActNeutral(a, f)
 
-                        pos_pre_det = pos_precond.details()
-                        neg_pre_det = neg_precond.details()
-                        pos_eff_det = pos_effect.details()
-                        neg_eff_det = neg_effect.details()
-                        neut_det = neutral.details()
+                        pos_precond = Var(f"{f} is a precondition of {a.details()}")
+                        neg_precond = Var(f"(~{f} is a precondition of {a.details()})")
+                        pos_effect = Var(f"{a.details()} causes {f}")
+                        neg_effect = Var(f"{a.details()} causes ~{f}")
+                        neutral = Var(f"{a.details()} has no effect on {f}")
 
-                        # only update the dictionaries if necessary
-                        keys = precond.keys()
-                        if pos_pre_det not in keys:
-                            precond[pos_pre_det] = pos_precond
-                        if neg_pre_det not in keys:
-                            precond[neg_pre_det] = neg_precond
-                        keys = effects.keys()
-                        if pos_eff_det not in keys:
-                            effects[pos_eff_det] = pos_effect
-                        if neg_eff_det not in keys:
-                            effects[neg_eff_det] = neg_effect
-                        keys = neutrals.keys()
-                        if neut_det not in keys:
-                            neutrals[neut_det] = neutral
+                        phi_pos_expl = And({*[p for p in phi["pos expl"]]})
+                        phi_neg_expl = And({*[n for n in phi["neg expl"]]})
 
-                        # simplify/parse the formulas in phi before using them?
-                        e.add_constraint(
-                            (~precond[pos_pre_det] | phi["pos expl"])
-                            & (~precond[neg_pre_det] | phi["neg expl"])
-                            & phi["neutral"]
+                        # phi["neutral"] = (~pos_precond | phi["pos expl"]) & (~neg_precond | phi["neg expl"]) & phi["neutral"]
+                        phi["pos expl"] = pos_effect | (
+                            neutral & ~neg_precond & phi["pos expl"]
                         )
-                        formula = e.compile().simplify()
-                        phi["neutral"] = formula
-                        clear_encoding(e)
-
-                        e.add_constraint(
-                            effects[pos_eff_det]
-                            | (
-                                neutrals[neut_det]
-                                & ~precond[neg_pre_det]
-                                & phi["pos expl"]
-                            )
+                        phi["neg expl"] = neg_effect | (
+                            neutral & ~pos_precond & phi["neg expl"]
                         )
-                        formula = e.compile().simplify()
-                        phi["pos expl"] = formula
-                        clear_encoding(e)
 
-                        e.add_constraint(
-                            effects[neg_eff_det]
-                            | (
-                                neutrals[neut_det]
-                                & ~precond[pos_pre_det]
-                                & phi["neg expl"]
-                            )
+                        phi["neutral"].append(~pos_precond | phi["pos expl"])
+                        phi["neutral"].append(~neg_precond | phi["neg expl"])
+                        phi["pos expl"] = pos_effect | (
+                            neutral & ~neg_precond & phi_pos_expl
                         )
-                        formula = e.compile().simplify()
-                        phi["neg expl"] = formula
 
                         # MOVE TO LATER
                         """
                         # apply the constraints to this action and all fluents (Section 5.2, 1-3)
                         constraint.add_exactly_one(
                             e,
-                            effects[pos_eff_det],
-                            effects[neg_eff_det],
-                            neutrals[neut_det],
+                            pos_effect,
+                            neg_effect,
+                            neutral,
                         )
                         constraint.add_at_most_one(
-                            e, precond[pos_pre_det], precond[neg_pre_det]
+                            e, pos_precond, neg_precond
                         )
                         """
                 if debug:
@@ -430,36 +374,15 @@ class Slaf:
                         print("\nAction taken: " + a.details() + "\n")
                     for obj in to_obs:
                         for phi in raw_fluent_factored:
-                            f_str = phi["fluent"].details
+                            f_str = phi["fluent"].name
                             if f_str == obj:
                                 print("\nfluent: " + f_str)
                                 print("\nexpl. for fluent being true:")
-                                strings = list(
-                                    Slaf.__print_nested_formula(
-                                        phi["pos expl"].compile()
-                                    )
-                                )
-                                strings.sort()
-                                for s in strings:
-                                    print(s)
+                                print(phi["pos expl"])
                                 print("\nexpl. for fluent being false:")
-                                strings = list(
-                                    Slaf.__print_nested_formula(
-                                        phi["neg expl"].compile()
-                                    )
-                                )
-                                strings.sort()
-                                for s in strings:
-                                    print(s)
+                                print(phi["neg expl"])
                                 print("\nexpl. for fluent being unaffected:")
-                                strings = list(
-                                    Slaf.__print_nested_formula(
-                                        phi["neutral"].compile()
-                                    )
-                                )
-                                strings.sort()
-                                for s in strings:
-                                    print(s)
+                                print(phi["neutral"])
                     print()
                     user_input = input("Hit enter to continue.")
 
