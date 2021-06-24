@@ -1,186 +1,12 @@
-import bauhaus
 import macq.extract as extract
-from bauhaus import Encoding, proposition, constraint
-from bauhaus.core import CustomNNF
 from typing import Union, List, Set
-from nnf import Var, Or, And
+from nnf import Var, Or, And, true, false
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
-
-e = Encoding()
-
-
-@proposition(e)
-class BauhausFluent(object):
-    """The proposition that allows basic fluents to be used in the bauhaus encoding."""
-
-    def __init__(self, details: str):
-        """Creates a bauhaus fluent.
-
-        Args:
-            details (str):
-                Describes the fluent/its objects (the value of the fluent, however, is not held by the fluent itself.)
-        """
-        self.details = details
-
-    def __repr__(self):
-        return self.details
-
-    def __eq__(self, other):
-        return other.__class__ == self.__class__ and other.details == self.details
-
-    def __hash__(self):
-        return hash(self.details)
-
-
-@proposition(e)
-class ActPrecond(object):
-    """The proposition that allows action preconditions to be used in the bauhaus encoding."""
-
-    def __init__(
-        self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
-    ):
-        """Creates an action precondition proposition.
-
-        Args:
-            action (Union[Action, None]):
-                The relevant action.
-            fluent (BauhausFluent):
-                The fluent to be set as a precondition of the action.
-            fluent_val (bool):
-                The True/False value of the fluent. If the value is False, then the negation of the fluent is set to the precondition of the action.
-        """
-        act_str = None
-        if action:
-            act_str = f"{action.name}"
-            for obj in action.obj_params:
-                act_str += f" {obj.details()}"
-        self.action = act_str
-        self.fluent = fluent
-        self.fluent_val = fluent_val
-
-    def details(self):
-        """Returns a string with the action proposition's details."""
-        return (
-            f"{self.fluent} is a precondition of {self.action}"
-            if self.fluent_val
-            else f"~{self.fluent} is a precondition of {self.action}"
-        )
-
-    def __repr__(self):
-        return self.details()
-
-    def __hash__(self):
-        return hash(self.details())
-
-
-@proposition(e)
-class ActEff(object):
-    """The proposition that allows action effects to be used in the bauhaus encoding."""
-
-    def __init__(
-        self, action: Union[Action, None], fluent: BauhausFluent, fluent_val: bool
-    ):
-        """Creates an action effect proposition.
-
-        Args:
-            action (Union[Action, None]):
-                The relevant action.
-            fluent (BauhausFluent):
-                The fluent to be set as an effect of the action.
-            fluent_val (bool):
-                The True/False value of the fluent. If the value is False, then the negation of the fluent is set to the effect of the action.
-        """
-        act_str = None
-        if action:
-            act_str = f"{action.name}"
-            for obj in action.obj_params:
-                act_str += f" {obj.details()}"
-        self.action = act_str
-        self.fluent = fluent
-        self.fluent_val = fluent_val
-
-    def details(self):
-        """Returns a string with the action proposition's details."""
-        return (
-            f"{self.action} causes {self.fluent}"
-            if self.fluent_val
-            else f"{self.action} causes ~{self.fluent}"
-        )
-
-    def __repr__(self):
-        return self.details()
-
-    def __hash__(self):
-        return hash(self.details())
-
-
-@proposition(e)
-class ActNeutral(object):
-    """The proposition that allows neutral actions (actions that have no effect on propositions) to be used in the bauhaus encoding."""
-
-    def __init__(self, action: Union[Action, None], fluent: BauhausFluent):
-        """Creates an neutral action effect proposition.
-
-        Args:
-            action (Union[Action, None]):
-                The relevant action.
-            fluent (BauhausFluent):
-                The fluent to be set as a neutral effect of the action (that is, the action, has no effect on the fluent).
-        """
-        act_str = None
-        if action:
-            act_str = f"{action.name}"
-            for obj in action.obj_params:
-                act_str += f" {obj.details()}"
-        self.action = act_str
-        self.fluent = fluent
-
-    def details(self):
-        """Returns a string with the action proposition's details."""
-        return f"{self.action} has no effect on {self.fluent}"
-
-    def __repr__(self):
-        return self.details()
-
-    def __hash__(self):
-        return hash(self.details())
-
-
-@proposition(e)
-class Bottom(object):
-    """Proposition that is always false (bottom symbol)."""
-
-    def __init__(self):
-        self.prop = False
-
-    def __repr__(self):
-        return "bottom"
-
-    def __hash__(self):
-        return hash("bottom")
-
-
-@proposition(e)
-class Top(object):
-    """Proposition that is always true (top symbol)."""
-
-    def __init__(self):
-        self.prop = True
-
-    def __repr__(self):
-        return "top"
-
-    def __hash__(self):
-        return hash("top")
 
 
 class Slaf:
     # only need one true and one false
-    # top = Var("top")
-    # bottom = Var("bottom")
-    from nnf import true, false
-
     top = true
     bottom = false
 
@@ -238,16 +64,6 @@ class Slaf:
         return raw_fluent_factored
 
     @staticmethod
-    def clear_encoding(e: Encoding):
-        top = Slaf.top
-        bottom = Slaf.bottom
-        e.clear_constraints()
-        e.clear_debug_constraints()
-        # e.purge_propositions()
-        e._custom_constraints = set()
-        e.add_constraint(top & ~bottom)
-
-    @staticmethod
     def as_strips_slaf(observations: ObservationList, debug: bool = False):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
@@ -260,7 +76,6 @@ class Slaf:
                 The list of observations/traces to apply the filtering algorithm to.
         """
         # get global variables
-        global e
         top = Slaf.top
         bottom = Slaf.bottom
         validity_constraints = set()
@@ -309,15 +124,12 @@ class Slaf:
                             phi["neutral"] = (
                                 (phi["neutral"] & phi["pos expl"]).simplify().to_CNF()
                             )
-                        elif isinstance(o, CustomNNF):
-                            if (~f).compile() == o.compile():
-                                phi["pos expl"] = bottom
-                                phi["neg expl"] = top
-                                phi["neutral"] = (
-                                    (phi["neutral"] & phi["neg expl"])
-                                    .simplify()
-                                    .to_CNF()
-                                )
+                        if ~f == o:
+                            phi["pos expl"] = bottom
+                            phi["neg expl"] = top
+                            phi["neutral"] = (
+                                (phi["neutral"] & phi["neg expl"]).simplify().to_CNF()
+                            )
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
