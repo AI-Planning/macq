@@ -1,14 +1,7 @@
-import json
+from json import loads, dumps
+from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
 from typing import Set
-
-
-class ComplexEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, "_serialize"):
-            return obj._serialize()
-        else:
-            return json.JSONEncoder.default(self, obj)
 
 
 class Model:
@@ -86,7 +79,7 @@ class Model:
             A string in json format representing the model.
         """
 
-        serial = json.dumps(self._serialize(), cls=ComplexEncoder)
+        serial = dumps(self._serialize(), cls=ComplexEncoder)
         if filepath is not None:
             with open(filepath, "w") as fp:
                 fp.write(serial)
@@ -106,7 +99,7 @@ class Model:
         Returns:
             A Model object matching the one specified by `string`.
         """
-        return Model._from_json(json.loads(string))
+        return Model._from_json(loads(string))
 
     @classmethod
     def _from_json(cls, data: dict):
