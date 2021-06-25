@@ -10,10 +10,10 @@ def test_learned_action():
         '{"name":"action2", "obj_params":["A", "B"], "cost":0, "precond":["C","B"], "add":["B","D"], "delete":"A"}'
     )
 
-    action1 = LearnedAction.from_json(action1_json)
+    action1 = LearnedAction._deserialize(action1_json)
     assert action1
 
-    action2 = LearnedAction.from_json(action2_json)
+    action2 = LearnedAction._deserialize(action2_json)
 
     assert action1.compare(action2) == ({"B"}, {"D"}, set())
 
