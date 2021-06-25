@@ -127,16 +127,10 @@ class Slaf:
                         if f == o:
                             phi["pos expl"] = {top}
                             phi["neg expl"] = {bottom}
-                            # phi["neutral"] = (
-                            #     (phi["neutral"] & phi["pos expl"]).simplify()
-                            # )
                             phi["neutral"].add(*[p.simplify() for p in phi["pos expl"]])
                         if ~f == o:
                             phi["pos expl"] = {bottom}
                             phi["neg expl"] = {top}
-                            # phi["neutral"] = (
-                            #     (phi["neutral"] & phi["neg expl"]).simplify()
-                            # )
                             phi["neutral"].add(*[n.simplify() for n in phi["neg expl"]])
 
                 # iterate through every fluent in the fluent-factored transition belief formula
@@ -153,31 +147,22 @@ class Slaf:
                         neg_effect = Var(f"{a.details()} causes ~{f}")
                         neutral = Var(f"{a.details()} has no effect on {f}")
 
-                        # phi["neutral"] = (
-                        #     (
-                        #         (~pos_precond | phi["pos expl"])
-                        #         & (~neg_precond | phi["neg expl"])
-                        #         & phi["neutral"]
-                        #     )
-                        #     .simplify()
-                        # )
-
-                        # phi["pos expl"] = ((pos_effect | neutral) & (pos_effect | ~neg_precond) & (pos_effect | phi["pos expl"])).simplify()
-                        # phi["neg expl"] = ((neg_effect | neutral) & (neg_effect | ~pos_precond) & (neg_effect | phi["neg expl"]).simplify())
-
                         all_phi_pos = [p.simplify() for p in phi["pos expl"]]
                         all_phi_neg = [n.simplify() for n in phi["neg expl"]]
                         all_phi_neut = [n.simplify() for n in phi["neutral"]]
                         phi["pos expl"] = set()
                         phi["neg expl"] = set()
+
                         for p in all_phi_pos:
                             phi["neutral"].add((~pos_precond | p).simplify())
                         for n in all_phi_neg:
                             phi["neutral"].add((~neg_precond | n).simplify())
+
                         phi["pos expl"].add(pos_effect | neutral)
                         phi["pos expl"].add(pos_effect | ~neg_precond)
                         for p in all_phi_pos:
                             phi["pos expl"].add((pos_effect | p).simplify())
+
                         phi["neg expl"].add(neg_effect | neutral)
                         phi["neg expl"].add(neg_effect | ~pos_precond)
                         for n in all_phi_neg:
