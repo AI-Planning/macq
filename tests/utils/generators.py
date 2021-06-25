@@ -18,9 +18,7 @@ def generate_test_fluents(num_fluents: int):
         The list of testing fluents generated.
     """
     objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
-    return {
-        Fluent(f"fluent {str(i+1)}", [objects[i]]): i % 2 for i in range(num_fluents)
-    }
+    return [Fluent(f"fluent {str(i+1)}", [objects[i]]) for i in range(num_fluents)]
 
 
 def generate_test_actions(num_actions: int):
@@ -62,9 +60,9 @@ def generate_test_states(num_states: int):
         The list of testing states generated.
     """
     states = []
-    fluents = list(generate_test_fluents(num_states).items())
+    fluents = generate_test_fluents(num_states)
     for i in range(num_states):
-        next_fluents = dict(fluents[: i + 1])
+        next_fluents = dict(zip(fluents[: i + 1], [j % 2 == 0 for j in range(i + 1)]))
         state = State(next_fluents)
         states.append(state)
     return states
