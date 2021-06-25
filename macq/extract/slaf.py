@@ -3,6 +3,10 @@ from typing import Union, List, Set
 from nnf import Var, Or, And, true, false
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
+import bauhaus
+from bauhaus import Encoding
+
+e = Encoding()
 
 
 class Slaf:
@@ -57,9 +61,9 @@ class Slaf:
             if f not in old_fluents:
                 phi = {}
                 phi["fluent"] = Var(f)
-                phi["pos expl"] = top
-                phi["neg expl"] = top
-                phi["neutral"] = top
+                phi["pos expl"] = {top}
+                phi["neg expl"] = {top}
+                phi["neutral"] = {top}
                 raw_fluent_factored.append(phi)
         return raw_fluent_factored
 
@@ -78,6 +82,7 @@ class Slaf:
         # get global variables
         top = Slaf.top
         bottom = Slaf.bottom
+        global e
         validity_constraints = set()
 
         raw_fluent_factored = None
@@ -94,10 +99,11 @@ class Slaf:
                     print(f)
                 to_obs = []
                 user_input = ""
+                print(
+                    "\nWhich fluents do you want to observe? Enter 'x' when you are finished.\n"
+                )
                 while user_input != "x":
-                    user_input = input(
-                        "Which fluents do you want to observe? Enter 'x' when you are finished.\n"
-                    )
+                    user_input = input()
                     if user_input in all_f_details:
                         to_obs.append(user_input)
                         print(user_input + " added to the debugging list.")
@@ -119,17 +125,19 @@ class Slaf:
                     for o in all_o:
                         # "negated" fluents are of type CustomNNF, and all f are of type Var
                         if f == o:
-                            phi["pos expl"] = top
-                            phi["neg expl"] = bottom
-                            phi["neutral"] = (
-                                (phi["neutral"] & phi["pos expl"]).simplify().to_CNF()
-                            )
+                            phi["pos expl"] = {top}
+                            phi["neg expl"] = {bottom}
+                            # phi["neutral"] = (
+                            #     (phi["neutral"] & phi["pos expl"]).simplify()
+                            # )
+                            phi["neutral"].add(*[p.simplify() for p in phi["pos expl"]])
                         if ~f == o:
-                            phi["pos expl"] = bottom
-                            phi["neg expl"] = top
-                            phi["neutral"] = (
-                                (phi["neutral"] & phi["neg expl"]).simplify().to_CNF()
-                            )
+                            phi["pos expl"] = {bottom}
+                            phi["neg expl"] = {top}
+                            # phi["neutral"] = (
+                            #     (phi["neutral"] & phi["neg expl"]).simplify()
+                            # )
+                            phi["neutral"].add(*[n.simplify() for n in phi["neg expl"]])
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -145,35 +153,40 @@ class Slaf:
                         neg_effect = Var(f"{a.details()} causes ~{f}")
                         neutral = Var(f"{a.details()} has no effect on {f}")
 
-                        phi["neutral"] = (
-                            (
-                                (~pos_precond | phi["pos expl"])
-                                & (~neg_precond | phi["neg expl"])
-                                & phi["neutral"]
-                            )
-                            .simplify()
-                            .to_CNF()
-                        )
-                        phi["pos expl"] = (
-                            pos_effect
-                            | (neutral & ~neg_precond & phi["pos expl"])
-                            .simplify()
-                            .to_CNF()
-                        )
+                        # phi["neutral"] = (
+                        #     (
+                        #         (~pos_precond | phi["pos expl"])
+                        #         & (~neg_precond | phi["neg expl"])
+                        #         & phi["neutral"]
+                        #     )
+                        #     .simplify()
+                        # )
 
-                        phi["neg expl"] = (
-                            neg_effect
-                            | (neutral & ~pos_precond & phi["neg expl"])
-                            .simplify()
-                            .to_CNF()
-                        )
+                        # phi["pos expl"] = ((pos_effect | neutral) & (pos_effect | ~neg_precond) & (pos_effect | phi["pos expl"])).simplify()
+                        # phi["neg expl"] = ((neg_effect | neutral) & (neg_effect | ~pos_precond) & (neg_effect | phi["neg expl"]).simplify())
+
+                        all_phi_pos = [p.simplify() for p in phi["pos expl"]]
+                        all_phi_neg = [n.simplify() for n in phi["neg expl"]]
+                        all_phi_neut = [n.simplify() for n in phi["neutral"]]
+                        phi["pos expl"] = set()
+                        phi["neg expl"] = set()
+                        for p in all_phi_pos:
+                            phi["neutral"].add((~pos_precond | p).simplify())
+                        for n in all_phi_neg:
+                            phi["neutral"].add((~neg_precond | n).simplify())
+                        phi["pos expl"].add(pos_effect | neutral)
+                        phi["pos expl"].add(pos_effect | ~neg_precond)
+                        for p in all_phi_pos:
+                            phi["pos expl"].add((pos_effect | p).simplify())
+                        phi["neg expl"].add(neg_effect | neutral)
+                        phi["neg expl"].add(neg_effect | ~pos_precond)
+                        for n in all_phi_neg:
+                            phi["neg expl"].add((neg_effect | n).simplify())
 
                         validity_constraints.add(pos_effect | neg_effect | neutral)
-                        validity_constraints.add(
-                            (~pos_effect | ~neg_effect)
-                            & (~neg_effect | ~neutral)
-                            & (~pos_effect | ~neutral)
-                        )
+                        validity_constraints.add((~pos_effect | ~neg_effect))
+                        validity_constraints.add(~neg_effect | ~neutral)
+                        validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
                 if debug:
                     print("-" * 100)
@@ -185,11 +198,17 @@ class Slaf:
                             if f_str == obj:
                                 print("\nfluent: " + f_str)
                                 print("\nexpl. for fluent being true:")
-                                print(phi["pos expl"])
+                                for f in phi["pos expl"]:
+                                    print(f)
+                                    # e.pprint(f)
                                 print("\nexpl. for fluent being false:")
-                                print(phi["neg expl"])
+                                for f in phi["neg expl"]:
+                                    print(f)
+                                    # e.pprint(f)
                                 print("\nexpl. for fluent being unaffected:")
-                                print(phi["neutral"])
+                                for f in phi["neutral"]:
+                                    print(f)
+                                    # e.pprint(f)
                     print()
                     user_input = input("Hit enter to continue.")
 
@@ -199,20 +218,27 @@ class Slaf:
         for phi in raw_fluent_factored:
             f = phi["fluent"]
             # convert to formula for each fluent
-            formula.append(~f | phi["pos expl"])
-            formula.append(f | phi["neg expl"])
-            formula.append(phi["neutral"])
+            all_phi_pos = [p.simplify() for p in phi["pos expl"]]
+            all_phi_neg = [n.simplify() for n in phi["neg expl"]]
+            all_phi_neut = [n.simplify() for n in phi["neutral"]]
+            for p in all_phi_pos:
+                formula.append((~f | p).simplify())
+            for n in all_phi_neg:
+                formula.append((f | n).simplify())
+            for n in all_phi_neut:
+                formula.append(n)
         formula.extend(validity_constraints)
-        full_formula = And({*[f for f in formula]})
-        solution = full_formula.solve()
+        full_formula = And({*[f.simplify() for f in formula]}).simplify()
+        # print(full_formula)
+        # solution = full_formula.solve()
 
         f = open("output.txt", "w")
-        keys = list(solution.keys())
+        keys = list(full_formula)
         keys = [str(f) for f in keys]
         keys.sort()
         for key in keys:
             try:
-                f.write(str(key) + ": " + str(solution[key]) + "\n")
+                f.write(str(key) + "\n")  # + ": " + str(full_formula[key]) + "\n")
             except:
                 f.write("aux\n")
         f.close()

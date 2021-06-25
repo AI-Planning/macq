@@ -12,7 +12,7 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    traces = VanillaSampling(dom=dom, prob=prob, plan_len=4, num_traces=1).traces
+    traces = VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1).traces
 
     observations = traces.tokenize(
         PartialObservabilityToken,
