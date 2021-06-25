@@ -34,11 +34,6 @@ class PlanningObject:
     def details(self):
         return " ".join([self.obj_type, self.name])
 
-    @classmethod
-    def from_json(cls, data):
-        """Converts a json object to a PlanningObject."""
-        return cls(**data)
-
 
 class Fluent:
     """Fluents of a planning domain.
@@ -77,9 +72,3 @@ class Fluent:
             and self.name == other.name
             and self.objects == other.objects
         )
-
-    @classmethod
-    def from_json(cls, data):
-        """Converts a json object to a Fluent."""
-        objects = list(map(PlanningObject.from_json, data["objects"]))
-        return cls(data["name"], objects)
