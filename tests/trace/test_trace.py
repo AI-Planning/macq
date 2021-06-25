@@ -1,7 +1,7 @@
 import pytest
 from macq.trace import *
 from macq.observation import IdentityObservation
-from tests.utils.generators import generate_test_trace
+from tests.utils.generators import generate_test_steps, generate_test_trace
 
 InvalidCostRange = Trace.InvalidCostRange
 
@@ -83,9 +83,10 @@ def test_trace_valid_cost_range():
 def test_trace_invalid_cost_range():
     trace = generate_test_trace(3)
     with pytest.raises(InvalidCostRange):
+        trace.get_slice_cost(-2, 2)
+
+    with pytest.raises(InvalidCostRange):
         trace.get_slice_cost(3, 1)
-        trace.get_slice_cost(0, 2)
-        trace.get_slice_cost(1, 5)
 
 
 # test trace action usage
@@ -109,3 +110,37 @@ def test_trace_tokenize():
     ]
     # test equality dunder by attempting to compare an object of a different type
     assert observations != step1
+
+
+def test_trace_rep():
+    trace = generate_test_trace(3)
+    assert trace.details()
+
+
+def test_trace_list_methods():
+    trace = generate_test_trace(3)
+    steps = generate_test_steps(3)
+    step = steps[0]
+
+    trace[0] = step
+    assert trace.count(step) == 1
+    assert trace.index(step) == 0
+    trace.insert(0, step)
+    assert trace[0] is step
+    del trace[0]
+    del trace[0]
+    assert trace[0] != step
+    assert step not in trace
+
+    rev = list(reversed(trace))
+    trace.reverse()
+    assert trace.steps == rev
+    assert trace.pop() not in trace
+    assert trace.steps == trace.copy()
+
+    trace.extend(steps)
+    for s in steps:
+        assert s in trace
+
+    trace.remove(step)
+    assert step not in trace

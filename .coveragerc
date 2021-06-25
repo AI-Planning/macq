@@ -1,3 +1,4 @@
 [run]
 omit =
     macq/generate/pddl/planning_domains_api.py
+    macq/utils/complex_encoder.py

@@ -136,9 +136,6 @@ class Trace:
     def reverse(self):
         self.steps.reverse()
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
-        self.steps.sort(reverse=reverse, key=key)
-
     def __update_actions_and_fluents(self, step: Step):
         """Updates the actions and fluents stored in this trace with any new ones from
         the provided step.
