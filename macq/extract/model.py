@@ -1,7 +1,14 @@
-from json import dumps, loads
+import json
 from .learned_action import LearnedAction
-from ..trace import Fluent
 from typing import Set
+
+
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, "_serialize"):
+            return obj._serialize()
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 class Model:
@@ -30,6 +37,11 @@ class Model:
         """
         self.fluents = fluents
         self.actions = actions
+
+    def __eq__(self, other):
+        if not isinstance(other, Model):
+            return False
+        return self.fluents == other.fluents and self.actions == other.actions
 
     def details(self):
         # Set the indent width
@@ -73,15 +85,15 @@ class Model:
         Returns:
             A string in json format representing the model.
         """
-        serial = dumps(
-            self,
-            indent=2,
-            default=lambda o: str(o) if "__dict__" not in dir(o) else o.__dict__,
-        )
+
+        serial = json.dumps(self._serialize(), cls=ComplexEncoder)
         if filepath is not None:
             with open(filepath, "w") as fp:
                 fp.write(serial)
         return serial
+
+    def _serialize(self):
+        return dict(fluents=list(self.fluents), actions=list(self.actions))
 
     @staticmethod
     def deserialize(string: str):
@@ -94,12 +106,9 @@ class Model:
         Returns:
             A Model object matching the one specified by `string`.
         """
-        return Model._from_json(loads(string))
+        return Model._from_json(json.loads(string))
 
     @classmethod
     def _from_json(cls, data: dict):
-        fluents = data["fluents"]
-        print(fluents)
-        print(fluents.split(","))
-        actions = set(map(LearnedAction.from_json, data["actions"]))
-        return cls(fluents, actions)
+        actions = set(map(LearnedAction._deserialize, data["actions"]))
+        return cls(set(data["fluents"]), actions)

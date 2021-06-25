@@ -61,8 +61,18 @@ class LearnedAction:
         delete_diff = orig_action.delete.difference(self.delete)
         return precond_diff, add_diff, delete_diff
 
+    def _serialize(self):
+        return dict(
+            name=self.name,
+            obj_params=self.obj_params,
+            cost=self.cost,
+            precond=list(self.precond),
+            add=list(self.add),
+            delete=list(self.delete),
+        )
+
     @classmethod
-    def from_json(cls, data):
+    def _deserialize(cls, data):
         """Converts a json object to an Action."""
         precond = set(data["precond"])
         add = set(data["add"])
