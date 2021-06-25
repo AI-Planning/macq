@@ -75,9 +75,6 @@ class TraceList:
     def copy(self):
         return self.traces.copy()
 
-    def count(self, value):
-        return self.traces.count(value)
-
     def extend(self, iterable):
         self.traces.extend(iterable)
 
@@ -96,7 +93,7 @@ class TraceList:
     def reverse(self):
         self.traces.reverse()
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
+    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
     def print(self):
