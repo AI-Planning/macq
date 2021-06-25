@@ -8,3 +8,4 @@ macq.egg-info/
 .coverage
 .mypy_cache/
 htmlcov/
+test_model.json
