@@ -134,7 +134,7 @@ class Slaf:
                             phi["neg expl"] = {bottom}
                             if debug and str(f) in to_obs:
                                 print(
-                                    f"{f} was observed to be true after the previous action/before the next action was taken."
+                                    f"{f} was observed to be true after the previous action was taken."
                                 )
                         # the opposite happens if the fluent is observed to be false.
                         elif ~f == o:
@@ -145,9 +145,26 @@ class Slaf:
                             phi["neg expl"] = {top}
                             if debug and str(f) in to_obs:
                                 print(
-                                    f"{f} was observed to be false after the previous action/before the next action was taken."
+                                    f"{f} was observed to be false after the previous action was taken."
                                 )
 
+                if debug:
+                    print("Update according to observations.")
+                    for obj in to_obs:
+                        for phi in raw_fluent_factored:
+                            f_str = phi["fluent"].name
+                            if f_str == obj:
+                                print("\nfluent: " + f_str)
+                                print("\npossible expl. for fluent being true:")
+                                for f in phi["pos expl"]:
+                                    e.pprint(f)
+                                print("\npossible expl. for fluent being false:")
+                                for f in phi["neg expl"]:
+                                    e.pprint(f)
+                                print("\npossible expl. for fluent being unaffected:")
+                                for f in phi["neutral"]:
+                                    e.pprint(f)
+                    print()
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
                 # "if a" ensures that the action is not None (happens on the last step of a trace)
@@ -193,23 +210,34 @@ class Slaf:
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
                 if debug:
-
                     if a:
-                        print("\nAction taken next: " + a.details() + "\n")
-                    for obj in to_obs:
-                        for phi in raw_fluent_factored:
-                            f_str = phi["fluent"].name
-                            if f_str == obj:
-                                print("\nfluent: " + f_str)
-                                print("\npossible expl. for fluent being true:")
-                                for f in phi["pos expl"]:
-                                    e.pprint(f)
-                                print("\npossible expl. for fluent being false:")
-                                for f in phi["neg expl"]:
-                                    e.pprint(f)
-                                print("\npossible expl. for fluent being unaffected:")
-                                for f in phi["neutral"]:
-                                    e.pprint(f)
+                        print("\nAction taken: " + a.details() + "\n")
+                        for obj in to_obs:
+                            for phi in raw_fluent_factored:
+                                f_str = phi["fluent"].name
+                                if f_str == obj:
+                                    print("\nfluent: " + f_str)
+                                    print(
+                                        "\npossible expl. for fluent being true after "
+                                        + a.details()
+                                        + ":"
+                                    )
+                                    for f in phi["pos expl"]:
+                                        e.pprint(f)
+                                    print(
+                                        "\npossible expl. for fluent being false after "
+                                        + a.details()
+                                        + ":"
+                                    )
+                                    for f in phi["neg expl"]:
+                                        e.pprint(f)
+                                    print(
+                                        "\npossible expl. for fluent being unaffected after "
+                                        + a.details()
+                                        + ":"
+                                    )
+                                    for f in phi["neutral"]:
+                                        e.pprint(f)
                     print()
                     user_input = input("Hit enter to continue.")
 
