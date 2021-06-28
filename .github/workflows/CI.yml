@@ -55,7 +55,7 @@ jobs:
             - if: ${{ matrix.python-version == '3.9' }}
               name: Get coverage
               run: |
-                  SUMMARY="$(pytest --cov=. | tail -4 | head -1)"
+                  SUMMARY="$(pytest --cov=macq | tail -4 | head -1)"
                   TOKENS=($SUMMARY)
                   echo $SUMMARY
                   echo "COVERAGE=$(echo ${TOKENS[3]})" >> $GITHUB_ENV

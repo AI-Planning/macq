@@ -54,7 +54,6 @@ class Extract:
             A Model object. The model's characteristics are determined by the
             extraction technique used.
         """
-
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: Slaf,
