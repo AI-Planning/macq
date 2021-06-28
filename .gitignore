@@ -11,3 +11,5 @@ output.txt
 output1.txt
 .mypy_cache/
 htmlcov
+formula.txt
+solution.txt

@@ -68,7 +68,7 @@ class Slaf:
         return raw_fluent_factored
 
     @staticmethod
-    def as_strips_slaf(observations: ObservationList, debug: bool = False):
+    def as_strips_slaf(observations: ObservationList, debug: bool = True):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -113,30 +113,40 @@ class Slaf:
 
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
+                if debug:
+                    print("-" * 100)
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
-                # NEED TO CHECK THE VALUE OF THE FLUENT HERE
                 all_o = [
-                    Var(str(f)) if token.step.state[f] else ~Var(str(f))
+                    Var(str(f)[1:-1]) if token.step.state[f] else ~Var(str(f)[1:-1])
                     for f in token.step.state.fluents
                 ]
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
-
+                    # take account all of the current observations BEFORE the next action is taken.
                     for o in all_o:
-                        # "negated" fluents are of type CustomNNF, and all f are of type Var
+                        # if this fluent is observed, update the formula accordingly.
+                        # since we know the fluent is now true, the prior possible explanation for the fluent being true (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations has to be true in order for the prior action to have no effect on the fluent currently being true.
                         if f == o:
                             phi["neutral"].update(
                                 [p.simplify() for p in phi["pos expl"]]
                             )
                             phi["pos expl"] = {top}
                             phi["neg expl"] = {bottom}
-
-                        if ~f == o:
+                            if debug and str(f) in to_obs:
+                                print(
+                                    f"{f} was observed to be true after the previous action/before the next action was taken."
+                                )
+                        # the opposite happens if the fluent is observed to be false.
+                        elif ~f == o:
                             phi["neutral"].update(
                                 [n.simplify() for n in phi["neg expl"]]
                             )
                             phi["pos expl"] = {bottom}
                             phi["neg expl"] = {top}
+                            if debug and str(f) in to_obs:
+                                print(
+                                    f"{f} was observed to be false after the previous action/before the next action was taken."
+                                )
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -146,11 +156,11 @@ class Slaf:
                     for phi in raw_fluent_factored:
                         f = phi["fluent"]
 
-                        pos_precond = Var(f"{f} is a precondition of {a.details()}")
+                        pos_precond = Var(f"({f} is a precondition of {a.details()})")
                         neg_precond = Var(f"(~{f} is a precondition of {a.details()})")
-                        pos_effect = Var(f"{a.details()} causes {f}")
-                        neg_effect = Var(f"{a.details()} causes ~{f}")
-                        neutral = Var(f"{a.details()} has no effect on {f}")
+                        pos_effect = Var(f"({a.details()} causes {f})")
+                        neg_effect = Var(f"({a.details()} causes ~{f})")
+                        neutral = Var(f"({a.details()} has no effect on {f})")
 
                         all_phi_pos = [p.simplify() for p in phi["pos expl"]]
                         all_phi_neg = [n.simplify() for n in phi["neg expl"]]
@@ -183,26 +193,23 @@ class Slaf:
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
                 if debug:
-                    print("-" * 100)
+
                     if a:
-                        print("\nAction taken: " + a.details() + "\n")
+                        print("\nAction taken next: " + a.details() + "\n")
                     for obj in to_obs:
                         for phi in raw_fluent_factored:
                             f_str = phi["fluent"].name
                             if f_str == obj:
                                 print("\nfluent: " + f_str)
-                                print("\nexpl. for fluent being true:")
+                                print("\npossible expl. for fluent being true:")
                                 for f in phi["pos expl"]:
-                                    print(f)
-                                    # e.pprint(f)
-                                print("\nexpl. for fluent being false:")
+                                    e.pprint(f)
+                                print("\npossible expl. for fluent being false:")
                                 for f in phi["neg expl"]:
-                                    print(f)
-                                    # e.pprint(f)
-                                print("\nexpl. for fluent being unaffected:")
+                                    e.pprint(f)
+                                print("\npossible expl. for fluent being unaffected:")
                                 for f in phi["neutral"]:
-                                    print(f)
-                                    # e.pprint(f)
+                                    e.pprint(f)
                     print()
                     user_input = input("Hit enter to continue.")
 
@@ -219,9 +226,9 @@ class Slaf:
             formula.update([(~f | p).simplify() for p in all_phi_pos])
             formula.update([(f | n).simplify() for n in all_phi_neg])
             formula.update([n for n in all_phi_neut])
-        formula.update(validity_constraints)
+        # formula.update(validity_constraints)
 
-        f = open("output1.txt", "w")
+        f = open("formula.txt", "w")
         keys = list(formula)
         keys = [str(f) for f in keys]
         keys.sort()
@@ -260,7 +267,7 @@ class Slaf:
         # print(full_formula)
         solution = full_formula.solve()
 
-        f = open("output.txt", "w")
+        f = open("solution.txt", "w")
         keys = list(solution)
         keys = [str(f) for f in keys]
         keys.sort()
