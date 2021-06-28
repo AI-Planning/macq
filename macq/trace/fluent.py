@@ -72,3 +72,8 @@ class Fluent:
             and self.name == other.name
             and self.objects == other.objects
         )
+
+    def __lt__(self, other):
+        if not isinstance(other, Fluent):
+            raise TypeError(f"Cannot compare Fluent to {other.__name__}.")
+        return str(self) < str(other)

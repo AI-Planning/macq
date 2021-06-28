@@ -1,6 +1,10 @@
 import pytest
 from macq.trace import TraceList
-from tests.utils.generators import generate_test_trace_list, generate_test_trace
+from tests.utils.generators import (
+    generate_test_trace_list,
+    generate_test_trace,
+    generate_blocks_traces,
+)
 
 MissingGenerator = TraceList.MissingGenerator
 
