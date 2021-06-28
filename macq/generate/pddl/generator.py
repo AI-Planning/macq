@@ -166,16 +166,15 @@ class Generator:
             A state, defined using the macq State class.
         """
         state_fluents = {}
-        true_fluents = []
+        true_fluents = set()
         for f in tarski_state.as_atoms():
             fluent = self.__tarski_atom_to_macq_fluent(f)
             # ignore functions for now
             if fluent:
-                true_fluents.append(fluent.details())
+                true_fluents.add(str(fluent))
         for grounded_fluent in self.grounded_fluents:
-            state_fluents[grounded_fluent] = (
-                False if grounded_fluent.details() not in true_fluents else True
-            )
+            state_fluents[grounded_fluent] = str(grounded_fluent) in true_fluents
+
         return State(state_fluents)
 
     def tarski_act_to_macq(self, tarski_act: PlainOperator):

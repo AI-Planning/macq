@@ -1,5 +1,6 @@
-from collections import defaultdict
-from typing import List, Callable, Type, Set
+from logging import warn
+from typing import List, Callable, Type, Set, Optional
+from rich.console import Console
 from . import Action, Trace
 from ..observation import Observation
 
@@ -32,8 +33,8 @@ class TraceList:
 
     def __init__(
         self,
-        traces: List[Trace] = [],
-        generator: Callable = None,
+        traces: List[Trace] = None,
+        generator: Optional[Callable] = None,
     ):
         """Initializes a TraceList with a list of traces and a generator.
 
@@ -43,7 +44,7 @@ class TraceList:
             generator (function):
                 Optional; The function used to generate the traces.
         """
-        self.traces = traces
+        self.traces = [] if traces is None else traces
         self.generator = generator
 
     def __len__(self):
@@ -100,12 +101,39 @@ class TraceList:
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
-    def print(self):
-        string = "TraceList:\n"
-        for trace in self:
-            for line in trace.details().splitlines():
-                string += f"    {line}\n"
-        print(string)
+    def print(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Pretty prints the trace list in the specified view.
+
+        Arguments:
+            view ("details" | "color"):
+                Specifies the view format to print in. "details" provides a
+                detailed summary of each step in a trace. "color" provides a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value.
+        """
+        console = Console()
+
+        views = ["details", "color"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        traces = []
+        if view == "details":
+            if wrap is None:
+                wrap = False
+            traces = [trace.details(wrap=wrap) for trace in self]
+
+        elif view == "color":
+            if wrap is None:
+                wrap = True
+            traces = [
+                trace.colorgrid(filter_func=filter_func, wrap=wrap) for trace in self
+            ]
+
+        for trace in traces:
+            console.print(trace)
+            print()
 
     def generate_more(self, num: int):
         """Generates more traces using the generator function.
@@ -121,7 +149,7 @@ class TraceList:
         if self.generator is None:
             raise self.MissingGenerator(self)
 
-        self.traces.extend(self.generator(num))
+        self.traces.extend([self.generator() for _ in range(num)])
 
     def get_usage(self, action: Action):
         """Calculates how often an action was performed in each of the traces.
@@ -173,14 +201,15 @@ class ObservationList(TraceList):
     get_fluents = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
-        super(ObservationList, self).__init__()
+        self.traces = []
         self.type = Token
-        for i, trace in enumerate(traces):
+        trace: Trace
+        for trace in traces:
             tokens = trace.tokenize(Token, **kwargs)
             self.append(tokens)
 
     def fetch_observations(self, query: dict):
-        matches = list()
+        matches: List[Set[Observation]] = list()
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())
@@ -195,21 +224,29 @@ class ObservationList(TraceList):
         trace: Set[Observation]
         for i, trace in enumerate(matches):  # i corresponds to trace index in self
             for obs in trace:
-                start = obs.index - left
-                end = obs.index + right + 1
+                start = obs.index - left - 1
+                end = obs.index + right
                 windows.append(self[i][start:end])
         return windows
 
     def get_transitions(self, action: Action):
-        query = {"action": action.details()}
+        query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
         actions = set()
+        actions_str = set()
         for trace in self:
             for obs in trace:
                 action = obs.action
-                if action is not None:
+                action_str = str(action)
+                if action:
                     actions.add(action)
+                    actions_str.add(action_str)
 
-        return dict(map(lambda action: (action, self.get_transitions(action)), actions))
+        return dict(
+            map(
+                lambda a: (a[0], self.get_transitions(a[1])),
+                zip(actions, actions_str),
+            )
+        )

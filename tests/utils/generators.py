@@ -1,6 +1,17 @@
+from pathlib import Path
 from macq.trace import *
 from macq.observation import IdentityObservation
 from macq.extract import Extract, modes
+from macq.generate.pddl import VanillaSampling
+
+
+def generate_blocks_traces():
+    base = Path(__file__).parent.parent
+    dom = (base / "pddl_testing_files/blocks_domain.pddl").resolve()
+    prob = (base / "pddl_testing_files/blocks_problem.pddl").resolve()
+    traces = VanillaSampling(dom=dom, prob=prob, plan_len=100, num_traces=1).traces  # type: ignore
+
+    return traces
 
 
 def generate_test_fluents(num_fluents: int):
@@ -94,7 +105,7 @@ def generate_test_steps(num_steps: int):
     return steps
 
 
-def generate_test_trace(complexity: int):
+def generate_test_trace(complexity: int = 1):
     """
     Generate a test trace with the given complexity (number of actions, fluents, states, and steps).
 

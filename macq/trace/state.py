@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict
+from rich.text import Text
 from . import Fluent
 
 
@@ -37,14 +38,10 @@ class State:
         return self.fluents == other.fluents
 
     def __str__(self):
-        string = ""
-        for fluent, value in self.items():
-            if value:
-                string += f"{fluent}, "
-        return string[:-2]
+        return ", ".join([str(fluent) for (fluent, value) in self.items() if value])
 
     def __hash__(self):
-        return hash(self.details())
+        return hash(str(self.details()))
 
     def __len__(self):
         return len(self.fluents)
@@ -86,9 +83,11 @@ class State:
         return self.fluents.items()
 
     def details(self):
-        string = ""
+        string = Text()
         for fluent, value in self.items():
-            string += f"{fluent.details()} ({value}), "
+            color = "green" if value else "red"
+            string.append(f"{str(fluent)}", style=color)
+            string.append(", ")
         return string[:-2]
 
     def clone(self):

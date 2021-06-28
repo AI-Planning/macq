@@ -9,3 +9,5 @@ macq.egg-info/
 output.txt
 ~$output.txt
 output1.txt
+.mypy_cache/
+htmlcov
