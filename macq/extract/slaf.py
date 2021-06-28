@@ -197,7 +197,7 @@ class Slaf:
                     print()
                     user_input = input("Hit enter to continue.")
 
-        formula = []
+        formula = set()
         # convert to formula once you have stepped through the whole observation/trace and applied all transformations
         # add as constraints to e here
         for phi in raw_fluent_factored:
@@ -207,23 +207,40 @@ class Slaf:
             all_phi_neg = [n.simplify() for n in phi["neg expl"]]
             all_phi_neut = [n.simplify() for n in phi["neutral"]]
             for p in all_phi_pos:
-                formula.append((~f | p).simplify())
+                formula.add((~f | p).simplify())
             for n in all_phi_neg:
-                formula.append((f | n).simplify())
+                formula.add((f | n).simplify())
             for n in all_phi_neut:
-                formula.append(n)
-        formula.extend(validity_constraints)
+                formula.add(n)
+        for v in validity_constraints:
+            formula.add(v)
+        # eliminate subsumed clauses
+        to_del = set()
+        for f in formula:
+            for other in formula:
+                if isinstance(f, Var):
+                    f = {str(f)}
+                if isinstance(f, Or) or isinstance(f, And):
+                    f = {str(o) for o in f.children}
+                if not isinstance(other, Var):
+                    other_set = (
+                        {str(o) for o in other.children}
+                        if isinstance(other, Or) or isinstance(other, And)
+                        else other
+                    )
+                    if f.issubset(other_set) and f != other_set:
+                        to_del.add(other)
+        for t in to_del:
+            # print(t)
+            formula.discard(t)
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
         # print(full_formula)
-        # solution = full_formula.solve()
+        solution = full_formula.solve()
 
         f = open("output.txt", "w")
-        keys = list(full_formula)
+        keys = list(solution)
         keys = [str(f) for f in keys]
         keys.sort()
         for key in keys:
-            try:
-                f.write(str(key) + "\n")  # + ": " + str(full_formula[key]) + "\n")
-            except:
-                f.write("aux\n")
+            f.write(str(key) + ": " + str(solution[key]) + "\n")
         f.close()
