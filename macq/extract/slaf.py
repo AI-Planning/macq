@@ -125,13 +125,18 @@ class Slaf:
                     for o in all_o:
                         # "negated" fluents are of type CustomNNF, and all f are of type Var
                         if f == o:
+                            phi["neutral"].update(
+                                [p.simplify() for p in phi["pos expl"]]
+                            )
                             phi["pos expl"] = {top}
                             phi["neg expl"] = {bottom}
-                            phi["neutral"].add(*[p.simplify() for p in phi["pos expl"]])
+
                         if ~f == o:
+                            phi["neutral"].update(
+                                [n.simplify() for n in phi["neg expl"]]
+                            )
                             phi["pos expl"] = {bottom}
                             phi["neg expl"] = {top}
-                            phi["neutral"].add(*[n.simplify() for n in phi["neg expl"]])
 
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -153,20 +158,24 @@ class Slaf:
                         phi["pos expl"] = set()
                         phi["neg expl"] = set()
 
-                        for p in all_phi_pos:
-                            phi["neutral"].add((~pos_precond | p).simplify())
-                        for n in all_phi_neg:
-                            phi["neutral"].add((~neg_precond | n).simplify())
+                        phi["neutral"].update(
+                            [(~pos_precond | p).simplify() for p in all_phi_pos]
+                        )
+                        phi["neutral"].update(
+                            [(~neg_precond | n).simplify() for n in all_phi_neg]
+                        )
 
                         phi["pos expl"].add(pos_effect | neutral)
                         phi["pos expl"].add(pos_effect | ~neg_precond)
-                        for p in all_phi_pos:
-                            phi["pos expl"].add((pos_effect | p).simplify())
+                        phi["pos expl"].update(
+                            [(pos_effect | p).simplify() for p in all_phi_pos]
+                        )
 
                         phi["neg expl"].add(neg_effect | neutral)
                         phi["neg expl"].add(neg_effect | ~pos_precond)
-                        for n in all_phi_neg:
-                            phi["neg expl"].add((neg_effect | n).simplify())
+                        phi["neg expl"].update(
+                            [(neg_effect | n).simplify() for n in all_phi_neg]
+                        )
 
                         validity_constraints.add(pos_effect | neg_effect | neutral)
                         validity_constraints.add((~pos_effect | ~neg_effect))
@@ -206,14 +215,11 @@ class Slaf:
             all_phi_pos = [p.simplify() for p in phi["pos expl"]]
             all_phi_neg = [n.simplify() for n in phi["neg expl"]]
             all_phi_neut = [n.simplify() for n in phi["neutral"]]
-            for p in all_phi_pos:
-                formula.add((~f | p).simplify())
-            for n in all_phi_neg:
-                formula.add((f | n).simplify())
-            for n in all_phi_neut:
-                formula.add(n)
-        for v in validity_constraints:
-            formula.add(v)
+
+            formula.update([(~f | p).simplify() for p in all_phi_pos])
+            formula.update([(f | n).simplify() for n in all_phi_neg])
+            formula.update([n for n in all_phi_neut])
+        formula.update(validity_constraints)
 
         f = open("output1.txt", "w")
         keys = list(formula)
