@@ -4,7 +4,7 @@ from nnf import Var, Or, And, true, false
 from ..observation import Observation, PartialObservabilityToken
 from ..trace import Action, ObservationList
 import bauhaus
-from bauhaus import Encoding
+from bauhaus import Encoding, proposition
 
 e = Encoding()
 
@@ -214,6 +214,15 @@ class Slaf:
                 formula.add(n)
         for v in validity_constraints:
             formula.add(v)
+
+        f = open("output1.txt", "w")
+        keys = list(formula)
+        keys = [str(f) for f in keys]
+        keys.sort()
+        for key in keys:
+            f.write(str(key) + "\n")
+        f.close()
+
         # eliminate subsumed clauses
         to_del = set()
         for f in formula:
@@ -231,8 +240,16 @@ class Slaf:
                     if f.issubset(other_set) and f != other_set:
                         to_del.add(other)
         for t in to_del:
-            # print(t)
             formula.discard(t)
+
+        f = open("output2.txt", "w")
+        keys = list(formula)
+        keys = [str(f) for f in keys]
+        keys.sort()
+        for key in keys:
+            f.write(str(key) + "\n")
+        f.close()
+
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
         # print(full_formula)
         solution = full_formula.solve()
