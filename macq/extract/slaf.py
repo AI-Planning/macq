@@ -229,7 +229,7 @@ class Slaf:
             f.write(str(key) + "\n")
         f.close()
 
-        # eliminate subsumed clauses
+        """# eliminate subsumed clauses
         to_del = set()
         for f in formula:
             for other in formula:
@@ -254,7 +254,7 @@ class Slaf:
         keys.sort()
         for key in keys:
             f.write(str(key) + "\n")
-        f.close()
+        f.close() """
 
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
         # print(full_formula)
