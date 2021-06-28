@@ -116,7 +116,7 @@ class Slaf:
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
                 # NEED TO CHECK THE VALUE OF THE FLUENT HERE
                 all_o = [
-                    Var(f.details()) if token.step.state[f] else ~Var(f.details())
+                    Var(str(f)) if token.step.state[f] else ~Var(str(f))
                     for f in token.step.state.fluents
                 ]
                 for phi in raw_fluent_factored:

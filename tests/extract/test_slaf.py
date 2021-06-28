@@ -17,7 +17,7 @@ if __name__ == "__main__":
     observations = traces.tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,
-        percent_missing=30,
+        percent_missing=0.3,
     )
     model = Extract(observations, modes.SLAF)
 

@@ -96,5 +96,5 @@ class PartialObservabilityToken(Observation):
         """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
         fluents = set()
         for f in self.step.state.fluents:
-            fluents.add(f.details())
+            fluents.add(str(f))
         return fluents
