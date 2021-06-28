@@ -34,7 +34,12 @@ class Observation:
         else:
             warn("Creating an Observation token without an index.")
 
+        self.id = self._get_id()
+
     def _matches(self, *_):
+        raise NotImplementedError()
+
+    def _get_id(self):
         raise NotImplementedError()
 
     def matches(self, query: dict):
