@@ -68,7 +68,24 @@ class Slaf:
         return raw_fluent_factored
 
     @staticmethod
-    def as_strips_slaf(observations: ObservationList, debug: bool = True):
+    def remove_subsumed_clauses(phi_form: Set):
+        to_del = set()
+        # eliminate subsumed clauses
+        for f in phi_form:
+            for other in phi_form:
+                if isinstance(f, Or) or isinstance(f, And):
+                    f_set = {str(o) for o in f.children}
+                else:
+                    f_set = {str(f)}
+                if not isinstance(other, Var):
+                    other_set = {str(o) for o in other.children}
+                    if f_set.issubset(other_set) and f_set != other_set and f != true:
+                        to_del.add(other)
+        for t in to_del:
+            phi_form.discard(t)
+
+    @staticmethod
+    def as_strips_slaf(observations: ObservationList, debug: bool = False):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -84,6 +101,7 @@ class Slaf:
         bottom = Slaf.bottom
         global e
         validity_constraints = set()
+        all_var = set()
 
         raw_fluent_factored = None
         # iterate through every observation in the list of observations/traces
@@ -147,7 +165,6 @@ class Slaf:
                                 print(
                                     f"{f} was observed to be false after the previous action was taken."
                                 )
-
                 if debug:
                     print("Update according to observations.")
                     for obj in to_obs:
@@ -157,13 +174,28 @@ class Slaf:
                                 print("\nfluent: " + f_str)
                                 print("\npossible expl. for fluent being true:")
                                 for f in phi["pos expl"]:
-                                    e.pprint(f)
+                                    if f == top:
+                                        print("true")
+                                    elif f == bottom:
+                                        print("false")
+                                    else:
+                                        e.pprint(f)
                                 print("\npossible expl. for fluent being false:")
                                 for f in phi["neg expl"]:
-                                    e.pprint(f)
+                                    if f == top:
+                                        print("true")
+                                    elif f == bottom:
+                                        print("false")
+                                    else:
+                                        e.pprint(f)
                                 print("\npossible expl. for fluent being unaffected:")
                                 for f in phi["neutral"]:
-                                    e.pprint(f)
+                                    if f == top:
+                                        print("true")
+                                    elif f == bottom:
+                                        print("false")
+                                    else:
+                                        e.pprint(f)
                     print()
                 # iterate through every fluent in the fluent-factored transition belief formula
                 # steps 1. (a)-(c) of AS-STRIPS-SLAF, page 366
@@ -178,6 +210,10 @@ class Slaf:
                         pos_effect = Var(f"({a.details()} causes {f})")
                         neg_effect = Var(f"({a.details()} causes ~{f})")
                         neutral = Var(f"({a.details()} has no effect on {f})")
+
+                        all_var.update(
+                            [pos_precond, neg_precond, pos_effect, neg_effect, neutral]
+                        )
 
                         all_phi_pos = [p.simplify() for p in phi["pos expl"]]
                         all_phi_neg = [n.simplify() for n in phi["neg expl"]]
@@ -209,6 +245,11 @@ class Slaf:
                         validity_constraints.add(~neg_effect | ~neutral)
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
+
+                        Slaf.remove_subsumed_clauses(phi["pos expl"])
+                        Slaf.remove_subsumed_clauses(phi["neg expl"])
+                        Slaf.remove_subsumed_clauses(phi["neutral"])
+
                 if debug:
                     if a:
                         print("\nAction taken: " + a.details() + "\n")
@@ -223,22 +264,39 @@ class Slaf:
                                         + ":"
                                     )
                                     for f in phi["pos expl"]:
-                                        e.pprint(f)
+                                        if f == top:
+                                            print("true")
+                                        elif f == bottom:
+                                            print("false")
+                                        else:
+                                            e.pprint(f)
                                     print(
                                         "\npossible expl. for fluent being false after "
                                         + a.details()
                                         + ":"
                                     )
                                     for f in phi["neg expl"]:
-                                        e.pprint(f)
+                                        if f == top:
+                                            print("true")
+                                        elif f == bottom:
+                                            print("false")
+                                        else:
+                                            e.pprint(f)
                                     print(
                                         "\npossible expl. for fluent being unaffected after "
                                         + a.details()
                                         + ":"
                                     )
                                     for f in phi["neutral"]:
-                                        e.pprint(f)
+                                        if f == top:
+                                            print("true")
+                                        elif f == bottom:
+                                            print("false")
+                                        else:
+                                            e.pprint(f)
+
                     print()
+
                     user_input = input("Hit enter to continue.")
 
         formula = set()
@@ -264,34 +322,8 @@ class Slaf:
             f.write(str(key) + "\n")
         f.close()
 
-        """# eliminate subsumed clauses
-        to_del = set()
-        for f in formula:
-            for other in formula:
-                if isinstance(f, Var):
-                    f = {str(f)}
-                if isinstance(f, Or) or isinstance(f, And):
-                    f = {str(o) for o in f.children}
-                if not isinstance(other, Var):
-                    other_set = (
-                        {str(o) for o in other.children}
-                        if isinstance(other, Or) or isinstance(other, And)
-                        else other
-                    )
-                    if f.issubset(other_set) and f != other_set:
-                        to_del.add(other)
-        for t in to_del:
-            formula.discard(t)
-
-        f = open("output2.txt", "w")
-        keys = list(formula)
-        keys = [str(f) for f in keys]
-        keys.sort()
-        for key in keys:
-            f.write(str(key) + "\n")
-        f.close() """
-
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
+
         # print(full_formula)
         solution = full_formula.solve()
 
@@ -302,3 +334,7 @@ class Slaf:
         for key in keys:
             f.write(str(key) + ": " + str(solution[key]) + "\n")
         f.close()
+
+        for v in all_var:
+            if full_formula.entails(v):
+                print(v)
