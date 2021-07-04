@@ -1,0 +1,147 @@
+Model[clear(c), clear(f), handempty(), on(a,d), on(b,g), on(c,e), on(d,i), on(e,j), on(g,h), on(h,a), on(j,b), ontable(f), ontable(i)]
+                                                                         Trace                                                                          
+Attributes:                                                                                                                                             
+  5 steps                                                                                                                                               
+  131 fluents                                                                                                                                           
+                                                                         Steps                                                                          
+       Step                                                      State                                                       Action                     
+          1   (ontable object j), (ontable object i), (ontable object g), (ontable object b), (ontable object d), (ontable   unstack object c object e  
+             object c), (ontable object h), (ontable object a), (ontable object f), (ontable object e), (on object f object                             
+             f), (on object h object j), (on object e object f), (on object j object f), (on object g object f), (on object                             
+              e object e), (on object i object e), (on object h object c), (on object i object b), (on object j object e),                              
+              (on object i object j), (on object e object j), (on object c object h), (on object h object h), (on object h                              
+             object a), (on object e object g), (on object c object a), (on object i object g), (on object b object e), (on                             
+                object g object i), (on object b object b), (on object j object j), (on object j object g), (on object f                                
+             object d), (on object d object f), (on object i object c), (on object i object d), (on object e object d), (on                             
+                object c object i), (on object b object j), (on object b object g), (on object j object d), (on object a                                
+             object h), (on object a object a), (on object i object a), (on object f object e), (on object b object c), (on                             
+                object b object d), (on object f object b), (on object e object b), (on object d object g), (on object a                                
+             object i), (on object g object e), (on object f object j), (on object j object b), (on object b object a), (on                             
+                object f object g), (on object g object b), (on object d object d), (on object g object j), (on object f                                
+             object c), (on object g object g), (on object e object c), (on object h object i), (on object d object e), (on                             
+                object j object c), (on object f object h), (on object g object c), (on object f object a), (on object g                                
+             object d), (on object i object h), (on object e object h), (on object d object b), (on object e object a), (on                             
+                object c object f), (on object h object f), (on object j object h), (on object j object a), (on object d                                
+             object j), (on object g object a), (on object i object i), (on object e object i), (on object c object e), (on                             
+                object b object h), (on object j object i), (on object d object c), (on object c object j), (on object a                                
+             object f), (on object b object i), (on object i object f), (on object c object g), (on object h object g), (on                             
+                object d object h), (on object d object a), (on object a object e), (on object c object c), (on object a                                
+             object b), (on object h object d), (on object c object d), (on object b object f), (on object d object i), (on                             
+                object g object h), (on object a object j), (on object f object i), (on object a object g), (on object h                                
+               object e), (on object c object b), (on object h object b), (on object a object c), (on object a object d),                               
+              (clear object j), (clear object i), (clear object g), (clear object b), (clear object d), (clear object c),                               
+               (clear object h), (clear object a), (clear object f), (clear object e), (handempty ), (holding object j),                                
+              (holding object i), (holding object g), (holding object b), (holding object d), (holding object c), (holding                              
+                                 object h), (holding object a), (holding object f), (holding object e)                                                  
+          2   (ontable object j), (ontable object i), (ontable object g), (ontable object b), (ontable object d), (ontable   put-down object c          
+             object c), (ontable object h), (ontable object a), (ontable object f), (ontable object e), (on object f object                             
+             f), (on object h object j), (on object e object f), (on object j object f), (on object g object f), (on object                             
+              e object e), (on object i object e), (on object h object c), (on object i object b), (on object j object e),                              
+              (on object i object j), (on object e object j), (on object c object h), (on object h object h), (on object h                              
+             object a), (on object e object g), (on object c object a), (on object i object g), (on object b object e), (on                             
+                object g object i), (on object b object b), (on object j object j), (on object j object g), (on object f                                
+             object d), (on object d object f), (on object i object c), (on object i object d), (on object e object d), (on                             
+                object c object i), (on object b object j), (on object b object g), (on object j object d), (on object a                                
+             object h), (on object a object a), (on object i object a), (on object f object e), (on object b object c), (on                             
+                object b object d), (on object f object b), (on object e object b), (on object d object g), (on object a                                
+             object i), (on object g object e), (on object f object j), (on object j object b), (on object b object a), (on                             
+                object f object g), (on object g object b), (on object d object d), (on object g object j), (on object f                                
+             object c), (on object g object g), (on object e object c), (on object h object i), (on object d object e), (on                             
+                object j object c), (on object f object h), (on object g object c), (on object f object a), (on object g                                
+             object d), (on object i object h), (on object e object h), (on object d object b), (on object e object a), (on                             
+                object c object f), (on object h object f), (on object j object h), (on object j object a), (on object d                                
+             object j), (on object g object a), (on object i object i), (on object e object i), (on object c object e), (on                             
+                object b object h), (on object j object i), (on object d object c), (on object c object j), (on object a                                
+             object f), (on object b object i), (on object i object f), (on object c object g), (on object h object g), (on                             
+                object d object h), (on object d object a), (on object a object e), (on object c object c), (on object a                                
+             object b), (on object h object d), (on object c object d), (on object b object f), (on object d object i), (on                             
+                object g object h), (on object a object j), (on object f object i), (on object a object g), (on object h                                
+               object e), (on object c object b), (on object h object b), (on object a object c), (on object a object d),                               
+              (clear object j), (clear object i), (clear object g), (clear object b), (clear object d), (clear object c),                               
+               (clear object h), (clear object a), (clear object f), (clear object e), (handempty ), (holding object j),                                
+              (holding object i), (holding object g), (holding object b), (holding object d), (holding object c), (holding                              
+                                 object h), (holding object a), (holding object f), (holding object e)                                                  
+          3   (ontable object j), (ontable object i), (ontable object g), (ontable object b), (ontable object d), (ontable   unstack object j object e  
+             object c), (ontable object h), (ontable object a), (ontable object f), (ontable object e), (on object f object                             
+             f), (on object h object j), (on object e object f), (on object j object f), (on object g object f), (on object                             
+              e object e), (on object i object e), (on object h object c), (on object i object b), (on object j object e),                              
+              (on object i object j), (on object e object j), (on object c object h), (on object h object h), (on object h                              
+             object a), (on object e object g), (on object c object a), (on object i object g), (on object b object e), (on                             
+                object g object i), (on object b object b), (on object j object j), (on object j object g), (on object f                                
+             object d), (on object d object f), (on object i object c), (on object i object d), (on object e object d), (on                             
+                object c object i), (on object b object j), (on object b object g), (on object j object d), (on object a                                
+             object h), (on object a object a), (on object i object a), (on object f object e), (on object b object c), (on                             
+                object b object d), (on object f object b), (on object e object b), (on object d object g), (on object a                                
+             object i), (on object g object e), (on object f object j), (on object j object b), (on object b object a), (on                             
+                object f object g), (on object g object b), (on object d object d), (on object g object j), (on object f                                
+             object c), (on object g object g), (on object e object c), (on object h object i), (on object d object e), (on                             
+                object j object c), (on object f object h), (on object g object c), (on object f object a), (on object g                                
+             object d), (on object i object h), (on object e object h), (on object d object b), (on object e object a), (on                             
+                object c object f), (on object h object f), (on object j object h), (on object j object a), (on object d                                
+             object j), (on object g object a), (on object i object i), (on object e object i), (on object c object e), (on                             
+                object b object h), (on object j object i), (on object d object c), (on object c object j), (on object a                                
+             object f), (on object b object i), (on object i object f), (on object c object g), (on object h object g), (on                             
+                object d object h), (on object d object a), (on object a object e), (on object c object c), (on object a                                
+             object b), (on object h object d), (on object c object d), (on object b object f), (on object d object i), (on                             
+                object g object h), (on object a object j), (on object f object i), (on object a object g), (on object h                                
+               object e), (on object c object b), (on object h object b), (on object a object c), (on object a object d),                               
+              (clear object j), (clear object i), (clear object g), (clear object b), (clear object d), (clear object c),                               
+               (clear object h), (clear object a), (clear object f), (clear object e), (handempty ), (holding object j),                                
+              (holding object i), (holding object g), (holding object b), (holding object d), (holding object c), (holding                              
+                                 object h), (holding object a), (holding object f), (holding object e)                                                  
+          4   (ontable object j), (ontable object i), (ontable object g), (ontable object b), (ontable object d), (ontable   stack object j object e    
+             object c), (ontable object h), (ontable object a), (ontable object f), (ontable object e), (on object f object                             
+             f), (on object h object j), (on object e object f), (on object j object f), (on object g object f), (on object                             
+              e object e), (on object i object e), (on object h object c), (on object i object b), (on object j object e),                              
+              (on object i object j), (on object e object j), (on object c object h), (on object h object h), (on object h                              
+             object a), (on object e object g), (on object c object a), (on object i object g), (on object b object e), (on                             
+                object g object i), (on object b object b), (on object j object j), (on object j object g), (on object f                                
+             object d), (on object d object f), (on object i object c), (on object i object d), (on object e object d), (on                             
+                object c object i), (on object b object j), (on object b object g), (on object j object d), (on object a                                
+             object h), (on object a object a), (on object i object a), (on object f object e), (on object b object c), (on                             
+                object b object d), (on object f object b), (on object e object b), (on object d object g), (on object a                                
+             object i), (on object g object e), (on object f object j), (on object j object b), (on object b object a), (on                             
+                object f object g), (on object g object b), (on object d object d), (on object g object j), (on object f                                
+             object c), (on object g object g), (on object e object c), (on object h object i), (on object d object e), (on                             
+                object j object c), (on object f object h), (on object g object c), (on object f object a), (on object g                                
+             object d), (on object i object h), (on object e object h), (on object d object b), (on object e object a), (on                             
+                object c object f), (on object h object f), (on object j object h), (on object j object a), (on object d                                
+             object j), (on object g object a), (on object i object i), (on object e object i), (on object c object e), (on                             
+                object b object h), (on object j object i), (on object d object c), (on object c object j), (on object a                                
+             object f), (on object b object i), (on object i object f), (on object c object g), (on object h object g), (on                             
+                object d object h), (on object d object a), (on object a object e), (on object c object c), (on object a                                
+             object b), (on object h object d), (on object c object d), (on object b object f), (on object d object i), (on                             
+                object g object h), (on object a object j), (on object f object i), (on object a object g), (on object h                                
+               object e), (on object c object b), (on object h object b), (on object a object c), (on object a object d),                               
+              (clear object j), (clear object i), (clear object g), (clear object b), (clear object d), (clear object c),                               
+               (clear object h), (clear object a), (clear object f), (clear object e), (handempty ), (holding object j),                                
+              (holding object i), (holding object g), (holding object b), (holding object d), (holding object c), (holding                              
+                                 object h), (holding object a), (holding object f), (holding object e)                                                  
+          5   (ontable object j), (ontable object i), (ontable object g), (ontable object b), (ontable object d), (ontable                              
+             object c), (ontable object h), (ontable object a), (ontable object f), (ontable object e), (on object f object                             
+             f), (on object h object j), (on object e object f), (on object j object f), (on object g object f), (on object                             
+              e object e), (on object i object e), (on object h object c), (on object i object b), (on object j object e),                              
+              (on object i object j), (on object e object j), (on object c object h), (on object h object h), (on object h                              
+             object a), (on object e object g), (on object c object a), (on object i object g), (on object b object e), (on                             
+                object g object i), (on object b object b), (on object j object j), (on object j object g), (on object f                                
+             object d), (on object d object f), (on object i object c), (on object i object d), (on object e object d), (on                             
+                object c object i), (on object b object j), (on object b object g), (on object j object d), (on object a                                
+             object h), (on object a object a), (on object i object a), (on object f object e), (on object b object c), (on                             
+                object b object d), (on object f object b), (on object e object b), (on object d object g), (on object a                                
+             object i), (on object g object e), (on object f object j), (on object j object b), (on object b object a), (on                             
+                object f object g), (on object g object b), (on object d object d), (on object g object j), (on object f                                
+             object c), (on object g object g), (on object e object c), (on object h object i), (on object d object e), (on                             
+                object j object c), (on object f object h), (on object g object c), (on object f object a), (on object g                                
+             object d), (on object i object h), (on object e object h), (on object d object b), (on object e object a), (on                             
+                object c object f), (on object h object f), (on object j object h), (on object j object a), (on object d                                
+             object j), (on object g object a), (on object i object i), (on object e object i), (on object c object e), (on                             
+                object b object h), (on object j object i), (on object d object c), (on object c object j), (on object a                                
+             object f), (on object b object i), (on object i object f), (on object c object g), (on object h object g), (on                             
+                object d object h), (on object d object a), (on object a object e), (on object c object c), (on object a                                
+             object b), (on object h object d), (on object c object d), (on object b object f), (on object d object i), (on                             
+                object g object h), (on object a object j), (on object f object i), (on object a object g), (on object h                                
+               object e), (on object c object b), (on object h object b), (on object a object c), (on object a object d),                               
+              (clear object j), (clear object i), (clear object g), (clear object b), (clear object d), (clear object c),                               
+               (clear object h), (clear object a), (clear object f), (clear object e), (handempty ), (holding object j),                                
+              (holding object i), (holding object g), (holding object b), (holding object d), (holding object c), (holding                              
+                                 object h), (holding object a), (holding object f), (holding object e)                                                  

@@ -1,10 +1,15 @@
 import macq.extract as extract
 from typing import Union, List, Set
 from nnf import Var, Or, And, true, false
-from ..observation import Observation, PartialObservabilityToken
-from ..trace import Action, ObservationList
+
+# from ..observation import Observation, PartialObservabilityToken
+# from ..trace import Action, ObservationList
 import bauhaus
-from bauhaus import Encoding, proposition
+from bauhaus import Encoding
+from nnf import dsharp
+
+from macq.observation import *
+from macq.trace import *
 
 e = Encoding()
 
@@ -69,6 +74,8 @@ class Slaf:
 
     @staticmethod
     def remove_subsumed_clauses(phi_form: Set):
+        # print(phi_form)
+        # print()
         to_del = set()
         # eliminate subsumed clauses
         for f in phi_form:
@@ -83,6 +90,13 @@ class Slaf:
                         to_del.add(other)
         for t in to_del:
             phi_form.discard(t)
+
+    @staticmethod
+    def or_refactor(maybe_lit):
+        if isinstance(maybe_lit, Var):
+            return Or([maybe_lit])
+        else:
+            return maybe_lit
 
     @staticmethod
     def as_strips_slaf(observations: ObservationList, debug: bool = False):
@@ -246,9 +260,9 @@ class Slaf:
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
 
-                        Slaf.remove_subsumed_clauses(phi["pos expl"])
-                        Slaf.remove_subsumed_clauses(phi["neg expl"])
-                        Slaf.remove_subsumed_clauses(phi["neutral"])
+                        # Slaf.remove_subsumed_clauses(phi["pos expl"])
+                        # Slaf.remove_subsumed_clauses(phi["neg expl"])
+                        # Slaf.remove_subsumed_clauses(phi["neutral"])
 
                 if debug:
                     if a:
@@ -314,27 +328,56 @@ class Slaf:
             formula.update([n for n in all_phi_neut])
         # formula.update(validity_constraints)
 
-        f = open("formula.txt", "w")
-        keys = list(formula)
-        keys = [str(f) for f in keys]
-        keys.sort()
-        for key in keys:
-            f.write(str(key) + "\n")
-        f.close()
-
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
+        cnf_formula = And(map(Slaf.or_refactor, full_formula.children))
 
-        # print(full_formula)
-        solution = full_formula.solve()
+        # f = open("formula.txt", "w")
+        # keys = list(cnf_formula)
+        # keys = [str(f) for f in keys]
+        # keys.sort()
+        # for key in keys:
+        #     f.write(str(key) + "\n")
+        # f.close()
 
-        f = open("solution.txt", "w")
-        keys = list(solution)
-        keys = [str(f) for f in keys]
-        keys.sort()
-        for key in keys:
-            f.write(str(key) + ": " + str(solution[key]) + "\n")
-        f.close()
+        ddnnf = dsharp.compile(
+            cnf_formula, "/home/rebecca/macq/dsharp", extra_args=["-Fgraph", "out.dot"]
+        )
+        # print(ddnnf.size())
+        children = set(cnf_formula.children)
+        for f in all_var:
+            # base_theory is the original CNF
+            children.add(Or([~f]))
+            check_theory = And(children)
+            print(check_theory.is_CNF())
+            # if False, then f is entailed
+            if not check_theory.solve():
+                print(f)
+            children.discard(Or([~f]))
 
-        for v in all_var:
-            if full_formula.entails(v):
-                print(v)
+
+if __name__ == "__main__":
+    from macq.extract import Extract, modes
+    from macq.observation import (
+        PartialObservabilityToken,
+    )
+    from macq.trace import *
+    from macq.generate.pddl import VanillaSampling
+    from pathlib import Path
+
+    # exit out to the base macq folder so we can get to /tests
+    base = Path(__file__).parent.parent.parent
+    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
+    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+    traces = vanilla.traces
+    print(vanilla.problem.init)
+    traces.print(wrap="y")
+
+    observations = traces.tokenize(
+        PartialObservabilityToken,
+        method=PartialObservabilityToken.random_subset,
+        percent_missing=0.3,
+    )
+    model = Extract(observations, modes.SLAF)
+
+    print()
