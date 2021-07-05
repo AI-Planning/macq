@@ -1,15 +1,13 @@
 import macq.extract as extract
-from typing import Union, List, Set
+from typing import Union, List, Set, Dict
 from nnf import Var, Or, And, true, false
-
-# from ..observation import Observation, PartialObservabilityToken
-# from ..trace import Action, ObservationList
+from ..observation import Observation, PartialObservabilityToken
+from .model import Model
+from ..trace import Action, ObservationList
 import bauhaus
 from bauhaus import Encoding
 from nnf import dsharp
 
-from macq.observation import *
-from macq.trace import *
 
 e = Encoding()
 
@@ -31,7 +29,8 @@ class Slaf:
         """
         if observations.type is not PartialObservabilityToken:
             raise extract.IncompatibleObservationToken(observations.type, Slaf)
-        Slaf.as_strips_slaf(observations)
+        entailed = Slaf.__as_strips_slaf(observations)
+        return Slaf.__sort_results(entailed)
 
     @staticmethod
     def __get_initial_fluent_factored(
@@ -73,7 +72,7 @@ class Slaf:
         return raw_fluent_factored
 
     @staticmethod
-    def remove_subsumed_clauses(phi_form: Set):
+    def __remove_subsumed_clauses(phi_form: Set):
         # print(phi_form)
         # print()
         to_del = set()
@@ -92,14 +91,74 @@ class Slaf:
             phi_form.discard(t)
 
     @staticmethod
-    def or_refactor(maybe_lit):
+    def __or_refactor(maybe_lit):
         if isinstance(maybe_lit, Var):
             return Or([maybe_lit])
         else:
             return maybe_lit
 
     @staticmethod
-    def as_strips_slaf(observations: ObservationList, debug: bool = False):
+    def __sort_results_setup_helper(all_actions_info: Dict, action: str):
+        if action not in all_actions_info.keys():
+            all_actions_info[action] = {}
+            all_actions_info[action]["precond"] = set()
+            all_actions_info[action]["add"] = set()
+            all_actions_info[action]["delete"] = set()
+
+    @staticmethod
+    def __sort_results(entailed: Set):
+        all_actions_info = {}
+        learned_actions = set()
+        fluents = set()
+        for e in entailed:
+            # split up the fluent into its relevant parts
+            # loop through and collect all information on each fluent
+            precond = " is a precondition of "
+            effect = " causes "
+            neutral = " has no effect on "
+            e = str(e)
+            obj_params = set()
+            if precond in e:
+                # split to separate precondition and action
+                info_split = e.split(precond)
+                precond = info_split[0] + ")"
+                action = "(" + info_split[1]
+                # set up structures if necessary
+                Slaf.__sort_results_setup_helper(all_actions_info, action)
+
+                # obj_params.add()
+                all_actions_info[action]["precond"].add(precond)
+            elif effect in e:
+                # split to separate effect and action
+                info_split = e.split(effect)
+                action = info_split[0] + ")"
+                effect = info_split[1]
+                # set up structures if necessary
+                Slaf.__sort_results_setup_helper(all_actions_info, action)
+                if "~" in effect:
+                    effect = "(" + effect.split("~")[1]
+                    all_actions_info[action]["delete"].add(effect)
+                else:
+                    effect = "(" + effect
+                    all_actions_info[action]["add"].add(effect)
+            else:
+                # regular fluent
+                if not neutral in e:
+                    fluents.add(e)
+        for action in all_actions_info:
+            learned_actions.add(
+                extract.LearnedAction(
+                    action,
+                    [],
+                    precond=all_actions_info[action]["precond"],
+                    add=all_actions_info[action]["add"],
+                    delete=all_actions_info[action]["delete"],
+                )
+            )
+        return Model(fluents, learned_actions)
+
+    @staticmethod
+    def __as_strips_slaf(observations: ObservationList, debug: bool = False):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -329,7 +388,7 @@ class Slaf:
         # formula.update(validity_constraints)
 
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
-        cnf_formula = And(map(Slaf.or_refactor, full_formula.children))
+        cnf_formula = And(map(Slaf.__or_refactor, full_formula.children))
 
         # f = open("formula.txt", "w")
         # keys = list(cnf_formula)
@@ -342,42 +401,15 @@ class Slaf:
         ddnnf = dsharp.compile(
             cnf_formula, "/home/rebecca/macq/dsharp", extra_args=["-Fgraph", "out.dot"]
         )
+        entailed = set()
         # print(ddnnf.size())
         children = set(cnf_formula.children)
         for f in all_var:
             # base_theory is the original CNF
             children.add(Or([~f]))
             check_theory = And(children)
-            print(check_theory.is_CNF())
             # if False, then f is entailed
             if not check_theory.solve():
-                print(f)
+                entailed.add(f)
             children.discard(Or([~f]))
-
-
-if __name__ == "__main__":
-    from macq.extract import Extract, modes
-    from macq.observation import (
-        PartialObservabilityToken,
-    )
-    from macq.trace import *
-    from macq.generate.pddl import VanillaSampling
-    from pathlib import Path
-
-    # exit out to the base macq folder so we can get to /tests
-    base = Path(__file__).parent.parent.parent
-    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
-    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
-    traces = vanilla.traces
-    print(vanilla.problem.init)
-    traces.print(wrap="y")
-
-    observations = traces.tokenize(
-        PartialObservabilityToken,
-        method=PartialObservabilityToken.random_subset,
-        percent_missing=0.3,
-    )
-    model = Extract(observations, modes.SLAF)
-
-    print()
+        return entailed

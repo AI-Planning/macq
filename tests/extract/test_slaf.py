@@ -12,7 +12,7 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=100, num_traces=1)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=2, num_traces=1)
     traces = vanilla.traces
     print(vanilla.problem.init)
     traces.print(wrap="y")
@@ -20,9 +20,9 @@ if __name__ == "__main__":
     observations = traces.tokenize(
         PartialObservabilityToken,
         method=PartialObservabilityToken.random_subset,
-        percent_missing=0.3,
+        percent_missing=0,
     )
     model = Extract(observations, modes.SLAF)
 
     print()
-    # print(model.details())
+    print(model.details())
