@@ -1,6 +1,6 @@
 import macq.extract as extract
 from typing import Union, List, Set, Dict
-from nnf import Var, Or, And, true, false
+from nnf import Var, Or, And, true, false, config
 from ..observation import Observation, PartialObservabilityToken
 from .model import Model
 from ..trace import Action, ObservationList, Fluent
@@ -218,12 +218,14 @@ class Slaf:
                 if debug:
                     print("-" * 100)
                 # steps 1. (d)-(e) of AS-STRIPS-SLAF
-                all_o = [
-                    str(Var(str(f)[1:-1]))
-                    if token.step.state[f]
-                    else str(~Var(str(f)[1:-1]))
-                    for f in token.step.state.fluents
-                ]
+                all_o = []
+                for f in token.step.state.fluents:
+                    if token.step.state[f] != None:
+                        if token.step.state[f]:
+                            all_o.append(str(Var(str(f)[1:-1])))
+                        elif not token.step.state[f]:
+                            all_o.append(str(~Var(str(f)[1:-1])))
+
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
                     """take account all of the current observations BEFORE the next action is taken.
@@ -397,22 +399,18 @@ class Slaf:
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
         cnf_formula = And(map(Slaf.__or_refactor, full_formula.children))
 
-        ddnnf = dsharp.compile(
-            cnf_formula, "/home/rebecca/macq/dsharp", extra_args=["-Fgraph", "out.dot"]
-        )
         entailed = set()
-        # print(ddnnf.size())
         children = set(cnf_formula.children)
         count = 0
         for f in all_var:
             count += 1
-            print(str(count) + "/" + str(len(all_var)))
+            print(count)
             # base_theory is the original CNF
             children.add(Or([~f]))
             check_theory = And(children)
-            # print(check_theory.is_CNF())
             # if False, then f is entailed
-            if not check_theory.solve():
-                entailed.add(f)
+            with config(sat_backend="kissat"):
+                if not check_theory.solve():
+                    entailed.add(f)
             children.discard(Or([~f]))
         return entailed
