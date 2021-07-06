@@ -33,43 +33,33 @@ class Slaf:
         return Slaf.__sort_results(observations, entailed)
 
     @staticmethod
-    def __get_initial_fluent_factored(
-        observation: Observation, raw_fluent_factored: Union[List, None]
-    ):
+    def __get_initial_fluent_factored(o_list: ObservationList):
         """Gets the initial fluent-factored formula of an observation/trace.
 
         Args:
-            observation (Observation):
-                The observation to extract the fluent-factored formula from.
+            o_list (ObservationList):
+                The observation list to extract the fluent-factored formula from.
 
         Returns:
             A list of dictionaries that holds the fluent-factored formula.
         """
         top = Slaf.top
         bottom = Slaf.bottom
-        if not raw_fluent_factored:
-            raw_fluent_factored = []
         fluents = set()
 
-        all_fluents = [f for token in observation for f in token.get_all_base_fluents()]
-        for f in all_fluents:
-            fluents.add(f)
-
-        # get previous fluents
-        old_fluents = set()
-        for f in raw_fluent_factored:
-            old_fluents.add(f["fluent"].details)
+        fluents.update(
+            [f for obs in o_list for token in obs for f in token.get_all_base_fluents()]
+        )
 
         # set up the initial fluent factored form for the problem
+        raw_fluent_factored = []
         for f in fluents:
-            if f not in old_fluents:
-
-                phi = {}
-                phi["fluent"] = Var(f)
-                phi["pos expl"] = {top}
-                phi["neg expl"] = {top}
-                phi["neutral"] = {top}
-                raw_fluent_factored.append(phi)
+            phi = {}
+            phi["fluent"] = Var(f)
+            phi["pos expl"] = {top}
+            phi["neg expl"] = {top}
+            phi["neutral"] = {top}
+            raw_fluent_factored.append(phi)
         return raw_fluent_factored
 
     @staticmethod
@@ -144,7 +134,7 @@ class Slaf:
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
-    def __as_strips_slaf(observations: ObservationList):
+    def __as_strips_slaf(o_list: ObservationList):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -152,7 +142,7 @@ class Slaf:
         which is then solved using a SAT solver to extract models.
 
         Args:
-            observations (ObservationList):
+            o_list (ObservationList):
                 The list of observations/traces to apply the filtering algorithm to.
         """
 
@@ -179,13 +169,10 @@ class Slaf:
         validity_constraints = set()
         all_var = set()
 
-        raw_fluent_factored = None
+        # get the fluent factored formula
+        raw_fluent_factored = Slaf.__get_initial_fluent_factored(o_list)
         # iterate through every observation in the list of observations/traces
-        for obs in observations:
-            # get the fluent factored formula for this observation/trace
-            raw_fluent_factored = Slaf.__get_initial_fluent_factored(
-                obs, raw_fluent_factored
-            )
+        for obs in o_list:
             if debug:
                 all_f_details = [f["fluent"].name for f in raw_fluent_factored]
                 all_f_details.sort()
