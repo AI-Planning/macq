@@ -105,14 +105,14 @@ class Slaf:
             for token in o:
                 if token.step.action:
                     learned_actions[
-                        "(" + token.step.action.details() + ")"
+                        token.step.action.details()
                     ] = extract.LearnedAction(
                         token.step.action.name,
                         token.step.action.obj_params,
                         cost=token.step.action.cost,
                     )
                 for f in token.step.state.fluents.keys():
-                    base_fluents[str(f)] = f
+                    base_fluents[str(f)[1:-1]] = f
         for e in entailed:
             precond = " is a precondition of "
             effect = " causes "
@@ -120,22 +120,22 @@ class Slaf:
             e = str(e)
             obj_params = set()
             if precond in e:
-                # split to separate precondition and action
-                info_split = e.split(precond)
-                precond = info_split[0] + ")"
-                action = "(" + info_split[1]
+                # split to separate precondition and action, get rid of extra brackets
+                info_split = e[1:-1].split(precond)
+                precond = info_split[0]
+                action = info_split[1]
                 learned_actions[action].update_precond({base_fluents[precond]})
             elif effect in e:
-                # split to separate effect and action
-                info_split = e.split(effect)
-                action = info_split[0] + ")"
+                # split to separate effect and action, get rid of extra brackets
+                info_split = e[1:-1].split(effect)
+                action = info_split[0]
                 effect = info_split[1]
                 # update either add or delete effects appropriately
                 if "~" in effect:
-                    effect = "(" + effect.split("~")[1]
+                    # get rid of "~"
+                    effect = effect[1:]
                     learned_actions[action].update_delete({base_fluents[effect]})
                 else:
-                    effect = "(" + effect
                     learned_actions[action].update_add({base_fluents[effect]})
             else:
                 # regular fluent
@@ -217,9 +217,11 @@ class Slaf:
                 ]
                 for phi in raw_fluent_factored:
                     f = phi["fluent"]
-                    # take account all of the current observations BEFORE the next action is taken.
-                    # if this fluent is observed, update the formula accordingly.
-                    # since we know the fluent is now true, the prior possible explanation for the fluent being true (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations has to be true in order for the prior action to have no effect on the fluent currently being true.
+                    """take account all of the current observations BEFORE the next action is taken.
+                    if this fluent is observed, update the formula accordingly.
+                    since we know the fluent is now true, the prior possible explanation for the fluent being true 
+                    (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations 
+                    has to be true in order for the prior action to have no effect on the fluent currently being true. """
                     if str(f) in all_o:
                         phi["neutral"].update([p.simplify() for p in phi["pos expl"]])
                         phi["pos expl"] = {top}
@@ -318,9 +320,9 @@ class Slaf:
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
 
-                        # Slaf.remove_subsumed_clauses(phi["pos expl"])
-                        # Slaf.remove_subsumed_clauses(phi["neg expl"])
-                        # Slaf.remove_subsumed_clauses(phi["neutral"])
+                        Slaf.__remove_subsumed_clauses(phi["pos expl"])
+                        Slaf.__remove_subsumed_clauses(phi["neg expl"])
+                        Slaf.__remove_subsumed_clauses(phi["neutral"])
 
                 if debug:
                     if a:
@@ -366,14 +368,11 @@ class Slaf:
                                             print("false")
                                         else:
                                             e.pprint(f)
-
                     print()
-
                     user_input = input("Hit enter to continue.")
 
         formula = set()
         # convert to formula once you have stepped through the whole observation/trace and applied all transformations
-        # add as constraints to e here
         for phi in raw_fluent_factored:
             f = phi["fluent"]
             # convert to formula for each fluent
@@ -384,18 +383,10 @@ class Slaf:
             formula.update([(~f | p).simplify() for p in all_phi_pos])
             formula.update([(f | n).simplify() for n in all_phi_neg])
             formula.update([n for n in all_phi_neut])
-        # formula.update(validity_constraints)
+        formula.update(validity_constraints)
 
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
         cnf_formula = And(map(Slaf.__or_refactor, full_formula.children))
-
-        # f = open("formula.txt", "w")
-        # keys = list(cnf_formula)
-        # keys = [str(f) for f in keys]
-        # keys.sort()
-        # for key in keys:
-        #     f.write(str(key) + "\n")
-        # f.close()
 
         ddnnf = dsharp.compile(
             cnf_formula, "/home/rebecca/macq/dsharp", extra_args=["-Fgraph", "out.dot"]
@@ -403,10 +394,14 @@ class Slaf:
         entailed = set()
         # print(ddnnf.size())
         children = set(cnf_formula.children)
+        count = 0
         for f in all_var:
+            count += 1
+            print(str(count) + "/" + str(len(all_var)))
             # base_theory is the original CNF
             children.add(Or([~f]))
             check_theory = And(children)
+            # print(check_theory.is_CNF())
             # if False, then f is entailed
             if not check_theory.solve():
                 entailed.add(f)
