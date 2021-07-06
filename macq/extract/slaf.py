@@ -65,6 +65,10 @@ class Slaf:
     @staticmethod
     def __remove_subsumed_clauses(phi_form: Set):
         to_del = set()
+        # if the overall phi formula (conjunction) has false, throw everything out
+        if false in phi_form:
+            phi_form.clear()
+            return
         # eliminate subsumed clauses
         for f in phi_form:
             for other in phi_form:
@@ -74,7 +78,25 @@ class Slaf:
                     f_set = {str(f)}
                 if not isinstance(other, Var):
                     other_set = {str(o) for o in other.children}
-                    if f_set.issubset(other_set) and f_set != other_set and f != true:
+                    # if the subformula is a conjunction and has false in it, throw it out
+                    if isinstance(other, And):
+                        if "false" in other_set:
+                            to_del.add(other)
+                            break
+                    # if the subformula is a disjunction and has true in it, throw it out
+                    elif isinstance(other, Or):
+                        if "true" in other_set:
+                            to_del.add(other)
+                            break
+                    # otherwise, if the subformula can be represented by a smaller subformula, throw it out
+                    # also, "true" and "false" are empty sets, and unless we have one of the two cases above, we need to
+                    # prevent them from throwing out formulas unnecessarily
+                    if (
+                        f_set.issubset(other_set)
+                        and f_set != other_set
+                        and f != true
+                        and f != false
+                    ):
                         to_del.add(other)
         for t in to_del:
             phi_form.discard(t)
