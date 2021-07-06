@@ -1,5 +1,5 @@
 import macq.extract as extract
-from typing import Union, List, Set, Dict
+from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
 from ..observation import Observation, PartialObservabilityToken
 from .model import Model
@@ -17,20 +17,20 @@ class Slaf:
     top = true
     bottom = false
 
-    def __new__(cls, observations: ObservationList):
+    def __new__(cls, o_list: ObservationList):
         """Creates a new Model object.
 
         Args:
-            observations (ObservationList):
+            o_list (ObservationList):
                 The state observations to extract the model from.
         Raises:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if observations.type is not PartialObservabilityToken:
-            raise extract.IncompatibleObservationToken(observations.type, Slaf)
-        entailed = Slaf.__as_strips_slaf(observations)
-        return Slaf.__sort_results(observations, entailed)
+        if o_list.type is not PartialObservabilityToken:
+            raise extract.IncompatibleObservationToken(o_list.type, Slaf)
+        entailed = Slaf.__as_strips_slaf(o_list)
+        return Slaf.__sort_results(o_list, entailed)
 
     @staticmethod
     def __get_initial_fluent_factored(o_list: ObservationList):
@@ -102,7 +102,7 @@ class Slaf:
             phi_form.discard(t)
 
     @staticmethod
-    def __or_refactor(maybe_lit):
+    def __or_refactor(maybe_lit: Union[Or, Var]):
         if isinstance(maybe_lit, Var):
             return Or([maybe_lit])
         else:
