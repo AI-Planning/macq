@@ -1,10 +1,13 @@
 from dataclasses import dataclass
-from typing import List
 from enum import Enum, auto
+
+from . import Model
+from ..trace import ObservationLists, Action, State
+
+# Techniques
 from .observer import Observer
 from .slaf import Slaf
-from ..observation import Observation
-from ..trace import ObservationLists, Action, State
+from .arms import ARMS
 
 
 @dataclass
@@ -29,6 +32,7 @@ class modes(Enum):
 
     OBSERVER = auto()
     SLAF = auto()
+    ARMS = auto()
 
 
 class Extract:
@@ -38,7 +42,7 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes):
+    def __new__(cls, obs_lists: ObservationLists, mode: modes) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
@@ -57,6 +61,7 @@ class Extract:
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: Slaf,
+            modes.ARMS: ARMS,
         }
         if mode == modes.SLAF:
             # only allow one trace
