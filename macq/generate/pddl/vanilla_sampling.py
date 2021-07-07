@@ -17,6 +17,7 @@ from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 
 MAX_TRACE_TIME = 30.0
 
+
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
 
@@ -147,3 +148,6 @@ class VanillaSampling(Generator):
                     trace.append(step)
                     valid_trace = True
         return trace
+
+
+# TODO: goal generation
