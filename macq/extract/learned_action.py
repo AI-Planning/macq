@@ -25,7 +25,7 @@ class LearnedAction:
         return hash(self.details())
 
     def details(self):
-        string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+        string = f"{self.name} {' '.join([o for o in self.obj_params])}"
         return string
 
     def update_precond(self, fluents: Set[Fluent]):

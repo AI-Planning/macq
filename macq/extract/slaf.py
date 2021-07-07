@@ -171,7 +171,7 @@ class Slaf:
                         token.step.action.details()
                     ] = extract.LearnedAction(
                         token.step.action.name,
-                        token.step.action.obj_params,
+                        [o.details() for o in token.step.action.obj_params],
                         cost=token.step.action.cost,
                     )
                 # store all the possible fluents for later reference
