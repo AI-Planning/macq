@@ -3,10 +3,9 @@ from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
 import bauhaus
 from bauhaus import Encoding
-from nnf import dsharp
-from ..observation import Observation, PartialObservabilityToken
 from .model import Model
-from ..trace import Action, ObservationList, Fluent
+from ..observation import Observation, PartialObservabilityToken
+from ..trace import Action, ObservationList
 
 e = Encoding()
 
