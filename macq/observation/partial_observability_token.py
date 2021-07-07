@@ -44,9 +44,7 @@ class PartialObservabilityToken(Observation):
         self.step = method(self, step, **method_kwargs)
 
     def __eq__(self, value):
-        if isinstance(value, PartialObservabilityToken):
-            return self.step == value.step
-        return False
+        return isinstance(value, PartialObservabilityToken) and self.step == value.step
 
     def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.
@@ -68,12 +66,15 @@ class PartialObservabilityToken(Observation):
 
         new_fluents = {}
         # shuffle keys and take an appropriate subset of them
-        fluents_list = list(fluents)
-        random.shuffle(fluents_list)
-        fluents_list = fluents_list[:num_new_fluents]
+        hide_fluents_ls = list(fluents)
+        random.shuffle(hide_fluents_ls)
+        hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
         # get new dict
-        for f in fluents_list:
-            new_fluents[f] = step.state[f]
+        for f in fluents:
+            if f in hide_fluents_ls:
+                new_fluents[f] = None
+            else:
+                new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def same_subset(self, step: Step, hide_fluents: Set[Fluent]):
@@ -89,7 +90,16 @@ class PartialObservabilityToken(Observation):
             The new step created using a PartialState that takes the hidden fluents into account.
         """
         new_fluents = {}
-        for fluent in step.state.fluents:
-            if fluent not in hide_fluents:
-                new_fluents[fluent] = step.state[fluent]
+        for f in step.state.fluents:
+            if f in hide_fluents:
+                new_fluents[f] = None
+            else:
+                new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
+
+    def get_all_base_fluents(self):
+        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
+        fluents = set()
+        for f in self.step.state.fluents:
+            fluents.add(str(f)[1:-1])
+        return fluents
