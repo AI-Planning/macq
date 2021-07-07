@@ -15,7 +15,7 @@ class PercentError(Exception):
         super().__init__(message)
 
 
-class PartialObservabilityToken(Observation):
+class PartialObservation(Observation):
     """The Partial Observability Token.
 
     The partial observability token stores the step where some of the values of
@@ -30,7 +30,7 @@ class PartialObservabilityToken(Observation):
         **method_kwargs
     ):
         """
-        Creates an PartialObservabilityToken object, storing the step.
+        Creates an PartialObservation object, storing the step.
 
         Args:
             step (Step):
@@ -44,7 +44,7 @@ class PartialObservabilityToken(Observation):
         self.step = method(self, step, **method_kwargs)
 
     def __eq__(self, value):
-        return isinstance(value, PartialObservabilityToken) and self.step == value.step
+        return isinstance(value, PartialObservation) and self.step == value.step
 
     def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.

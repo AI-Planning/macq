@@ -1,11 +1,10 @@
 import macq.extract as extract
 from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
-import bauhaus
 from bauhaus import Encoding
 from .model import Model
-from ..observation import Observation, PartialObservabilityToken
-from ..trace import Action, ObservationLists
+from ..observation import PartialObservation
+from ..trace import ObservationLists
 
 e = Encoding()
 
@@ -17,8 +16,8 @@ class Slaf:
     algorithm is used to extract the effects of actions given a trace/observation. The algorithm
     is incapable of finding the preconditions of those actions, however.
 
-    Note that SLAF learns partially observable, deterministic action models, and thus takes the
-    PartialObservabilityToken type.
+    Note that SLAF learns partially observable, deterministic action models, and thus takes
+    PartialObservation as the token type.
 
     The AS-STRIPS-SLAF algorithm works by defining "action propositions" for each action that define
     the possible preconditions, effects, or lack-thereof of that action and every possible fluent. A
@@ -47,7 +46,7 @@ class Slaf:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if o_list.type is not PartialObservabilityToken:
+        if o_list.type is not PartialObservation:
             raise extract.IncompatibleObservationToken(o_list.type, Slaf)
         entailed = Slaf.__as_strips_slaf(o_list)
         # return the Model
