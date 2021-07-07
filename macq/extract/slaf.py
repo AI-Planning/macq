@@ -5,7 +5,7 @@ import bauhaus
 from bauhaus import Encoding
 from .model import Model
 from ..observation import Observation, PartialObservabilityToken
-from ..trace import Action, ObservationList
+from ..trace import Action, ObservationLists
 
 e = Encoding()
 
@@ -37,7 +37,7 @@ class Slaf:
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservationList):
+    def __new__(cls, o_list: ObservationLists):
         """Creates a new Model object.
 
         Args:
@@ -54,7 +54,7 @@ class Slaf:
         return Slaf.__sort_results(o_list, entailed)
 
     @staticmethod
-    def __get_initial_fluent_factored(o_list: ObservationList):
+    def __get_initial_fluent_factored(o_list: ObservationLists):
         """Gets the initial fluent-factored formula of an observation/trace.
 
         Args:
@@ -146,7 +146,7 @@ class Slaf:
         return Or([maybe_lit]) if isinstance(maybe_lit, Var) else maybe_lit
 
     @staticmethod
-    def __sort_results(observations: ObservationList, entailed: Set):
+    def __sort_results(observations: ObservationLists, entailed: Set):
         """Generates a `Model` given the set of entailed propositions.
 
         Args:
@@ -214,7 +214,7 @@ class Slaf:
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
-    def __as_strips_slaf(o_list: ObservationList):
+    def __as_strips_slaf(o_list: ObservationLists):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -283,7 +283,7 @@ class Slaf:
                 if debug:
                     print("-" * 100)
                 """Steps 1. (d)-(e) of AS-STRIPS-SLAF.
-                Steps (d)-(e) are done first as the action-observation order of SLAF is opposite to that of 
+                Steps (d)-(e) are done first as the action-observation order of SLAF is opposite to that of
                 how steps are stored in macq."""
                 all_o = []
                 # retrieve list of observations from the current state. Missing fluents are not taken into account.
@@ -294,11 +294,11 @@ class Slaf:
                         else:
                             all_o.append(str(~Var(str(f)[1:-1])))
 
-                """Iterate through every fluent in the fluent-factored transition belief formula and take 
+                """Iterate through every fluent in the fluent-factored transition belief formula and take
                 account of all of the current observations BEFORE the next action is taken.
                 If this fluent is observed, update the formula accordingly.
-                Since we know the fluent is now true, the prior possible explanation for the fluent being true 
-                (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations 
+                Since we know the fluent is now true, the prior possible explanation for the fluent being true
+                (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations
                 has to be true in order for the prior action to have no effect on the fluent currently being true.
                 The opposite happens if the fluent is observed to be false.
                 If the fluent is not observed to be either true or false (it is missing), then nothing happens."""
@@ -465,7 +465,7 @@ class Slaf:
 
         formula = set()
         """Convert to formula once you have stepped through all observations and applied all transformations.
-        NOTE: This would have to be refactored if the functionality for multiple traces was added, as each trace would 
+        NOTE: This would have to be refactored if the functionality for multiple traces was added, as each trace would
         have to store its own separate formulas, and the conjunction would be taken at the end."""
         for phi in raw_fluent_factored:
             f = phi["fluent"]

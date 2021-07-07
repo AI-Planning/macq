@@ -189,10 +189,10 @@ class TraceList:
                 for the steps.
         """
 
-        return ObservationList(self, Token, **kwargs)
+        return ObservationLists(self, Token, **kwargs)
 
 
-class ObservationList(TraceList):
+class ObservationLists(TraceList):
     traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
