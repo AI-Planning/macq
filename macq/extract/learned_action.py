@@ -28,7 +28,7 @@ class LearnedAction:
         string = f"{self.name} {' '.join([o for o in self.obj_params])}"
         return string
 
-    def update_precond(self, fluents: Set[Fluent]):
+    def update_precond(self, fluents: Set[str]):
         """Adds preconditions to the action.
 
         Args:
@@ -37,7 +37,7 @@ class LearnedAction:
         """
         self.precond.update(fluents)
 
-    def update_add(self, fluents: Set[Fluent]):
+    def update_add(self, fluents: Set[str]):
         """Adds add effects to the action.
 
         Args:
@@ -46,7 +46,7 @@ class LearnedAction:
         """
         self.add.update(fluents)
 
-    def update_delete(self, fluents: Set[Fluent]):
+    def update_delete(self, fluents: Set[str]):
         """Adds delete effects to the action.
 
         Args:

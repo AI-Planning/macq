@@ -174,9 +174,6 @@ class Slaf:
                         [o.details() for o in token.step.action.obj_params],
                         cost=token.step.action.cost,
                     )
-                # store all the possible fluents for later reference
-                for f in token.step.state.fluents.keys():
-                    base_fluents[str(f)[1:-1]] = f
         # iterate through all entailed propositions
         for e in entailed:
             precond = " is a precondition of "
@@ -190,8 +187,10 @@ class Slaf:
                 info_split = e[1:-1].split(precond)
                 precond = info_split[0]
                 action = info_split[1]
-                # update the precondition of this action with the appropriate fluent
-                learned_actions[action].update_precond({base_fluents[precond]})
+                # add brackets
+                precond = "".join(["(", precond, ")"])
+                # update the precondition of this action
+                learned_actions[action].update_precond({precond})
             # if this proposition holds information about an effect
             elif effect in e:
                 # split to separate effect and action, get rid of extra brackets
@@ -200,13 +199,15 @@ class Slaf:
                 effect = info_split[1]
                 # update either add or delete effects appropriately
                 if "~" in effect:
-                    # get rid of "~"
-                    effect = effect[1:]
-                    # update the delete effects of this action with the appropriate fluent
-                    learned_actions[action].update_delete({base_fluents[effect]})
+                    # get rid of "~", add brackets
+                    effect = "".join(["(", effect[1:], ")"])
+                    # update the delete effects of this action
+                    learned_actions[action].update_delete({effect})
                 else:
-                    # update the add effects of this action with the appropriate fluent
-                    learned_actions[action].update_add({base_fluents[effect]})
+                    # add brackets
+                    effect = "".join(["(", effect, ")"])
+                    # update the add effects of this action
+                    learned_actions[action].update_add({effect})
             else:
                 # regular fluent (not an action proposition) is entailed
                 if not neutral in e:
