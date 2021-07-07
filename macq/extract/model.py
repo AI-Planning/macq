@@ -97,3 +97,6 @@ class Model:
         fluents = set(map(Fluent.from_json, data["fluents"]))
         actions = set(map(LearnedAction.from_json, data["actions"]))
         return cls(fluents, actions)
+
+    def to_pddl(self):
+        pass
