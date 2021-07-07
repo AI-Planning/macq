@@ -23,25 +23,23 @@ class PartialObservation(Observation):
     class.
     """
 
-    def __init__(
-        self,
-        step: Step,
-        method: Union[Callable[[int], Step], Callable[[Set[Fluent]], Step]],
-        **method_kwargs
-    ):
+    def __init__(self, step: Step, method: str, **method_kwargs):
         """
         Creates an PartialObservation object, storing the step.
 
         Args:
             step (Step):
                 The step associated with this observation.
-            method (function reference):
-                The method to be used to tokenize the step.
+            method (str):
+                The method to be used to tokenize the step. "random" or "same".
             **method_kwargs (keyword arguments):
                 The arguments to be passed to the corresponding method function.
         """
         super().__init__(index=step.index)
-        self.step = method(self, step, **method_kwargs)
+        if method == "random":
+            self.step = self.random_subset(step, **method_kwargs)
+        elif method == "same":
+            self.step = self.same_subset(step, **method_kwargs)
 
     def __eq__(self, value):
         return isinstance(value, PartialObservation) and self.step == value.step
