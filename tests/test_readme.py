@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 from macq import generate, extract
 from macq.observation import IdentityObservation
 
