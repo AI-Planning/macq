@@ -1,13 +1,12 @@
 import macq.extract as extract
 from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
-from ..observation import Observation, PartialObservabilityToken
-from .model import Model
-from ..trace import Action, ObservationList, Fluent
 import bauhaus
 from bauhaus import Encoding
 from nnf import dsharp
-
+from ..observation import Observation, PartialObservabilityToken
+from .model import Model
+from ..trace import Action, ObservationList, Fluent
 
 e = Encoding()
 
@@ -405,7 +404,6 @@ class Slaf:
         for f in all_var:
             count += 1
             print(count)
-            # base_theory is the original CNF
             children.add(Or([~f]))
             check_theory = And(children)
             # if False, then f is entailed

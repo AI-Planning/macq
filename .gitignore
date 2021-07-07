@@ -6,12 +6,5 @@ dist/
 macq.egg-info/
 .pytest_cache/
 .coverage
-output.txt
-~$output.txt
-output1.txt
 .mypy_cache/
-htmlcov
-formula.txt
-solution.txt
-out.dot
-out.dot
+
