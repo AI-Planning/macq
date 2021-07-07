@@ -62,6 +62,6 @@ class Extract:
             # only allow one trace
             assert (
                 len(observations) == 1
-            ), "Only 1 trace is allowed with the current implementation."
+            ), "The SLAF extraction technique only takes one trace."
 
         return techniques[mode](observations)
