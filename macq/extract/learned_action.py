@@ -27,7 +27,7 @@ class LearnedAction:
         string = f"{self.name} {' '.join([o for o in self.obj_params])}"
         return string
 
-    def update_precond(self, fluents: Set[Fluent]):
+    def update_precond(self, fluents: Set[str]):
         """Adds preconditions to the action.
 
         Args:
