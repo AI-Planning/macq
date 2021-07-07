@@ -11,6 +11,7 @@ DEPENDENCIES = [
     "requests",
     "rich",
     "python-sat",
+    "nnf",
 ]
 
 DEV_DEPENDENCIES = [
