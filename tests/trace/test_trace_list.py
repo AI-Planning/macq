@@ -19,8 +19,6 @@ def test_trace_list():
 
     first = trace_list[0]
     trace_list.generator = generate_test_trace
-    trace_list.generate_more(5)
-    assert len(trace_list) == 10
     assert trace_list[0] is first
 
     action = trace_list[0].steps[0].action
@@ -28,9 +26,31 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
 
+    trace = generate_test_trace()
+    trace_list[0] = trace
+    assert trace_list[0] is trace
+    del trace_list[0]
+    assert trace_list[0] != trace
+    assert list(reversed(trace_list))[0] == trace_list[-1]
+    trace_list.clear()
+    assert len(trace_list) == 0
 
-if __name__ == "__main__":
-    display = input("Display [details, color]: ")
-    wrap = input("Wrap? [y, n]: ")
-    traces = generate_blocks_traces()
-    traces.print(display, wrap=(wrap.lower() == "y"))
+    traces = [generate_test_trace() for _ in range(5)]
+    trace_list.extend(traces)
+
+    trace_list.insert(0, trace)
+    assert trace in trace_list
+    assert trace_list.index(trace) == 0
+
+    trace_list.pop()
+    assert len(trace_list) == 5
+
+    trace_list.reverse()
+    assert trace_list[-1] == trace
+    trace_list.remove(trace)
+    assert trace not in trace_list
+
+    assert trace_list.traces == trace_list.copy()
+
+    trace_list.sort()
+    trace_list.print()

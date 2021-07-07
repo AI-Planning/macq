@@ -208,4 +208,4 @@ class Generator:
             objs.update(set(fluent.objects))
         for fluent in precond:
             objs.update(set(fluent.objects))
-        return Action(name, objs)
+        return Action(name, list(objs))

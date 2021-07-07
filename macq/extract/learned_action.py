@@ -1,7 +1,6 @@
 from __future__ import annotations
-from macq.trace.action import Action
 from typing import Set, List
-from ..trace import Fluent, PlanningObject
+from ..trace import Fluent
 
 
 class LearnedAction:
@@ -37,7 +36,7 @@ class LearnedAction:
         """
         self.precond.update(fluents)
 
-    def update_add(self, fluents: Set[Fluent]):
+    def update_add(self, fluents: Set[str]):
         """Adds add effects to the action.
 
         Args:
@@ -46,7 +45,7 @@ class LearnedAction:
         """
         self.add.update(fluents)
 
-    def update_delete(self, fluents: Set[Fluent]):
+    def update_delete(self, fluents: Set[str]):
         """Adds delete effects to the action.
 
         Args:
@@ -62,16 +61,25 @@ class LearnedAction:
         delete_diff = orig_action.delete.difference(self.delete)
         return precond_diff, add_diff, delete_diff
 
+    def _serialize(self):
+        return dict(
+            name=self.name,
+            obj_params=self.obj_params,
+            cost=self.cost,
+            precond=list(self.precond),
+            add=list(self.add),
+            delete=list(self.delete),
+        )
+
     @classmethod
-    def from_json(cls, data):
+    def _deserialize(cls, data):
         """Converts a json object to an Action."""
-        obj_params = list(map(str, data["obj_params"]))
-        precond = set(map(Fluent.from_json, data["precond"]))
-        add = set(map(Fluent.from_json, data["add"]))
-        delete = set(map(Fluent.from_json, data["delete"]))
+        precond = set(data["precond"])
+        add = set(data["add"])
+        delete = set(data["delete"])
         return cls(
             data["name"],
-            obj_params,
+            data["obj_params"],
             cost=data["cost"],
             precond=precond,
             add=add,

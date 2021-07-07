@@ -77,9 +77,6 @@ class TraceList:
     def copy(self):
         return self.traces.copy()
 
-    def count(self, value):
-        return self.traces.count(value)
-
     def extend(self, iterable):
         self.traces.extend(iterable)
 
@@ -98,7 +95,7 @@ class TraceList:
     def reverse(self):
         self.traces.reverse()
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
+    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
     def print(self, view="details", filter_func=lambda _: True, wrap=None):
@@ -229,24 +226,16 @@ class ObservationLists(TraceList):
                 windows.append(self[i][start:end])
         return windows
 
-    def get_transitions(self, action: Action):
+    def get_transitions(self, action: str):
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
         actions = set()
-        actions_str = set()
         for trace in self:
             for obs in trace:
                 action = obs.action
-                action_str = str(action)
                 if action:
                     actions.add(action)
-                    actions_str.add(action_str)
 
-        return dict(
-            map(
-                lambda a: (a[0], self.get_transitions(a[1])),
-                zip(actions, actions_str),
-            )
-        )
+        return {action: self.get_transitions(str(action)) for action in actions}
