@@ -111,7 +111,7 @@ class VanillaSampling(Generator):
         return traces
 
     @set_timer(num_seconds=MAX_TRACE_TIME)
-    def generate_single_trace(self):
+    def generate_single_trace(self, plan_len: int = None):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
@@ -119,6 +119,10 @@ class VanillaSampling(Generator):
         Returns:
             A Trace object (the valid trace generated).
         """
+
+        if not plan_len:
+            plan_len = self.plan_len
+
         trace = Trace()
 
         state = self.problem.init
@@ -126,9 +130,9 @@ class VanillaSampling(Generator):
         while not valid_trace:
             trace.clear()
             # add more steps while the trace has not yet reached the desired length
-            for j in range(self.plan_len):
+            for j in range(plan_len):
                 # if we have not yet reached the last step
-                if j < self.plan_len - 1:
+                if j < plan_len - 1:
                     # find the next applicable actions
                     app_act = list(self.instance.applicable(state))
                     # if the trace reaches a dead lock, disregard this trace and try again
@@ -149,5 +153,8 @@ class VanillaSampling(Generator):
                     valid_trace = True
         return trace
 
-
-# TODO: goal generation
+    def goal_sampling(self, num_states: int, steps_deep: int):
+        states = set()
+        while len(states) < num_states:
+            states.add(self.generate_single_trace(steps_deep)[-1].state)
+        return states
