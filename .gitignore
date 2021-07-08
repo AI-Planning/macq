@@ -9,3 +9,4 @@ macq.egg-info/
 .mypy_cache/
 htmlcov/
 test_model.json
+plan.ipc

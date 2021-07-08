@@ -23,6 +23,13 @@ if __name__ == "__main__":
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
+
+    # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5)
-    for s in states_gen:
-        print(s.details())
+
+    # test generating plans, both from raw pddl files and from a problem ID
+    # from raw pddl
+    vanilla.generate_plan()
+    # from problem ID
+    vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
+    vanilla.generate_plan()

@@ -1,5 +1,5 @@
 from ...trace import Action, State, PlanningObject, Fluent
-from .planning_domains_api import get_problem
+from .planning_domains_api import get_problem, get_plan
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import (
@@ -44,9 +44,14 @@ class Generator:
             problem_id (int):
                 The ID of the problem to access.
         """
+        # get attributes
+        self.pddl_dom = dom
+        self.pddl_prob = prob
+        self.problem_id = problem_id
+
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
-        if problem_id == None:
+        if not problem_id:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
         else:
@@ -209,3 +214,19 @@ class Generator:
         for fluent in precond:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
+
+    def generate_plan(self):
+        if self.problem_id:
+            plan = get_plan(self.problem_id)
+            with open("plan.ipc", "w") as f:
+                f.write("\n".join(act for act in plan))
+        else:
+            data = {
+                "domain": open(self.pddl_dom, "r").read(),
+                "problem": open(self.pddl_prob, "r").read(),
+            }
+            resp = requests.post(
+                "http://solver.planning.domains/solve", verify=False, json=data
+            ).json()
+            with open("plan.ipc", "w") as f:
+                f.write("\n".join([act["name"] for act in resp["result"]["plan"]]))
