@@ -77,9 +77,6 @@ class TraceList:
     def copy(self):
         return self.traces.copy()
 
-    def count(self, value):
-        return self.traces.count(value)
-
     def extend(self, iterable):
         self.traces.extend(iterable)
 
@@ -98,7 +95,7 @@ class TraceList:
     def reverse(self):
         self.traces.reverse()
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_cost()):
+    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
         self.traces.sort(reverse=reverse, key=key)
 
     def print(self, view="details", filter_func=lambda _: True, wrap=None):
@@ -168,6 +165,18 @@ class TraceList:
             usages.append(trace.get_usage(action))
         return usages
 
+    def get_fluents(self):
+        """Retrieves a set of all fluents used in child traces.
+
+        Returns:
+            A set of all fluents used in child traces.
+        """
+        fluents = set()
+        for trace in self.traces:
+            for step in trace:
+                fluents.update(step.state.fluents)
+        return fluents
+
     def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.
 
@@ -177,15 +186,16 @@ class TraceList:
                 for the steps.
         """
 
-        return ObservationList(self, Token, **kwargs)
+        return ObservationLists(self, Token, **kwargs)
 
 
-class ObservationList(TraceList):
+class ObservationLists(TraceList):
     traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
     get_usage = property()
     tokenize = property()
+    get_fluents = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
@@ -216,24 +226,16 @@ class ObservationList(TraceList):
                 windows.append(self[i][start:end])
         return windows
 
-    def get_transitions(self, action: Action):
+    def get_transitions(self, action: str):
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
         actions = set()
-        actions_str = set()
         for trace in self:
             for obs in trace:
                 action = obs.action
-                action_str = str(action)
                 if action:
                     actions.add(action)
-                    actions_str.add(action_str)
 
-        return dict(
-            map(
-                lambda a: (a[0], self.get_transitions(a[1])),
-                zip(actions, actions_str),
-            )
-        )
+        return {action: self.get_transitions(str(action)) for action in actions}

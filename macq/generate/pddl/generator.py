@@ -183,8 +183,6 @@ class Generator:
         Args:
             tarski_act (PlainOperator):
                 The supplied action, defined using the tarski PlainOperator class.
-            fully_observable (bool):
-                Determines if the generator wants to extract preconditions and effects as well.
 
         Returns:
             An action, defined using the macq Action class.
@@ -210,4 +208,4 @@ class Generator:
             objs.update(set(fluent.objects))
         for fluent in precond:
             objs.update(set(fluent.objects))
-        return Action(name, objs)
+        return Action(name, list(objs))

@@ -7,4 +7,5 @@ macq.egg-info/
 .pytest_cache/
 .coverage
 .mypy_cache/
-htmlcov
+htmlcov/
+test_model.json
