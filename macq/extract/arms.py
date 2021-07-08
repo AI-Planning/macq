@@ -1,5 +1,6 @@
 from typing import Set, List
-import macq.extract as extract
+from . import LearnedAction, Model
+from .exceptions import IncompatibleObservationToken
 from ..observation import PartialObservation
 from ..trace import ObservationLists, Fluent
 
@@ -14,7 +15,7 @@ class ARMS:
 
     def __new__(cls, obs_lists: ObservationLists):
         if obs_lists.type is not PartialObservation:
-            raise extract.IncompatibleObservationToken(obs_lists.type, ARMS)
+            raise IncompatibleObservationToken(obs_lists.type, ARMS)
 
         # assert that there is a goal
         ARMS._check_goal(obs_lists)
@@ -22,7 +23,7 @@ class ARMS:
         fluents = ARMS._get_fluents(obs_lists)
         # call algorithm to get actions
         actions = ARMS._get_actions(obs_lists)
-        return extract.Model(fluents, actions)
+        return Model(fluents, actions)
 
     @staticmethod
     def _check_goal(obs_lists: ObservationLists) -> bool:
@@ -45,5 +46,5 @@ class ARMS:
         return fluents
 
     @staticmethod
-    def _get_actions(obs_lists: ObservationLists) -> Set[str]:
+    def _get_actions(obs_lists: ObservationLists) -> Set[LearnedAction]:
         pass

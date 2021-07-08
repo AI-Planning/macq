@@ -1,5 +1,6 @@
 from .model import Model, LearnedAction
-from .extract import Extract, modes, IncompatibleObservationToken
+from .extract import Extract, modes
+from .exceptions import IncompatibleObservationToken
 
 __all__ = [
     "Model",

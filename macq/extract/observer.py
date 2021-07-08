@@ -2,7 +2,8 @@ from typing import List, Set
 from collections import defaultdict
 
 from attr import dataclass
-import macq.extract as extract
+from . import LearnedAction, Model
+from .exceptions import IncompatibleObservationToken
 from ..trace import ObservationLists
 from ..observation import IdentityObservation
 
@@ -39,10 +40,10 @@ class Observer:
                 Raised if the observations are not identity observation.
         """
         if obs_lists.type is not IdentityObservation:
-            raise extract.IncompatibleObservationToken(obs_lists.type, Observer)
+            raise IncompatibleObservationToken(obs_lists.type, Observer)
         fluents = Observer._get_fluents(obs_lists)
         actions = Observer._get_actions(obs_lists)
-        return extract.Model(fluents, actions)
+        return Model(fluents, actions)
 
     @staticmethod
     def _get_fluents(obs_lists: ObservationLists):
@@ -72,7 +73,7 @@ class Observer:
         action_transitions = obs_lists.get_all_transitions()
         for action, transitions in action_transitions.items():
             # Create a LearnedAction for the current action
-            model_action = extract.LearnedAction(
+            model_action = LearnedAction(
                 action.name, action.obj_params, cost=action.cost
             )
 
