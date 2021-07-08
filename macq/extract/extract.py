@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import List
 from enum import Enum, auto
+from ..trace import ObservationLists, Action, State
+from .model import Model
 from .observer import Observer
 from .slaf import Slaf
-from ..observation import Observation
-from ..trace import ObservationLists, Action, State
 
 
 @dataclass
@@ -38,7 +37,7 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes):
+    def __new__(cls, obs_lists: ObservationLists, mode: modes) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
