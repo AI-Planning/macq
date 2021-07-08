@@ -64,9 +64,7 @@ class Extract:
             modes.ARMS: ARMS,
         }
         if mode == modes.SLAF:
-            # only allow one trace
-            assert (
-                len(obs_lists) == 1
-            ), "The SLAF extraction technique only takes one trace."
+            if len(obs_lists) != 1:
+                raise Exception("The SLAF extraction technique only takes one trace.")
 
         return techniques[mode](obs_lists)

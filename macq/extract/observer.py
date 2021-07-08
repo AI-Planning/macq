@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from attr import dataclass
 import macq.extract as extract
-from .model import Model
 from ..trace import ObservationLists
 from ..observation import IdentityObservation
 
@@ -43,7 +42,7 @@ class Observer:
             raise extract.IncompatibleObservationToken(obs_lists.type, Observer)
         fluents = Observer._get_fluents(obs_lists)
         actions = Observer._get_actions(obs_lists)
-        return Model(fluents, actions)
+        return extract.Model(fluents, actions)
 
     @staticmethod
     def _get_fluents(obs_lists: ObservationLists):
