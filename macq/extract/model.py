@@ -20,7 +20,9 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[Union[str, Fluent]], actions: Set[LearnedAction]):
+    def __init__(
+        self, fluents: Union[Set[str], Set[Fluent]], actions: Set[LearnedAction]
+    ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
