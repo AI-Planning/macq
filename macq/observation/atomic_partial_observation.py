@@ -44,7 +44,7 @@ class AtomicPartialObservation(Observation):
         self.step = method(self, step, **method_kwargs)
 
     def __eq__(self, value):
-        return isinstance(value, PartialObservation) and self.step == value.step
+        return isinstance(value, AtomicPartialObservation) and self.step == value.step
 
     def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.
