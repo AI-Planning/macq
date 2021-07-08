@@ -1,7 +1,8 @@
+from typing import Set, Union
 from json import loads, dumps
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
-from typing import Set
+from ..trace import Fluent
 
 
 class Model:
@@ -19,7 +20,7 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[str], actions: Set[LearnedAction]):
+    def __init__(self, fluents: Set[Union[str, Fluent]], actions: Set[LearnedAction]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
