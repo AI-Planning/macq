@@ -238,4 +238,4 @@ class ObservationLists(TraceList):
                 if action:
                     actions.add(action)
 
-        return {action: self.get_transitions(str(action)) for action in actions}
+        return {action: self.get_transitions(action.details()) for action in actions}
