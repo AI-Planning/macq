@@ -34,7 +34,15 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
-        return self.fluents == other.fluents and self.actions == other.actions
+        self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
+            list(other.fluents)[0]
+        )
+        if self_fluent_type == other_fluent_type:
+            return self.fluents == other.fluents and self.actions == other.actions
+        if self_fluent_type == str:
+            return set(map(lambda f: str(f), other.fluents)) == self.fluents
+        if other_fluent_type == str:
+            return set(map(lambda f: str(f), self.fluents)) == other.fluents
 
     def details(self):
         # Set the indent width
