@@ -149,7 +149,7 @@ class Slaf:
         """Generates a `Model` given the set of entailed propositions.
 
         Args:
-            observations (ObservationList):
+            observations (ObservationLists):
                 The observations supplied for extraction.
             entailed (Set)
                 The set of propositions that were found to be entailed.
@@ -161,20 +161,18 @@ class Slaf:
         base_fluents = {}
         model_fluents = set()
         # iterate through each step
-        for o in observations.traces:
+        for o in observations:
             for token in o:
                 # if an action was taken on this step
-                if token.step.action:
+                if token.action:
                     # set up a base LearnedAction with the known information
-                    learned_actions[
-                        token.step.action.details()
-                    ] = extract.LearnedAction(
-                        token.step.action.name,
-                        [o.details() for o in token.step.action.obj_params],
-                        cost=token.step.action.cost,
+                    learned_actions[token.action.details()] = extract.LearnedAction(
+                        token.action.name,
+                        [o.details() for o in token.action.obj_params],
+                        cost=token.action.cost,
                     )
                 # store all the possible fluents for later reference
-                for f in token.step.state.fluents.keys():
+                for f in token.state.keys():
                     base_fluents[str(f)[1:-1]] = f
         # iterate through all entailed propositions
         for e in entailed:
@@ -286,9 +284,9 @@ class Slaf:
                 how steps are stored in macq."""
                 all_o = []
                 # retrieve list of observations from the current state. Missing fluents are not taken into account.
-                for f in token.step.state.fluents:
-                    if token.step.state[f] != None:
-                        if token.step.state[f]:
+                for f in token.state.fluents:
+                    if token.state[f] != None:
+                        if token.state[f]:
                             all_o.append(str(Var(str(f)[1:-1])))
                         else:
                             all_o.append(str(~Var(str(f)[1:-1])))
@@ -359,7 +357,7 @@ class Slaf:
                 Finally, validity constraints are added (section 5.2 of the SLAF paper) and the clauses are simplified
                 (step 2 of the AS-STRIPS-SLAF algorithm).
                 """
-                a = token.step.action
+                a = token.action
                 # ensures that the action is not None (happens on the last step of a trace)
                 if a:
                     # iterate through every fluent in the fluent-factored transition belief formula
