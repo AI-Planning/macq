@@ -1,7 +1,7 @@
 from typing import Set, List
 import macq.extract as extract
 from ..observation import PartialObservation
-from ..trace import ObservationLists
+from ..trace import ObservationLists, Fluent
 
 
 class ARMS:
@@ -35,7 +35,7 @@ class ARMS:
         return goal
 
     @staticmethod
-    def _get_fluents(obs_lists: ObservationLists) -> Set[str]:
+    def _get_fluents(obs_lists: ObservationLists) -> Set[Fluent]:
         """Retrieves the set of fluents in the observations."""
         fluents = set()
         obs_list: List[PartialObservation]

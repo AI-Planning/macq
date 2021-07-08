@@ -37,18 +37,9 @@ class IdentityObservation(Observation):
                 The step associated with this observation.
         """
         super().__init__(index=step.index, **kwargs)
-        self.state = self.IdentityState(
-            {str(fluent): value for fluent, value in step.state.items()}
-        )
-        self.action = (
-            None
-            if step.action is None
-            else self.IdentityAction(
-                step.action.name,
-                list(map(lambda o: o.details(), step.action.obj_params)),
-                step.action.cost,
-            )
-        )
+
+        self.state = step.state.clone()
+        self.action = None if step.action is None else step.action.clone()
 
     def __hash__(self):
         return hash(self.details())
@@ -58,15 +49,15 @@ class IdentityObservation(Observation):
             return False
         return self.state == other.state and self.action == other.action
 
+    def details(self):
+        return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
+
     def _matches(self, key: str, value: str):
         if key == "action":
             if self.action is None:
                 return value is None
-            return str(self.action) == value
+            return self.action.details() == value
         elif key == "fluent_holds":
-            return self.state[value]
+            return self.state.holds(value)
         else:
             raise InvalidQueryParameter(IdentityObservation, key)
-
-    def details(self):
-        return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
