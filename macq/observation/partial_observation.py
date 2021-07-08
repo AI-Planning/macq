@@ -71,10 +71,7 @@ class PartialObservation(Observation):
         hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
         # get new dict
         for f in fluents:
-            if f in hide_fluents_ls:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+            new_fluents[f] = None if f in hide_fluents_ls else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def same_subset(self, step: Step, hide_fluents: Set[Fluent]):
@@ -92,9 +89,7 @@ class PartialObservation(Observation):
         new_fluents = {}
         for f in step.state.fluents:
             if f in hide_fluents:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+                new_fluents[f] = None if f in hide_fluents else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def get_all_base_fluents(self):

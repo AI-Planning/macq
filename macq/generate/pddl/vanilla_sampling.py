@@ -14,6 +14,8 @@ from macq.trace import (
 from macq.generate.pddl import Generator
 from macq.utils.timer import set_timer
 from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+from macq.observation.partial_observation import PercentError
+import random
 
 MAX_TRACE_TIME = 30.0
 
@@ -153,8 +155,21 @@ class VanillaSampling(Generator):
                     valid_trace = True
         return trace
 
-    def goal_sampling(self, num_states: int, steps_deep: int):
-        states = set()
-        while len(states) < num_states:
-            states.add(self.generate_single_trace(steps_deep)[-1].state)
-        return states
+    def goal_sampling(
+        self, num_states: int, steps_deep: int, subset_size_perc: int = 1
+    ):
+        if subset_size_perc < 0 or subset_size_perc > 1:
+            raise PercentError()
+        goal_states = set()
+        while len(goal_states) < num_states:
+            # generate a trace of the specified length and retrieve the state of the last step
+            state = self.generate_single_trace(steps_deep)[-1].state
+            # randomly generate missing fluents according to the size of the partial state/subset specified
+            del_f = list(state.fluents.keys())
+            random.shuffle(del_f)
+            del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
+            # delete the missing fluents
+            for f in del_f:
+                del state.fluents[f]
+            goal_states.add(state)
+        return goal_states

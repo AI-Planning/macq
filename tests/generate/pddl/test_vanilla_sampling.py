@@ -25,7 +25,7 @@ if __name__ == "__main__":
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
     # test goal sampling
-    states_gen = vanilla.goal_sampling(3, 5)
+    states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
     # test generating plans, both from raw pddl files and from a problem ID
     # from raw pddl
