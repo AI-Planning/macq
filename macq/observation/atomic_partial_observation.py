@@ -103,3 +103,37 @@ class AtomicPartialObservation(Observation):
         for f in self.step.state.fluents:
             fluents.add(str(f)[1:-1])
         return fluents
+
+
+"""
+    used these to store action and state info with just strings
+
+    class IdentityState(dict):
+        def __hash__(self):
+            return hash(tuple(sorted(self.items())))
+
+    @dataclass
+    class IdentityAction:
+        name: str
+        obj_params: List[str]
+        cost: Optional[int]
+
+        def __str__(self):
+            return self.name + str(self.obj_params) + str(self.cost)
+
+        def __hash__(self):
+            return hash(str(self))
+
+
+    and here is the old matches function
+
+    def _matches(self, key: str, value: str):
+        if key == "action":
+            if self.action is None:
+                return value is None
+            return str(self.action) == value
+        elif key == "fluent_holds":
+            return self.state[value]
+        else:
+            raise InvalidQueryParameter(IdentityObservation, key)
+"""
