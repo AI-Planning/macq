@@ -219,7 +219,7 @@ class ObservationLists(TraceList):
         windows = []
         matches = self.fetch_observations(query)
         trace: Set[Observation]
-        for i, trace in enumerate(matches):  # i corresponds to trace index in self
+        for i, trace in enumerate(matches):  # note obs.index starts at 1 (index = i+1)
             for obs in trace:
                 start = obs.index - left - 1
                 end = obs.index + right
@@ -237,5 +237,9 @@ class ObservationLists(TraceList):
                 action = obs.action
                 if action:
                     actions.add(action)
-
-        return {action: self.get_transitions(action.details()) for action in actions}
+        try:
+            return {
+                action: self.get_transitions(action.details()) for action in actions
+            }
+        except AttributeError:
+            return {action: self.get_transitions(str(action)) for action in actions}
