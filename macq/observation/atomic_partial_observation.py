@@ -1,7 +1,8 @@
 from ..trace import Step, Fluent
 from ..trace import PartialState
-from . import Observation
-from typing import Callable, Union, Set
+from . import Observation, InvalidQueryParameter
+from typing import Callable, Union, Set, List, Optional
+from dataclasses import dataclass
 import random
 
 
@@ -16,18 +17,39 @@ class PercentError(Exception):
 
 
 class AtomicPartialObservation(Observation):
-    """The Partial Observability Token.
+    """The Atomic Partial Observability Token.
 
-    The partial observability token stores the step where some of the values of
+    The atomic partial observability token stores the step where some of the values of
     the fluents in the step's state are unknown. Inherits the base Observation
-    class.
+    class. Unlike the partial observability token, the atomic partial observability token
+    stores everything in strings.
     """
+
+    # used these to store action and state info with just strings
+    class IdentityState(dict):
+        def __hash__(self):
+            return hash(tuple(sorted(self.items())))
+
+    @dataclass
+    class IdentityAction:
+        name: str
+        obj_params: List[str]
+        cost: Optional[int]
+
+        def __str__(self):
+            objs_str = ""
+            for o in self.obj_params:
+                objs_str += o + " "
+            return " ".join([self.name, objs_str]) + "[" + str(self.cost) + "]"
+
+        def __hash__(self):
+            return hash(str(self))
 
     def __init__(
         self,
         step: Step,
         method: Union[Callable[[int], Step], Callable[[Set[Fluent]], Step]],
-        **method_kwargs
+        **method_kwargs,
     ):
         """
         Creates an PartialObservation object, storing the step.
@@ -41,10 +63,39 @@ class AtomicPartialObservation(Observation):
                 The arguments to be passed to the corresponding method function.
         """
         super().__init__(index=step.index)
-        self.step = method(self, step, **method_kwargs)
+        step = method(self, step, **method_kwargs)
+        self.state = self.IdentityState(
+            {str(fluent): value for fluent, value in step.state.items()}
+        )
+        self.action = (
+            None
+            if step.action is None
+            else self.IdentityAction(
+                step.action.name,
+                list(map(lambda o: o.details(), step.action.obj_params)),
+                step.action.cost,
+            )
+        )
 
-    def __eq__(self, value):
-        return isinstance(value, AtomicPartialObservation) and self.step == value.step
+    def __eq__(self, other):
+        if not isinstance(other, AtomicPartialObservation):
+            return False
+        return self.state == other.state and self.action == other.action
+
+    # and here is the old matches function
+
+    def _matches(self, key: str, value: str):
+        if key == "action":
+            if self.action is None:
+                return value is None
+            return str(self.action) == value
+        elif key == "fluent_holds":
+            return self.state[value]
+        else:
+            raise InvalidQueryParameter(AtomicPartialObservation, key)
+
+    def details(self):
+        return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
 
     def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.
@@ -96,44 +147,3 @@ class AtomicPartialObservation(Observation):
             else:
                 new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
-
-    def get_all_base_fluents(self):
-        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
-        fluents = set()
-        for f in self.step.state.fluents:
-            fluents.add(str(f)[1:-1])
-        return fluents
-
-
-"""
-    used these to store action and state info with just strings
-
-    class IdentityState(dict):
-        def __hash__(self):
-            return hash(tuple(sorted(self.items())))
-
-    @dataclass
-    class IdentityAction:
-        name: str
-        obj_params: List[str]
-        cost: Optional[int]
-
-        def __str__(self):
-            return self.name + str(self.obj_params) + str(self.cost)
-
-        def __hash__(self):
-            return hash(str(self))
-
-
-    and here is the old matches function
-
-    def _matches(self, key: str, value: str):
-        if key == "action":
-            if self.action is None:
-                return value is None
-            return str(self.action) == value
-        elif key == "fluent_holds":
-            return self.state[value]
-        else:
-            raise InvalidQueryParameter(IdentityObservation, key)
-"""

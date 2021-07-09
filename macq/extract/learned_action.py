@@ -31,7 +31,7 @@ class LearnedAction:
 
         return string
 
-    def update_precond(self, fluents: Set[Fluent]):
+    def update_precond(self, fluents: Set[str]):
         """Adds preconditions to the action.
 
         Args:
