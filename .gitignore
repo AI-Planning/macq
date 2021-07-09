@@ -9,3 +9,6 @@ macq.egg-info/
 .mypy_cache/
 htmlcov/
 test_model.json
+domain.pddl
+plan.ipc
+problem.pddl

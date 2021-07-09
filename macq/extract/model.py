@@ -1,7 +1,9 @@
+from typing import Set, Union
 from json import loads, dumps
+import tarski
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
-from typing import Set
+from ..trace import Fluent
 
 
 class Model:
@@ -19,7 +21,9 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[str], actions: Set[LearnedAction]):
+    def __init__(
+        self, fluents: Union[Set[str], Set[Fluent]], actions: Set[LearnedAction]
+    ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -34,14 +38,26 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
-        return self.fluents == other.fluents and self.actions == other.actions
+        self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
+            list(other.fluents)[0]
+        )
+        if self_fluent_type == other_fluent_type:
+            return self.fluents == other.fluents and self.actions == other.actions
+        if self_fluent_type == str:
+            return set(map(lambda f: str(f), other.fluents)) == self.fluents
+        if other_fluent_type == str:
+            return set(map(lambda f: str(f), self.fluents)) == other.fluents
 
     def details(self):
         # Set the indent width
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
+        try:
+            string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
+        except TypeError:
+            string += f"{indent}Fluents: {', '.join(map(str,self.fluents))}\n"
+
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
         string += f"{indent}Actions:\n"
@@ -85,6 +101,24 @@ class Model:
                 fp.write(serial)
         return serial
 
+    def to_pddl(self, domain_name: str, problem_name: str):
+        lang = tarski.language("model")
+        problem = tarski.fstrips.create_fstrips_problem(
+            domain_name=domain_name, problem_name=problem_name, language=lang
+        )
+        if self.fluents:
+            for f in self.fluents:
+                lang.predicate(f.replace(" ", "_"))
+        if self.actions:
+            for a in self.actions:
+                # fetch all the relevant 0-arity predicates to set up the ground actions
+                preconds = [lang.get(p.replace(" ", "_")) for p in a.precond]
+                adds = [lang.get(e.replace(" ", "_")) for e in a.add]
+                dels = [lang.get(e.replace(" ", "_")) for e in a.delete]
+                # TODO: convert to formulas and get add/delete effects
+                # TODO: set up action
+                # problem.action(name=a.name, parameters=None, precondition=a.precond, effects=a.effects)
+
     def _serialize(self):
         return dict(fluents=list(self.fluents), actions=list(self.actions))
 
@@ -105,6 +139,3 @@ class Model:
     def _from_json(cls, data: dict):
         actions = set(map(LearnedAction._deserialize, data["actions"]))
         return cls(set(data["fluents"]), actions)
-
-    def to_pddl(self):
-        pass
