@@ -161,6 +161,7 @@ class Slaf:
         # iterate through each step
         for o in observations:
             for token in o:
+                model_fluents.update([f for f in token.state])
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information
@@ -198,10 +199,6 @@ class Slaf:
                 else:
                     # update the add effects of this action with the appropriate fluent
                     learned_actions[action].update_add({effect})
-            else:
-                # regular fluent (not an action proposition) is entailed
-                if not neutral in e:
-                    model_fluents.add(e)
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
