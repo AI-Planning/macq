@@ -1,6 +1,6 @@
-from json import dumps, loads
+from json import loads, dumps
+from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
-from ..trace import Fluent
 from typing import Set
 
 
@@ -30,6 +30,11 @@ class Model:
         """
         self.fluents = fluents
         self.actions = actions
+
+    def __eq__(self, other):
+        if not isinstance(other, Model):
+            return False
+        return self.fluents == other.fluents and self.actions == other.actions
 
     def details(self):
         # Set the indent width
@@ -73,11 +78,15 @@ class Model:
         Returns:
             A string in json format representing the model.
         """
-        serial = dumps(self, indent=2, default=lambda o: o.__dict__)
+
+        serial = dumps(self._serialize(), cls=ComplexEncoder)
         if filepath is not None:
             with open(filepath, "w") as fp:
                 fp.write(serial)
         return serial
+
+    def _serialize(self):
+        return dict(fluents=list(self.fluents), actions=list(self.actions))
 
     @staticmethod
     def deserialize(string: str):
@@ -94,6 +103,5 @@ class Model:
 
     @classmethod
     def _from_json(cls, data: dict):
-        fluents = set(map(Fluent.from_json, data["fluents"]))
-        actions = set(map(LearnedAction.from_json, data["actions"]))
-        return cls(fluents, actions)
+        actions = set(map(LearnedAction._deserialize, data["actions"]))
+        return cls(set(data["fluents"]), actions)
