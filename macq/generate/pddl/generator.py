@@ -12,6 +12,8 @@ from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
 from tarski.model import Model
+from tarski.syntax import land
+from tarski.io import fstrips as iofs
 import requests
 
 
@@ -216,18 +218,11 @@ class Generator:
         return Action(name, list(objs))
 
     def change_goal(self):
-        from tarski.syntax import land
-
-        partial_goal = self.problem.goal  # .subformulas[3:]
-        # self.problem.goal = land(partial_goal)
-        from tarski.io import fstrips as iofs
-
+        partial_goal = self.problem.goal.subformulas[3:]
+        self.problem.goal = land(*partial_goal)
         writer = iofs.FstripsWriter(self.problem)
-        writer.write("domain.pddl", "problem.pddl")
-        self.pddl_dom = "domain.pddl"
+        writer.write_instance("problem.pddl", constant_objects=None)
         self.pddl_prob = "problem.pddl"
-        # print(writer.print_domain())
-        # print(writer.print_instance())
 
     def generate_plan(self):
         if self.problem_id:

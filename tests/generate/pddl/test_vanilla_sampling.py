@@ -27,13 +27,7 @@ if __name__ == "__main__":
     # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
-    # goal = vanilla.problem.goal
-    # print(goal)
-    # sub = goal.subformulas
-    # print(sub)
-    # print(type(sub))
-    # print(type(sub[0]))
-
+    # test change goal
     vanilla.change_goal()
 
     # test generating plans, both from raw pddl files and from a problem ID
