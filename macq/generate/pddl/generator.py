@@ -221,8 +221,10 @@ class Generator:
         partial_goal = self.problem.goal.subformulas[3:]
         self.problem.goal = land(*partial_goal)
         writer = iofs.FstripsWriter(self.problem)
-        writer.write_instance("problem.pddl", constant_objects=None)
+        # writer.write_instance("problem.pddl", constant_objects=None)
+        writer.write("domain.pddl", "problem.pddl")
         self.pddl_prob = "problem.pddl"
+        self.pddl_dom = "domain.pddl"
 
     def generate_plan(self):
         if self.problem_id:
