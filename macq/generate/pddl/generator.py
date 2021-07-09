@@ -215,6 +215,20 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
+    def change_goal(self):
+        from tarski.syntax import land
+
+        partial_goal = self.problem.goal  # .subformulas[3:]
+        # self.problem.goal = land(partial_goal)
+        from tarski.io import fstrips as iofs
+
+        writer = iofs.FstripsWriter(self.problem)
+        writer.write("domain.pddl", "problem.pddl")
+        self.pddl_dom = "domain.pddl"
+        self.pddl_prob = "problem.pddl"
+        # print(writer.print_domain())
+        # print(writer.print_instance())
+
     def generate_plan(self):
         if self.problem_id:
             plan = get_plan(self.problem_id)

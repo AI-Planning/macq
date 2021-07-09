@@ -10,3 +10,5 @@ macq.egg-info/
 htmlcov/
 test_model.json
 plan.ipc
+domain.pddl
+problem.pddl
