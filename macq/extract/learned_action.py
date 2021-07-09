@@ -4,7 +4,7 @@ from ..trace import Fluent
 
 
 class LearnedAction:
-    def __init__(self, name: str, obj_params: List[str], **kwargs):
+    def __init__(self, name: str, obj_params: List, **kwargs):
         self.name = name
         self.obj_params = obj_params
         if "cost" in kwargs:
@@ -24,7 +24,11 @@ class LearnedAction:
         return hash(self.details())
 
     def details(self):
-        string = f"{self.name} {' '.join([o for o in self.obj_params])}"
+        try:
+            string = f"{self.name} {' '.join([o for o in self.obj_params])}"
+        except TypeError:
+            string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+
         return string
 
     def update_precond(self, fluents: Set[str]):

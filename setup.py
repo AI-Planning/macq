@@ -10,6 +10,7 @@ DEPENDENCIES = [
     "tarski@git+git://github.com/aig-upf/tarski.git@ffc7e53#egg=tarski[arithmetic]",
     "requests",
     "rich",
+    "python-sat",
     "bauhaus",
 ]
 
