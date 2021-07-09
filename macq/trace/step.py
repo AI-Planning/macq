@@ -33,7 +33,3 @@ class Step:
         self.state = state
         self.action = action
         self.index = index
-
-    def details(self):
-        string = self.action.details() + "\n\n" + self.state.details()
-        return string
