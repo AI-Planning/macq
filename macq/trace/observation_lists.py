@@ -1,7 +1,5 @@
-from logging import warn
-from typing import List, Callable, Type, Set, Optional
-from rich.console import Console
-from . import Action, Trace
+from typing import List, Type, Set
+from . import Trace
 from ..observation import Observation
 import macq.trace as TraceAPI
 
