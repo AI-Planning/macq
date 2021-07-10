@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from macq.generate.pddl import VanillaSampling
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
+from macq.trace import Fluent, PlanningObject
 
 
 def test_invalid_vanilla_sampling():
@@ -28,7 +29,16 @@ if __name__ == "__main__":
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
     # test change goal
-    vanilla.change_goal()
+    vanilla.change_goal(
+        {
+            Fluent(
+                "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
+            ),
+            Fluent(
+                "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
+            ),
+        }
+    )
 
     # test generating plans, both from raw pddl files and from a problem ID
     # from raw pddl

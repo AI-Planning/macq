@@ -12,3 +12,5 @@ test_model.json
 plan.ipc
 domain.pddl
 problem.pddl
+blocks_domain.pddl
+blocks_problem.pddl

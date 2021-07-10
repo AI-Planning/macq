@@ -1,20 +1,33 @@
 from ...trace import Action, State, PlanningObject, Fluent
 from .planning_domains_api import get_problem, get_plan
+from typing import Set
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
-from tarski.syntax.ops import CompoundFormula
+from tarski.syntax.ops import CompoundFormula, Variable
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
 from tarski.model import Model
-from tarski.syntax import land
+from tarski.syntax import land, Sort
 from tarski.io import fstrips as iofs
 import requests
+
+
+class InvalidGoalFluent(Exception):
+    """
+    Raised when the user attempts to supply a new goal with invalid fluent(s).
+    """
+
+    def __init__(
+        self,
+        message="The fluents provided contain one or more fluents not available in this problem.",
+    ):
+        super().__init__(message)
 
 
 class Generator:
@@ -217,9 +230,31 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
-    def change_goal(self):
-        partial_goal = self.problem.goal.subformulas[3:]
-        self.problem.goal = land(*partial_goal)
+    def change_goal(self, goal_fluents: Set[Fluent]):
+        # check if the fluents to add are valid
+        available_f = self.__get_all_grounded_fluents()
+        for f in goal_fluents:
+            if f not in available_f:
+                raise InvalidGoalFluent()
+
+        # convert the given set of fluents into a formula
+        if not goal_fluents:
+            goal = land()
+        else:
+            goal = land(
+                *[
+                    Atom(
+                        self.lang.get(f.name),
+                        [
+                            Variable(o.name, Sort(o.obj_type, self.lang))
+                            for o in f.objects
+                        ],
+                    )
+                    for f in goal_fluents
+                ]
+            )
+        self.problem.goal = goal
+
         writer = iofs.FstripsWriter(self.problem)
         # writer.write_instance("problem.pddl", constant_objects=None)
         writer.write("domain.pddl", "problem.pddl")
