@@ -44,7 +44,7 @@ class ARMS:
     @staticmethod
     def _arms(obs_lists: ObservationLists, fluents: Set[Fluent]) -> Set[LearnedAction]:
         connected_actions = ARMS._step1(obs_lists)  # actions = connected_actions.keys()
-        # constraints = ARMS._step2(obs_lists, connected_actions, fluents)
+        constraints = ARMS._step2(obs_lists, connected_actions, fluents)
 
         return set()  # WARNING temp
 
@@ -71,3 +71,23 @@ class ARMS:
                     connected_actions[a1][a2] = intersection
 
         return connected_actions
+
+    @staticmethod
+    def _step2(
+        obs_lists: ObservationLists,
+        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        fluents: Set[Fluent],
+    ) -> List:
+        """Generate action constraints, information constraints, and plan constraints."""
+
+        @dataclass
+        class Relation:
+            name: str
+            types: set
+
+        relations: Set = set()
+
+        for action, connections in connected_actions.items():
+            pass
+
+        return []  # WARNING temp
