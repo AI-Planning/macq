@@ -1,6 +1,11 @@
 from typing import Set, Union
 from json import loads, dumps
 import tarski
+from tarski.syntax.formulas import CompoundFormula, Connective
+from tarski.fol import FirstOrderLanguage
+from tarski.io import fstrips as iofs
+from tarski.syntax import land
+import tarski.fstrips as fs
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
 from ..trace import Fluent
@@ -101,8 +106,18 @@ class Model:
                 fp.write(serial)
         return serial
 
+    def to_tarski_formula(self, attribute: Set[str], lang: FirstOrderLanguage):
+        if not attribute:
+            return None
+        elif len(attribute) == 1:
+            return lang.get(attribute.replace(" ", "_"))()
+        else:
+            return CompoundFormula(
+                Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
+            )
+
     def to_pddl(self, domain_name: str, problem_name: str):
-        lang = tarski.language("model")
+        lang = tarski.language(domain_name)
         problem = tarski.fstrips.create_fstrips_problem(
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
@@ -111,13 +126,25 @@ class Model:
                 lang.predicate(f.replace(" ", "_"))
         if self.actions:
             for a in self.actions:
-                # fetch all the relevant 0-arity predicates to set up the ground actions
-                preconds = [lang.get(p.replace(" ", "_")) for p in a.precond]
-                adds = [lang.get(e.replace(" ", "_")) for e in a.add]
-                dels = [lang.get(e.replace(" ", "_")) for e in a.delete]
-                # TODO: convert to formulas and get add/delete effects
-                # TODO: set up action
-                # problem.action(name=a.name, parameters=None, precondition=a.precond, effects=a.effects)
+                # fetch all the relevant 0-arity predicates and create formulas to set up the ground actions
+                preconds = self.to_tarski_formula(a.precond, lang)
+                adds = [lang.get(e.replace(" ", "_"))() for e in a.add]
+                dels = [lang.get(e.replace(" ", "_"))() for e in a.delete]
+                effects = [fs.AddEffect(e) for e in adds]
+                effects.extend([fs.DelEffect(e) for e in dels])
+                # set up action
+                problem.action(
+                    name=a.details(),
+                    parameters=[],
+                    precondition=preconds,
+                    effects=effects,
+                )
+        # create empty init and goal
+        problem.init = tarski.model.create(lang)
+        problem.goal = land()
+        # write to files
+        writer = iofs.FstripsWriter(problem)
+        writer.write(domain_name, problem_name)
 
     def _serialize(self):
         return dict(fluents=list(self.fluents), actions=list(self.actions))
