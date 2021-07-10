@@ -168,7 +168,7 @@ class Model:
         problem.goal = land()
         # write to files
         writer = iofs.FstripsWriter(problem)
-        writer.write(domain_name, problem_name)
+        writer.write(domain_name + ".pddl", problem_name + ".pddl")
 
     def _serialize(self):
         return dict(fluents=list(self.fluents), actions=list(self.actions))
