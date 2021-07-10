@@ -22,6 +22,22 @@ class ObservationLists(TraceAPI.TraceList):
             tokens = trace.tokenize(Token, **kwargs)
             self.append(tokens)
 
+    def get_actions(self):
+        actions = set()
+        for obs_list in self:
+            for obs in obs_list:
+                action = obs.action
+                if action:
+                    actions.add(action)
+        return actions
+
+    def get_fluents(self):
+        fluents = set()
+        for obs_list in self:
+            for obs in obs_list:
+                fluents.update(list(obs.state.keys()))
+        return fluents
+
     def fetch_observations(self, query: dict):
         matches: List[Set[Observation]] = list()
         trace: List[Observation]
@@ -48,12 +64,7 @@ class ObservationLists(TraceAPI.TraceList):
         return self.fetch_observation_windows(query, 0, 1)
 
     def get_all_transitions(self):
-        actions = set()
-        for trace in self:
-            for obs in trace:
-                action = obs.action
-                if action:
-                    actions.add(action)
+        actions = self.get_actions()
         try:
             return {
                 action: self.get_transitions(action.details()) for action in actions
