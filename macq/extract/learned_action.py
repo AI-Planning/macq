@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Set, List
-from ..trace import Fluent
+from typing import Set
 
 
 class LearnedAction:
-    def __init__(self, name: str, obj_params: List, **kwargs):
+    def __init__(self, name: str, obj_params: Set, **kwargs):
         self.name = name
         self.obj_params = obj_params
         if "cost" in kwargs:

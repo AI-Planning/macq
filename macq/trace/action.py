@@ -1,5 +1,5 @@
-from typing import List, Set
-from .fluent import Fluent, PlanningObject
+from typing import Set
+from .fluent import PlanningObject
 
 
 class Action:
@@ -12,8 +12,8 @@ class Action:
     Attributes:
         name (str):
             The name of the action.
-        obj_params (list):
-            The list of objects the action acts on.
+        obj_params (set):
+            The set of objects the action acts on.
         cost (int):
             The cost to perform the action.
     """
@@ -21,7 +21,7 @@ class Action:
     def __init__(
         self,
         name: str,
-        obj_params: List[PlanningObject],
+        obj_params: Set[PlanningObject],
         cost: int = 0,
     ):
         """Initializes an Action with the parameters provided.
