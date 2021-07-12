@@ -14,6 +14,7 @@ from ..trace import ObservationLists, Fluent
 class Relation:
     name: str
     types: set
+    var: str
 
     def __hash__(self):
         return hash(self.name + " ".join(self.types))
@@ -95,7 +96,11 @@ class ARMS:
         # Convert fluents to relations with instantiated objects replaced by the object type
         relations: Set[Relation] = set(
             map(
-                lambda f: Relation(f.name, set([obj.obj_type for obj in f.objects])),
+                lambda f: Relation(
+                    f.name,
+                    set([obj.obj_type for obj in f.objects]),
+                    f"{f.name} {' '.join([obj.obj_type for obj in f.objects])}",
+                ),
                 fluents,
             )
         )
@@ -111,7 +116,40 @@ class ARMS:
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
     ):
-        pass
+        def implication(a: str, b: str):
+            return Or([Var(a).negate(), Var(b)])
+
+        constraints = []
+        actions = set(connected_actions.keys())
+        for action in actions:
+            for relation in relations:
+                # A relation is relevant to an action if they share parameter types
+                if relation.types.issubset(action.obj_params):
+                    # A1
+                    # relation in action.add <=> relation not in action.precond
+                    constraints.append(
+                        implication(
+                            f"{relation.var} in add {action.details()}",
+                            f"{relation.var} notin pre {action.details()}",
+                        )
+                    )
+                    constraints.append(
+                        implication(
+                            f"{relation.var} in pre {action.details()}",
+                            f"{relation.var} notin add {action.details()}",
+                        )
+                    )
+
+                    # A2
+                    # relation in action.del => relation in action.precond
+                    constraints.append(
+                        implication(
+                            f"{relation.var} in del {action.details()}",
+                            f"{relation.var} in pre {action.details()}",
+                        )
+                    )
+
+        return constraints
 
     @staticmethod
     def _step2I(obs_lists: ObservationLists):
