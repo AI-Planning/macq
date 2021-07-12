@@ -41,7 +41,7 @@ class PartialObservation(Observation):
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
 
-        if percent_missing == 0:
+        if percent_missing == 0 and not hide:
             warning("Creating a PartialObseration with no missing information.")
 
         super().__init__(index=step.index)
