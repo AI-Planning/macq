@@ -52,6 +52,7 @@ class ObservationLists(TraceAPI.TraceList):
                 action = obs.action
                 if action:
                     actions.add(action)
+        # Actions in the observations can be either Action objects or strings depending on the type of observation
         try:
             return {
                 action: self.get_transitions(action.details()) for action in actions
