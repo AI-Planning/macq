@@ -10,6 +10,15 @@ from ..observation import PartialObservation as Observation
 from ..trace import ObservationLists, Fluent
 
 
+@dataclass
+class Relation:
+    name: str
+    types: set
+
+    def __hash__(self):
+        return hash(self.name + " ".join(self.types))
+
+
 class ARMS:
     """ARMS model extraction method.
 
@@ -57,7 +66,10 @@ class ARMS:
         actions: List[LearnedAction] = []
         for obs_action in obs_lists.get_actions():
             # We don't support objects with multiple types right now, so no
-            # multiple type clauses need to be generated
+            # multiple type clauses need to be generated.
+
+            # Create LearnedActions for each action, replacing instantiated
+            # objects with the object type.
             types = {obj.obj_type for obj in obs_action.obj_params}
             action = LearnedAction(obs_action.name, types)
             actions.append(action)
@@ -80,14 +92,21 @@ class ARMS:
     ) -> List:
         """Generate action constraints, information constraints, and plan constraints."""
 
-        @dataclass
-        class Relation:
-            name: str
-            types: set
+        # Convert fluents to relations with instantiated objects replaced by the object type
+        relations: Set[Relation] = set(
+            map(
+                lambda f: Relation(f.name, set([obj.obj_type for obj in f.objects])),
+                fluents,
+            )
+        )
 
-        relations: Set = set()
-
-        for action, connections in connected_actions.items():
-            pass
+        action_constraints = ARMS._step2A(connected_actions, fluents)
 
         return []  # WARNING temp
+
+    @staticmethod
+    def _step2A(
+        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        relations: Set[Relation],
+    ):
+        pass
