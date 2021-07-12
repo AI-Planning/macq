@@ -253,13 +253,55 @@ class Generator:
                     for f in goal_fluents
                 ]
             )
-        self.problem.goal = goal
+        # reset the goal
+        # self.problem.goal = goal
 
+        # rewrite PDDL files appropriately
         writer = iofs.FstripsWriter(self.problem)
         # writer.write_instance("problem.pddl", constant_objects=None)
         writer.write("domain.pddl", "problem.pddl")
         self.pddl_prob = "problem.pddl"
         self.pddl_dom = "domain.pddl"
+
+        # current lazy fix - modify domain file to add type "object"
+        with open(self.pddl_dom, "r") as f:
+            contents = f.readlines()
+
+        # get insertion indexes
+        req_idx = None
+        types_idx = None
+        pred_idx = None
+        for i in range(len(contents)):
+            if "(define" in contents[i]:
+                def_idx = i
+            if "(:requirements" in contents[i]:
+                req_idx = i
+            if "(:types" in contents[i]:
+                types_idx = i
+            if "(:predicates" in contents[i]:
+                pred_idx = i
+        # add the typing requirement
+        if req_idx:
+            contents[req_idx] = "".join(
+                [contents[req_idx].split(")")[0], " :typing", ")", "\n"]
+            )
+        # TODO: test (if necessary)
+        else:
+            contents.insert(def_idx + 1, "(:requirements :typing)\n")
+
+        # manually add the object type
+        # if the domain has types already, insert the object type
+        if types_idx:
+            index = types_idx + 1
+            contents.insert(index, "\t\tobject - object")
+        # otherwise, if there are no types, insert the types parameter with the object type
+        else:
+            index = pred_idx - 1
+            contents.insert(index, "  (:types\n\tobject - object)\n")
+        # rewrite the file
+        with open(self.pddl_dom, "w") as f:
+            contents = "".join(contents)
+            f.write(contents)
 
     def generate_plan(self):
         if self.problem_id:
