@@ -3,7 +3,7 @@ from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
 from bauhaus import Encoding
 from .model import Model
-from ..observation import PartialObservation
+from ..observation import AtomicPartialObservation
 from ..trace import ObservationLists
 
 e = Encoding()
@@ -46,7 +46,7 @@ class Slaf:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if o_list.type is not PartialObservation:
+        if o_list.type is not AtomicPartialObservation:
             raise extract.IncompatibleObservationToken(o_list.type, Slaf)
         entailed = Slaf.__as_strips_slaf(o_list)
         # return the Model
@@ -67,19 +67,17 @@ class Slaf:
         bottom = Slaf.bottom
         fluents = set()
         # get all the base fluents
-        fluents.update(
-            [f for obs in o_list for token in obs for f in token.get_all_base_fluents()]
-        )
+        fluents.update([f for obs in o_list for token in obs for f in token.state])
 
         # set up the initial fluent factored form for the problem
-        raw_fluent_factored = []
+        raw_fluent_factored = {}
         for f in fluents:
             phi = {}
             phi["fluent"] = Var(f)
             phi["pos expl"] = {top}
             phi["neg expl"] = {top}
             phi["neutral"] = {top}
-            raw_fluent_factored.append(phi)
+            raw_fluent_factored[f] = phi
         return raw_fluent_factored
 
     @staticmethod
@@ -166,21 +164,17 @@ class Slaf:
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information
-                    learned_actions[token.action.details()] = extract.LearnedAction(
+                    learned_actions[str(token.action)] = extract.LearnedAction(
                         token.action.name,
-                        [o.details() for o in token.action.obj_params],
+                        token.action.obj_params,
                         cost=token.action.cost,
                     )
-                # store all the possible fluents for later reference
-                for f in token.state.keys():
-                    base_fluents[str(f)[1:-1]] = f
         # iterate through all entailed propositions
         for e in entailed:
             precond = " is a precondition of "
             effect = " causes "
             neutral = " has no effect on "
             e = str(e)
-            obj_params = set()
             # if this proposition holds information about a precondition
             if precond in e:
                 # split to separate precondition and action, get rid of extra brackets
@@ -188,7 +182,7 @@ class Slaf:
                 precond = info_split[0]
                 action = info_split[1]
                 # update the precondition of this action with the appropriate fluent
-                learned_actions[action].update_precond({base_fluents[precond]})
+                learned_actions[action].update_precond({precond})
             # if this proposition holds information about an effect
             elif effect in e:
                 # split to separate effect and action, get rid of extra brackets
@@ -200,10 +194,10 @@ class Slaf:
                     # get rid of "~"
                     effect = effect[1:]
                     # update the delete effects of this action with the appropriate fluent
-                    learned_actions[action].update_delete({base_fluents[effect]})
+                    learned_actions[action].update_delete({effect})
                 else:
                     # update the add effects of this action with the appropriate fluent
-                    learned_actions[action].update_add({base_fluents[effect]})
+                    learned_actions[action].update_add({effect})
             else:
                 # regular fluent (not an action proposition) is entailed
                 if not neutral in e:
@@ -253,12 +247,12 @@ class Slaf:
         # get the fluent factored formula
         raw_fluent_factored = Slaf.__get_initial_fluent_factored(o_list)
         # get all base fluents to check entailments later
-        all_var.update([phi["fluent"] for phi in raw_fluent_factored])
+        all_var.update([phi["fluent"] for phi in raw_fluent_factored.values()])
         # iterate through every observation
         for obs in o_list:
             # more options if the user is in debug mode
             if debug:
-                all_f_details = [f["fluent"].name for f in raw_fluent_factored]
+                all_f_details = [f["fluent"].name for f in raw_fluent_factored.values()]
                 all_f_details.sort()
                 for f in all_f_details:
                     print(f)
@@ -284,12 +278,12 @@ class Slaf:
                 how steps are stored in macq."""
                 all_o = []
                 # retrieve list of observations from the current state. Missing fluents are not taken into account.
-                for f in token.state.fluents:
+                for f in token.state:
                     if token.state[f] != None:
                         if token.state[f]:
-                            all_o.append(str(Var(str(f)[1:-1])))
+                            all_o.append(str(Var(f)))
                         else:
-                            all_o.append(str(~Var(str(f)[1:-1])))
+                            all_o.append(str(~Var(f)))
 
                 """Iterate through every fluent in the fluent-factored transition belief formula and take
                 account of all of the current observations BEFORE the next action is taken.
@@ -299,7 +293,7 @@ class Slaf:
                 has to be true in order for the prior action to have no effect on the fluent currently being true.
                 The opposite happens if the fluent is observed to be false.
                 If the fluent is not observed to be either true or false (it is missing), then nothing happens."""
-                for phi in raw_fluent_factored:
+                for phi in raw_fluent_factored.values():
                     f = phi["fluent"]
                     if str(f) in all_o:
                         phi["neutral"].update([p.simplify() for p in phi["pos expl"]])
@@ -321,34 +315,32 @@ class Slaf:
                 if debug:
                     print("Update according to observations.")
                     for obj in to_obs:
-                        for phi in raw_fluent_factored:
-                            f_str = phi["fluent"].name
-                            if f_str == obj:
-                                print("\nfluent: " + f_str)
-                                print("\npossible expl. for fluent being true:")
-                                for f in phi["pos expl"]:
-                                    if f == top:
-                                        print("true")
-                                    elif f == bottom:
-                                        print("false")
-                                    else:
-                                        e.pprint(f)
-                                print("\npossible expl. for fluent being false:")
-                                for f in phi["neg expl"]:
-                                    if f == top:
-                                        print("true")
-                                    elif f == bottom:
-                                        print("false")
-                                    else:
-                                        e.pprint(f)
-                                print("\npossible expl. for fluent being unaffected:")
-                                for f in phi["neutral"]:
-                                    if f == top:
-                                        print("true")
-                                    elif f == bottom:
-                                        print("false")
-                                    else:
-                                        e.pprint(f)
+                        f_str = raw_fluent_factored[obj]["fluent"].name
+                        print("\nfluent: " + f_str)
+                        print("\npossible expl. for fluent being true:")
+                        for f in phi["pos expl"]:
+                            if f == top:
+                                print("true")
+                            elif f == bottom:
+                                print("false")
+                            else:
+                                e.pprint(f)
+                        print("\npossible expl. for fluent being false:")
+                        for f in phi["neg expl"]:
+                            if f == top:
+                                print("true")
+                            elif f == bottom:
+                                print("false")
+                            else:
+                                e.pprint(f)
+                        print("\npossible expl. for fluent being unaffected:")
+                        for f in phi["neutral"]:
+                            if f == top:
+                                print("true")
+                            elif f == bottom:
+                                print("false")
+                            else:
+                                e.pprint(f)
                     print()
 
                 """Steps 1. (a)-(c) of AS-STRIPS-SLAF.
@@ -361,15 +353,15 @@ class Slaf:
                 # ensures that the action is not None (happens on the last step of a trace)
                 if a:
                     # iterate through every fluent in the fluent-factored transition belief formula
-                    for phi in raw_fluent_factored:
+                    for phi in raw_fluent_factored.values():
                         f = phi["fluent"]
 
                         # create action propositions
-                        pos_precond = Var(f"({f} is a precondition of {a.details()})")
-                        neg_precond = Var(f"(~{f} is a precondition of {a.details()})")
-                        pos_effect = Var(f"({a.details()} causes {f})")
-                        neg_effect = Var(f"({a.details()} causes ~{f})")
-                        neutral = Var(f"({a.details()} has no effect on {f})")
+                        pos_precond = Var(f"({f} is a precondition of {a})")
+                        neg_precond = Var(f"(~{f} is a precondition of {a})")
+                        pos_effect = Var(f"({a} causes {f})")
+                        neg_effect = Var(f"({a} causes ~{f})")
+                        neutral = Var(f"({a} has no effect on {f})")
 
                         all_var.update(
                             [pos_precond, neg_precond, pos_effect, neg_effect, neutral]
@@ -415,48 +407,46 @@ class Slaf:
                 # display current updates
                 if debug:
                     if a:
-                        print("\nAction taken: " + a.details() + "\n")
+                        print("\nAction taken: " + str(a) + "\n")
                         for obj in to_obs:
-                            for phi in raw_fluent_factored:
-                                f_str = phi["fluent"].name
-                                if f_str == obj:
-                                    print("\nfluent: " + f_str)
-                                    print(
-                                        "\npossible expl. for fluent being true after "
-                                        + a.details()
-                                        + ":"
-                                    )
-                                    for f in phi["pos expl"]:
-                                        if f == top:
-                                            print("true")
-                                        elif f == bottom:
-                                            print("false")
-                                        else:
-                                            e.pprint(f)
-                                    print(
-                                        "\npossible expl. for fluent being false after "
-                                        + a.details()
-                                        + ":"
-                                    )
-                                    for f in phi["neg expl"]:
-                                        if f == top:
-                                            print("true")
-                                        elif f == bottom:
-                                            print("false")
-                                        else:
-                                            e.pprint(f)
-                                    print(
-                                        "\npossible expl. for fluent being unaffected after "
-                                        + a.details()
-                                        + ":"
-                                    )
-                                    for f in phi["neutral"]:
-                                        if f == top:
-                                            print("true")
-                                        elif f == bottom:
-                                            print("false")
-                                        else:
-                                            e.pprint(f)
+                            f_str = raw_fluent_factored[obj]["fluent"].name
+                            print("\nfluent: " + f_str)
+                            print(
+                                "\npossible expl. for fluent being true after "
+                                + str(a)
+                                + ":"
+                            )
+                            for f in phi["pos expl"]:
+                                if f == top:
+                                    print("true")
+                                elif f == bottom:
+                                    print("false")
+                                else:
+                                    e.pprint(f)
+                            print(
+                                "\npossible expl. for fluent being false after "
+                                + str(a)
+                                + ":"
+                            )
+                            for f in phi["neg expl"]:
+                                if f == top:
+                                    print("true")
+                                elif f == bottom:
+                                    print("false")
+                                else:
+                                    e.pprint(f)
+                            print(
+                                "\npossible expl. for fluent being unaffected after "
+                                + str(a)
+                                + ":"
+                            )
+                            for f in phi["neutral"]:
+                                if f == top:
+                                    print("true")
+                                elif f == bottom:
+                                    print("false")
+                                else:
+                                    e.pprint(f)
                     print()
                     user_input = input("Hit enter to continue.")
 
@@ -464,7 +454,7 @@ class Slaf:
         """Convert to formula once you have stepped through all observations and applied all transformations.
         NOTE: This would have to be refactored if the functionality for multiple traces was added, as each trace would
         have to store its own separate formulas, and the conjunction would be taken at the end."""
-        for phi in raw_fluent_factored:
+        for phi in raw_fluent_factored.values():
             f = phi["fluent"]
             # convert to formula for each fluent
             all_phi_pos = [p.simplify() for p in phi["pos expl"]]

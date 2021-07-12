@@ -1,5 +1,5 @@
 from logging import warn
-from typing import List, Callable, Type, Set, Optional
+from typing import List, Callable, Type, Optional
 from rich.console import Console
 from . import Action, Trace
 from ..observation import Observation
@@ -186,5 +186,4 @@ class TraceList:
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
         """
-
         return TraceAPI.ObservationLists(self, Token, **kwargs)
