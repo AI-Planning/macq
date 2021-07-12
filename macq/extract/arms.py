@@ -100,12 +100,26 @@ class ARMS:
             )
         )
 
-        action_constraints = ARMS._step2A(connected_actions, fluents)
+        action_constraints = ARMS._step2A(connected_actions, relations)
+        info_constraints = ARMS._step2I(obs_lists)
+        plan_constraints = ARMS._step2P(obs_lists, connected_actions, relations)
 
         return []  # WARNING temp
 
     @staticmethod
     def _step2A(
+        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        relations: Set[Relation],
+    ):
+        pass
+
+    @staticmethod
+    def _step2I(obs_lists: ObservationLists):
+        pass
+
+    @staticmethod
+    def _step2P(
+        obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
     ):
