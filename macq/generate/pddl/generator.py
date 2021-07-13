@@ -79,6 +79,7 @@ class Generator:
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
         self.grounded_fluents = self.__get_all_grounded_fluents()
+        self.op_dict = self.__get_op_dict()
 
     def extract_action_typing(self):
         """Retrieves a dictionary mapping all of this problem's actions and the types
@@ -120,6 +121,13 @@ class Generator:
                 name = name.value
             extracted_pred_types[name] = [type for type in info[1:]]
         return extracted_pred_types
+
+    def __get_op_dict(self):
+        op_dict = {}
+        for o in self.instance.operators:
+            # reformat so that operators can be referenced by the same string format the planner uses for actions
+            op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
+        return op_dict
 
     def __get_all_grounded_fluents(self):
         return [
@@ -259,13 +267,14 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, filename: str):
+    def generate_plan(self, write_to_file: bool = False, filename: str = None):
         # if the files are only being generated from the problem ID, retrieve the existing plan (note that
         # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
         if self.problem_id and not self.pddl_dom and not self.pddl_prob:
             plan = get_plan(self.problem_id)
-            with open(filename, "w") as f:
-                f.write("\n".join(act for act in plan))
+            if write_to_file:
+                with open(filename, "w") as f:
+                    f.write("\n".join(act for act in plan))
         else:
             data = {
                 "domain": open(self.pddl_dom, "r").read(),
@@ -274,5 +283,9 @@ class Generator:
             resp = requests.post(
                 "http://solver.planning.domains/solve", verify=False, json=data
             ).json()
-            with open(filename, "w") as f:
-                f.write("\n".join([act["name"] for act in resp["result"]["plan"]]))
+            plan = [act["name"] for act in resp["result"]["plan"]]
+            if write_to_file:
+                with open(filename, "w") as f:
+                    f.write("\n".join(act for act in plan))
+        # convert to tarski actions
+        return [self.op_dict[p] for p in plan]
