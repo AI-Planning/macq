@@ -110,13 +110,6 @@ class PartialObservation(Observation):
                 new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
-    def get_all_base_fluents(self):
-        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
-        fluents = set()
-        for f in self.state.fluents:
-            fluents.add(str(f)[1:-1])
-        return fluents
-
     def _matches(self, key: str, value: str):
         if key == "action":
             if self.action is None:
