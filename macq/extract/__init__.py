@@ -7,5 +7,5 @@ __all__ = [
     "modes",
     "IncompatibleObservationToken",
     "LearnedAction",
-    "Slaf",
+    "SLAF",
 ]

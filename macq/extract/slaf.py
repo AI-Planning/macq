@@ -6,11 +6,15 @@ from .model import Model
 from ..observation import AtomicPartialObservation
 from ..trace import ObservationLists
 
+# only used for pretty printing in debug mode
 e = Encoding()
 
 
 class Slaf:
     """Slaf model extraction method.
+
+    Amir, E, and A Chang. 2008. “Learning Partially Observable Deterministic Action Models.”
+    Journal of Artificial Intelligence Research 33: 349–402. https://doi.org/10.1613/jair.2575.
 
     Extracts a Model from state observations using the SLAF technique. The AS-STRIPS-SLAF
     algorithm is used to extract the effects of actions given a trace/observation. The algorithm
@@ -27,27 +31,28 @@ class Slaf:
     are stored carefully so as to easily conjoin them into one CNF formula later). Once all steps in the trace
     have been iterated through, the CNF formula is created, and all possible fluents/action propositions are
     iterated through to determine which ones are entailed. This information is then used to extract the Model.
-
-    A debugging mode is supplied to help the user track any fluents they desire and to examine this fluent-
-    factored form and its evolution through the steps.
     """
 
     # only need one true and one false
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservationLists):
+    def __new__(cls, o_list: ObservationLists, debug_mode: bool = False):
         """Creates a new Model object.
 
         Args:
             o_list (ObservationList):
                 The state observations to extract the model from.
+            debug_mode (bool):
+                An optional mode that helps the user track any fluents they desire by examining the evolution
+                of their fluent-factored formulas through the steps.
         Raises:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
         if o_list.type is not AtomicPartialObservation:
             raise extract.IncompatibleObservationToken(o_list.type, Slaf)
+        Slaf.debug_mode = debug_mode
         entailed = Slaf.__as_strips_slaf(o_list)
         # return the Model
         return Slaf.__sort_results(o_list, entailed)
@@ -218,28 +223,12 @@ class Slaf:
             The set of fluents that are entailed.
         """
 
-        # ask the user if they want to run in debug mode
-        inputOK = False
-        while not inputOK:
-            inputOK = True
-            user_input = input(
-                "Do you want to run the algorithm in debug mode, where you can track the progression of individual fluents? (y/n)"
-            )
-            if user_input == "y":
-                debug = True
-                print("\nRunning in debug mode...\n")
-            elif user_input == "n":
-                debug = False
-                print("\nRunning normally...\n")
-            else:
-                inputOK = False
-                print("Invalid input.")
-
         global e
         top = Slaf.top
         bottom = Slaf.bottom
         validity_constraints = set()
         all_var = set()
+        debug_mode = Slaf.debug_mode
 
         # get the fluent factored formula
         raw_fluent_factored = Slaf.__get_initial_fluent_factored(o_list)
@@ -248,7 +237,7 @@ class Slaf:
         # iterate through every observation
         for obs in o_list:
             # more options if the user is in debug mode
-            if debug:
+            if debug_mode:
                 all_f_details = [f["fluent"].name for f in raw_fluent_factored.values()]
                 all_f_details.sort()
                 for f in all_f_details:
@@ -268,48 +257,48 @@ class Slaf:
 
             # iterate through all tokens (action/observation pairs) in this observation/trace
             for token in obs:
-                if debug:
+                if debug_mode:
                     print("-" * 100)
-                """Steps 1. (d)-(e) of AS-STRIPS-SLAF.
-                Steps (d)-(e) are done first as the action-observation order of SLAF is opposite to that of
-                how steps are stored in macq."""
+
                 all_o = []
                 # retrieve list of observations from the current state. Missing fluents are not taken into account.
                 for f in token.state:
                     if token.state[f] != None:
-                        if token.state[f]:
-                            all_o.append(str(Var(f)))
-                        else:
-                            all_o.append(str(~Var(f)))
+                        all_o.append(str(Var(f, token.state[f])))
 
-                """Iterate through every fluent in the fluent-factored transition belief formula and take
-                account of all of the current observations BEFORE the next action is taken.
-                If this fluent is observed, update the formula accordingly.
-                Since we know the fluent is now true, the prior possible explanation for the fluent being true
-                (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations
-                has to be true in order for the prior action to have no effect on the fluent currently being true.
-                The opposite happens if the fluent is observed to be false.
-                If the fluent is not observed to be either true or false (it is missing), then nothing happens."""
+                """Steps 1 (d)-(e) of AS-STRIPS-SLAF are taken care of in this loop.
+                Note that steps (d)-(e) are done first as the action-observation order of SLAF is opposite to that of
+                how steps are stored in macq.
+
+                Iterate through every fluent in the fluent-factored transition belief formula and take
+                account of all of the current observations BEFORE the next action is taken."""
                 for phi in raw_fluent_factored.values():
                     f = phi["fluent"]
                     if str(f) in all_o:
+                        """Step 1 (d): If this fluent is observed, update the formula accordingly.
+                        Since we know the fluent is now true, the prior possible explanation for the fluent being true
+                        (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations
+                        has to be true in order for the prior action to have no effect on the fluent currently being true."""
                         phi["neutral"].update([p.simplify() for p in phi["pos expl"]])
                         phi["pos expl"] = {top}
                         phi["neg expl"] = {bottom}
-                        if debug and str(f) in to_obs:
+                        if debug_mode and str(f) in to_obs:
                             print(
                                 f"{f} was observed to be true after the previous action was taken."
                             )
+
                     elif str(~f) in all_o:
+                        """For Step 1 (e), the opposite happens if the fluent is observed to be false."""
                         phi["neutral"].update([n.simplify() for n in phi["neg expl"]])
                         phi["pos expl"] = {bottom}
                         phi["neg expl"] = {top}
-                        if debug and str(f) in to_obs:
+                        if debug_mode and str(f) in to_obs:
                             print(
                                 f"{f} was observed to be false after the previous action was taken."
                             )
+                    """If the fluent is not observed to be either true or false (it is missing), then nothing happens."""
                 # display current updates
-                if debug:
+                if debug_mode:
                     print("Update according to observations.")
                     for obj in to_obs:
                         f_str = raw_fluent_factored[obj]["fluent"].name
@@ -340,12 +329,7 @@ class Slaf:
                                 e.pprint(f)
                     print()
 
-                """Steps 1. (a)-(c) of AS-STRIPS-SLAF.
-                Creates new action propositions if necessary, as well as updates every fluent in the
-                fluent-factored transition belief formula with information from the last step.
-                Finally, validity constraints are added (section 5.2 of the SLAF paper) and the clauses are simplified
-                (step 2 of the AS-STRIPS-SLAF algorithm).
-                """
+                """Steps 1. (a)-(c) and Step 2 of AS-STRIPS-SLAF are taken care of in this loop."""
                 a = token.action
                 # ensures that the action is not None (happens on the last step of a trace)
                 if a:
@@ -371,6 +355,10 @@ class Slaf:
                         phi["pos expl"] = set()
                         phi["neg expl"] = set()
 
+                        """Steps 1 (a-c) - Update every fluent in the fluent-factored transition belief formula 
+                        with information from the last step."""
+
+                        """Step 1 (a) - update the neutral effects."""
                         phi["neutral"].update(
                             [(~pos_precond | p).simplify() for p in all_phi_pos]
                         )
@@ -378,31 +366,33 @@ class Slaf:
                             [(~neg_precond | n).simplify() for n in all_phi_neg]
                         )
 
+                        """Step 1 (b) - update the positive effects."""
                         phi["pos expl"].add(pos_effect | neutral)
                         phi["pos expl"].add(pos_effect | ~neg_precond)
                         phi["pos expl"].update(
                             [(pos_effect | p).simplify() for p in all_phi_pos]
                         )
 
+                        """Step 1 (c) - update the negative effects."""
                         phi["neg expl"].add(neg_effect | neutral)
                         phi["neg expl"].add(neg_effect | ~pos_precond)
                         phi["neg expl"].update(
                             [(neg_effect | n).simplify() for n in all_phi_neg]
                         )
 
-                        # add validity constraints
+                        """add validity constraints (from section 5.2 of the SLAF paper)."""
                         validity_constraints.add(pos_effect | neg_effect | neutral)
                         validity_constraints.add((~pos_effect | ~neg_effect))
                         validity_constraints.add(~neg_effect | ~neutral)
                         validity_constraints.add(~pos_effect | ~neutral)
                         validity_constraints.add(~pos_precond | ~neg_precond)
 
-                        # simplify each clause
+                        """Step 2 - eliminate subsumed clauses in phi."""
                         Slaf.__remove_subsumed_clauses(phi["pos expl"])
                         Slaf.__remove_subsumed_clauses(phi["neg expl"])
                         Slaf.__remove_subsumed_clauses(phi["neutral"])
                 # display current updates
-                if debug:
+                if debug_mode:
                     if a:
                         print("\nAction taken: " + str(a) + "\n")
                         for obj in to_obs:
@@ -445,7 +435,7 @@ class Slaf:
                                 else:
                                     e.pprint(f)
                     print()
-                    user_input = input("Hit enter to continue.")
+                    user_input = input("Hit enter to continue.\n")
 
         formula = set()
         """Convert to formula once you have stepped through all observations and applied all transformations.
