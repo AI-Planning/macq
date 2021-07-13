@@ -10,8 +10,8 @@ from ..trace import ObservationLists
 e = Encoding()
 
 
-class Slaf:
-    """Slaf model extraction method.
+class SLAF:
+    """SLAF model extraction method.
 
     Amir, E, and A Chang. 2008. “Learning Partially Observable Deterministic Action Models.”
     Journal of Artificial Intelligence Research 33: 349–402. https://doi.org/10.1613/jair.2575.
@@ -51,11 +51,11 @@ class Slaf:
                 Raised if the observations are not identity observation.
         """
         if o_list.type is not AtomicPartialObservation:
-            raise extract.IncompatibleObservationToken(o_list.type, Slaf)
-        Slaf.debug_mode = debug_mode
-        entailed = Slaf.__as_strips_slaf(o_list)
+            raise extract.IncompatibleObservationToken(o_list.type, SLAF)
+        SLAF.debug_mode = debug_mode
+        entailed = SLAF.__as_strips_slaf(o_list)
         # return the Model
-        return Slaf.__sort_results(o_list, entailed)
+        return SLAF.__sort_results(o_list, entailed)
 
     @staticmethod
     def __get_initial_fluent_factored(o_list: ObservationLists):
@@ -68,8 +68,8 @@ class Slaf:
         Returns:
             A list of dictionaries that holds the fluent-factored formula.
         """
-        top = Slaf.top
-        bottom = Slaf.bottom
+        top = SLAF.top
+        bottom = SLAF.bottom
         fluents = set()
         # get all the base fluents
         fluents.update([f for obs in o_list for token in obs for f in token.state])
@@ -224,14 +224,14 @@ class Slaf:
         """
 
         global e
-        top = Slaf.top
-        bottom = Slaf.bottom
+        top = SLAF.top
+        bottom = SLAF.bottom
         validity_constraints = set()
         all_var = set()
-        debug_mode = Slaf.debug_mode
+        debug_mode = SLAF.debug_mode
 
         # get the fluent factored formula
-        raw_fluent_factored = Slaf.__get_initial_fluent_factored(o_list)
+        raw_fluent_factored = SLAF.__get_initial_fluent_factored(o_list)
         # get all base fluents to check entailments later
         all_var.update([phi["fluent"] for phi in raw_fluent_factored.values()])
         # iterate through every observation
@@ -388,9 +388,9 @@ class Slaf:
                         validity_constraints.add(~pos_precond | ~neg_precond)
 
                         """Step 2 - eliminate subsumed clauses in phi."""
-                        Slaf.__remove_subsumed_clauses(phi["pos expl"])
-                        Slaf.__remove_subsumed_clauses(phi["neg expl"])
-                        Slaf.__remove_subsumed_clauses(phi["neutral"])
+                        SLAF.__remove_subsumed_clauses(phi["pos expl"])
+                        SLAF.__remove_subsumed_clauses(phi["neg expl"])
+                        SLAF.__remove_subsumed_clauses(phi["neutral"])
                 # display current updates
                 if debug_mode:
                     if a:
@@ -454,7 +454,7 @@ class Slaf:
         formula.update(validity_constraints)
         # create CNF formula
         full_formula = And({*[f.simplify() for f in formula]}).simplify()
-        cnf_formula = And(map(Slaf.__or_refactor, full_formula.children))
+        cnf_formula = And(map(SLAF.__or_refactor, full_formula.children))
 
         entailed = set()
         children = set(cnf_formula.children)

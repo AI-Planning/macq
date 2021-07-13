@@ -3,7 +3,7 @@ from enum import Enum, auto
 from ..trace import ObservationLists, Action, State
 from .model import Model
 from .observer import Observer
-from .slaf import Slaf
+from .SLAF import SLAF
 
 
 @dataclass
@@ -57,7 +57,7 @@ class Extract:
         """
         techniques = {
             modes.OBSERVER: Observer,
-            modes.SLAF: Slaf,
+            modes.SLAF: SLAF,
         }
         if mode == modes.SLAF:
             # only allow one trace
