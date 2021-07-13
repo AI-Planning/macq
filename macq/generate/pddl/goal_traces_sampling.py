@@ -1,5 +1,7 @@
-from ..trace_utils import set_num_traces, set_plan_length
+from tarski.search.operations import progress
 from .generator import Generator
+from ...utils.trace_utils import set_num_traces, set_plan_length
+from ...trace import Trace, Step
 
 
 class GoalTracesSampling(Generator):
@@ -35,12 +37,26 @@ class GoalTracesSampling(Generator):
         self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
 
+    # TODO: separate into a generate_single_trace function and add the timer
     def generate_traces(self):
+        trace = Trace()
         for _ in range(self.num_traces):
-            plan = self.generate_plan("plan.ipc")
+            plan = self.generate_plan()
             # if the plan length is longer than the generated plan, just use the plan length
             if self.plan_len > len(plan):
                 self.plan_len = len(plan)
+            state = self.problem.init
+            for i in range(self.plan_len):
+                macq_state = self.tarski_state_to_macq(state)
+                if i < self.plan_len - 1:
+                    act = plan[i]
+                    macq_action = self.tarski_act_to_macq(act)
+                    step = Step(macq_state, macq_action, i + 1)
+                else:
+                    step = Step(macq_state, None, i + 1)
+                trace.append(step)
+                state = progress(state, act)
+            print()
 
             # do the following for however many TRACES they specified
             # generate the plan (list of TARSKI actions)
