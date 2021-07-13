@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
-    # test change goal
+    # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {
             Fluent(
@@ -37,12 +37,25 @@ if __name__ == "__main__":
             Fluent(
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
-        }
+        },
+        "new_blocks_dom.pddl",
+        "new_blocks_prob.pddl",
     )
+    vanilla.generate_plan("blocks_plan.ipc")
 
-    # test generating plans, both from raw pddl files and from a problem ID
-    # from raw pddl
-    vanilla.generate_plan()
-    # from problem ID
+    # test changing the goal and generating a plan from files extracted from a problem ID
     vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
-    vanilla.generate_plan()
+    vanilla.change_goal(
+        {
+            Fluent(
+                "at",
+                [
+                    PlanningObject("stone", "stone-11"),
+                    PlanningObject("location", "pos-10-07"),
+                ],
+            )
+        },
+        "new_game_dom.pddl",
+        "new_game_prob.pddl",
+    )
+    vanilla.generate_plan("game_plan.ipc")

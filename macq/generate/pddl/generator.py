@@ -47,7 +47,7 @@ class Generator:
             A list of all grounded (macq) fluents extracted from the given problem definition.
     """
 
-    def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
+    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
 
@@ -230,7 +230,7 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
-    def change_goal(self, goal_fluents: Set[Fluent]):
+    def change_goal(self, goal_fluents: Set[Fluent], new_domain: str, new_prob: str):
         # check if the fluents to add are valid
         available_f = self.__get_all_grounded_fluents()
         for f in goal_fluents:
@@ -255,14 +255,16 @@ class Generator:
 
         # rewrite PDDL files appropriately
         writer = iofs.FstripsWriter(self.problem)
-        writer.write("domain.pddl", "problem.pddl")
-        self.pddl_prob = "problem.pddl"
-        self.pddl_dom = "domain.pddl"
+        writer.write(new_domain, new_prob)
+        self.pddl_dom = new_domain
+        self.pddl_prob = new_prob
 
-    def generate_plan(self):
-        if self.problem_id:
+    def generate_plan(self, filename: str):
+        # if the files are only being generated from the problem ID (note if any changes were made,
+        # the local files would be used as the PDDL files would have to be rewritten)
+        if self.problem_id and not self.pddl_dom and not self.pddl_prob:
             plan = get_plan(self.problem_id)
-            with open("plan.ipc", "w") as f:
+            with open(filename, "w") as f:
                 f.write("\n".join(act for act in plan))
         else:
             data = {
@@ -272,5 +274,5 @@ class Generator:
             resp = requests.post(
                 "http://solver.planning.domains/solve", verify=False, json=data
             ).json()
-            with open("plan.ipc", "w") as f:
+            with open(filename, "w") as f:
                 f.write("\n".join([act["name"] for act in resp["result"]["plan"]]))
