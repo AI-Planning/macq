@@ -260,8 +260,8 @@ class Generator:
         self.pddl_prob = new_prob
 
     def generate_plan(self, filename: str):
-        # if the files are only being generated from the problem ID (note if any changes were made,
-        # the local files would be used as the PDDL files would have to be rewritten)
+        # if the files are only being generated from the problem ID, retrieve the existing plan (note that
+        # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
         if self.problem_id and not self.pddl_dom and not self.pddl_prob:
             plan = get_plan(self.problem_id)
             with open(filename, "w") as f:

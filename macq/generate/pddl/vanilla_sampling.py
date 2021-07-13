@@ -13,7 +13,7 @@ from macq.trace import (
 )
 from macq.generate.pddl import Generator
 from macq.utils.timer import set_timer
-from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+from macq.generate.trace_utils import set_num_traces, set_plan_length
 from macq.observation.partial_observation import PercentError
 import random
 
@@ -39,8 +39,8 @@ class VanillaSampling(Generator):
         self,
         plan_len: int,
         num_traces: int,
-        dom: str = "",
-        prob: str = "",
+        dom: str = None,
+        prob: str = None,
         problem_id: int = None,
         seed: int = None,
     ):
@@ -61,43 +61,11 @@ class VanillaSampling(Generator):
                 The ID of the problem to access.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
-        self.set_plan_length(plan_len)
-        self.set_num_traces(num_traces)
+        self.plan_len = set_plan_length(plan_len)
+        self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
         if seed:
             random.seed(seed)
-
-    def set_num_traces(self, num_traces: int):
-        """Checks the validity of the number of traces and then sets it.
-
-        Args:
-            num_traces (int):
-                The number of traces to set.
-
-        Raises:
-            InvalidNumberOfTraces:
-                The exception raised when the number of traces provided is invalid.
-        """
-        if num_traces > 0:
-            self.num_traces = num_traces
-        else:
-            raise InvalidNumberOfTraces()
-
-    def set_plan_length(self, plan_len: int):
-        """Checks the validity of the plan length and then sets it.
-
-        Args:
-            plan_len (int):
-                The plan length to set.
-
-        Raises:
-            InvalidPlanLength:
-                The exception raised when the plan length provided is invalid.
-        """
-        if plan_len > 0:
-            self.plan_len = plan_len
-        else:
-            raise InvalidPlanLength()
 
     def generate_traces(self):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
