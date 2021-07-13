@@ -10,5 +10,5 @@ if __name__ == "__main__":
         percent_missing=0.10,
     )
     traces.print()
-    model = Extract(observations, modes.SLAF, debug_mode=False)
+    model = Extract(observations, modes.SLAF, debug_mode=True)
     print(model.details())
