@@ -1,4 +1,4 @@
-from .trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+from ..generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
 
 
 def set_num_traces(num_traces: int):

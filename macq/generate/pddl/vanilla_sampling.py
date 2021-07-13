@@ -13,7 +13,7 @@ from macq.trace import (
 )
 from macq.generate.pddl import Generator
 from macq.utils.timer import set_timer
-from macq.generate.trace_utils import set_num_traces, set_plan_length
+from macq.utils.trace_utils import set_num_traces, set_plan_length
 from macq.observation.partial_observation import PercentError
 import random
 
