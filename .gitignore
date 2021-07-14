@@ -12,3 +12,11 @@ test_model.json
 domain.pddl
 plan.ipc
 problem.pddl
+blocks_plan.ipc
+game_plan.ipc
+new_blocks_dom.pddl
+new_blocks_prob.pddl
+new_game_dom.pddl
+new_game_prob.pddl
+__init__.pyc
+test_model.json
