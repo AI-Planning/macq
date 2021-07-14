@@ -165,6 +165,18 @@ class TraceList:
             usages.append(trace.get_usage(action))
         return usages
 
+    def get_fluents(self):
+        """Retrieves a set of all fluents used in child traces.
+
+        Returns:
+            A set of all fluents used in child traces.
+        """
+        fluents = set()
+        for trace in self.traces:
+            for step in trace:
+                fluents.update(step.state.fluents)
+        return fluents
+
     def tokenize(self, Token: Type[Observation], **kwargs):
         """Tokenizes the steps in this trace.
 
@@ -174,15 +186,16 @@ class TraceList:
                 for the steps.
         """
 
-        return ObservationList(self, Token, **kwargs)
+        return ObservationLists(self, Token, **kwargs)
 
 
-class ObservationList(TraceList):
+class ObservationLists(TraceList):
     traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
     get_usage = property()
     tokenize = property()
+    get_fluents = property()
 
     def __init__(self, traces: TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
@@ -206,7 +219,7 @@ class ObservationList(TraceList):
         windows = []
         matches = self.fetch_observations(query)
         trace: Set[Observation]
-        for i, trace in enumerate(matches):  # i corresponds to trace index in self
+        for i, trace in enumerate(matches):  # note obs.index starts at 1 (index = i+1)
             for obs in trace:
                 start = obs.index - left - 1
                 end = obs.index + right
@@ -224,5 +237,9 @@ class ObservationList(TraceList):
                 action = obs.action
                 if action:
                     actions.add(action)
-
-        return {action: self.get_transitions(str(action)) for action in actions}
+        try:
+            return {
+                action: self.get_transitions(action.details()) for action in actions
+            }
+        except AttributeError:
+            return {action: self.get_transitions(str(action)) for action in actions}

@@ -1,7 +1,8 @@
+from typing import Set, Union
 from json import loads, dumps
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
-from typing import Set
+from ..trace import Fluent
 
 
 class Model:
@@ -19,7 +20,9 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[str], actions: Set[LearnedAction]):
+    def __init__(
+        self, fluents: Union[Set[str], Set[Fluent]], actions: Set[LearnedAction]
+    ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -34,14 +37,26 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
-        return self.fluents == other.fluents and self.actions == other.actions
+        self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
+            list(other.fluents)[0]
+        )
+        if self_fluent_type == other_fluent_type:
+            return self.fluents == other.fluents and self.actions == other.actions
+        if self_fluent_type == str:
+            return set(map(lambda f: str(f), other.fluents)) == self.fluents
+        if other_fluent_type == str:
+            return set(map(lambda f: str(f), self.fluents)) == other.fluents
 
     def details(self):
         # Set the indent width
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
+        try:
+            string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
+        except TypeError:
+            string += f"{indent}Fluents: {', '.join(map(str,self.fluents))}\n"
+
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
         string += f"{indent}Actions:\n"

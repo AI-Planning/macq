@@ -4,7 +4,7 @@ from .state import State
 from .partial_state import PartialState
 from .step import Step
 from .trace import Trace, SAS
-from .trace_list import TraceList, ObservationList
+from .trace_list import TraceList, ObservationLists
 
 
 __all__ = [
@@ -17,5 +17,5 @@ __all__ = [
     "Trace",
     "SAS",
     "TraceList",
-    "ObservationList",
+    "ObservationLists",
 ]
