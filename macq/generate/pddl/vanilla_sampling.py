@@ -41,6 +41,7 @@ class VanillaSampling(Generator):
         prob: str = "",
         problem_id: int = None,
         seed: int = None,
+        forbid = 'thisshouldntexist'
     ):
         """
         Initializes a vanilla state trace sampler using the plan length, number of traces,
@@ -61,7 +62,7 @@ class VanillaSampling(Generator):
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.set_plan_length(plan_len)
         self.set_num_traces(num_traces)
-        self.traces = self.generate_traces()
+        self.traces = self.generate_traces(forbid)
         if seed:
             random.seed(seed)
 
@@ -97,7 +98,7 @@ class VanillaSampling(Generator):
         else:
             raise InvalidPlanLength()
 
-    def generate_traces(self):
+    def generate_traces(self, forbid):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
         of the given length.
 
@@ -107,11 +108,11 @@ class VanillaSampling(Generator):
         traces = TraceList()
         traces.generator = self.generate_single_trace
         for _ in range(self.num_traces):
-            traces.append(self.generate_single_trace())
+            traces.append(self.generate_single_trace(forbid))
         return traces
 
     @set_timer(num_seconds=MAX_TRACE_TIME)
-    def generate_single_trace(self):
+    def generate_single_trace(self, forbid):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
@@ -134,6 +135,8 @@ class VanillaSampling(Generator):
                     # if the trace reaches a dead lock, disregard this trace and try again
                     if not app_act:
                         break
+                    # Filter out all actions that have 'saw' in the name
+                    app_act = list(filter(lambda a: forbid not in a.name, app_act))
                     # pick a random applicable action and apply it
                     act = random.choice(app_act)
                     # create the trace and progress the state
