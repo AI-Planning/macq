@@ -11,7 +11,6 @@ DEPENDENCIES = [
     "requests",
     "rich",
     "python-sat",
-    "nnf",
     "bauhaus",
 ]
 

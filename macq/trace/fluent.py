@@ -34,6 +34,9 @@ class PlanningObject:
     def details(self):
         return " ".join([self.obj_type, self.name])
 
+    def _serialize(self):
+        return self.details()
+
 
 class Fluent:
     """Fluents of a planning domain.
@@ -77,3 +80,6 @@ class Fluent:
         if not isinstance(other, Fluent):
             raise TypeError(f"Cannot compare Fluent to {other.__name__}.")
         return str(self) < str(other)
+
+    def _serialize(self):
+        return str(self)

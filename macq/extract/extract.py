@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import List
 from enum import Enum, auto
-from .observer import Observer
-from .slaf import Slaf
-from ..observation import Observation
 from ..trace import ObservationLists, Action, State
+from .model import Model
+from .observer import Observer
+from .SLAF import SLAF
 
 
 @dataclass
@@ -38,7 +37,7 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes):
+    def __new__(cls, obs_lists: ObservationLists, mode: modes, **kwargs) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
@@ -49,6 +48,8 @@ class Extract:
                 The state observations to extract the model from.
             mode (Enum):
                 The extraction technique to use.
+            **kwargs: (keyword arguments)
+                Any extra arguments to supply to the extraction technique.
 
         Returns:
             A Model object. The model's characteristics are determined by the
@@ -56,7 +57,7 @@ class Extract:
         """
         techniques = {
             modes.OBSERVER: Observer,
-            modes.SLAF: Slaf,
+            modes.SLAF: SLAF,
         }
         if mode == modes.SLAF:
             # only allow one trace
@@ -64,4 +65,4 @@ class Extract:
                 len(obs_lists) == 1
             ), "The SLAF extraction technique only takes one trace."
 
-        return techniques[mode](obs_lists)
+        return techniques[mode](obs_lists, **kwargs)

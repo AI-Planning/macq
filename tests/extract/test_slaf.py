@@ -8,8 +8,8 @@ from tests.utils.generators import generate_blocks_traces
 def test_slaf():
     traces = generate_blocks_traces(plan_len=2, num_traces=1)
     observations = traces.tokenize(
-        PartialObservation,
-        method=PartialObservation.random_subset,
+        AtomicPartialObservation,
+        method=AtomicPartialObservation.random_subset,
         percent_missing=0.10,
     )
     model = Extract(observations, modes.SLAF)
@@ -20,12 +20,12 @@ def test_slaf():
 
 
 if __name__ == "__main__":
-    traces = generate_blocks_traces(plan_len=2, num_traces=1)
+    traces = generate_blocks_traces(plan_len=3, num_traces=1)
     observations = traces.tokenize(
-        PartialObservation,
-        method=PartialObservation.random_subset,
+        AtomicPartialObservation,
+        method=AtomicPartialObservation.random_subset,
         percent_missing=0.10,
     )
-    model = Extract(observations, modes.SLAF)
-    print()
+    traces.print()
+    model = Extract(observations, modes.SLAF, debug_mode=True)
     print(model.details())
