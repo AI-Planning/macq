@@ -1,7 +1,7 @@
 from ..trace import Step, Fluent
 from ..trace import PartialState
-from . import Observation
-from typing import Callable, Union, Set
+from . import Observation, InvalidQueryParameter
+from typing import Set
 import random
 
 
@@ -15,7 +15,7 @@ class PercentError(Exception):
         super().__init__(message)
 
 
-class PartialObservabilityToken(Observation):
+class PartialObservation(Observation):
     """The Partial Observability Token.
 
     The partial observability token stores the step where some of the values of
@@ -23,30 +23,33 @@ class PartialObservabilityToken(Observation):
     class.
     """
 
-    def __init__(
-        self,
-        step: Step,
-        method: Union[Callable[[int], Step], Callable[[Set[Fluent]], Step]],
-        **method_kwargs
-    ):
+    def __init__(self, step: Step, method: str, **method_kwargs):
         """
-        Creates an PartialObservabilityToken object, storing the step.
+        Creates an PartialObservation object, storing the step.
 
         Args:
             step (Step):
                 The step associated with this observation.
-            method (function reference):
-                The method to be used to tokenize the step.
+            method (str):
+                The method to be used to tokenize the step. "random" or "same".
             **method_kwargs (keyword arguments):
                 The arguments to be passed to the corresponding method function.
         """
         super().__init__(index=step.index)
-        self.step = method(self, step, **method_kwargs)
+        if method == "random":
+            step = self.random_subset(step, **method_kwargs)
+        elif method == "same":
+            step = self.same_subset(step, **method_kwargs)
 
-    def __eq__(self, value):
-        if isinstance(value, PartialObservabilityToken):
-            return self.step == value.step
-        return False
+        self.state = step.state.clone()
+        self.action = None if step.action is None else step.action.clone()
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, PartialObservation)
+            and self.state == other.state
+            and self.action == other.action
+        )
 
     def random_subset(self, step: Step, percent_missing: float):
         """Method of tokenization that picks a random subset of fluents to hide.
@@ -68,12 +71,15 @@ class PartialObservabilityToken(Observation):
 
         new_fluents = {}
         # shuffle keys and take an appropriate subset of them
-        fluents_list = list(fluents)
-        random.shuffle(fluents_list)
-        fluents_list = fluents_list[:num_new_fluents]
+        hide_fluents_ls = list(fluents)
+        random.shuffle(hide_fluents_ls)
+        hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
         # get new dict
-        for f in fluents_list:
-            new_fluents[f] = step.state[f]
+        for f in fluents:
+            if f in hide_fluents_ls:
+                new_fluents[f] = None
+            else:
+                new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def same_subset(self, step: Step, hide_fluents: Set[Fluent]):
@@ -89,7 +95,26 @@ class PartialObservabilityToken(Observation):
             The new step created using a PartialState that takes the hidden fluents into account.
         """
         new_fluents = {}
-        for fluent in step.state.fluents:
-            if fluent not in hide_fluents:
-                new_fluents[fluent] = step.state[fluent]
+        for f in step.state.fluents:
+            if f in hide_fluents:
+                new_fluents[f] = None
+            else:
+                new_fluents[f] = step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
+
+    def get_all_base_fluents(self):
+        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
+        fluents = set()
+        for f in self.state.fluents:
+            fluents.add(str(f)[1:-1])
+        return fluents
+
+    def _matches(self, key: str, value: str):
+        if key == "action":
+            if self.action is None:
+                return value is None
+            return self.action.details() == value
+        elif key == "fluent_holds":
+            return self.state.holds(value)
+        else:
+            raise InvalidQueryParameter(PartialObservation, key)

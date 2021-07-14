@@ -5,11 +5,11 @@ from macq.extract import Extract, modes
 from macq.generate.pddl import VanillaSampling
 
 
-def generate_blocks_traces():
+def generate_blocks_traces(plan_len: int = 100, num_traces: int = 1):
     base = Path(__file__).parent.parent
     dom = (base / "pddl_testing_files/blocks_domain.pddl").resolve()
     prob = (base / "pddl_testing_files/blocks_problem.pddl").resolve()
-    traces = VanillaSampling(dom=dom, prob=prob, plan_len=100, num_traces=1).traces  # type: ignore
+    traces = VanillaSampling(dom=dom, prob=prob, plan_len=plan_len, num_traces=num_traces).traces  # type: ignore
 
     return traces
 
