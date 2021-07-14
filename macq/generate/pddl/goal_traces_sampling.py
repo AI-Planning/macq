@@ -1,10 +1,13 @@
 from tarski.search.operations import progress
+from tarski.fstrips.action import PlainOperator
+from typing import List
 from .generator import Generator
 from ...utils.trace_utils import set_num_traces, set_plan_length
-from ...utils.timer import set_timer
+from ...utils.timer import set_timer, TraceSearchTimeOut, PlanSearchTimeOut
 from ...trace import Trace, TraceList, Step
 
 MAX_TRACE_TIME = 30.0
+MAX_PLAN_TIME = 30.0
 
 
 class GoalTracesSampling(Generator):
@@ -38,19 +41,42 @@ class GoalTracesSampling(Generator):
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.plan_len = set_plan_length(plan_len) if plan_len else None
         self.num_traces = set_num_traces(num_traces)
+        self.plans = []
         self.traces = self.generate_traces()
 
     def generate_traces(self):
         traces = TraceList()
-        for _ in range(self.num_traces):
-            traces.append(self.generate_single_trace())
+        while len(traces) < self.num_traces:
+            try:
+                traces.append(self.generate_single_trace(self.generate_unique_plan()))
+            except PlanSearchTimeOut as e:
+                print(e)
+                print(
+                    "The first "
+                    + str(len(traces))
+                    + " traces were unique. The rest will be duplicates."
+                )
+                while len(traces) < self.num_traces:
+                    traces.append(self.generate_single_trace(self.generate_plan()))
         return traces
 
-    # @set_timer(num_seconds=MAX_TRACE_TIME)
-    def generate_single_trace(self):
+    @set_timer(num_seconds=MAX_PLAN_TIME, exception=PlanSearchTimeOut)
+    # function to generate a single plan - also timed.
+    def generate_unique_plan(self):
+        duplicate = True
+        while duplicate:
+            plan = self.generate_plan()
+            plan_str = [str(a) for a in plan]
+            duplicate = plan_str in self.plans
+            if not duplicate:
+                self.plans.append(plan)
+                return plan
+
+    @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
+    def generate_single_trace(self, plan: List[PlainOperator]):
         trace = Trace()
         trace.clear()
-        plan = self.generate_plan()
+
         # if the plan length is longer than the generated plan, or no plan length was set,
         # just use the full length of the generated plan.
         # note that we add 1 because the states represented take place BEFORE their subsequent action,

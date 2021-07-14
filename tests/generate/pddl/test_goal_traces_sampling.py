@@ -25,6 +25,7 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # test sampling using the original goal from a local PDDL problem file
+
     goal_traces_sampler = GoalTracesSampling(dom=dom, prob=prob)
     goal_traces = goal_traces_sampler.traces
     goal_traces.print(wrap="y")

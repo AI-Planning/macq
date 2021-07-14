@@ -28,6 +28,8 @@ if __name__ == "__main__":
     # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
+    vanilla.MAX_TRACE_TIME = 10
+
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {

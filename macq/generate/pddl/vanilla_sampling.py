@@ -12,7 +12,7 @@ from macq.trace import (
     TraceList,
 )
 from macq.generate.pddl import Generator
-from macq.utils.timer import set_timer
+from macq.utils.timer import set_timer, TraceSearchTimeOut
 from macq.utils.trace_utils import set_num_traces, set_plan_length
 from macq.observation.partial_observation import PercentError
 import random
@@ -80,7 +80,7 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TRACE_TIME)
+    @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
     def generate_single_trace(self, plan_len: int = None):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
