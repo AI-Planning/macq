@@ -70,3 +70,15 @@ if __name__ == "__main__":
     goal_traces = goal_traces_sampler.generate_traces()
     goal_traces.print(wrap="y")
     print()
+
+    # test getting multiple traces and altering length
+    goal_traces_sampler = GoalTracesSampling(problem_id=123, plan_len=3, num_traces=4)
+    goal_traces = goal_traces_sampler.traces
+    goal_traces.print(wrap="y")
+    print()
+
+    # test getting multiple traces and altering length
+    goal_traces_sampler = GoalTracesSampling(problem_id=123, plan_len=1000)
+    goal_traces = goal_traces_sampler.traces
+    goal_traces.print(wrap="y")
+    print()
