@@ -288,4 +288,4 @@ class Generator:
                 with open(filename, "w") as f:
                     f.write("\n".join(act for act in plan))
         # convert to tarski actions
-        return [self.op_dict[p] for p in plan]
+        return [self.op_dict[p] for p in plan if p in self.op_dict.keys()]

@@ -1,7 +1,10 @@
 from tarski.search.operations import progress
 from .generator import Generator
 from ...utils.trace_utils import set_num_traces, set_plan_length
-from ...trace import Trace, Step
+from ...utils.timer import set_timer
+from ...trace import Trace, TraceList, Step
+
+MAX_TRACE_TIME = 30.0
 
 
 class GoalTracesSampling(Generator):
@@ -33,33 +36,37 @@ class GoalTracesSampling(Generator):
                 The ID of the problem to access.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
-        self.plan_len = set_plan_length(plan_len)
+        self.plan_len = set_plan_length(plan_len) if plan_len else None
         self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
 
-    # TODO: separate into a generate_single_trace function and add the timer
     def generate_traces(self):
-        trace = Trace()
+        traces = TraceList()
         for _ in range(self.num_traces):
-            plan = self.generate_plan()
-            # if the plan length is longer than the generated plan, just use the plan length
-            if self.plan_len > len(plan):
-                self.plan_len = len(plan)
-            state = self.problem.init
-            for i in range(self.plan_len):
-                macq_state = self.tarski_state_to_macq(state)
-                if i < self.plan_len - 1:
-                    act = plan[i]
-                    macq_action = self.tarski_act_to_macq(act)
-                    step = Step(macq_state, macq_action, i + 1)
-                else:
-                    step = Step(macq_state, None, i + 1)
-                trace.append(step)
-                state = progress(state, act)
-            print()
+            traces.append(self.generate_single_trace())
+        return traces
 
-            # do the following for however many TRACES they specified
-            # generate the plan (list of TARSKI actions)
-            # truncate the plan list if necessary, according to the plan length provided.
-            # start at the initial state
-            # iterate through all actions and progress the state, generating a macq Trace as you go along.
+    # @set_timer(num_seconds=MAX_TRACE_TIME)
+    def generate_single_trace(self):
+        trace = Trace()
+        trace.clear()
+        plan = self.generate_plan()
+        # if the plan length is longer than the generated plan, or no plan length was set,
+        # just use the full length of the generated plan.
+        # note that we add 1 because the states represented take place BEFORE their subsequent action,
+        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps.
+        if not self.plan_len or self.plan_len > len(plan):
+            self.plan_len = len(plan) + 1
+        # get initial state
+        state = self.problem.init
+        for i in range(self.plan_len):
+            macq_state = self.tarski_state_to_macq(state)
+
+            # if we have not yet reached the end of the trace
+            if len(trace) < self.plan_len - 1:
+                act = plan[i]
+                trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
+                state = progress(state, act)
+            else:
+                trace.append(Step(macq_state, None, i + 1))
+        return trace

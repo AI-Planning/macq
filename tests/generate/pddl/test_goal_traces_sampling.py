@@ -23,39 +23,50 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-    goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
-    # # test goal sampling
-    # states_gen = goal_traces.goal_sampling(3, 5, 0.2)
+    # test sampling using the original goal from a local PDDL problem file
+    goal_traces_sampler = GoalTracesSampling(dom=dom, prob=prob)
+    goal_traces = goal_traces_sampler.traces
+    goal_traces.print(wrap="y")
+    print()
 
-    # # test changing the goal and generating a plan from two local files
-    # goal_traces.change_goal(
-    #     {
-    #         Fluent(
-    #             "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
-    #         ),
-    #         Fluent(
-    #             "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
-    #         ),
-    #     },
-    #     "new_blocks_dom.pddl",
-    #     "new_blocks_prob.pddl",
-    # )
-    # plan = goal_traces.generate_plan(True, "blocks_plan.ipc")
+    # test changing the goal and regenerating traces from local PDDL files
+    goal_traces_sampler.change_goal(
+        {
+            Fluent(
+                "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
+            ),
+            Fluent(
+                "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
+            ),
+        },
+        "new_blocks_dom.pddl",
+        "new_blocks_prob.pddl",
+    )
+    goal_traces = goal_traces_sampler.generate_traces()
+    goal_traces.print(wrap="y")
+    print()
 
-    # # test changing the goal and generating a plan from files extracted from a problem ID
-    # goal_traces = GoalTracesSampling(problem_id=123, plan_len=7, num_traces=10)
-    # goal_traces.change_goal(
-    #     {
-    #         Fluent(
-    #             "at",
-    #             [
-    #                 PlanningObject("stone", "stone-11"),
-    #                 PlanningObject("location", "pos-10-07"),
-    #             ],
-    #         )
-    #     },
-    #     "new_game_dom.pddl",
-    #     "new_game_prob.pddl",
-    # )
-    # plan = goal_traces.generate_plan(True, "game_plan.ipc")
+    # test sampling using the goal from the problem file extracted from a problem ID
+    goal_traces_sampler = GoalTracesSampling(problem_id=123)
+    goal_traces = goal_traces_sampler.traces
+    goal_traces.print(wrap="y")
+    print()
+
+    # test changing the goal and regenerating traces from files extracted from a problem ID
+    goal_traces_sampler.change_goal(
+        {
+            Fluent(
+                "at",
+                [
+                    PlanningObject("stone", "stone-11"),
+                    PlanningObject("location", "pos-10-07"),
+                ],
+            )
+        },
+        "new_game_dom.pddl",
+        "new_game_prob.pddl",
+    )
+    goal_traces = goal_traces_sampler.generate_traces()
+    goal_traces.print(wrap="y")
+    print()

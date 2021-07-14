@@ -102,7 +102,7 @@ class VanillaSampling(Generator):
             # add more steps while the trace has not yet reached the desired length
             for j in range(plan_len):
                 # if we have not yet reached the last step
-                if j < plan_len - 1:
+                if len(trace) < plan_len - 1:
                     # find the next applicable actions
                     app_act = list(self.instance.applicable(state))
                     # if the trace reaches a dead lock, disregard this trace and try again
