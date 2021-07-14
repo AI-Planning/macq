@@ -7,13 +7,13 @@ from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
-from tarski.syntax.ops import CompoundFormula, Variable
+from tarski.syntax.ops import CompoundFormula
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
 from tarski.model import Model
-from tarski.syntax import land, Sort
+from tarski.syntax import land
 from tarski.io import fstrips as iofs
 import requests
 
