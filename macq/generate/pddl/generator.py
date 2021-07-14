@@ -37,6 +37,12 @@ class Generator:
     language, and grounded instance for the child generators to easily access and use.
 
     Attributes:
+        pddl_dom (str):
+            The name of the local PDDL domain filename (relevant if the problem ID is not provided.)
+        pddl_prob (str):
+            The name of the local PDDL problem filename (relevant if the problem ID is not provided.)
+        problem_id (int):
+            The ID of the problem to be accessed (relevant if local files are not provided.)
         problem (tarski.fstrips.problem.Problem):
             The problem definition.
         lang (tarski.fol.FirstOrderLanguage):
@@ -45,6 +51,8 @@ class Generator:
             The grounded instance of the problem.
         grounded_fluents (list):
             A list of all grounded (macq) fluents extracted from the given problem definition.
+        op_dict (dict):
+            The problem's ground operators, formatted to a dictionary for easy access during plan generation.
     """
 
     def __init__(self, dom: str = None, prob: str = None, problem_id: int = None):
@@ -63,7 +71,6 @@ class Generator:
         self.pddl_dom = dom
         self.pddl_prob = prob
         self.problem_id = problem_id
-
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
         if not problem_id:
@@ -123,6 +130,12 @@ class Generator:
         return extracted_pred_types
 
     def __get_op_dict(self):
+        """Converts this problem's ground operators into a dictionary format so that the appropriate
+        tarski PlainOperators can be referenced when a plan is generated (see `generate_plan`).
+
+        Returns:
+            The problem's ground operators, in a formatted dictionary.
+        """
         op_dict = {}
         for o in self.instance.operators:
             # reformat so that operators can be referenced by the same string format the planner uses for actions
@@ -130,6 +143,11 @@ class Generator:
         return op_dict
 
     def __get_all_grounded_fluents(self):
+        """Extracts all the grounded fluents in the problem.
+
+        Returns:
+            A list of all the grounded fluents in the problem, in the form of macq Fluents.
+        """
         return [
             self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
             for grounded_fluent in LPGroundingStrategy(
@@ -239,6 +257,21 @@ class Generator:
         return Action(name, list(objs))
 
     def change_goal(self, goal_fluents: Set[Fluent], new_domain: str, new_prob: str):
+        """Changes the goal of the `Generator`. The domain and problem PDDL files
+        are rewritten to accomodate the new goal for later use by a planner.
+
+        Args:
+            goal_fluents (Set[Fluent]):
+                The set of fluents to make up the new goal.
+            new_domain (str):
+                The name of the new domain file.
+            new_prob (str):
+                The name of the new problem file.
+
+        Raises:
+            InvalidGoalFluent:
+                Raised if any of the fluents supplied do not exist in this domain.
+        """
         # check if the fluents to add are valid
         available_f = self.__get_all_grounded_fluents()
         for f in goal_fluents:
@@ -268,13 +301,26 @@ class Generator:
         self.pddl_prob = new_prob
 
     def generate_plan(self, write_to_file: bool = False, filename: str = None):
-        # if the files are only being generated from the problem ID, retrieve the existing plan (note that
+        """Generates a plan. If the goal was changed, the new goal is taken into account.
+        Otherwise, the default goal in the initial problem file is used.
+
+        Args:
+            write_to_file (bool, optional):
+                Option to write the plan to a file. Defaults to False.
+            filename (str, optional):
+                The name of the file to (optionally) write the plan to. Defaults to None.
+
+        Returns:
+            A list of tarski PlainOperators representing the actions taken in this plan.
+        """
+        # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
         # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
         if self.problem_id and not self.pddl_dom and not self.pddl_prob:
             plan = get_plan(self.problem_id)
             if write_to_file:
                 with open(filename, "w") as f:
                     f.write("\n".join(act for act in plan))
+        # if you are not just using the unaltered files, use the local files instead
         else:
             data = {
                 "domain": open(self.pddl_dom, "r").read(),
@@ -287,5 +333,5 @@ class Generator:
             if write_to_file:
                 with open(filename, "w") as f:
                     f.write("\n".join(act for act in plan))
-        # convert to tarski actions
+        # convert to a list of tarski PlainOperators (actions)
         return [self.op_dict[p] for p in plan if p in self.op_dict.keys()]
