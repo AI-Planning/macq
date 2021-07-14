@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from macq.generate.pddl import VanillaSampling
+from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
 
@@ -17,6 +18,19 @@ def test_invalid_vanilla_sampling():
     with pytest.raises(InvalidNumberOfTraces):
         VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=-1)
 
+    with pytest.raises(InvalidGoalFluent):
+        vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+        # test changing the goal and generating a plan from two local files
+        vanilla.change_goal(
+            {
+                Fluent(
+                    "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
+                ),
+            },
+            "new_blocks_dom.pddl",
+            "new_blocks_prob.pddl",
+        )
+
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
@@ -27,8 +41,6 @@ if __name__ == "__main__":
 
     # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
-
-    vanilla.MAX_TRACE_TIME = 10
 
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(

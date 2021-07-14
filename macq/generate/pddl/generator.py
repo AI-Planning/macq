@@ -1,5 +1,3 @@
-from ...trace import Action, State, PlanningObject, Fluent
-from .planning_domains_api import get_problem, get_plan
 from typing import Set
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
@@ -16,6 +14,8 @@ from tarski.model import Model
 from tarski.syntax import land
 from tarski.io import fstrips as iofs
 import requests
+from .planning_domains_api import get_problem, get_plan
+from ...trace import Action, State, PlanningObject, Fluent
 
 
 class InvalidGoalFluent(Exception):
