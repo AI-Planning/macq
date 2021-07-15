@@ -21,3 +21,4 @@ if __name__ == "__main__":
     traces.print()
     model = Extract(observations, modes.OBSERVER)
     print(model.details())
+    model.to_pddl("blocks_domain", "blocks_problem")
