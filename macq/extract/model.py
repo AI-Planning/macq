@@ -58,10 +58,7 @@ class Model:
         indent = " " * 2
         string = "Model:\n"
         # Map fluents to a comma separated string of the fluent names
-        try:
-            string += f"{indent}Fluents: {', '.join(self.fluents)}\n"
-        except TypeError:
-            string += f"{indent}Fluents: {', '.join(map(str,self.fluents))}\n"
+        string += f"{indent}Fluents: {', '.join(map(str,self.fluents))}\n"
 
         # Map the actions to a summary of their names, preconditions, add
         # effects and delete effects
