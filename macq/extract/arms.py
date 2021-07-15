@@ -14,10 +14,12 @@ from ..trace import ObservationLists, Fluent
 class Relation:
     name: str
     types: set
-    var: str
+
+    def var(self):
+        return f"{self.name} {' '.join(list(self.types))}"
 
     def __hash__(self):
-        return hash(self.name + " ".join(self.types))
+        return hash(self.var())
 
 
 class ARMS:
@@ -93,21 +95,24 @@ class ARMS:
     ) -> List:
         """Generate action constraints, information constraints, and plan constraints."""
 
-        # Convert fluents to relations with instantiated objects replaced by the object type
-        relations: Set[Relation] = set(
+        # Map fluents to relations
+        # relations are fluents but with instantiated objects replaced by the object type
+        relations: Dict[Fluent, Relation] = dict(
             map(
-                lambda f: Relation(
-                    f.name,
-                    set([obj.obj_type for obj in f.objects]),
-                    f"{f.name} {' '.join([obj.obj_type for obj in f.objects])}",
+                lambda f: (
+                    f,
+                    Relation(
+                        f.name,  # the fluent name
+                        set([obj.obj_type for obj in f.objects]),  # the object types
+                    ),
                 ),
                 fluents,
             )
         )
 
-        action_constraints = ARMS._step2A(connected_actions, relations)
-        info_constraints = ARMS._step2I(obs_lists)
-        plan_constraints = ARMS._step2P(obs_lists, connected_actions, relations)
+        action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
+        info_constraints = ARMS._step2I(obs_lists, relations)
+        # plan_constraints = ARMS._step2P(obs_lists, connected_actions, relations)
 
         return []  # WARNING temp
 
@@ -127,16 +132,20 @@ class ARMS:
                 if relation.types.issubset(action.obj_params):
                     # A1
                     # relation in action.add <=> relation not in action.precond
+
+                    # _ is used to mark split locations for parsing later.
+                    # Can't use spaces because both relation.var and
+                    # action.details() contain spaces.
                     constraints.append(
                         implication(
-                            f"{relation.var} in add {action.details()}",
-                            f"{relation.var} notin pre {action.details()}",
+                            f"{relation.var()}_in_add_{action.details()}",
+                            f"{relation.var()}_notin_pre_{action.details()}",
                         )
                     )
                     constraints.append(
                         implication(
-                            f"{relation.var} in pre {action.details()}",
-                            f"{relation.var} notin add {action.details()}",
+                            f"{relation.var()}_in_pre_{action.details()}",
+                            f"{relation.var()}_notin_add_{action.details()}",
                         )
                     )
 
@@ -144,16 +153,56 @@ class ARMS:
                     # relation in action.del => relation in action.precond
                     constraints.append(
                         implication(
-                            f"{relation.var} in del {action.details()}",
-                            f"{relation.var} in pre {action.details()}",
+                            f"{relation.var()}_in_del_{action.details()}",
+                            f"{relation.var()}_in_pre_{action.details()}",
                         )
                     )
 
         return constraints
 
     @staticmethod
-    def _step2I(obs_lists: ObservationLists):
-        pass
+    def _step2I(obs_lists: ObservationLists, relations: dict):
+        occurences = defaultdict(int)
+        constraints = []
+        for obs_list in obs_lists:
+            for i, obs in enumerate(obs_list):
+                if obs.state is not None:
+                    for fluent, val in obs.state.items():
+                        # Information constraints only apply to true relations
+                        if val:
+                            # I1
+                            # relation in the add list of an action <= n (i-1)
+                            i1: List[Var] = []
+                            for obs_i in obs_list[:i]:
+                                a_i = obs_i.action
+                                i1.append(
+                                    Var(
+                                        f"{relations[fluent].var()}_in_add_{a_i.details()}"
+                                    )
+                                )
+
+                            # I2
+                            # relation not in del list of action n (i-1)
+                            i2 = Var(
+                                f"{relations[fluent].var()}_notin_del_{obs_list[i-1].action.details()}"
+                            )
+
+                            constraints.append(And([Or(i1), i2]))
+
+                            # I3
+                            # count occurences
+                            occurences[(relations[fluent], obs.action)] += 1
+
+        # calculate occurence probabilities
+        occurence_prob = {}
+        total_pairs = sum(occurences.keys())
+        # Could do this in a map function, but more readable this way
+        for pair, support_count in occurences.items():
+            occurence_prob[pair] = support_count / total_pairs
+
+            # weight of (p,a) is the occurence probability
+            # if probability > theta, p in pre of a, with weight =
+            # prior probability
 
     @staticmethod
     def _step2P(
