@@ -46,7 +46,11 @@ class PartialObservation(Observation):
 
         super().__init__(index=step.index)
 
-        if percent_missing < 1 and percent_missing > 0:
+        # If percent_missing == 1 -> self.state = None (below).
+        # This allows ARMS (and other algorithms) to skip steps when there is no
+        # state information available without having to check every mapping in
+        # the state (slow in large domains).
+        if percent_missing < 1:
             step = self.random_subset(step, percent_missing)
         if hide:
             step = self.hide_subset(step, hide)
