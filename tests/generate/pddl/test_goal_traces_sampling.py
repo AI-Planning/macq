@@ -4,6 +4,7 @@ from macq.generate.pddl import GoalTracesSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
+from macq.utils.timer import PlanSearchTimeOut
 
 
 def test_invalid_goal_sampling():
@@ -19,9 +20,9 @@ def test_invalid_goal_sampling():
         GoalTracesSampling(dom=dom, prob=prob, plan_len=5, num_traces=-1)
 
     with pytest.raises(InvalidGoalFluent):
-        vanilla = GoalTracesSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+        goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
         # test changing the goal and generating a plan from two local files
-        vanilla.change_goal(
+        goal_traces.change_goal(
             {
                 Fluent(
                     "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
@@ -31,12 +32,28 @@ def test_invalid_goal_sampling():
             "new_blocks_prob.pddl",
         )
 
+    with pytest.raises(PlanSearchTimeOut):
+        goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=2, num_traces=100)
+
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
+
+    # test time out by setting the goal as 1 step away from the initial state
+    goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
+    goal_traces.change_goal(
+        {
+            Fluent("handempty", []),
+        },
+        "new_blocks_dom.pddl",
+        "new_blocks_prob.pddl",
+    )
+    for plan in goal_traces.plans:
+        print(plan)
+        print("\n")
 
     # test sampling using the original goal from a local PDDL problem file
 

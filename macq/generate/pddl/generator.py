@@ -8,13 +8,14 @@ from tarski.grounding.lp_grounding import (
 from tarski.syntax.ops import CompoundFormula
 from tarski.syntax.formulas import Atom
 from tarski.syntax.builtins import BuiltinPredicateSymbol
-from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
+from tarski.fstrips.fstrips import AddEffect
 from tarski.model import Model
 from tarski.syntax import land
 from tarski.io import fstrips as iofs
 import requests
 from .planning_domains_api import get_problem, get_plan
+from .plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent
 
 
@@ -300,26 +301,21 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, write_to_file: bool = False, filename: str = None):
+    def generate_plan(self, length=None):
         """Generates a plan. If the goal was changed, the new goal is taken into account.
         Otherwise, the default goal in the initial problem file is used.
 
         Args:
-            write_to_file (bool, optional):
-                Option to write the plan to a file. Defaults to False.
-            filename (str, optional):
-                The name of the file to (optionally) write the plan to. Defaults to None.
+            length (int): Defaults to None.
+                The optional length of the plan to be generated. If not specified, the full length of the plan is used.
 
         Returns:
-            A list of tarski PlainOperators representing the actions taken in this plan.
+            A `Plan` object that holds all the actions taken.
         """
         # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
         # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
         if self.problem_id and not self.pddl_dom and not self.pddl_prob:
             plan = get_plan(self.problem_id)
-            if write_to_file:
-                with open(filename, "w") as f:
-                    f.write("\n".join(act for act in plan))
         # if you are not just using the unaltered files, use the local files instead
         else:
             data = {
@@ -330,8 +326,11 @@ class Generator:
                 "http://solver.planning.domains/solve", verify=False, json=data
             ).json()
             plan = [act["name"] for act in resp["result"]["plan"]]
-            if write_to_file:
-                with open(filename, "w") as f:
-                    f.write("\n".join(act for act in plan))
+
+        # if the plan length was specified and is shorter than the plan length, truncate the plan.
+        if length:
+            if length < len(plan):
+                plan = plan[:length]
+
         # convert to a list of tarski PlainOperators (actions)
-        return [self.op_dict[p] for p in plan if p in self.op_dict.keys()]
+        return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])

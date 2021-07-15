@@ -2,6 +2,7 @@ from tarski.search.operations import progress
 from tarski.fstrips.action import PlainOperator
 from typing import List
 from .generator import Generator
+from .plan import Plan
 from ...utils.trace_utils import set_num_traces, set_plan_length
 from ...utils.timer import set_timer, TraceSearchTimeOut, PlanSearchTimeOut
 from ...trace import Trace, TraceList, Step
@@ -41,7 +42,7 @@ class GoalTracesSampling(Generator):
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.plan_len = set_plan_length(plan_len) if plan_len else None
         self.num_traces = set_num_traces(num_traces)
-        self.plans = []
+        self.plans = set()
         self.traces = self.generate_traces()
 
     def generate_traces(self):
@@ -65,32 +66,29 @@ class GoalTracesSampling(Generator):
     def generate_unique_plan(self):
         duplicate = True
         while duplicate:
-            plan = self.generate_plan()
-            plan_str = [str(a) for a in plan]
-            duplicate = plan_str in self.plans
+            plan = self.generate_plan(self.plan_len)
+            duplicate = plan in self.plans
             if not duplicate:
-                self.plans.append(plan)
+                self.plans.add(plan)
                 return plan
+            else:
+                print()
 
     @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
-    def generate_single_trace(self, plan: List[PlainOperator]):
+    def generate_single_trace(self, plan: Plan):
         trace = Trace()
         trace.clear()
+        actions = plan.actions
 
-        # if the plan length is longer than the generated plan, or no plan length was set,
-        # just use the full length of the generated plan.
-        # note that we add 1 because the states represented take place BEFORE their subsequent action,
-        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps.
-        if not self.plan_len or self.plan_len > len(plan):
-            self.plan_len = len(plan) + 1
         # get initial state
         state = self.problem.init
-        for i in range(self.plan_len):
+        # note that we add 1 because the states represented take place BEFORE their subsequent action,
+        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps in the trace.
+        for i in range(self.plan_len + 1):
             macq_state = self.tarski_state_to_macq(state)
-
             # if we have not yet reached the end of the trace
             if len(trace) < self.plan_len - 1:
-                act = plan[i]
+                act = actions[i]
                 trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
                 state = progress(state, act)
             else:
