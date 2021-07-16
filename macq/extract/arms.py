@@ -111,7 +111,25 @@ class ARMS:
         )
 
         action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
-        info_constraints = ARMS._step2I(obs_lists, relations)
+        info_constraints, support_counts = ARMS._step2I(obs_lists, relations)
+        """
+        # calculate support rates
+        support_rate = {}
+
+        # NOTE:
+        # In the paper, Z_Σ_P (denominator of the support rate formula) is
+        # defined as the "total pairs" in the set of plans. However, in the
+        # examples it appears that they use the max support count as the
+        # denominator. My best interpretation is then to use the max support
+        # count as the denominator to calculate the support rate.
+        z_sigma_p = max(support_counts.values())
+        for pair, support_count in support_counts.items():
+            support_rate[pair] = support_count / z_sigma_p
+
+            # weight of (p,a) is the occurence probability
+            # if probability > theta, p in pre of a, with weight =
+            # prior probability
+        """
         # plan_constraints = ARMS._step2P(obs_lists, connected_actions, relations)
 
         return []  # WARNING temp
@@ -162,8 +180,8 @@ class ARMS:
 
     @staticmethod
     def _step2I(obs_lists: ObservationLists, relations: dict):
-        occurences = defaultdict(int)
         constraints = []
+        support_counts = defaultdict(int)
         for obs_list in obs_lists:
             for i, obs in enumerate(obs_list):
                 if obs.state is not None:
@@ -191,18 +209,15 @@ class ARMS:
 
                             # I3
                             # count occurences
-                            occurences[(relations[fluent], obs.action)] += 1
+                            if i < len(obs_list)-1:
+                                # corresponding constraint is related to the current action's precondition list
+                                support_counts[(relations[fluent], obs.action, "pre")] += 1
+                            else:
+                                # corresponding constraint is related to the previous action's add list
+                                support_counts[(relations[fluent], obs_list[i-1].action, "add")] += 1
 
-        # calculate occurence probabilities
-        occurence_prob = {}
-        total_pairs = sum(occurences.keys())
-        # Could do this in a map function, but more readable this way
-        for pair, support_count in occurences.items():
-            occurence_prob[pair] = support_count / total_pairs
+        return constraints, support_counts
 
-            # weight of (p,a) is the occurence probability
-            # if probability > theta, p in pre of a, with weight =
-            # prior probability
 
     @staticmethod
     def _step2P(
