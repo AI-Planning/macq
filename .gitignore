@@ -12,6 +12,8 @@ blocks_domain.pddl
 blocks_problem.pddl
 domain.pddl
 problem.pddl
+blocks_domain.pddl
+blocks_problem.pddl
 blocks_plan.ipc
 game_plan.ipc
 new_blocks_dom.pddl
