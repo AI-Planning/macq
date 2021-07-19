@@ -1,6 +1,7 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
+from itertools import combinations
 from dataclasses import dataclass
-from typing import Set, List, Dict
+from typing import Set, List, Dict, Tuple
 from nnf import Var, And, Or
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
@@ -209,15 +210,57 @@ class ARMS:
 
                             # I3
                             # count occurences
-                            if i < len(obs_list)-1:
+                            if i < len(obs_list) - 1:
                                 # corresponding constraint is related to the current action's precondition list
-                                support_counts[(relations[fluent], obs.action, "pre")] += 1
+                                support_counts[
+                                    (relations[fluent], obs.action, "pre")
+                                ] += 1
                             else:
                                 # corresponding constraint is related to the previous action's add list
-                                support_counts[(relations[fluent], obs_list[i-1].action, "add")] += 1
+                                support_counts[
+                                    (relations[fluent], obs_list[i - 1].action, "add")
+                                ] += 1
 
         return constraints, support_counts
 
+    @staticmethod
+    def apriori(action_lists, minsup) -> Set[Tuple[LearnedAction]]:
+        counts = Counter(
+            [action for action_list in action_lists for action in action_list]
+        )
+        # L1 = {actions that appear >minsup}
+        L1 = set(
+            frozenset(action)
+            for action in filter(lambda k: counts[k] >= minsup, counts.keys())
+        )  # large 1-itemsets
+
+        # Only going up to L2, so no loop or generalized algorithm needed
+        # apriori-gen step
+        C2 = set([i.union(j) for i in L1 for j in L1 if len(i.union(j)) == 2])
+        # Since L1 contains 1-itemsets where each item is frequent, C2 can
+        # only contain valid sets and pruning is not required
+
+        # Get all possible ordered action pairs
+        C2_ordered = set()
+        for pair in C2:
+            pair = list(pair)
+            C2_ordered.add((pair[0], pair[1]))
+            C2_ordered.add((pair[1], pair[0]))
+
+        # Count pair occurences and generate L2
+        L2 = set()
+        for a1, a2 in C2_ordered:
+            count = 0
+            for action_list in action_lists:
+                a1_indecies = [i for i, e in enumerate(action_list) if e == a1]
+                if a1_indecies:
+                    for i in a1_indecies:
+                        if a2 in action_list[i + 1 :]:
+                            count += 1
+            if count >= minsup:
+                L2.add((a1, a2))
+
+        return L2
 
     @staticmethod
     def _step2P(
@@ -225,4 +268,6 @@ class ARMS:
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
     ):
-        pass
+        frequent_pairs = ARMS.apriori(
+            [[obs.action for obs in obs_list] for obs_list in obs_lists]
+        )
