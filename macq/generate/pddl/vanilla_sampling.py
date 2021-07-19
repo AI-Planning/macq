@@ -33,7 +33,7 @@ class VanillaSampling(Generator):
     def __init__(
         self,
         plan_len: int,
-        num_traces: int,
+        num_traces: int = 1,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
@@ -47,7 +47,7 @@ class VanillaSampling(Generator):
             plan_len (int):
                 The length of each generated trace.
             num_traces (int):
-                The number of traces to generate.
+                The number of traces to generate. Defaults to 1.
             dom (str):
                 The domain filename.
             prob (str):
