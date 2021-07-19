@@ -1,6 +1,7 @@
 from tarski.search.operations import progress
 from tarski.fstrips.action import PlainOperator
 from typing import List
+import random
 from .generator import Generator
 from .plan import Plan
 from ...utils.trace_utils import set_num_traces, set_plan_length
@@ -53,12 +54,15 @@ class GoalTracesSampling(Generator):
             except PlanSearchTimeOut as e:
                 print(e)
                 print(
-                    "The first "
+                    "WARNING: Only the first "
                     + str(len(traces))
-                    + " traces were unique. The rest will be duplicates."
+                    + " trace(s) are unique. The rest will be duplicates."
                 )
                 while len(traces) < self.num_traces:
-                    traces.append(self.generate_single_trace(self.generate_plan()))
+                    # instead of regenerating a plan, randomly select an existing plan for efficiency
+                    traces.append(
+                        self.generate_single_trace(random.choice(tuple(self.plans)))
+                    )
         return traces
 
     @set_timer(num_seconds=MAX_PLAN_TIME, exception=PlanSearchTimeOut)
@@ -71,8 +75,6 @@ class GoalTracesSampling(Generator):
             if not duplicate:
                 self.plans.add(plan)
                 return plan
-            else:
-                print()
 
     @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
     def generate_single_trace(self, plan: Plan):
@@ -87,7 +89,7 @@ class GoalTracesSampling(Generator):
         for i in range(self.plan_len + 1):
             macq_state = self.tarski_state_to_macq(state)
             # if we have not yet reached the end of the trace
-            if len(trace) < self.plan_len - 1:
+            if len(trace) < self.plan_len:
                 act = actions[i]
                 trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
                 state = progress(state, act)

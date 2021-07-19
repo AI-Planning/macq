@@ -17,8 +17,12 @@ class Plan:
             with open(filename, "w") as f:
                 f.write("\n".join(act for act in self.actions))
 
+    def __hash__(self):
+        return hash(str(self))
+
     def __str__(self):
         return "\n".join(str(act) for act in self.actions)
 
-    def __hash__(self):
-        return hash(str(self))
+    def __eq__(self, other):
+        if isinstance(other, Plan):
+            return self.actions == other.actions

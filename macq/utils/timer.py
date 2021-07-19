@@ -57,7 +57,7 @@ class PlanSearchTimeOut(Exception):
 
     def __init__(
         self,
-        message="The generator took longer than MAX_PLAN_TIME in its attempt to generate a unique plan. "
+        message="WARNING: The generator took longer than MAX_PLAN_TIME in its attempt to generate a unique plan. "
         + "MAX_PLAN_TIME can be changed through the trace generator used.",
     ):
         super().__init__(message)

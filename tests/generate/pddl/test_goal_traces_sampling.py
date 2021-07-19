@@ -43,6 +43,7 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # test time out by setting the goal as 1 step away from the initial state
+    # should get 1 unique plan, 1 unique trace and 29 duplicate traces.
     goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
     goal_traces.change_goal(
         {
@@ -53,7 +54,8 @@ if __name__ == "__main__":
     )
     for plan in goal_traces.plans:
         print(plan)
-        print("\n")
+
+    goal_traces.traces.print()
 
     # test sampling using the original goal from a local PDDL problem file
 
