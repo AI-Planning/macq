@@ -8,7 +8,7 @@ from pysat.formula import WCNF
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from ..observation import PartialObservation as Observation
-from ..trace import ObservationLists, Fluent
+from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
 
 
 @dataclass
@@ -31,7 +31,14 @@ class ARMS:
     algorithm.
     """
 
-    def __new__(cls, obs_lists: ObservationLists):
+    def __new__(cls, obs_lists: ObservationLists, min_support: int = 2):
+        """
+        Arguments:
+            obs_lists (ObservationLists):
+                The observations to extract the model from.
+            min_support (int):
+                The minimum support count for an action pair to be considered frequent.
+        """
         if obs_lists.type is not Observation:
             raise IncompatibleObservationToken(obs_lists.type, ARMS)
 
@@ -40,7 +47,7 @@ class ARMS:
         # get fluents from initial state
         fluents = ARMS._get_fluents(obs_lists)
         # call algorithm to get actions
-        actions = ARMS._arms(obs_lists, fluents)
+        actions = ARMS._arms(obs_lists, fluents, min_support)
         return Model(fluents, actions)
 
     @staticmethod
@@ -55,9 +62,11 @@ class ARMS:
         return obs_lists.get_fluents()
 
     @staticmethod
-    def _arms(obs_lists: ObservationLists, fluents: Set[Fluent]) -> Set[LearnedAction]:
+    def _arms(
+        obs_lists: ObservationLists, fluents: Set[Fluent], min_support: int
+    ) -> Set[LearnedAction]:
         connected_actions = ARMS._step1(obs_lists)  # actions = connected_actions.keys()
-        constraints = ARMS._step2(obs_lists, connected_actions, fluents)
+        constraints = ARMS._step2(obs_lists, connected_actions, fluents, min_support)
 
         return set()  # WARNING temp
 
@@ -93,6 +102,7 @@ class ARMS:
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         fluents: Set[Fluent],
+        min_support: int,
     ) -> List:
         """Generate action constraints, information constraints, and plan constraints."""
 
@@ -131,7 +141,9 @@ class ARMS:
             # if probability > theta, p in pre of a, with weight =
             # prior probability
         """
-        # plan_constraints = ARMS._step2P(obs_lists, connected_actions, relations)
+        plan_constraints = ARMS._step2P(
+            obs_lists, connected_actions, set(relations.values()), min_support
+        )
 
         return []  # WARNING temp
 
@@ -224,13 +236,16 @@ class ARMS:
         return constraints, support_counts
 
     @staticmethod
-    def apriori(action_lists, minsup) -> Set[Tuple[LearnedAction]]:
+    def apriori(
+        action_lists: List[List[Action]], minsup: int
+    ) -> Dict[Tuple[Action, Action], int]:
+        """An implementation of the Apriori algorithm to find frequent ordered pairs of actions."""
         counts = Counter(
             [action for action_list in action_lists for action in action_list]
         )
         # L1 = {actions that appear >minsup}
         L1 = set(
-            frozenset(action)
+            frozenset([action])
             for action in filter(lambda k: counts[k] >= minsup, counts.keys())
         )  # large 1-itemsets
 
@@ -248,26 +263,46 @@ class ARMS:
             C2_ordered.add((pair[1], pair[0]))
 
         # Count pair occurences and generate L2
-        L2 = set()
-        for a1, a2 in C2_ordered:
+        frequent_pairs = {}
+        for ai, aj in C2_ordered:
             count = 0
             for action_list in action_lists:
-                a1_indecies = [i for i, e in enumerate(action_list) if e == a1]
+                a1_indecies = [i for i, e in enumerate(action_list) if e == ai]
                 if a1_indecies:
                     for i in a1_indecies:
-                        if a2 in action_list[i + 1 :]:
+                        if aj in action_list[i + 1 :]:
                             count += 1
             if count >= minsup:
-                L2.add((a1, a2))
+                frequent_pairs[(ai, aj)] = count
 
-        return L2
+        return frequent_pairs
 
     @staticmethod
     def _step2P(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
+        min_support: int,
     ):
         frequent_pairs = ARMS.apriori(
-            [[obs.action for obs in obs_list] for obs_list in obs_lists]
+            [[obs.action for obs in obs_list] for obs_list in obs_lists], min_support
         )
+
+        for ai, aj in frequent_pairs.keys():
+            """
+            ∃p(
+              (p∈ (pre_i ∩ pre_j) ∧ p∉ (del_i)) ∨
+              (p∈ (add_i ∩ pre_j)) ∨
+              (p∈ (del_i ∩ add_j))
+            )
+            where p is a relevant relation.
+
+            ∃p can be converted to a disjunction of the formula for all p.
+            Will need to be converted to CNF at some point.
+            """
+            # get list of relevant relations from connected_actions
+            # for each relation, save constraint
+            # connect in a big Or - constraint for pair
+
+            pass
+        # return constraints with pair support counts
