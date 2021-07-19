@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from macq.generate.pddl import GoalTracesSampling
+from macq.generate.pddl import SingleGoalSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
@@ -14,13 +14,13 @@ def test_invalid_goal_sampling():
     prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
 
     with pytest.raises(InvalidPlanLength):
-        GoalTracesSampling(dom=dom, prob=prob, plan_len=-1, num_traces=5)
+        SingleGoalSampling(dom=dom, prob=prob, plan_len=-1, num_traces=5)
 
     with pytest.raises(InvalidNumberOfTraces):
-        GoalTracesSampling(dom=dom, prob=prob, plan_len=5, num_traces=-1)
+        SingleGoalSampling(dom=dom, prob=prob, plan_len=5, num_traces=-1)
 
     with pytest.raises(InvalidGoalFluent):
-        goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+        goal_traces = SingleGoalSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
         # test changing the goal and generating a plan from two local files
         goal_traces.change_goal(
             {
@@ -33,7 +33,7 @@ def test_invalid_goal_sampling():
         )
 
     with pytest.raises(PlanSearchTimeOut):
-        goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=2, num_traces=100)
+        goal_traces = SingleGoalSampling(dom=dom, prob=prob, plan_len=2, num_traces=100)
 
 
 if __name__ == "__main__":
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # test time out by setting the goal as 1 step away from the initial state
     # should get 1 unique plan, 1 unique trace and 29 duplicate traces.
-    goal_traces = GoalTracesSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
+    goal_traces = SingleGoalSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
     goal_traces.change_goal(
         {
             Fluent("handempty", []),
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     # test sampling using the original goal from a local PDDL problem file
 
-    goal_traces_sampler = GoalTracesSampling(dom=dom, prob=prob)
+    goal_traces_sampler = SingleGoalSampling(dom=dom, prob=prob)
     goal_traces = goal_traces_sampler.traces
     goal_traces.print(wrap="y")
     print()
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     print()
 
     # test sampling using the goal from the problem file extracted from a problem ID
-    goal_traces_sampler = GoalTracesSampling(problem_id=123)
+    goal_traces_sampler = SingleGoalSampling(problem_id=123)
     goal_traces = goal_traces_sampler.traces
     goal_traces.print(wrap="y")
     print()
@@ -106,13 +106,13 @@ if __name__ == "__main__":
     print()
 
     # test getting multiple traces and altering length
-    goal_traces_sampler = GoalTracesSampling(problem_id=123, plan_len=3, num_traces=4)
+    goal_traces_sampler = SingleGoalSampling(problem_id=123, plan_len=3, num_traces=4)
     goal_traces = goal_traces_sampler.traces
     goal_traces.print(wrap="y")
     print()
 
     # test getting multiple traces and altering length
-    goal_traces_sampler = GoalTracesSampling(problem_id=123, plan_len=1000)
+    goal_traces_sampler = SingleGoalSampling(problem_id=123, plan_len=1000)
     goal_traces = goal_traces_sampler.traces
     goal_traces.print(wrap="y")
     print()

@@ -1,6 +1,7 @@
 from typing import Set
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
+from tarski.search.operations import progress
 from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
@@ -16,7 +17,7 @@ from tarski.io import fstrips as iofs
 import requests
 from .planning_domains_api import get_problem, get_plan
 from .plan import Plan
-from ...trace import Action, State, PlanningObject, Fluent
+from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 
 
 class InvalidGoalFluent(Exception):
@@ -334,3 +335,26 @@ class Generator:
 
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
+
+    def generate_single_trace_from_plan(self, plan: Plan, plan_len: int = None):
+        trace = Trace()
+        trace.clear()
+        actions = plan.actions
+        if plan_len:
+            plan_len = len(actions) if plan_len > len(actions) else plan_len
+        else:
+            plan_len = len(actions)
+        # get initial state
+        state = self.problem.init
+        # note that we add 1 because the states represented take place BEFORE their subsequent action,
+        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps in the trace.
+        for i in range(plan_len + 1):
+            macq_state = self.tarski_state_to_macq(state)
+            # if we have not yet reached the end of the trace
+            if len(trace) < plan_len:
+                act = actions[i]
+                trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
+                state = progress(state, act)
+            else:
+                trace.append(Step(macq_state, None, i + 1))
+        return trace

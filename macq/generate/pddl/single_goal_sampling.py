@@ -50,18 +50,22 @@ class SingleGoalSampling(Generator):
         traces = TraceList()
         while len(traces) < self.num_traces:
             try:
-                traces.append(self.generate_single_trace(self.generate_unique_plan()))
+                traces.append(
+                    self.generate_single_trace_from_plan(
+                        self.generate_unique_plan(), self.plan_len
+                    )
+                )
             except PlanSearchTimeOut as e:
                 print(e)
                 print(
-                    "WARNING: Only the first "
-                    + str(len(traces))
-                    + " trace(s) are unique. The rest will be duplicates."
+                    f"WARNING: Only the first {len(traces)} trace(s) are unique. The rest will be duplicates."
                 )
                 while len(traces) < self.num_traces:
                     # instead of regenerating a plan, randomly select an existing plan for efficiency
                     traces.append(
-                        self.generate_single_trace(random.choice(tuple(self.plans)))
+                        self.generate_single_trace_from_plan(
+                            random.choice(tuple(self.plans)), self.plan_len
+                        )
                     )
         return traces
 
@@ -75,24 +79,3 @@ class SingleGoalSampling(Generator):
             if not duplicate:
                 self.plans.add(plan)
                 return plan
-
-    @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
-    def generate_single_trace(self, plan: Plan):
-        trace = Trace()
-        trace.clear()
-        actions = plan.actions
-
-        # get initial state
-        state = self.problem.init
-        # note that we add 1 because the states represented take place BEFORE their subsequent action,
-        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps in the trace.
-        for i in range(self.plan_len + 1):
-            macq_state = self.tarski_state_to_macq(state)
-            # if we have not yet reached the end of the trace
-            if len(trace) < self.plan_len:
-                act = actions[i]
-                trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
-                state = progress(state, act)
-            else:
-                trace.append(Step(macq_state, None, i + 1))
-        return trace
