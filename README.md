@@ -41,7 +41,7 @@ trace.get_post_states(action) # state after each occurance of action
 trace.get_total_cost()
 
 ######################################################################
-# Model Extraction
+# Model Extraction - OBSERVER Technique
 ######################################################################
 observations = traces.tokenize(IdentityObservation)
 model = extract.Extract(observations, extract.modes.OBSERVER)
@@ -66,6 +66,23 @@ Model:
         clear location pos-04-04
         at player player-01 location pos-04-06
   ...
+######################################################################
+# Model Extraction - SLAF Technique
+######################################################################
+traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 2, num_traces = 1).traces
+observations = traces.tokenize(PartialObservabilityToken, method=PartialObservabilityToken.random_subset, percent_missing=0.10)
+model = Extract(observations, modes.SLAF)
+model.details()
+
+Model:
+  Fluents: clear location pos-06-09, clear location pos-02-05, clear location pos-08-08, clear location pos-10-05, clear location pos-02-06, clear location pos-10-02, clear location pos-01-01, at stone stone-05 location pos-08-05, at stone stone-07 location pos-08-06, at stone stone-03 location pos-07-04, clear location pos-03-06, clear location pos-10-06, clear location pos-10-10, clear location pos-05-09, clear location pos-05-07, clear location pos-02-07, clear location pos-09-01, at stone stone-06 location pos-04-06, clear location pos-02-03, clear location pos-07-05, clear location pos-09-10, clear location pos-06-05, at stone stone-01 location pos-05-04, clear location pos-02-10, clear location pos-06-10, clear location pos-11-03, at stone stone-11 location pos-06-08, at stone stone-08 location pos-04-07, clear location pos-01-10, clear location pos-07-03, clear location pos-02-11, clear location pos-03-01, clear location pos-06-02, clear location pos-03-02, clear location pos-11-01, clear location pos-06-03, clear location pos-08-04, clear location pos-09-11, at stone stone-09 location pos-08-07, clear location pos-09-07, clear location pos-06-07, clear location pos-10-01, clear location pos-11-09, clear location pos-03-05, clear location pos-07-06, clear location pos-05-05, at stone stone-12 location pos-07-08, clear location pos-10-03, clear location pos-11-11, clear location pos-10-09, clear location pos-02-01, clear location pos-02-02, clear location pos-01-02, at stone stone-02 location pos-06-04, clear location pos-03-10, clear location pos-05-10, clear location pos-07-10, clear location pos-09-05, clear location pos-07-09, clear location pos-05-03, clear location pos-10-11, clear location pos-01-03, at stone stone-04 location pos-04-05, clear location pos-07-02, clear location pos-09-06, clear location pos-10-07, clear location pos-01-09, clear location pos-03-07, clear location pos-04-04, clear location pos-01-11
+  Actions:
+    move player player-01 direction dir-left location pos-05-02 location pos-06-02:
+      precond:
+      add:
+      delete:
+        (clear location pos-05-02)
+        (at player player-01 location pos-06-02)
 ```
 
 ## Coverage <a name="coverage"></a>
@@ -79,7 +96,7 @@ Model:
 - [ ] [Learning Planning Rules in Noisy Stochastic Worlds](https://people.csail.mit.edu/lpk/papers/2005/zpk-aaai05.pdf) (AAAI'05)
 - [ ] [Learning action models from plan examples using weighted MAX-SAT](https://www.sciencedirect.com/science/article/pii/S0004370206001408) (AIJ'07)
 - [ ] [Learning Symbolic Models of Stochastic Domains](https://www.aaai.org/Papers/JAIR/Vol29/JAIR-2910.pdf) (JAIR'07)
-- [ ] [Learning Partially Observable Deterministic Action Models](https://www.aaai.org/Papers/JAIR/Vol33/JAIR-3310.pdf) (JAIR'08)
+- [x] [Learning Partially Observable Deterministic Action Models](https://www.aaai.org/Papers/JAIR/Vol33/JAIR-3310.pdf) (JAIR'08)
 - [ ] [Acquisition of Object-Centred Domain Models from Planning Examples](https://ojs.aaai.org/index.php/ICAPS/article/view/13391) (ICAPS'09)
 - [ ] [Automated acquisition of action knowledge](http://eprints.hud.ac.uk/id/eprint/3292/1/mccluskeyCRC.pdf) (ICAART'09)
 - [ ] [Generalised Domain Model Acquisition from Action Traces](https://ojs.aaai.org/index.php/ICAPS/article/view/13476) (ICAPS'11)

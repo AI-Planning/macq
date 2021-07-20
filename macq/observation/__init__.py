@@ -1,5 +1,13 @@
 from .observation import Observation, InvalidQueryParameter
 from .identity_observation import IdentityObservation
-from .partial_observability_token import PartialObservabilityToken
+from .partial_observation import PartialObservation
+from .atomic_partial_observation import AtomicPartialObservation
 
-__all__ = ["Observation", "IdentityObservation", "PartialObservabilityToken", "InvalidQueryParameter"]
+
+__all__ = [
+    "InvalidQueryParameter",
+    "Observation",
+    "IdentityObservation",
+    "PartialObservation",
+    "AtomicPartialObservation",
+]

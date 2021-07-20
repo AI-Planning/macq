@@ -70,3 +70,6 @@ class Action:
                 The object to be added to the action's object parameters.
         """
         self.obj_params.append(obj)
+
+    def _serialize(self):
+        return self.name

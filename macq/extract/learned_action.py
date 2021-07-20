@@ -4,7 +4,7 @@ from ..trace import Fluent
 
 
 class LearnedAction:
-    def __init__(self, name: str, obj_params: List[str], **kwargs):
+    def __init__(self, name: str, obj_params: List, **kwargs):
         self.name = name
         self.obj_params = obj_params
         if "cost" in kwargs:
@@ -24,10 +24,15 @@ class LearnedAction:
         return hash(self.details())
 
     def details(self):
-        string = f"{self.name} {' '.join([o for o in self.obj_params])}"
+        # obj_params can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the action
+        try:
+            string = f"{self.name} {' '.join([o for o in self.obj_params])}"
+        except TypeError:
+            string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+
         return string
 
-    def update_precond(self, fluents: Set[Fluent]):
+    def update_precond(self, fluents: Set[str]):
         """Adds preconditions to the action.
 
         Args:
