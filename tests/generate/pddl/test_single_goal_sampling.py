@@ -44,24 +44,25 @@ if __name__ == "__main__":
 
     # test time out by setting the goal as 1 step away from the initial state
     # should get 1 unique plan, 1 unique trace and 29 duplicate traces.
-    goal_traces = SingleGoalSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
-    goal_traces.change_goal(
+    """     goal_traces_sampler = SingleGoalSampling(dom=dom, prob=prob, plan_len=2, num_traces=30)
+    goal_traces_sampler.change_goal(
         {
             Fluent("handempty", []),
         },
+        {},
         "new_blocks_dom.pddl",
         "new_blocks_prob.pddl",
     )
-    for plan in goal_traces.plans:
+    for plan in goal_traces_sampler.plans:
         print(plan)
 
-    goal_traces.traces.print()
+    goal_traces_sampler.traces.print() """
 
     # test sampling using the original goal from a local PDDL problem file
 
-    goal_traces_sampler = SingleGoalSampling(dom=dom, prob=prob)
+    goal_traces_sampler = SingleGoalSampling(dom=dom, prob=prob, num_traces=5)
     goal_traces = goal_traces_sampler.traces
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
     print()
 
     # test changing the goal and regenerating traces from local PDDL files
@@ -74,17 +75,24 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
+        {},
         "new_blocks_dom.pddl",
         "new_blocks_prob.pddl",
     )
     goal_traces = goal_traces_sampler.generate_traces()
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
+    for plan in goal_traces_sampler.plans:
+        print(plan)
+        print()
     print()
 
     # test sampling using the goal from the problem file extracted from a problem ID
-    goal_traces_sampler = SingleGoalSampling(problem_id=123)
+    goal_traces_sampler = SingleGoalSampling(problem_id=123, num_traces=5)
     goal_traces = goal_traces_sampler.traces
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
+    for plan in goal_traces_sampler.plans:
+        print(plan)
+        print()
     print()
 
     # test changing the goal and regenerating traces from files extracted from a problem ID
@@ -98,21 +106,22 @@ if __name__ == "__main__":
                 ],
             )
         },
+        {},
         "new_game_dom.pddl",
         "new_game_prob.pddl",
     )
     goal_traces = goal_traces_sampler.generate_traces()
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
     print()
 
     # test getting multiple traces and altering length
     goal_traces_sampler = SingleGoalSampling(problem_id=123, plan_len=3, num_traces=4)
     goal_traces = goal_traces_sampler.traces
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
     print()
 
     # test getting multiple traces and altering length
     goal_traces_sampler = SingleGoalSampling(problem_id=123, plan_len=1000)
     goal_traces = goal_traces_sampler.traces
-    goal_traces.print(wrap="y")
+    # goal_traces.print(wrap="y")
     print()

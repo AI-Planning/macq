@@ -119,7 +119,11 @@ class VanillaSampling(Generator):
         return trace
 
     def goal_sampling(
-        self, num_states: int, steps_deep: int, subset_size_perc: int = 1
+        self,
+        num_states: int,
+        steps_deep: int,
+        plan_complexity: int,
+        subset_size_perc: int = 1,
     ):
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
@@ -127,12 +131,23 @@ class VanillaSampling(Generator):
         while len(goal_states) < num_states:
             # generate a trace of the specified length and retrieve the state of the last step
             state = self.generate_single_trace(steps_deep)[-1].state
+
+            test_plan_complexity_sampler = VanillaSampling(
+                dom=self.pddl_dom, prob=self.pddl_prob
+            )
+            # TODO: fix to take values of fluents into account
+            goal = {f for f in state.keys()}
+            test_plan_complexity_sampler.change_goal(goal)
+            if len(self.generate_plan().actions) < plan_complexity:
+                break
+
             # randomly generate missing fluents according to the size of the partial state/subset specified
-            del_f = list(state.fluents.keys())
+            del_f = list(goal)
             random.shuffle(del_f)
             del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
             # delete the missing fluents
             for f in del_f:
                 del state.fluents[f]
             goal_states.add(state)
+        # TODO: fix to return sets of fluents
         return goal_states

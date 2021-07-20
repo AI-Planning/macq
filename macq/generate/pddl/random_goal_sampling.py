@@ -5,6 +5,7 @@ class RandomGoalSampling(Generator):
     def __init__(
         self,
         steps_deep: int,
+        plan_complexity: int,
         subset_size_perc: int,
         num_traces: int = 1,
         dom: str = None,
@@ -20,6 +21,8 @@ class RandomGoalSampling(Generator):
         self.goals = self.vanilla_gen.goal_sampling(
             self.num_traces, self.steps_deep, self.subset_size_perc
         )
+        for g in self.goals:
+            self.change_goal()
         # iterate through all goals, changing the generator's goal to the current goal each iteration
         # generating a plan based on the new goal with generate_plan
         # generate a trace from that plan with generate_single_trace_from_plan
