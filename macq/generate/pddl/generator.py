@@ -6,7 +6,7 @@ from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
-from tarski.syntax.ops import CompoundFormula
+from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom, neg
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.action import PlainOperator
@@ -313,7 +313,7 @@ class Generator:
                     for f in neg_goal_fluents
                 ]
             )
-            goal = land(*formula)
+            goal = flatten(land(*formula))
         # reset the goal
         self.problem.goal = goal
 
@@ -343,6 +343,10 @@ class Generator:
             resp = requests.post(
                 "http://solver.planning.domains/solve", verify=False, json=data
             ).json()
+            try:
+                print(resp["result"]["error"])
+            except KeyError:
+                pass
             plan = [act["name"] for act in resp["result"]["plan"]]
 
         # convert to a list of tarski PlainOperators (actions)

@@ -1,4 +1,5 @@
 from . import VanillaSampling, Generator
+from ...trace import TraceList
 
 
 class RandomGoalSampling(Generator):
@@ -6,24 +7,36 @@ class RandomGoalSampling(Generator):
         self,
         steps_deep: int,
         plan_complexity: int,
-        subset_size_perc: int,
+        subset_size_perc: int = 1,
         num_traces: int = 1,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
     ):
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id)
         self.vanilla_gen = VanillaSampling(dom=dom, prob=prob)
+        self.steps_deep = steps_deep
+        self.plan_complexity = plan_complexity
+        self.subset_size_perc = subset_size_perc
+        self.num_traces = num_traces
         self.traces = self.generate_traces()
 
     def generate_traces(self):
-        # retrieve goals and ensure that "bad"/easy goals are tossed out (do this in the goal sampling function)
+        traces = TraceList()
         # store the goals so that the sampler goal can be reverted/changed if needed
         self.goals = self.vanilla_gen.goal_sampling(
-            self.num_traces, self.steps_deep, self.subset_size_perc
+            num_states=self.num_traces,
+            steps_deep=self.steps_deep,
+            plan_complexity=self.plan_complexity,
+            subset_size_perc=self.subset_size_perc,
         )
-        for g in self.goals:
-            self.change_goal()
         # iterate through all goals, changing the generator's goal to the current goal each iteration
-        # generating a plan based on the new goal with generate_plan
-        # generate a trace from that plan with generate_single_trace_from_plan
-        # repeat for all goals.
+        for state in self.goals:
+            pos_f = {f for f in state if state[f]}
+            neg_f = {f for f in state if not state[f]}
+            self.vanilla_gen.change_goal(pos_f, neg_f)
+            # generate a plan based on the new goal, then generate a trace based on that plan
+            traces.append(
+                self.generate_single_trace_from_plan(self.vanilla_gen.generate_plan())
+            )
+        return traces

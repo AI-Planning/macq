@@ -127,27 +127,37 @@ class VanillaSampling(Generator):
     ):
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
+
         goal_states = set()
         while len(goal_states) < num_states:
             # generate a trace of the specified length and retrieve the state of the last step
             state = self.generate_single_trace(steps_deep)[-1].state
 
-            test_plan_complexity_sampler = VanillaSampling(
-                dom=self.pddl_dom, prob=self.pddl_prob
-            )
-            # TODO: fix to take values of fluents into account
-            goal = {f for f in state.keys()}
-            test_plan_complexity_sampler.change_goal(goal)
-            if len(self.generate_plan().actions) < plan_complexity:
-                break
-
             # randomly generate missing fluents according to the size of the partial state/subset specified
-            del_f = list(goal)
+            del_f = list(state.keys())
             random.shuffle(del_f)
             del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
             # delete the missing fluents
             for f in del_f:
                 del state.fluents[f]
+
+            # create a sampler to test the new goal
+            test_plan_complexity_sampler = VanillaSampling(
+                dom=self.pddl_dom, prob=self.pddl_prob
+            )
+            pos_f = {f for f in state if state[f]}
+            neg_f = {f for f in state if not state[f]}
+            test_plan_complexity_sampler.change_goal(pos_f, neg_f)
+
+            # attempt to generate a plan, and find a new goal if a plan can't be found
+            try:
+                test_plan = test_plan_complexity_sampler.generate_plan()
+            except KeyError:
+                continue
+
+            # find a new goal if the plan to the goal isn't long enough/the goal isn't complex enough
+            if len(test_plan.actions) < plan_complexity:
+                continue
+
             goal_states.add(state)
-        # TODO: fix to return sets of fluents
         return goal_states

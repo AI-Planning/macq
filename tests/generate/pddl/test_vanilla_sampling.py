@@ -40,8 +40,10 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
-    # TODO: test goal sampling
-    # states_gen = vanilla.goal_sampling(3, 5, 5, 0.8)
+    # test goal sampling
+    states_gen = vanilla.goal_sampling(
+        num_states=3, steps_deep=5, plan_complexity=5, subset_size_perc=0.1
+    )
 
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
