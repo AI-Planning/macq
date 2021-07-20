@@ -57,10 +57,13 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
+        {},
         "new_blocks_dom.pddl",
         "new_blocks_prob.pddl",
     )
     plan = vanilla.generate_plan()
+    print(plan)
+    print()
 
     # test changing the goal and generating a plan from files extracted from a problem ID
     vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
@@ -78,4 +81,6 @@ if __name__ == "__main__":
         "new_game_dom.pddl",
         "new_game_prob.pddl",
     )
-    plan = vanilla.generate_plan(True, "game_plan.ipc")
+    plan = vanilla.generate_plan()
+    print(plan)
+    print()

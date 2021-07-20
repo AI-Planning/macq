@@ -13,9 +13,8 @@ class Plan:
             filename (str):
                 The name of the file to write the plan to.
         """
-        if write_to_file:
-            with open(filename, "w") as f:
-                f.write("\n".join(act for act in self.actions))
+        with open(filename, "w") as f:
+            f.write("\n".join(act for act in self.actions))
 
     def __hash__(self):
         return hash(str(self))

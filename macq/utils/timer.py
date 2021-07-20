@@ -47,17 +47,3 @@ class TraceSearchTimeOut(Exception):
         + "MAX_TRACE_TIME can be changed through the trace generator used.",
     ):
         super().__init__(message)
-
-
-class PlanSearchTimeOut(Exception):
-    """
-    Raised when the time it takes to generate (or attempt to generate) a single plan is
-    longer than the MAX_PLAN_TIME constant. MAX_PLAN_TIME is 30 seconds by default.
-    """
-
-    def __init__(
-        self,
-        message="WARNING: The generator took longer than MAX_PLAN_TIME in its attempt to generate a unique plan. "
-        + "MAX_PLAN_TIME can be changed through the trace generator used.",
-    ):
-        super().__init__(message)

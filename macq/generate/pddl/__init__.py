@@ -1,6 +1,5 @@
 from .generator import Generator
 from .vanilla_sampling import VanillaSampling
-from .single_goal_sampling import SingleGoalSampling
-from .random_goal_sampling import RandomGoalSampling
+from .trace_from_goal import TraceFromGoal
 
-__all__ = ["Generator", "VanillaSampling", "SingleGoalSampling", "RandomGoalSampling"]
+__all__ = ["Generator", "VanillaSampling", "TraceFromGoal"]

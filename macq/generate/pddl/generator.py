@@ -258,7 +258,6 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
-    # TODO: separate into positive/negated fluents
     def change_goal(
         self,
         true_goal_fluents: Set[Fluent],
@@ -324,13 +323,9 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, length=None):
+    def generate_plan(self):
         """Generates a plan. If the goal was changed, the new goal is taken into account.
         Otherwise, the default goal in the initial problem file is used.
-
-        Args:
-            length (int): Defaults to None.
-                The optional length of the plan to be generated. If not specified, the full length of the plan is used.
 
         Returns:
             A `Plan` object that holds all the actions taken.
@@ -350,22 +345,14 @@ class Generator:
             ).json()
             plan = [act["name"] for act in resp["result"]["plan"]]
 
-        # if the plan length was specified and is shorter than the plan length, truncate the plan.
-        if length:
-            if length < len(plan):
-                plan = plan[:length]
-
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
 
-    def generate_single_trace_from_plan(self, plan: Plan, plan_len: int = None):
+    def generate_single_trace_from_plan(self, plan: Plan):
         trace = Trace()
         trace.clear()
         actions = plan.actions
-        if plan_len:
-            plan_len = len(actions) if plan_len > len(actions) else plan_len
-        else:
-            plan_len = len(actions)
+        plan_len = len(actions)
         # get initial state
         state = self.problem.init
         # note that we add 1 because the states represented take place BEFORE their subsequent action,
