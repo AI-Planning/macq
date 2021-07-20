@@ -84,7 +84,6 @@ if __name__ == "__main__":
                 ],
             )
         },
-        {},
         "new_game_dom.pddl",
         "new_game_prob.pddl",
     )
