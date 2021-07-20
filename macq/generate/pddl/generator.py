@@ -260,8 +260,7 @@ class Generator:
 
     def change_goal(
         self,
-        true_goal_fluents: Set[Fluent],
-        neg_goal_fluents: Set[Fluent],
+        goal_fluents: Set[Fluent],
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
@@ -269,10 +268,8 @@ class Generator:
         are rewritten to accomodate the new goal for later use by a planner.
 
         Args:
-            true_goal_fluents (Set[Fluent]):
-                The true set of fluents to make up the new goal.
-            neg_goal_fluents (Set[Fluent]):
-                The negated set of fluents to make up the new goal.
+            goal_fluents (Set[Fluent]):
+                The set of fluents to make up the new goal.
             new_domain (str):
                 The name of the new domain file. Defaults to a generic name.
             new_prob (str):
@@ -284,36 +281,23 @@ class Generator:
         """
         # check if the fluents to add are valid
         available_f = self.__get_all_grounded_fluents()
-        for f in true_goal_fluents:
-            if f not in available_f:
-                raise InvalidGoalFluent()
-        for f in neg_goal_fluents:
+        for f in goal_fluents:
             if f not in available_f:
                 raise InvalidGoalFluent()
 
         # convert the given set of fluents into a formula
-        if not true_goal_fluents and not neg_goal_fluents:
+        if not goal_fluents:
             goal = land()
         else:
-            formula = [
-                Atom(
-                    self.lang.get(f.name),
-                    [self.lang.get_constant(o.name) for o in f.objects],
-                )
-                for f in true_goal_fluents
-            ]
-            formula.extend(
-                [
-                    neg(
-                        Atom(
-                            self.lang.get(f.name),
-                            [self.lang.get_constant(o.name) for o in f.objects],
-                        )
+            goal = land(
+                *[
+                    Atom(
+                        self.lang.get(f.name),
+                        [self.lang.get_constant(o.name) for o in f.objects],
                     )
-                    for f in neg_goal_fluents
+                    for f in goal_fluents
                 ]
             )
-            goal = land(*formula)
         # reset the goal
         self.problem.goal = goal
 
