@@ -42,7 +42,12 @@ if __name__ == "__main__":
 
     # test goal sampling
     states_gen = vanilla.goal_sampling(
-        num_states=3, steps_deep=5, plan_complexity=5, subset_size_perc=0.1
+        num_states=3,
+        steps_deep=5,
+        plan_complexity=5,
+        subset_size_perc=0.1,
+        new_domain="new_blocks_dom.pddl",
+        new_prob="new_blocks_prob.pddl",
     )
 
     # test changing the goal and generating a plan from two local files

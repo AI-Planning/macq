@@ -262,8 +262,8 @@ class Generator:
         self,
         true_goal_fluents: Set[Fluent],
         neg_goal_fluents: Set[Fluent],
-        new_domain: str = "new_domain.pddl",
-        new_prob: str = "new_prob.pddl",
+        new_domain: str,
+        new_prob: str,
     ):
         """Changes the goal of the `Generator`. The domain and problem PDDL files
         are rewritten to accomodate the new goal for later use by a planner.
@@ -274,9 +274,9 @@ class Generator:
             neg_goal_fluents (Set[Fluent]):
                 The negated set of fluents to make up the new goal.
             new_domain (str):
-                The name of the new domain file. Defaults to a generic name.
+                The name of the new domain file.
             new_prob (str):
-                The name of the new problem file. Defaults to a generic name.
+                The name of the new problem file.
 
         Raises:
             InvalidGoalFluent:
@@ -343,10 +343,6 @@ class Generator:
             resp = requests.post(
                 "http://solver.planning.domains/solve", verify=False, json=data
             ).json()
-            try:
-                print(resp["result"]["error"])
-            except KeyError:
-                pass
             plan = [act["name"] for act in resp["result"]["plan"]]
 
         # convert to a list of tarski PlainOperators (actions)

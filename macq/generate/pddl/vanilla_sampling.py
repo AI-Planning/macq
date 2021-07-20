@@ -120,6 +120,8 @@ class VanillaSampling(Generator):
 
     def goal_sampling(
         self,
+        new_domain: str,
+        new_prob: str,
         num_states: int,
         steps_deep: int,
         plan_complexity: int,
@@ -141,19 +143,16 @@ class VanillaSampling(Generator):
             for f in del_f:
                 del state.fluents[f]
 
-            # create a sampler to test the new goal
+            # create a sampler to test the complexity of the new goal by running a planner on it
             test_plan_complexity_sampler = VanillaSampling(
-                dom=self.pddl_dom, prob=self.pddl_prob
+                dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
             )
             pos_f = {f for f in state if state[f]}
             neg_f = {f for f in state if not state[f]}
-            test_plan_complexity_sampler.change_goal(pos_f, neg_f)
+            test_plan_complexity_sampler.change_goal(pos_f, neg_f, new_domain, new_prob)
 
             # attempt to generate a plan, and find a new goal if a plan can't be found
-            try:
-                test_plan = test_plan_complexity_sampler.generate_plan()
-            except KeyError:
-                continue
+            test_plan = test_plan_complexity_sampler.generate_plan()
 
             # find a new goal if the plan to the goal isn't long enough/the goal isn't complex enough
             if len(test_plan.actions) < plan_complexity:
