@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Set, Optional
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -7,7 +7,7 @@ from tarski.grounding.lp_grounding import (
     LPGroundingStrategy,
 )
 from tarski.syntax.ops import CompoundFormula
-from tarski.syntax.formulas import Atom
+from tarski.syntax.formulas import Atom, neg
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.action import PlainOperator
 from tarski.fstrips.fstrips import AddEffect
@@ -258,17 +258,25 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
-    def change_goal(self, goal_fluents: Set[Fluent], new_domain: str, new_prob: str):
+    def change_goal(
+        self,
+        true_goal_fluents: Set[Fluent],
+        neg_goal_fluents: Set[Fluent],
+        new_domain: str = "new_domain.pddl",
+        new_prob: str = "new_prob.pddl",
+    ):
         """Changes the goal of the `Generator`. The domain and problem PDDL files
         are rewritten to accomodate the new goal for later use by a planner.
 
         Args:
-            goal_fluents (Set[Fluent]):
-                The set of fluents to make up the new goal.
+            true_goal_fluents (Set[Fluent]):
+                The true set of fluents to make up the new goal.
+            neg_goal_fluents (Set[Fluent]):
+                The negated set of fluents to make up the new goal.
             new_domain (str):
-                The name of the new domain file.
+                The name of the new domain file. Defaults to a generic name.
             new_prob (str):
-                The name of the new problem file.
+                The name of the new problem file. Defaults to a generic name.
 
         Raises:
             InvalidGoalFluent:
@@ -276,23 +284,36 @@ class Generator:
         """
         # check if the fluents to add are valid
         available_f = self.__get_all_grounded_fluents()
-        for f in goal_fluents:
+        for f in true_goal_fluents:
+            if f not in available_f:
+                raise InvalidGoalFluent()
+        for f in neg_goal_fluents:
             if f not in available_f:
                 raise InvalidGoalFluent()
 
         # convert the given set of fluents into a formula
-        if not goal_fluents:
+        if not true_goal_fluents and not neg_goal_fluents:
             goal = land()
         else:
-            goal = land(
-                *[
-                    Atom(
-                        self.lang.get(f.name),
-                        [self.lang.get_constant(o.name) for o in f.objects],
+            formula = [
+                Atom(
+                    self.lang.get(f.name),
+                    [self.lang.get_constant(o.name) for o in f.objects],
+                )
+                for f in true_goal_fluents
+            ]
+            formula.extend(
+                [
+                    neg(
+                        Atom(
+                            self.lang.get(f.name),
+                            [self.lang.get_constant(o.name) for o in f.objects],
+                        )
                     )
-                    for f in goal_fluents
+                    for f in neg_goal_fluents
                 ]
             )
+            goal = land(*formula)
         # reset the goal
         self.problem.goal = goal
 
@@ -302,13 +323,9 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, length=None):
+    def generate_plan(self):
         """Generates a plan. If the goal was changed, the new goal is taken into account.
         Otherwise, the default goal in the initial problem file is used.
-
-        Args:
-            length (int): Defaults to None.
-                The optional length of the plan to be generated. If not specified, the full length of the plan is used.
 
         Returns:
             A `Plan` object that holds all the actions taken.
@@ -328,22 +345,14 @@ class Generator:
             ).json()
             plan = [act["name"] for act in resp["result"]["plan"]]
 
-        # if the plan length was specified and is shorter than the plan length, truncate the plan.
-        if length:
-            if length < len(plan):
-                plan = plan[:length]
-
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
 
-    def generate_single_trace_from_plan(self, plan: Plan, plan_len: int = None):
+    def generate_single_trace_from_plan(self, plan: Plan):
         trace = Trace()
         trace.clear()
         actions = plan.actions
-        if plan_len:
-            plan_len = len(actions) if plan_len > len(actions) else plan_len
-        else:
-            plan_len = len(actions)
+        plan_len = len(actions)
         # get initial state
         state = self.problem.init
         # note that we add 1 because the states represented take place BEFORE their subsequent action,
