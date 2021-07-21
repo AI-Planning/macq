@@ -159,8 +159,8 @@ class ARMS:
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
     ) -> List[Or]:
-        def implication(a: str, b: str):
-            return Or([Var(a).negate(), Var(b)])
+        def implication(a: Var, b: Var):
+            return Or([a.negate(), b])
 
         constraints = []
         actions = set(connected_actions.keys())
@@ -176,14 +176,14 @@ class ARMS:
                     # action.details() contain spaces.
                     constraints.append(
                         implication(
-                            f"{relation.var()}_in_add_{action.details()}",
-                            f"{relation.var()}_notin_pre_{action.details()}",
+                            Var(f"{relation.var()}_in_add_{action.details()}"),
+                            Var(f"{relation.var()}_in_pre_{action.details()}").negate(),
                         )
                     )
                     constraints.append(
                         implication(
-                            f"{relation.var()}_in_pre_{action.details()}",
-                            f"{relation.var()}_notin_add_{action.details()}",
+                            Var(f"{relation.var()}_in_pre_{action.details()}"),
+                            Var(f"{relation.var()}_in_add_{action.details()}").negate(),
                         )
                     )
 
@@ -191,8 +191,8 @@ class ARMS:
                     # relation in action.del => relation in action.precond
                     constraints.append(
                         implication(
-                            f"{relation.var()}_in_del_{action.details()}",
-                            f"{relation.var()}_in_pre_{action.details()}",
+                            Var(f"{relation.var()}_in_del_{action.details()}"),
+                            Var(f"{relation.var()}_in_pre_{action.details()}"),
                         )
                     )
 
@@ -249,7 +249,7 @@ class ARMS:
         return constraints, support_counts
 
     @staticmethod
-    def apriori(
+    def _apriori(
         action_lists: List[List[LearnedAction]], minsup: int
     ) -> Dict[Tuple[LearnedAction, LearnedAction], int]:
         """An implementation of the Apriori algorithm to find frequent ordered pairs of actions."""
@@ -298,7 +298,7 @@ class ARMS:
         relations: Set[Relation],
         min_support: int,
     ) -> Dict[Or, int]:
-        frequent_pairs = ARMS.apriori(
+        frequent_pairs = ARMS._apriori(
             [
                 [learned_actions[obs.action] for obs in obs_list]
                 for obs_list in obs_lists
@@ -336,7 +336,9 @@ class ARMS:
                                 [
                                     Var(f"{relation.var()}_in_pre_{ai.details()}"),
                                     Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                                    Var(f"{relation.var()}_notin_del_{ai.details()}"),
+                                    Var(
+                                        f"{relation.var()}_in_del_{ai.details()}"
+                                    ).negate(),
                                 ]
                             ),
                             And(
@@ -359,5 +361,7 @@ class ARMS:
         return constraints
 
     @staticmethod
-    def _step3(constraints: ARMSConstraints):
+    def _step3(constraints: ARMSConstraints) -> WCNF:
+        # translate action constraints to pysat constraints with constant weight
+        #
         pass
