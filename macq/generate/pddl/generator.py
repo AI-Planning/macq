@@ -1,4 +1,4 @@
-from typing import Set, Optional
+from typing import Set, List, Union
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -260,7 +260,7 @@ class Generator:
 
     def change_goal(
         self,
-        goal_fluents: Set[Fluent],
+        goal_fluents: Union[Set[Fluent], List[Fluent]],
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
@@ -268,8 +268,8 @@ class Generator:
         are rewritten to accomodate the new goal for later use by a planner.
 
         Args:
-            goal_fluents (Set[Fluent]):
-                The set of fluents to make up the new goal.
+            goal_fluents (Union[Set[Fluent], List[Fluent]]):
+                The collection of fluents that will make up the new goal.
             new_domain (str):
                 The name of the new domain file.
             new_prob (str):

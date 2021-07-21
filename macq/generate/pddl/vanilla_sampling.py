@@ -131,7 +131,10 @@ class VanillaSampling(Generator):
             raise PercentError()
 
         goal_states = set()
+        # keeps track of the number of failed iterations (in a row) at this depth
+        failed_depth_it = 0
         while len(goal_states) < num_states:
+            failed_depth_it += 1
             # generate a trace of the specified length and retrieve the state of the last step
             state = self.generate_single_trace(steps_deep)[-1].state
 
@@ -140,9 +143,9 @@ class VanillaSampling(Generator):
             # get the subset size
             subset_size = int(len(state.fluents) * subset_size_perc)
             # if necessary, take a subset of the fluents
-            # if len(pos_f) > subset_size:
-            #     random.shuffle(pos_f)
-            #     pos_f = pos_f[:subset_size]
+            if len(pos_f) > subset_size:
+                random.shuffle(pos_f)
+                pos_f = pos_f[:subset_size]
 
             # create a sampler to test the complexity of the new goal by running a planner on it
             test_plan_complexity_sampler = VanillaSampling(
@@ -152,7 +155,7 @@ class VanillaSampling(Generator):
                 goal_fluents=pos_f, new_domain=new_domain, new_prob=new_prob
             )
 
-            # ensure that the goal doesn't hold in the initial state
+            # ensure that the goal doesn't hold in the initial state; restart if it does
             init_state = {
                 str(a) for a in test_plan_complexity_sampler.problem.init.as_atoms()
             }
@@ -164,12 +167,21 @@ class VanillaSampling(Generator):
 
             # attempt to generate a plan, and find a new goal if a plan can't be found
             test_plan = test_plan_complexity_sampler.generate_plan()
-            print(test_plan)
-            print()
 
             # find a new goal if the plan to the goal isn't long enough/the goal isn't complex enough
             if len(test_plan.actions) < plan_complexity:
+                # if we failed to find a complex goal at this depth 10 times in a row, increase the depth by 1 and reset the counter
+                if failed_depth_it > 10:
+                    failed_depth_it = 0
+                    steps_deep += 1
                 continue
 
-            goal_states.add(state)
+            # upon a successful iteration, reset to 0
+            failed_depth_it = 0
+
+            # create a State and add it to the set
+            state_dict = {}
+            for f in pos_f:
+                state_dict[f] = True
+            goal_states.add(State(state_dict))
         return goal_states
