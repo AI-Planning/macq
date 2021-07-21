@@ -27,7 +27,6 @@ def test_invalid_vanilla_sampling():
                     "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
                 ),
             },
-            {},
             "new_blocks_dom.pddl",
             "new_blocks_prob.pddl",
         )
