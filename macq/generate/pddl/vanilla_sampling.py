@@ -140,9 +140,9 @@ class VanillaSampling(Generator):
             # get the subset size
             subset_size = int(len(state.fluents) * subset_size_perc)
             # if necessary, take a subset of the fluents
-            if len(pos_f) > subset_size:
-                random.shuffle(pos_f)
-                pos_f = pos_f[:subset_size]
+            # if len(pos_f) > subset_size:
+            #     random.shuffle(pos_f)
+            #     pos_f = pos_f[:subset_size]
 
             # create a sampler to test the complexity of the new goal by running a planner on it
             test_plan_complexity_sampler = VanillaSampling(
@@ -151,11 +151,21 @@ class VanillaSampling(Generator):
             test_plan_complexity_sampler.change_goal(
                 goal_fluents=pos_f, new_domain=new_domain, new_prob=new_prob
             )
-            print(test_plan_complexity_sampler.problem.goal)
+
+            # ensure that the goal doesn't hold in the initial state
+            init_state = {
+                str(a) for a in test_plan_complexity_sampler.problem.init.as_atoms()
+            }
+            goal = {
+                str(a) for a in test_plan_complexity_sampler.problem.goal.subformulas
+            }
+            if goal.issubset(init_state):
+                continue
 
             # attempt to generate a plan, and find a new goal if a plan can't be found
             test_plan = test_plan_complexity_sampler.generate_plan()
             print(test_plan)
+            print()
 
             # find a new goal if the plan to the goal isn't long enough/the goal isn't complex enough
             if len(test_plan.actions) < plan_complexity:
