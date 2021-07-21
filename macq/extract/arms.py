@@ -1,5 +1,4 @@
 from collections import defaultdict, Counter
-from itertools import combinations
 from dataclasses import dataclass
 from typing import Set, List, Dict, Tuple, Union
 from nnf import Var, And, Or
@@ -39,23 +38,61 @@ class ARMS:
     algorithm.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, min_support: int = 2):
+    class InvalidThreshold(Exception):
+        def __init__(self, threshold):
+            super().__init__(
+                f"Invalid threshold value: {threshold}. Threshold must be a float between 0-1 (inclusive)."
+            )
+
+    def __new__(
+        cls,
+        obs_lists: ObservationLists,
+        min_support: int = 2,
+        action_weight: int = 110,
+        info_weight: int = 100,
+        threshold: float = 0.6,
+        info3_default: int = 30,
+        plan_default: int = 30,
+    ):
         """
         Arguments:
             obs_lists (ObservationLists):
                 The observations to extract the model from.
             min_support (int):
                 The minimum support count for an action pair to be considered frequent.
+            action_weight (int):
+                The constant weight W_A(a) to assign to each action constraint.
+            info_weight (int):
+                The constant weight W_I(r) to assign to each information constraint.
+            threshold (float):
+                (0-1) The probability threshold θ to determine if an I3/plan constraint
+                is weighted by its probability or set to a default value.
+            info3_default (int):
+                The default weight for I3 constraints with probability below the threshold.
+            plan_default (int):
+                The default weight for plan constraints with probability below the threshold.
         """
         if obs_lists.type is not Observation:
             raise IncompatibleObservationToken(obs_lists.type, ARMS)
+
+        if not (threshold >= 0 and threshold <= 1):
+            raise ARMS.InvalidThreshold(threshold)
 
         # assert that there is a goal
         ARMS._check_goal(obs_lists)
         # get fluents from initial state
         fluents = ARMS._get_fluents(obs_lists)
         # call algorithm to get actions
-        actions = ARMS._arms(obs_lists, fluents, min_support)
+        actions = ARMS._arms(
+            obs_lists,
+            fluents,
+            min_support,
+            action_weight,
+            info_weight,
+            threshold,
+            info3_default,
+            plan_default,
+        )
         return Model(fluents, actions)
 
     @staticmethod
@@ -71,7 +108,14 @@ class ARMS:
 
     @staticmethod
     def _arms(
-        obs_lists: ObservationLists, fluents: Set[Fluent], min_support: int
+        obs_lists: ObservationLists,
+        fluents: Set[Fluent],
+        min_support: int,
+        action_weight: int,
+        info_weight: int,
+        threshold: float,
+        info3_default: int,
+        plan_default: int,
     ) -> Set[LearnedAction]:
         connected_actions, learned_actions = ARMS._step1(
             obs_lists
@@ -79,7 +123,14 @@ class ARMS:
         constraints = ARMS._step2(
             obs_lists, connected_actions, learned_actions, fluents, min_support
         )
-        max_sat = ARMS._step3(constraints)
+        max_sat = ARMS._step3(
+            constraints,
+            action_weight,
+            info_weight,
+            threshold,
+            info3_default,
+            plan_default,
+        )
 
         return set()  # WARNING temp
 
