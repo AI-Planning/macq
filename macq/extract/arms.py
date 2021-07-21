@@ -23,6 +23,14 @@ class Relation:
         return hash(self.var())
 
 
+@dataclass
+class ARMSConstraints:
+    action: List[Or]
+    info: List[And]
+    info3: Dict[Var, int]
+    plan: Dict[Or, int]
+
+
 class ARMS:
     """ARMS model extraction method.
 
@@ -71,6 +79,7 @@ class ARMS:
         constraints = ARMS._step2(
             obs_lists, connected_actions, learned_actions, fluents, min_support
         )
+        max_sat = ARMS._step3(constraints)
 
         return set()  # WARNING temp
 
@@ -113,7 +122,7 @@ class ARMS:
         learned_actions: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
-    ) -> List:
+    ) -> ARMSConstraints:
         """Generate action constraints, information constraints, and plan constraints."""
 
         # Map fluents to relations
@@ -132,25 +141,7 @@ class ARMS:
         )
 
         action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
-        info_constraints, support_counts = ARMS._step2I(obs_lists, relations)
-        """
-        # calculate support rates
-        support_rate = {}
-
-        # NOTE:
-        # In the paper, Z_Σ_P (denominator of the support rate formula) is
-        # defined as the "total pairs" in the set of plans. However, in the
-        # examples it appears that they use the max support count as the
-        # denominator. My best interpretation is then to use the max support
-        # count as the denominator to calculate the support rate.
-        z_sigma_p = max(support_counts.values())
-        for pair, support_count in support_counts.items():
-            support_rate[pair] = support_count / z_sigma_p
-
-            # weight of (p,a) is the occurence probability
-            # if probability > theta, p in pre of a, with weight =
-            # prior probability
-        """
+        info_constraints, info_support_counts = ARMS._step2I(obs_lists, relations)
         plan_constraints = ARMS._step2P(
             obs_lists,
             connected_actions,
@@ -159,13 +150,15 @@ class ARMS:
             min_support,
         )
 
-        return []  # WARNING temp
+        return ARMSConstraints(
+            action_constraints, info_constraints, info_support_counts, plan_constraints
+        )
 
     @staticmethod
     def _step2A(
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
-    ):
+    ) -> List[Or]:
         def implication(a: str, b: str):
             return Or([Var(a).negate(), Var(b)])
 
@@ -206,7 +199,9 @@ class ARMS:
         return constraints
 
     @staticmethod
-    def _step2I(obs_lists: ObservationLists, relations: dict):
+    def _step2I(
+        obs_lists: ObservationLists, relations: dict
+    ) -> Tuple[List[And], Dict[Var, int]]:
         constraints = []
         support_counts = defaultdict(int)
         for obs_list in obs_lists:
@@ -362,3 +357,7 @@ class ARMS:
             constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
 
         return constraints
+
+    @staticmethod
+    def _step3(constraints: ARMSConstraints):
+        pass
