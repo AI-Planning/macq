@@ -38,7 +38,7 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=1)
 
     # test goal sampling
     states_gen = vanilla.goal_sampling(

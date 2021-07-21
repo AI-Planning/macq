@@ -135,24 +135,27 @@ class VanillaSampling(Generator):
             # generate a trace of the specified length and retrieve the state of the last step
             state = self.generate_single_trace(steps_deep)[-1].state
 
-            # randomly generate missing fluents according to the size of the partial state/subset specified
-            del_f = list(state.keys())
-            random.shuffle(del_f)
-            del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
-            # delete the missing fluents
-            for f in del_f:
-                del state.fluents[f]
+            # get all positive fluents (only positive fluents can be used for a goal)
+            pos_f = [f for f in state if state[f]]
+            # get the subset size
+            subset_size = int(len(state.fluents) * subset_size_perc)
+            # if necessary, take a subset of the fluents
+            if len(pos_f) > subset_size:
+                random.shuffle(pos_f)
+                pos_f = pos_f[:subset_size]
 
             # create a sampler to test the complexity of the new goal by running a planner on it
             test_plan_complexity_sampler = VanillaSampling(
                 dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
             )
-            pos_f = {f for f in state if state[f]}
-            neg_f = {f for f in state if not state[f]}
-            test_plan_complexity_sampler.change_goal(pos_f, neg_f, new_domain, new_prob)
+            test_plan_complexity_sampler.change_goal(
+                goal_fluents=pos_f, new_domain=new_domain, new_prob=new_prob
+            )
+            print(test_plan_complexity_sampler.problem.goal)
 
             # attempt to generate a plan, and find a new goal if a plan can't be found
             test_plan = test_plan_complexity_sampler.generate_plan()
+            print(test_plan)
 
             # find a new goal if the plan to the goal isn't long enough/the goal isn't complex enough
             if len(test_plan.actions) < plan_complexity:

@@ -299,7 +299,7 @@ class Generator:
                 ]
             )
         # reset the goal
-        self.problem.goal = goal
+        self.problem.goal = flatten(goal)
 
         # rewrite PDDL files appropriately
         writer = iofs.FstripsWriter(self.problem)
