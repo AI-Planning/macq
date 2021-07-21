@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 from itertools import combinations
 from dataclasses import dataclass
-from typing import Set, List, Dict, Tuple
+from typing import Set, List, Dict, Tuple, Union
 from nnf import Var, And, Or
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
@@ -27,7 +27,7 @@ class Relation:
 class ARMSConstraints:
     action: List[Or]
     info: List[And]
-    info3: Dict[Var, int]
+    info3: Dict[Or, int]
     plan: Dict[Or, int]
 
 
@@ -201,7 +201,7 @@ class ARMS:
     @staticmethod
     def _step2I(
         obs_lists: ObservationLists, relations: dict
-    ) -> Tuple[List[And], Dict[Var, int]]:
+    ) -> Tuple[List[And], Dict[Or, int]]:
         constraints = []
         support_counts = defaultdict(int)
         for obs_list in obs_lists:
@@ -234,15 +234,23 @@ class ARMS:
                             if i < len(obs_list) - 1:
                                 # corresponding constraint is related to the current action's precondition list
                                 support_counts[
-                                    Var(
-                                        f"{relations[fluent].var()}_in_pre_{obs.action.details()}"
+                                    Or(
+                                        [
+                                            Var(
+                                                f"{relations[fluent].var()}_in_pre_{obs.action.details()}"
+                                            )
+                                        ]
                                     )
                                 ] += 1
                             else:
                                 # corresponding constraint is related to the previous action's add list
                                 support_counts[
-                                    Var(
-                                        f"{relations[fluent].var()}_in_add_{obs_list[i-1].action.details()}"
+                                    Or(
+                                        [
+                                            Var(
+                                                f"{relations[fluent].var()}_in_add_{obs_list[i-1].action.details()}"
+                                            )
+                                        ]
                                     )
                                 ] += 1
 
@@ -361,7 +369,52 @@ class ARMS:
         return constraints
 
     @staticmethod
-    def _step3(constraints: ARMSConstraints) -> WCNF:
-        # translate action constraints to pysat constraints with constant weight
-        #
-        pass
+    def _step3(
+        constraints: ARMSConstraints,
+        action_weight: int,
+        info_weight: int,
+        threshold: float,
+        info3_default: int,
+        plan_default: int,
+    ) -> WCNF:
+        # construct (ordered) problem
+        # construct ordered weights list
+
+        action_weights = [action_weight] * len(constraints.action)
+        info_weights = [info_weight] * len(constraints.info)
+        info3_weights = ARMS._calculate_support_rates(
+            list(constraints.info3.values()), threshold, info3_default
+        )
+        plan_weights = ARMS._calculate_support_rates(
+            list(constraints.plan.values()), threshold, plan_default
+        )
+        weights = action_weights + info_weights + info3_weights + plan_weights
+
+        info3_constraints = list(constraints.info3.keys())
+        plan_constraints = list(constraints.plan.keys())
+        problem = And(
+            *constraints.action,
+            *constraints.info,
+            *info3_constraints,
+            *plan_constraints,
+        )
+        return  # type: ignore
+
+    @staticmethod
+    def _calculate_support_rates(
+        support_counts: List[int], threshold: float, default: int
+    ) -> List[int]:
+        # NOTE:
+        # In the paper, Z_Σ_P (denominator of the support rate formula) is
+        # defined as the "total pairs" in the set of plans. However, in the
+        # examples it appears that they use the max support count as the
+        # denominator. My best interpretation is then to use the max support
+        # count as the denominator to calculate the support rate.
+
+        z_sigma_p = max(support_counts)
+
+        def get_support_rate(count):
+            probability = count / z_sigma_p
+            return probability * 100 if probability > threshold else default
+
+        return list(map(get_support_rate, support_counts))
