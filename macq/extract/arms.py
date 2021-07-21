@@ -65,18 +65,26 @@ class ARMS:
     def _arms(
         obs_lists: ObservationLists, fluents: Set[Fluent], min_support: int
     ) -> Set[LearnedAction]:
-        connected_actions = ARMS._step1(obs_lists)  # actions = connected_actions.keys()
-        constraints = ARMS._step2(obs_lists, connected_actions, fluents, min_support)
+        connected_actions, learned_actions = ARMS._step1(
+            obs_lists
+        )  # actions = connected_actions.keys()
+        constraints = ARMS._step2(
+            obs_lists, connected_actions, learned_actions, fluents, min_support
+        )
 
         return set()  # WARNING temp
 
     @staticmethod
     def _step1(
         obs_lists: ObservationLists,
-    ) -> Dict[LearnedAction, Dict[LearnedAction, Set]]:
+    ) -> Tuple[
+        Dict[LearnedAction, Dict[LearnedAction, Set]],
+        Dict[Action, LearnedAction],
+    ]:
         """Substitute instantiated objects in each action instance with the object type."""
 
         actions: List[LearnedAction] = []
+        learned_actions = {}
         for obs_action in obs_lists.get_actions():
             # We don't support objects with multiple types right now, so no
             # multiple type clauses need to be generated.
@@ -86,6 +94,7 @@ class ARMS:
             types = {obj.obj_type for obj in obs_action.obj_params}
             action = LearnedAction(obs_action.name, types)
             actions.append(action)
+            learned_actions[obs_action] = action
 
         connected_actions = {}
         for i, a1 in enumerate(actions):
@@ -95,12 +104,13 @@ class ARMS:
                 if intersection:
                     connected_actions[a1][a2] = intersection
 
-        return connected_actions
+        return connected_actions, learned_actions
 
     @staticmethod
     def _step2(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        learned_actions: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
     ) -> List:
@@ -142,7 +152,11 @@ class ARMS:
             # prior probability
         """
         plan_constraints = ARMS._step2P(
-            obs_lists, connected_actions, set(relations.values()), min_support
+            obs_lists,
+            connected_actions,
+            learned_actions,
+            set(relations.values()),
+            min_support,
         )
 
         return []  # WARNING temp
@@ -204,19 +218,19 @@ class ARMS:
                             # I1
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
-                            for obs_i in obs_list[:i]:
-                                a_i = obs_i.action
+                            for obs_i in obs_list[: i - 1]:
+                                ai = obs_i.action
                                 i1.append(
                                     Var(
-                                        f"{relations[fluent].var()}_in_add_{a_i.details()}"
+                                        f"{relations[fluent].var()}_in_add_{ai.details()}"
                                     )
                                 )
 
                             # I2
                             # relation not in del list of action n (i-1)
                             i2 = Var(
-                                f"{relations[fluent].var()}_notin_del_{obs_list[i-1].action.details()}"
-                            )
+                                f"{relations[fluent].var()}_in_del_{obs_list[i-1].action.details()}"
+                            ).negate()
 
                             constraints.append(And([Or(i1), i2]))
 
@@ -225,20 +239,24 @@ class ARMS:
                             if i < len(obs_list) - 1:
                                 # corresponding constraint is related to the current action's precondition list
                                 support_counts[
-                                    (relations[fluent], obs.action, "pre")
+                                    Var(
+                                        f"{relations[fluent].var()}_in_pre_{obs.action.details()}"
+                                    )
                                 ] += 1
                             else:
                                 # corresponding constraint is related to the previous action's add list
                                 support_counts[
-                                    (relations[fluent], obs_list[i - 1].action, "add")
+                                    Var(
+                                        f"{relations[fluent].var()}_in_add_{obs_list[i-1].action.details()}"
+                                    )
                                 ] += 1
 
         return constraints, support_counts
 
     @staticmethod
     def apriori(
-        action_lists: List[List[Action]], minsup: int
-    ) -> Dict[Tuple[Action, Action], int]:
+        action_lists: List[List[LearnedAction]], minsup: int
+    ) -> Dict[Tuple[LearnedAction, LearnedAction], int]:
         """An implementation of the Apriori algorithm to find frequent ordered pairs of actions."""
         counts = Counter(
             [action for action_list in action_lists for action in action_list]
@@ -281,28 +299,66 @@ class ARMS:
     def _step2P(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        learned_actions: Dict[Action, LearnedAction],
         relations: Set[Relation],
         min_support: int,
-    ):
+    ) -> Dict[Or, int]:
         frequent_pairs = ARMS.apriori(
-            [[obs.action for obs in obs_list] for obs_list in obs_lists], min_support
+            [
+                [learned_actions[obs.action] for obs in obs_list]
+                for obs_list in obs_lists
+            ],
+            min_support,
         )
 
+        constraints: Dict[Or, int] = {}
         for ai, aj in frequent_pairs.keys():
-            """
-            ∃p(
-              (p∈ (pre_i ∩ pre_j) ∧ p∉ (del_i)) ∨
-              (p∈ (add_i ∩ pre_j)) ∨
-              (p∈ (del_i ∩ add_j))
-            )
-            where p is a relevant relation.
-
-            ∃p can be converted to a disjunction of the formula for all p.
-            Will need to be converted to CNF at some point.
-            """
             # get list of relevant relations from connected_actions
-            # for each relation, save constraint
-            # connect in a big Or - constraint for pair
+            if ai in connected_actions.keys():
+                relevant_relations = connected_actions[ai][aj]
+            else:
+                relevant_relations = connected_actions[aj][ai]
 
-            pass
-        # return constraints with pair support counts
+            # if the actions are not related they are not a valid pair for a plan constraint
+            if not relevant_relations:
+                continue
+
+            # for each relation, save constraint
+            relation_constraints = []
+            for relation in relevant_relations:
+                """
+                ∃p(
+                  (p∈ (pre_i ∩ pre_j) ∧ p∉ (del_i)) ∨
+                  (p∈ (add_i ∩ pre_j)) ∨
+                  (p∈ (del_i ∩ add_j))
+                )
+                where p is a relevant relation.
+                """
+                relation_constraints.append(
+                    Or(
+                        [
+                            And(
+                                [
+                                    Var(f"{relation.var()}_in_pre_{ai.details()}"),
+                                    Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                                    Var(f"{relation.var()}_notin_del_{ai.details()}"),
+                                ]
+                            ),
+                            And(
+                                [
+                                    Var(f"{relation.var()}_in_add_{ai.details()}"),
+                                    Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                                ]
+                            ),
+                            And(
+                                [
+                                    Var(f"{relation.var()}_in_del_{ai.details()}"),
+                                    Var(f"{relation.var()}_in_add_{aj.details()}"),
+                                ]
+                            ),
+                        ]
+                    )
+                )
+            constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
+
+        return constraints
