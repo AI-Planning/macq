@@ -280,7 +280,7 @@ class Generator:
                 Raised if any of the fluents supplied do not exist in this domain.
         """
         # check if the fluents to add are valid
-        available_f = self.__get_all_grounded_fluents()
+        available_f = self.grounded_fluents
         for f in goal_fluents:
             if f not in available_f:
                 raise InvalidGoalFluent()

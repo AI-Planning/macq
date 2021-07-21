@@ -1,3 +1,4 @@
+from tarski.model import create
 from tarski.search.operations import progress
 import random
 from . import Generator
@@ -129,10 +130,13 @@ class VanillaSampling(Generator):
     ):
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
-
-        goal_states = set()
+        goal_states = {}
         # keeps track of the number of failed iterations (in a row) at this depth
         failed_depth_it = 0
+        # create a sampler to test the complexity of the new goal by running a planner on it
+        test_plan_complexity_sampler = VanillaSampling(
+            dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
+        )
         while len(goal_states) < num_states:
             failed_depth_it += 1
             # generate a trace of the specified length and retrieve the state of the last step
@@ -147,10 +151,6 @@ class VanillaSampling(Generator):
                 random.shuffle(pos_f)
                 pos_f = pos_f[:subset_size]
 
-            # create a sampler to test the complexity of the new goal by running a planner on it
-            test_plan_complexity_sampler = VanillaSampling(
-                dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
-            )
             test_plan_complexity_sampler.change_goal(
                 goal_fluents=pos_f, new_domain=new_domain, new_prob=new_prob
             )
@@ -179,9 +179,15 @@ class VanillaSampling(Generator):
             # upon a successful iteration, reset to 0
             failed_depth_it = 0
 
+            # change the initial state of the sampler to the goal just generated (ensures more diversity in goals/plans)
+            init = create(test_plan_complexity_sampler.lang)
+            for a in test_plan_complexity_sampler.problem.goal.subformulas:
+                init.add(a.predicate, *a.subterms)
+            test_plan_complexity_sampler.problem.init = init
+
             # create a State and add it to the set
             state_dict = {}
             for f in pos_f:
                 state_dict[f] = True
-            goal_states.add(State(state_dict))
+            goal_states[State(state_dict)] = test_plan
         return goal_states

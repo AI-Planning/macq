@@ -49,6 +49,15 @@ if __name__ == "__main__":
         new_prob="new_blocks_prob.pddl",
     )
 
+    for s in states_gen:
+        print()
+        print(states_gen[s])
+        print()
+        f_sorted = [str(f) for f in s.fluents]
+        f_sorted.sort()
+        for f in f_sorted:
+            print(f)
+
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {

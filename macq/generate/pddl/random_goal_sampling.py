@@ -37,10 +37,9 @@ class RandomGoalSampling(Generator):
             subset_size_perc=self.subset_size_perc,
         )
         # iterate through all goals, changing the generator's goal to the current goal each iteration
-        for state in self.goals:
-            pos_f = {f for f in state if state[f]}
-            neg_f = {f for f in state if not state[f]}
-            self.vanilla_gen.change_goal(pos_f, neg_f, self.new_domain, self.new_prob)
+        for goal in self.goals:
+            state = {f for f in goal}
+            self.vanilla_gen.change_goal(state, self.new_domain, self.new_prob)
             # generate a plan based on the new goal, then generate a trace based on that plan
             traces.append(
                 self.generate_single_trace_from_plan(self.vanilla_gen.generate_plan())
