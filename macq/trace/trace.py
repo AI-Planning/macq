@@ -53,6 +53,11 @@ class Trace:
         self.steps = steps
         self.__reinit_actions_and_fluents()
 
+    def __eq__(self, other):
+        if not isinstance(other, Trace):
+            return False
+        return self.steps == other.steps
+
     def __len__(self):
         return len(self.steps)
 
