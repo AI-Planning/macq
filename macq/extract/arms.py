@@ -1,6 +1,6 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
-from typing import Set, List, Dict, Tuple, Union
+from typing import Set, List, Dict, Tuple, Union, Hashable
 from nnf import Var, And, Or
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
@@ -8,6 +8,7 @@ from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from ..observation import PartialObservation as Observation
 from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
+from ..utils.pysat import to_wcnf
 
 
 @dataclass
@@ -427,9 +428,8 @@ class ARMS:
         threshold: float,
         info3_default: int,
         plan_default: int,
-    ) -> WCNF:
-        # construct (ordered) problem
-        # construct ordered weights list
+    ) -> Tuple[WCNF, Dict[int, Hashable]]:
+        """Construct the weighted MAX-SAT problem."""
 
         action_weights = [action_weight] * len(constraints.action)
         info_weights = [info_weight] * len(constraints.info)
@@ -449,7 +449,8 @@ class ARMS:
             *info3_constraints,
             *plan_constraints,
         )
-        return  # type: ignore
+        wcnf, decode = to_wcnf(problem, weights)
+        return wcnf, decode
 
     @staticmethod
     def _calculate_support_rates(
