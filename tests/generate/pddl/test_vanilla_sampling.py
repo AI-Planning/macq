@@ -43,7 +43,6 @@ if __name__ == "__main__":
     states_gen = vanilla.goal_sampling(
         num_states=3,
         steps_deep=5,
-        plan_complexity=5,
         subset_size_perc=0.1,
         new_domain="new_blocks_dom.pddl",
         new_prob="new_blocks_prob.pddl",
