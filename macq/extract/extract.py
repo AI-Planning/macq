@@ -6,7 +6,7 @@ from ..trace import ObservationLists, Action, State
 
 # Techniques
 from .observer import Observer
-from .slaf import Slaf
+from .slaf import SLAF
 from .arms import ARMS
 
 
@@ -35,7 +35,7 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes) -> Model:
+    def __new__(cls, obs_lists: ObservationLists, mode: modes, **kwargs) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
@@ -46,6 +46,8 @@ class Extract:
                 The state observations to extract the model from.
             mode (Enum):
                 The extraction technique to use.
+            **kwargs: (keyword arguments)
+                Any extra arguments to supply to the extraction technique.
 
         Returns:
             A Model object. The model's characteristics are determined by the
@@ -53,11 +55,11 @@ class Extract:
         """
         techniques = {
             modes.OBSERVER: Observer,
-            modes.SLAF: Slaf,
+            modes.SLAF: SLAF,
             modes.ARMS: ARMS,
         }
         if mode == modes.SLAF:
             if len(obs_lists) != 1:
                 raise Exception("The SLAF extraction technique only takes one trace.")
 
-        return techniques[mode](obs_lists)
+        return techniques[mode](obs_lists, **kwargs)

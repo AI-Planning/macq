@@ -46,7 +46,11 @@ class PartialObservation(Observation):
 
         super().__init__(index=step.index)
 
-        if percent_missing < 1 and percent_missing > 0:
+        # If percent_missing == 1 -> self.state = None (below).
+        # This allows ARMS (and other algorithms) to skip steps when there is no
+        # state information available without having to check every mapping in
+        # the state (slow in large domains).
+        if percent_missing < 1:
             step = self.random_subset(step, percent_missing)
         if hide:
             step = self.hide_subset(step, hide)
@@ -84,10 +88,7 @@ class PartialObservation(Observation):
         hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
         # get new dict
         for f in fluents:
-            if f in hide_fluents_ls:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+            new_fluents[f] = None if f in hide_fluents_ls else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def hide_subset(self, step: Step, hide: Set[Fluent]):
@@ -104,18 +105,8 @@ class PartialObservation(Observation):
         """
         new_fluents = {}
         for f in step.state.fluents:
-            if f in hide:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+            new_fluents[f] = None if f in hide else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
-
-    def get_all_base_fluents(self):
-        """Returns a set of the details all the fluents used at the current step. The value of the fluents is not included."""
-        fluents = set()
-        for f in self.state.fluents:
-            fluents.add(str(f)[1:-1])
-        return fluents
 
     def _matches(self, key: str, value: str):
         if key == "action":

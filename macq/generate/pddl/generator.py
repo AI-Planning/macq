@@ -1,18 +1,35 @@
-from ...trace import Action, State, PlanningObject, Fluent
-from .planning_domains_api import get_problem
+from typing import Set, Optional
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
+from tarski.search.operations import progress
 from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
 from tarski.syntax.ops import CompoundFormula
-from tarski.syntax.formulas import Atom
+from tarski.syntax.formulas import Atom, neg
 from tarski.syntax.builtins import BuiltinPredicateSymbol
-from tarski.fstrips.fstrips import AddEffect
 from tarski.fstrips.action import PlainOperator
+from tarski.fstrips.fstrips import AddEffect
 from tarski.model import Model
+from tarski.syntax import land
+from tarski.io import fstrips as iofs
 import requests
+from .planning_domains_api import get_problem, get_plan
+from .plan import Plan
+from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
+
+
+class InvalidGoalFluent(Exception):
+    """
+    Raised when the user attempts to supply a new goal with invalid fluent(s).
+    """
+
+    def __init__(
+        self,
+        message="The fluents provided contain one or more fluents not available in this problem.",
+    ):
+        super().__init__(message)
 
 
 class Generator:
@@ -22,6 +39,12 @@ class Generator:
     language, and grounded instance for the child generators to easily access and use.
 
     Attributes:
+        pddl_dom (str):
+            The name of the local PDDL domain filename (relevant if the problem ID is not provided.)
+        pddl_prob (str):
+            The name of the local PDDL problem filename (relevant if the problem ID is not provided.)
+        problem_id (int):
+            The ID of the problem to be accessed (relevant if local files are not provided.)
         problem (tarski.fstrips.problem.Problem):
             The problem definition.
         lang (tarski.fol.FirstOrderLanguage):
@@ -30,9 +53,11 @@ class Generator:
             The grounded instance of the problem.
         grounded_fluents (list):
             A list of all grounded (macq) fluents extracted from the given problem definition.
+        op_dict (dict):
+            The problem's ground operators, formatted to a dictionary for easy access during plan generation.
     """
 
-    def __init__(self, dom: str = "", prob: str = "", problem_id: int = None):
+    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
 
@@ -44,9 +69,13 @@ class Generator:
             problem_id (int):
                 The ID of the problem to access.
         """
+        # get attributes
+        self.pddl_dom = dom
+        self.pddl_prob = prob
+        self.problem_id = problem_id
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
-        if problem_id == None:
+        if not problem_id:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
         else:
@@ -59,6 +88,7 @@ class Generator:
         operators = ground_problem_schemas_into_plain_operators(self.problem)
         self.instance = GroundForwardSearchModel(self.problem, operators)
         self.grounded_fluents = self.__get_all_grounded_fluents()
+        self.op_dict = self.__get_op_dict()
 
     def extract_action_typing(self):
         """Retrieves a dictionary mapping all of this problem's actions and the types
@@ -101,7 +131,25 @@ class Generator:
             extracted_pred_types[name] = [type for type in info[1:]]
         return extracted_pred_types
 
+    def __get_op_dict(self):
+        """Converts this problem's ground operators into a dictionary format so that the appropriate
+        tarski PlainOperators can be referenced when a plan is generated (see `generate_plan`).
+
+        Returns:
+            The problem's ground operators, in a formatted dictionary.
+        """
+        op_dict = {}
+        for o in self.instance.operators:
+            # reformat so that operators can be referenced by the same string format the planner uses for actions
+            op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
+        return op_dict
+
     def __get_all_grounded_fluents(self):
+        """Extracts all the grounded fluents in the problem.
+
+        Returns:
+            A list of all the grounded fluents in the problem, in the form of macq Fluents.
+        """
         return [
             self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
             for grounded_fluent in LPGroundingStrategy(
@@ -209,3 +257,97 @@ class Generator:
         for fluent in precond:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
+
+    def change_goal(
+        self,
+        goal_fluents: Set[Fluent],
+        new_domain: str = "new_domain.pddl",
+        new_prob: str = "new_prob.pddl",
+    ):
+        """Changes the goal of the `Generator`. The domain and problem PDDL files
+        are rewritten to accomodate the new goal for later use by a planner.
+
+        Args:
+            goal_fluents (Set[Fluent]):
+                The set of fluents to make up the new goal.
+            new_domain (str):
+                The name of the new domain file. Defaults to a generic name.
+            new_prob (str):
+                The name of the new problem file. Defaults to a generic name.
+
+        Raises:
+            InvalidGoalFluent:
+                Raised if any of the fluents supplied do not exist in this domain.
+        """
+        # check if the fluents to add are valid
+        available_f = self.__get_all_grounded_fluents()
+        for f in goal_fluents:
+            if f not in available_f:
+                raise InvalidGoalFluent()
+
+        # convert the given set of fluents into a formula
+        if not goal_fluents:
+            goal = land()
+        else:
+            goal = land(
+                *[
+                    Atom(
+                        self.lang.get(f.name),
+                        [self.lang.get_constant(o.name) for o in f.objects],
+                    )
+                    for f in goal_fluents
+                ]
+            )
+        # reset the goal
+        self.problem.goal = goal
+
+        # rewrite PDDL files appropriately
+        writer = iofs.FstripsWriter(self.problem)
+        writer.write(new_domain, new_prob)
+        self.pddl_dom = new_domain
+        self.pddl_prob = new_prob
+
+    def generate_plan(self):
+        """Generates a plan. If the goal was changed, the new goal is taken into account.
+        Otherwise, the default goal in the initial problem file is used.
+
+        Returns:
+            A `Plan` object that holds all the actions taken.
+        """
+        # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
+        # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
+        if self.problem_id and not self.pddl_dom and not self.pddl_prob:
+            plan = get_plan(self.problem_id)
+        # if you are not just using the unaltered files, use the local files instead
+        else:
+            data = {
+                "domain": open(self.pddl_dom, "r").read(),
+                "problem": open(self.pddl_prob, "r").read(),
+            }
+            resp = requests.post(
+                "http://solver.planning.domains/solve", verify=False, json=data
+            ).json()
+            plan = [act["name"] for act in resp["result"]["plan"]]
+
+        # convert to a list of tarski PlainOperators (actions)
+        return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
+
+    def generate_single_trace_from_plan(self, plan: Plan):
+        trace = Trace()
+        trace.clear()
+        actions = plan.actions
+        plan_len = len(actions)
+        # get initial state
+        state = self.problem.init
+        # note that we add 1 because the states represented take place BEFORE their subsequent action,
+        # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps in the trace.
+        for i in range(plan_len + 1):
+            macq_state = self.tarski_state_to_macq(state)
+            # if we have not yet reached the end of the trace
+            if len(trace) < plan_len:
+                act = actions[i]
+                trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
+                state = progress(state, act)
+            else:
+                trace.append(Step(macq_state, None, i + 1))
+        return trace

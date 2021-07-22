@@ -1,19 +1,16 @@
 from tarski.search.operations import progress
 import random
-
-from macq.trace import (
-    PlanningObject,
-    Fluent,
-    Action,
+from . import Generator
+from ...utils.timer import set_timer, TraceSearchTimeOut
+from ...utils.trace_utils import set_num_traces, set_plan_length
+from ...observation.partial_observation import PercentError
+from ...trace import (
     Step,
     State,
     Trace,
-    SAS,
     TraceList,
 )
-from macq.generate.pddl import Generator
-from macq.utils.timer import set_timer
-from macq.generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+
 
 MAX_TRACE_TIME = 30.0
 
@@ -35,10 +32,10 @@ class VanillaSampling(Generator):
 
     def __init__(
         self,
-        plan_len: int,
-        num_traces: int,
-        dom: str = "",
-        prob: str = "",
+        plan_len: int = 0,
+        num_traces: int = 0,
+        dom: str = None,
+        prob: str = None,
         problem_id: int = None,
         seed: int = None,
     ):
@@ -48,9 +45,9 @@ class VanillaSampling(Generator):
 
         Args:
             plan_len (int):
-                The length of each generated trace.
+                The length of each generated trace. Defaults to 0 (in case the sampler is only being used for goal sampling).
             num_traces (int):
-                The number of traces to generate.
+                The number of traces to generate. Defaults to 0 (in case the sampler is only being used for goal sampling).
             dom (str):
                 The domain filename.
             prob (str):
@@ -59,43 +56,11 @@ class VanillaSampling(Generator):
                 The ID of the problem to access.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
-        self.set_plan_length(plan_len)
-        self.set_num_traces(num_traces)
+        self.plan_len = set_plan_length(plan_len)
+        self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
         if seed:
             random.seed(seed)
-
-    def set_num_traces(self, num_traces: int):
-        """Checks the validity of the number of traces and then sets it.
-
-        Args:
-            num_traces (int):
-                The number of traces to set.
-
-        Raises:
-            InvalidNumberOfTraces:
-                The exception raised when the number of traces provided is invalid.
-        """
-        if num_traces > 0:
-            self.num_traces = num_traces
-        else:
-            raise InvalidNumberOfTraces()
-
-    def set_plan_length(self, plan_len: int):
-        """Checks the validity of the plan length and then sets it.
-
-        Args:
-            plan_len (int):
-                The plan length to set.
-
-        Raises:
-            InvalidPlanLength:
-                The exception raised when the plan length provided is invalid.
-        """
-        if plan_len > 0:
-            self.plan_len = plan_len
-        else:
-            raise InvalidPlanLength()
 
     def generate_traces(self):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -110,8 +75,8 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TRACE_TIME)
-    def generate_single_trace(self):
+    @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
+    def generate_single_trace(self, plan_len: int = None):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
         to run past the time specified by the time specified.
@@ -119,6 +84,10 @@ class VanillaSampling(Generator):
         Returns:
             A Trace object (the valid trace generated).
         """
+
+        if not plan_len:
+            plan_len = self.plan_len
+
         trace = Trace()
 
         state = self.problem.init
@@ -126,9 +95,9 @@ class VanillaSampling(Generator):
         while not valid_trace:
             trace.clear()
             # add more steps while the trace has not yet reached the desired length
-            for j in range(self.plan_len):
+            for j in range(plan_len):
                 # if we have not yet reached the last step
-                if j < self.plan_len - 1:
+                if len(trace) < plan_len - 1:
                     # find the next applicable actions
                     app_act = list(self.instance.applicable(state))
                     # if the trace reaches a dead lock, disregard this trace and try again
@@ -148,3 +117,22 @@ class VanillaSampling(Generator):
                     trace.append(step)
                     valid_trace = True
         return trace
+
+    def goal_sampling(
+        self, num_states: int, steps_deep: int, subset_size_perc: int = 1
+    ):
+        if subset_size_perc < 0 or subset_size_perc > 1:
+            raise PercentError()
+        goal_states = set()
+        while len(goal_states) < num_states:
+            # generate a trace of the specified length and retrieve the state of the last step
+            state = self.generate_single_trace(steps_deep)[-1].state
+            # randomly generate missing fluents according to the size of the partial state/subset specified
+            del_f = list(state.fluents.keys())
+            random.shuffle(del_f)
+            del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
+            # delete the missing fluents
+            for f in del_f:
+                del state.fluents[f]
+            goal_states.add(state)
+        return goal_states
