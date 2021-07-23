@@ -1,10 +1,10 @@
 from pathlib import Path
 from collections import Counter
-from macq.extract import Extract, modes
-from macq.observation import IdentityObservation, Observation
-from macq.trace import *
 from macq import generate, extract
-from macq.generate.pddl import VanillaSampling, TraceFromGoal
+from macq.extract import *
+from macq.observation import *
+from macq.trace import *
+from macq.generate.pddl import *
 
 
 def generate_traces():
@@ -160,7 +160,10 @@ def arms():
         }
     )
     traces.append(generator.generate_trace())
-    traces.print("color")
+    # traces.print("color")
+
+    observations = traces.tokenize(PartialObservation, percent_missing=0.5)
+    model = Extract(observations, modes.ARMS)
 
 
 if __name__ == "__main__":

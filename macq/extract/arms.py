@@ -124,7 +124,7 @@ class ARMS:
         constraints = ARMS._step2(
             obs_lists, connected_actions, learned_actions, fluents, min_support
         )
-        max_sat = ARMS._step3(
+        max_sat, decode = ARMS._step3(
             constraints,
             action_weight,
             info_weight,
@@ -132,6 +132,8 @@ class ARMS:
             info3_default,
             plan_default,
         )
+
+        print(max_sat)
 
         return set()  # WARNING temp
 
