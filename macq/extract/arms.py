@@ -25,10 +25,10 @@ class Relation:
 
 @dataclass
 class ARMSConstraints:
-    action: List[Or]
-    info: List[And]
-    info3: Dict[Or, int]
-    plan: Dict[Or, int]
+    action: List[Or[Var]]
+    info: List[And[Union[Or[Var], Var]]]
+    info3: Dict[Or[Var], int]
+    plan: Dict[And[Or[Var]], int]
 
 
 class ARMS:
@@ -212,11 +212,11 @@ class ARMS:
     def _step2A(
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
-    ) -> List[Or]:
+    ) -> List[Or[Var]]:
         def implication(a: Var, b: Var):
             return Or([a.negate(), b])
 
-        constraints = []
+        constraints: List[Or[Var]] = []
         actions = set(connected_actions.keys())
         for action in actions:
             for relation in relations:
@@ -255,9 +255,9 @@ class ARMS:
     @staticmethod
     def _step2I(
         obs_lists: ObservationLists, relations: dict
-    ) -> Tuple[List[And], Dict[Or, int]]:
-        constraints = []
-        support_counts = defaultdict(int)
+    ) -> Tuple[List[And[Union[Or[Var], Var]]], Dict[Or[Var], int]]:
+        constraints: List[And[Union[Or[Var], Var]]] = []
+        support_counts: Dict[Or[Var], int] = defaultdict(int)
         for obs_list in obs_lists:
             for i, obs in enumerate(obs_list):
                 if obs.state is not None and i > 0:
@@ -359,7 +359,7 @@ class ARMS:
         learned_actions: Dict[Action, LearnedAction],
         relations: Set[Relation],
         min_support: int,
-    ) -> Dict[Or, int]:
+    ) -> Dict[And[Or[Var]], int]:
         frequent_pairs = ARMS._apriori(
             [
                 [
@@ -372,7 +372,7 @@ class ARMS:
             min_support,
         )
 
-        constraints: Dict[Or, int] = {}
+        constraints: Dict[And[Or[Var]], int] = {}
         for ai, aj in frequent_pairs.keys():
             connectors = set()
             # get list of relevant relations from connected_actions
@@ -387,7 +387,7 @@ class ARMS:
 
             # for each relation, save constraint
             relevant_relations = {p for p in relations if connectors.issubset(p.types)}
-            relation_constraints = []
+            relation_constraints: List[Or[And[Var]]] = []
             for relation in relevant_relations:
                 """
                 ∃p(
@@ -452,10 +452,12 @@ class ARMS:
         info3_constraints = list(constraints.info3.keys())
         plan_constraints = list(constraints.plan.keys())
         problem = And(
-            *constraints.action,
-            *constraints.info,
-            *info3_constraints,
-            *plan_constraints,
+            [
+                *constraints.action,
+                *constraints.info,
+                *info3_constraints,
+                # *plan_constraints,
+            ]
         )
         wcnf, decode = to_wcnf(problem, weights)
         return wcnf, decode
