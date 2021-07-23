@@ -374,17 +374,19 @@ class ARMS:
 
         constraints: Dict[Or, int] = {}
         for ai, aj in frequent_pairs.keys():
+            connectors = set()
             # get list of relevant relations from connected_actions
-            if ai in connected_actions.keys():
-                relevant_relations = connected_actions[ai][aj]
-            else:
-                relevant_relations = connected_actions[aj][ai]
+            if ai in connected_actions and aj in connected_actions[ai]:
+                connectors.update(connected_actions[ai][aj])
+            if aj in connected_actions and ai in connected_actions[aj]:
+                connectors.update(connected_actions[aj][ai])
 
             # if the actions are not related they are not a valid pair for a plan constraint
-            if not relevant_relations:
+            if not connectors:
                 continue
 
             # for each relation, save constraint
+            relevant_relations = {p for p in relations if connectors.issubset(p.types)}
             relation_constraints = []
             for relation in relevant_relations:
                 """
