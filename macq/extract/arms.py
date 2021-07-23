@@ -260,7 +260,7 @@ class ARMS:
         support_counts = defaultdict(int)
         for obs_list in obs_lists:
             for i, obs in enumerate(obs_list):
-                if obs.state is not None:
+                if obs.state is not None and i > 0:
                     for fluent, val in obs.state.items():
                         # Information constraints only apply to true relations
                         if val:
@@ -362,7 +362,11 @@ class ARMS:
     ) -> Dict[Or, int]:
         frequent_pairs = ARMS._apriori(
             [
-                [learned_actions[obs.action] for obs in obs_list]
+                [
+                    learned_actions[obs.action]
+                    for obs in obs_list
+                    if obs.action is not None
+                ]
                 for obs_list in obs_lists
             ],
             min_support,
