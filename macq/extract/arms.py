@@ -26,7 +26,7 @@ class Relation:
 @dataclass
 class ARMSConstraints:
     action: List[Or[Var]]
-    info: List[And[Union[Or[Var], Var]]]
+    info: List[Or[Var]]
     info3: Dict[Or[Var], int]
     plan: Dict[And[Or[Var]], int]
 
@@ -255,8 +255,8 @@ class ARMS:
     @staticmethod
     def _step2I(
         obs_lists: ObservationLists, relations: dict
-    ) -> Tuple[List[And[Union[Or[Var], Var]]], Dict[Or[Var], int]]:
-        constraints: List[And[Union[Or[Var], Var]]] = []
+    ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
+        constraints: List[Or[Var]] = []
         support_counts: Dict[Or[Var], int] = defaultdict(int)
         for obs_list in obs_lists:
             for i, obs in enumerate(obs_list):
@@ -281,7 +281,8 @@ class ARMS:
                                 f"{relations[fluent].var()}_in_del_{obs_list[i-1].action.details()}"
                             ).negate()
 
-                            constraints.append(And([Or(i1), i2]))
+                            constraints.append(Or(i1))
+                            constraints.append(Or([i2]))
 
                             # I3
                             # count occurences
@@ -424,7 +425,8 @@ class ARMS:
                         ]
                     )
                 )
-            constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
+            # TODO fix
+            constraints[Or(relation_constraints).to_CNF()] = frequent_pairs[(ai, aj)]
 
         return constraints
 
@@ -451,14 +453,15 @@ class ARMS:
 
         info3_constraints = list(constraints.info3.keys())
         plan_constraints = list(constraints.plan.keys())
-        problem = And(
+        problem: And[Or[Var]] = And(
             [
                 *constraints.action,
                 *constraints.info,
                 *info3_constraints,
-                # *plan_constraints,
+                # *plan_constraints, # TODO fix
             ]
         )
+
         wcnf, decode = to_wcnf(problem, weights)
         return wcnf, decode
 
