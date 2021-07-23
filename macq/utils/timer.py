@@ -47,13 +47,10 @@ def basic_timer(num_seconds: Union[float, int]):
             pool = ThreadPool(processes=1)
 
             thr = pool.apply_async(function, args=args, kwds=kwargs)
-            # run the function for the specified seconds
+            # run the function for the specified seconds and exit without checking for/returning results
             thr.wait(num_seconds)
-            # return successful results, if ready/if there are any; don't raise an exception otherwise
-            if thr.ready():
-                pool.terminate()
-                return thr.get()
             pool.terminate()
+            return
 
         return wrapper
 

@@ -15,7 +15,7 @@ from ...trace import (
 
 
 MAX_TRACE_TIME = 30.0
-MAX_GOAL_SEARCH_TIME = 60.0
+MAX_GOAL_SEARCH_TIME = 30.0
 
 
 class VanillaSampling(Generator):
