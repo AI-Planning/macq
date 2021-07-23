@@ -457,16 +457,10 @@ class ARMS:
         info3_constraints = list(constraints.info3.keys())
         plan_constraints = list(constraints.plan.keys())
         problem: And[Or[Var]] = And(
-            [
-                *constraints.action,
-                *constraints.info,
-                *info3_constraints,
-                *plan_constraints,  # TODO fix
-            ]
+            constraints.action + constraints.info + info3_constraints + plan_constraints
         )
 
         wcnf, decode = to_wcnf(problem, weights)
-        print(len(problem), len(weights))
         return wcnf, decode
 
     @staticmethod
