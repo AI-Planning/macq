@@ -28,7 +28,8 @@ class ARMSConstraints:
     action: List[Or[Var]]
     info: List[Or[Var]]
     info3: Dict[Or[Var], int]
-    plan: Dict[And[Or[Var]], int]
+    # plan: Dict[And[Or[Var]], int]
+    plan: Dict[Or[Var], int]
 
 
 class ARMS:
@@ -133,7 +134,7 @@ class ARMS:
             plan_default,
         )
 
-        print(max_sat)
+        model = ARMS._step4(max_sat)
 
         return set()  # WARNING temp
 
@@ -360,7 +361,8 @@ class ARMS:
         learned_actions: Dict[Action, LearnedAction],
         relations: Set[Relation],
         min_support: int,
-    ) -> Dict[And[Or[Var]], int]:
+    ) -> Dict[Or[Var], int]:
+        # ) -> Dict[And[Or[Var]], int]:
         frequent_pairs = ARMS._apriori(
             [
                 [
@@ -373,7 +375,8 @@ class ARMS:
             min_support,
         )
 
-        constraints: Dict[And[Or[Var]], int] = {}
+        # constraints: Dict[And[Or[Var]], int] = {}
+        constraints: Dict[Or[Var], int] = {}
         for ai, aj in frequent_pairs.keys():
             connectors = set()
             # get list of relevant relations from connected_actions
@@ -388,7 +391,8 @@ class ARMS:
 
             # for each relation, save constraint
             relevant_relations = {p for p in relations if connectors.issubset(p.types)}
-            relation_constraints: List[Or[And[Var]]] = []
+            # relation_constraints: List[Or[And[Var]]] = []
+            relation_constraints: List[Var] = []
             for relation in relevant_relations:
                 """
                 ∃p(
@@ -398,35 +402,34 @@ class ARMS:
                 )
                 where p is a relevant relation.
                 """
+                Phi = Or(
+                    [
+                        And(
+                            [
+                                Var(f"{relation.var()}_in_pre_{ai.details()}"),
+                                Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                                Var(f"{relation.var()}_in_del_{ai.details()}").negate(),
+                            ]
+                        ),
+                        And(
+                            [
+                                Var(f"{relation.var()}_in_add_{ai.details()}"),
+                                Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                            ]
+                        ),
+                        And(
+                            [
+                                Var(f"{relation.var()}_in_del_{ai.details()}"),
+                                Var(f"{relation.var()}_in_add_{aj.details()}"),
+                            ]
+                        ),
+                    ]
+                )
                 relation_constraints.append(
-                    Or(
-                        [
-                            And(
-                                [
-                                    Var(f"{relation.var()}_in_pre_{ai.details()}"),
-                                    Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                                    Var(
-                                        f"{relation.var()}_in_del_{ai.details()}"
-                                    ).negate(),
-                                ]
-                            ),
-                            And(
-                                [
-                                    Var(f"{relation.var()}_in_add_{ai.details()}"),
-                                    Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                                ]
-                            ),
-                            And(
-                                [
-                                    Var(f"{relation.var()}_in_del_{ai.details()}"),
-                                    Var(f"{relation.var()}_in_add_{aj.details()}"),
-                                ]
-                            ),
-                        ]
-                    )
+                    Var(f"{relation.var()}_relevant_{ai.details()}_{aj.details()}")
                 )
             # TODO fix
-            constraints[Or(relation_constraints).to_CNF()] = frequent_pairs[(ai, aj)]
+            constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
 
         return constraints
 
@@ -458,11 +461,12 @@ class ARMS:
                 *constraints.action,
                 *constraints.info,
                 *info3_constraints,
-                # *plan_constraints, # TODO fix
+                *plan_constraints,  # TODO fix
             ]
         )
 
         wcnf, decode = to_wcnf(problem, weights)
+        print(len(problem), len(weights))
         return wcnf, decode
 
     @staticmethod
@@ -483,3 +487,10 @@ class ARMS:
             return probability * 100 if probability > threshold else default
 
         return list(map(get_support_rate, support_counts))
+
+    @staticmethod
+    def _step4(max_sat: WCNF):
+        solver = RC2(max_sat)
+        solver.compute()
+        print(solver.model)
+        return solver.model

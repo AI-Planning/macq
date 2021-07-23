@@ -13,12 +13,10 @@ def _encode(clauses: And[Or[Var]]) -> Tuple[List[List[int]], Dict[int, Hashable]
     decode = dict(enumerate(clauses.vars(), start=1))
     encode = {v: k for k, v in decode.items()}
     clauses.simplify()
-    print(clauses)
     encoded = [
         [encode[var.name] if var.true else -encode[var.name] for var in clause]
         for clause in clauses
     ]
-    print(encoded)
 
     return encoded, decode
 

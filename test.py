@@ -110,27 +110,6 @@ def apriori():
     # only contain valid sets and pruning is not required
 
 
-"""
-def generate_traces():
-    # traces = generate.pddl.VanillaSampling(
-    #     problem_id=2336, plan_len=5, num_traces=3, seed=42
-    # ).traces
-    # traces.generate_more(1)
-    base = Path(__file__).parent
-    dom = (base / "tests/pddl_testing_files/blocks_domain.pddl").resolve()
-    prob = (base / "tests/pddl_testing_files/blocks_problem.pddl").resolve()
-    traces = VanillaSampling(dom=dom, prob=prob, plan_len=100, num_traces=1).traces  # type: ignore
-
-    return traces
-
-
-def extract_model(traces):
-    observations = traces.tokenize(IdentityObservation)
-    model = extract.Extract(observations, extract.modes.OBSERVER)
-    return model
-"""
-
-
 def get_fluent(name: str, objs: list[str]):
     objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
     return Fluent(name, objects)
