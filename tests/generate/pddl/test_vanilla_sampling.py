@@ -40,22 +40,22 @@ if __name__ == "__main__":
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=1)
 
     # test goal sampling
-    states_gen = vanilla.goal_sampling(
-        num_states=3,
-        steps_deep=5,
+    goals_w_plans = vanilla.goal_sampling(
+        num_states=2,
+        steps_deep=10,
         subset_size_perc=0.1,
         new_domain="new_blocks_dom.pddl",
         new_prob="new_blocks_prob.pddl",
+        enforced_hill_climbing_sampling=False,
     )
-
-    for s in states_gen:
+    for k in goals_w_plans:
+        print("goal:")
+        print(k)
+        print("plan:")
+        print(goals_w_plans[k])
         print()
-        print(states_gen[s])
-        print()
-        f_sorted = [str(f) for f in s.fluents]
-        f_sorted.sort()
-        for f in f_sorted:
-            print(f)
+    plans = list(goals_w_plans.values())
+    trace = vanilla.generate_single_trace_from_plan(plans[0])
 
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(

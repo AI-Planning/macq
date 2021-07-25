@@ -14,7 +14,11 @@ if __name__ == "__main__":
         dom=dom,
         prob=prob,
         num_traces=3,
-        steps_deep=5,
-        plan_complexity=5,
+        steps_deep=10,
         subset_size_perc=0.1,
+        enforced_hill_climbing_sampling=False
     )
+    traces = random_sampler.traces
+    traces.print(wrap="y")
+    #TODO: test changing goal
+    

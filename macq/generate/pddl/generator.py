@@ -344,7 +344,7 @@ class Generator:
         for i in range(plan_len + 1):
             macq_state = self.tarski_state_to_macq(state)
             # if we have not yet reached the end of the trace
-            if len(trace) < plan_len:
+            if len(trace) < plan_len - 1:
                 act = actions[i]
                 trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
                 state = progress(state, act)

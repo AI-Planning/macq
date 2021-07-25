@@ -1,6 +1,4 @@
-from tarski.model import create
 from tarski.search.operations import progress
-from typing import Dict
 import random
 from . import Generator
 from ...utils.timer import set_timer_throw_exc, TraceSearchTimeOut, basic_timer
@@ -15,7 +13,6 @@ from ...trace import (
 
 
 MAX_TRACE_TIME = 30.0
-MAX_GOAL_SEARCH_TIME = 30.0
 
 
 class VanillaSampling(Generator):
@@ -35,8 +32,8 @@ class VanillaSampling(Generator):
 
     def __init__(
         self,
-        plan_len: int = 0,
-        num_traces: int = 0,
+        plan_len: int = 1,
+        num_traces: int = 1,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
@@ -48,9 +45,9 @@ class VanillaSampling(Generator):
 
         Args:
             plan_len (int):
-                The length of each generated trace. Defaults to 0 (in case the sampler is only being used for goal sampling).
+                The length of each generated trace. Defaults to 1.
             num_traces (int):
-                The number of traces to generate. Defaults to 0 (in case the sampler is only being used for goal sampling).
+                The number of traces to generate. Defaults to 1.
             dom (str):
                 The domain filename.
             prob (str):
@@ -82,7 +79,7 @@ class VanillaSampling(Generator):
     def generate_single_trace(self, plan_len: int = None):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
-        to run past the time specified by the time specified.
+        to run past the time specified.
 
         Returns:
             A Trace object (the valid trace generated).
@@ -121,91 +118,4 @@ class VanillaSampling(Generator):
                     valid_trace = True
         return trace
 
-    def goal_sampling(
-        self,
-        new_domain: str,
-        new_prob: str,
-        num_states: int,
-        steps_deep: int,
-        time_limit: float = MAX_GOAL_SEARCH_TIME,
-        subset_size_perc: int = 1,
-        enforced_hill_climbing_sampling: bool = True,
-    ):
-        if subset_size_perc < 0 or subset_size_perc > 1:
-            raise PercentError()
-        goal_states = {}
 
-        self.MAX_GOAL_SEARCH_TIME = time_limit
-        self.generate_goals(
-            new_domain=new_domain,
-            new_prob=new_prob,
-            steps_deep=steps_deep,
-            subset_size_perc=subset_size_perc,
-            enforced_hill_climbing_sampling=enforced_hill_climbing_sampling,
-            goal_states=goal_states,
-        )
-
-        return goal_states
-
-    @basic_timer(num_seconds=MAX_GOAL_SEARCH_TIME)
-    def generate_goals(
-        self,
-        new_domain: str,
-        new_prob: str,
-        steps_deep: int,
-        subset_size_perc: int,
-        enforced_hill_climbing_sampling: bool,
-        goal_states: Dict,
-    ):
-        # create a sampler to test the complexity of the new goal by running a planner on it
-        test_plan_complexity_sampler = VanillaSampling(
-            dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
-        )
-        while True:
-            # generate a trace of the specified length and retrieve the state of the last step
-            state = self.generate_single_trace(steps_deep)[-1].state
-
-            # get all positive fluents (only positive fluents can be used for a goal)
-            pos_f = [f for f in state if state[f]]
-            # get the subset size
-            subset_size = int(len(state.fluents) * subset_size_perc)
-            # if necessary, take a subset of the fluents
-            if len(pos_f) > subset_size:
-                random.shuffle(pos_f)
-                pos_f = pos_f[:subset_size]
-
-            test_plan_complexity_sampler.change_goal(
-                goal_fluents=pos_f, new_domain=new_domain, new_prob=new_prob
-            )
-
-            # ensure that the goal doesn't hold in the initial state; restart if it does
-            init_state = {
-                str(a) for a in test_plan_complexity_sampler.problem.init.as_atoms()
-            }
-            goal = {
-                str(a) for a in test_plan_complexity_sampler.problem.goal.subformulas
-            }
-            print(init_state)
-            print(goal)
-            print()
-            if goal.issubset(init_state):
-                continue
-
-            try:
-                # attempt to generate a plan, and find a new goal if a plan can't be found
-                test_plan = test_plan_complexity_sampler.generate_plan()
-            except KeyError as e:
-                continue
-
-            # optionally change the initial state of the sampler to the goal just generated (ensures more diversity in goals/plans)
-            if enforced_hill_climbing_sampling:
-                init = create(test_plan_complexity_sampler.lang)
-                for a in test_plan_complexity_sampler.problem.goal.subformulas:
-                    init.add(a.predicate, *a.subterms)
-                test_plan_complexity_sampler.problem.init = init
-
-            # create a State and add it to the set
-            state_dict = {}
-            for f in pos_f:
-                state_dict[f] = True
-            goal_states[State(state_dict)] = test_plan
