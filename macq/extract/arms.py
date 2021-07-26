@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from typing import Set, List, Dict, Tuple, Union, Hashable
 from nnf import Var, And, Or
 from pysat.examples.rc2 import RC2
+from pysat.examples.lbx import LBX
 from pysat.formula import WCNF
 from . import LearnedAction, Model
-from .exceptions import IncompatibleObservationToken
+from .exceptions import IncompatibleObservationToken, InconsistentConstraintWeights
 from ..observation import PartialObservation as Observation
 from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
 from ..utils.pysat import to_wcnf
@@ -402,29 +403,29 @@ class ARMS:
                 )
                 where p is a relevant relation.
                 """
-                Phi = Or(
-                    [
-                        And(
-                            [
-                                Var(f"{relation.var()}_in_pre_{ai.details()}"),
-                                Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                                Var(f"{relation.var()}_in_del_{ai.details()}").negate(),
-                            ]
-                        ),
-                        And(
-                            [
-                                Var(f"{relation.var()}_in_add_{ai.details()}"),
-                                Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                            ]
-                        ),
-                        And(
-                            [
-                                Var(f"{relation.var()}_in_del_{ai.details()}"),
-                                Var(f"{relation.var()}_in_add_{aj.details()}"),
-                            ]
-                        ),
-                    ]
-                )
+                # Phi = Or(
+                #     [
+                #         And(
+                #             [
+                #                 Var(f"{relation.var()}_in_pre_{ai.details()}"),
+                #                 Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                #                 Var(f"{relation.var()}_in_del_{ai.details()}").negate(),
+                #             ]
+                #         ),
+                #         And(
+                #             [
+                #                 Var(f"{relation.var()}_in_add_{ai.details()}"),
+                #                 Var(f"{relation.var()}_in_pre_{aj.details()}"),
+                #             ]
+                #         ),
+                #         And(
+                #             [
+                #                 Var(f"{relation.var()}_in_del_{ai.details()}"),
+                #                 Var(f"{relation.var()}_in_add_{aj.details()}"),
+                #             ]
+                #         ),
+                #     ]
+                # )
                 relation_constraints.append(
                     Var(f"{relation.var()}_relevant_{ai.details()}_{aj.details()}")
                 )
@@ -452,13 +453,26 @@ class ARMS:
         plan_weights = ARMS._calculate_support_rates(
             list(constraints.plan.values()), threshold, plan_default
         )
-        weights = action_weights + info_weights + info3_weights + plan_weights
+        all_weights = action_weights + info_weights + info3_weights + plan_weights
 
         info3_constraints = list(constraints.info3.keys())
         plan_constraints = list(constraints.plan.keys())
-        problem: And[Or[Var]] = And(
+        all_constraints = (
             constraints.action + constraints.info + info3_constraints + plan_constraints
         )
+
+        constraints_w_weights = {}
+        for constraint, weight in zip(all_constraints, all_weights):
+            if constraint not in constraints_w_weights:
+                constraints_w_weights[constraint] = weight
+            elif weight != constraints_w_weights[constraint]:
+                raise InconsistentConstraintWeights(
+                    constraint, weight, constraints_w_weights[constraint]
+                )
+
+        # dict maintains order, so this should match up properly
+        problem: And[Or[Var]] = And(list(constraints_w_weights.keys()))
+        weights = list(constraints_w_weights.keys())
 
         wcnf, decode = to_wcnf(problem, weights)
         return wcnf, decode
