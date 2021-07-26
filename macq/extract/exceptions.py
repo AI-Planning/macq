@@ -10,3 +10,10 @@ class InconsistentConstraintWeights(Exception):
         if message is None:
             message = f"Tried to assign the constraint {constraint} conflicting weights ({weight1} and {weight2})"
         super().__init__()
+
+
+class InvalidMaxSATModel(Exception):
+    def __init__(self, model, message=None):
+        if message is None:
+            message = f"The MAX-SAT solver generated an invalid model. Model should be a list of integers. model = {model}"
+        super().__init__(message)
