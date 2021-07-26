@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 from typing import Set, List, Dict, Tuple, Union, Hashable
-from nnf import Var, And, Or
+from nnf import Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2
 from pysat.examples.lbx import LBX
 from pysat.formula import WCNF
@@ -460,8 +460,10 @@ class ARMS:
             constraints.action + constraints.info + info3_constraints + plan_constraints
         )
 
-        constraints_w_weights = {}
+        constraints_w_weights: Dict[Or[Var], int] = {}
         for constraint, weight in zip(all_constraints, all_weights):
+            if constraint == nnffalse:
+                continue
             if constraint not in constraints_w_weights:
                 constraints_w_weights[constraint] = weight
             elif weight != constraints_w_weights[constraint]:
