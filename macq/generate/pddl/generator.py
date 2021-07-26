@@ -6,14 +6,15 @@ from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
+from tarski.syntax import land
 from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom, neg
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.action import PlainOperator
 from tarski.fstrips.fstrips import AddEffect
-from tarski.model import Model
-from tarski.syntax import land
+from tarski.model import Model, create
 from tarski.io import fstrips as iofs
+
 import requests
 from .planning_domains_api import get_problem, get_plan
 from .plan import Plan
@@ -258,6 +259,18 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
+    def change_init(
+        self,
+        init_fluents: Union[Set[Fluent], List[Fluent]],
+        new_domain: str = "new_domain.pddl",
+        new_prob: str = "new_prob.pddl",
+    ):
+        init = create(self.lang)
+        for f in init_fluents:
+            atom = Atom(self.lang.get_predicate(f.name), [self.lang.get(o.name) for o in f.objects])
+            init.add(atom.predicate, *atom.subterms)
+        self.problem.init = init
+
     def change_goal(
         self,
         goal_fluents: Union[Set[Fluent], List[Fluent]],
@@ -355,7 +368,4 @@ class Generator:
             else:
                 trace.append(Step(macq_state, None, i + 1))
         pos = {f for f in trace[-1].state if trace[-1].state[f]}
-        print("final state of generated trace:")
-        for f in pos:
-            print(f)
         return trace
