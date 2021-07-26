@@ -1,6 +1,7 @@
 import random
 from typing import Dict
 from tarski.model import create
+from tarski.syntax.formulas import Atom
 from collections import OrderedDict
 from . import VanillaSampling
 from ...trace import TraceList, State
@@ -15,8 +16,6 @@ MAX_GOAL_SEARCH_TIME = 30.0
 class RandomGoalSampling(VanillaSampling):
     def __init__(
         self,
-        new_domain: str,
-        new_prob: str,
         steps_deep: int,
         enforced_hill_climbing_sampling: bool = True,
         subset_size_perc: int = 1,
@@ -27,12 +26,11 @@ class RandomGoalSampling(VanillaSampling):
     ):
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
-        self.new_domain = new_domain
-        self.new_prob = new_prob
         self.steps_deep = steps_deep
         self.subset_size_perc = subset_size_perc
         self.num_traces = num_traces
         self.enforced_hill_climbing_sampling = enforced_hill_climbing_sampling
+        self.goals = []
         super().__init__(dom=dom, prob=prob, problem_id=problem_id, num_traces=num_traces)
 
     def goal_sampling(self):
@@ -48,10 +46,6 @@ class RandomGoalSampling(VanillaSampling):
     @basic_timer(num_seconds=MAX_GOAL_SEARCH_TIME)
     def generate_goals(self, goal_states: Dict):
         # create a sampler to test the complexity of the new goal by running a planner on it
-        # test_plan_complexity_sampler = VanillaSampling(
-        #     dom=self.pddl_dom, prob=self.pddl_prob, problem_id=self.problem_id
-        # )
-        #test_plan_complexity_sampler = self
         k_length_plans = 0
         while True:
             # generate a trace of the specified length and retrieve the state of the last step
@@ -66,9 +60,7 @@ class RandomGoalSampling(VanillaSampling):
                 random.shuffle(pos_f)
                 pos_f = pos_f[:subset_size]
 
-            self.change_goal(
-                goal_fluents=pos_f, new_domain=self.new_domain, new_prob=self.new_prob
-            )
+            self.change_goal(goal_fluents=pos_f)
 
             # ensure that the goal doesn't hold in the initial state; restart if it does
             init_state = {
@@ -85,15 +77,21 @@ class RandomGoalSampling(VanillaSampling):
 
             try:
                 # attempt to generate a plan, and find a new goal if a plan can't be found
+                # should only crash if there are server issues
                 test_plan = self.generate_plan()
             except KeyError as e:
                 continue
 
             # optionally change the initial state of the sampler to the goal just generated (ensures more diversity in goals/plans)
+            # use the full state the goal was extracted from as the initial state to prevent planning errors from incomplete initial states
             if self.enforced_hill_climbing_sampling:
+                new_init = [f for f in state if state[f]]
                 init = create(self.lang)
-                for a in self.problem.goal.subformulas:
-                    init.add(a.predicate, *a.subterms)
+                for f in new_init:
+                    predicate = self.lang.get_predicate(f.name)
+                    subterms = [self.lang.get(o.name) for o in f.objects]
+                    atom = Atom(predicate, subterms)
+                    init.add(predicate, *subterms)
                 self.problem.init = init
 
             # create a State and add it to the dictionary
@@ -112,9 +110,13 @@ class RandomGoalSampling(VanillaSampling):
         traces = TraceList()
         # retrieve goals and their respective plans
         goals_w_plans = self.goal_sampling()
-        # store the goals so that the sampler goal can be reverted/changed if needed
-        # TODO: store goals as sets of fluents
-        self.goals = list(goals_w_plans.keys())
+        # store the goals as sets of fluents so that the sampler goal can be reverted/changed if needed
+        goals = list(goals_w_plans.keys())
+        print("goal 1:")
+        for f in goals[0]:
+            print(f)
+        print()
+        self.goals.extend([{f for f in state} for state in goals])
         # iterate through all plans corresponding to the goals, generating traces
         for plan in goals_w_plans.values():
             # generate a plan based on the new goal, then generate a trace based on that plan

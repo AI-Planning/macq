@@ -8,17 +8,23 @@ if __name__ == "__main__":
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
+    #TODO: test enforced hill climbing sampling
     random_sampler = RandomGoalSampling(
-        new_domain="new_blocks_dom.pddl",
-        new_prob="new_blocks_prob.pddl",
         dom=dom,
         prob=prob,
         num_traces=3,
         steps_deep=10,
         subset_size_perc=0.1,
-        enforced_hill_climbing_sampling=False
+        enforced_hill_climbing_sampling=True
     )
     traces = random_sampler.traces
-    traces.print(wrap="y")
-    #TODO: test changing goal
+    # traces.print(wrap="y")
+    # test changing goal to one of the previous goals generated
+    goal = random_sampler.goals[0]
+    for f in goal:
+        print(f)
+    random_sampler.change_goal(goal)
+    plan = random_sampler.generate_plan()
+    print()
+    print(plan)
     

@@ -324,10 +324,14 @@ class Generator:
                 "domain": open(self.pddl_dom, "r").read(),
                 "problem": open(self.pddl_prob, "r").read(),
             }
-            resp = requests.post(
-                "http://solver.planning.domains/solve", verify=False, json=data
-            ).json()
-            plan = [act["name"] for act in resp["result"]["plan"]]
+            try:
+                resp = requests.post(
+                    "http://solver.planning.domains/solve", verify=False, json=data
+                ).json()
+                plan = [act["name"] for act in resp["result"]["plan"]]
+            except KeyError as e:
+                print("Plan not found. Error output:")
+                print(resp["error"])
 
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
@@ -344,10 +348,14 @@ class Generator:
         for i in range(plan_len + 1):
             macq_state = self.tarski_state_to_macq(state)
             # if we have not yet reached the end of the trace
-            if len(trace) < plan_len - 1:
+            if len(trace) < plan_len:
                 act = actions[i]
                 trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
                 state = progress(state, act)
             else:
                 trace.append(Step(macq_state, None, i + 1))
+        pos = {f for f in trace[-1].state if trace[-1].state[f]}
+        print("final state of generated trace:")
+        for f in pos:
+            print(f)
         return trace
