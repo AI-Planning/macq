@@ -1,12 +1,15 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
-from typing import Set, List, Dict, Tuple, Union, Hashable
+from typing import Set, List, Dict, Tuple, Hashable
 from nnf import Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2
-from pysat.examples.lbx import LBX
 from pysat.formula import WCNF
 from . import LearnedAction, Model
-from .exceptions import IncompatibleObservationToken, InconsistentConstraintWeights
+from .exceptions import (
+    IncompatibleObservationToken,
+    InconsistentConstraintWeights,
+    InvalidMaxSATModel,
+)
 from ..observation import PartialObservation as Observation
 from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
 from ..utils.pysat import to_wcnf
@@ -101,7 +104,7 @@ class ARMS:
     @staticmethod
     def _check_goal(obs_lists: ObservationLists) -> bool:
         """Checks that there is a goal state in the ObservationLists."""
-        # TODO Depends on how Rebecca implements goals
+        # TODO
         return True
 
     @staticmethod
@@ -136,6 +139,15 @@ class ARMS:
         )
 
         model = ARMS._step4(max_sat)
+        print(type(model))
+        print(model)
+
+        for clause in model:
+            print("  ", decode[abs(clause)], end="")
+            if clause > 0:
+                print(" - true")
+            else:
+                print(" - false")
 
         return set()  # WARNING temp
 
@@ -497,8 +509,10 @@ class ARMS:
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
-    def _step4(max_sat: WCNF):
+    def _step4(max_sat: WCNF) -> List[int]:
         solver = RC2(max_sat)
         solver.compute()
-        print(solver.model)
-        return solver.model
+        model = solver.model
+        if not isinstance(model, list):
+            raise InvalidMaxSATModel(model)
+        return model
