@@ -3,7 +3,7 @@ from pathlib import Path
 from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject
+from macq.trace import Fluent, PlanningObject, TraceList
 
 
 def test_invalid_vanilla_sampling():
@@ -39,37 +39,11 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=1)
 
-    # test goal sampling
-    goals_w_plans = vanilla.goal_sampling(
-        num_states=2,
-        steps_deep=10,
-        subset_size_perc=0.1,
-        new_domain="new_blocks_dom.pddl",
-        new_prob="new_blocks_prob.pddl",
-        enforced_hill_climbing_sampling=False,
-    )
-    for k in goals_w_plans:
-        print("goal:")
-        print(k)
-        print("plan:")
-        print(goals_w_plans[k])
-        print()
-    plans = list(goals_w_plans.values())
-    trace = vanilla.generate_single_trace_from_plan(plans[0])
-
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {
             Fluent(
                 "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
-            ),
-        },
-        {
-            Fluent(
-                "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
-            ),
-            Fluent(
-                "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
         "new_blocks_dom.pddl",
@@ -78,6 +52,10 @@ if __name__ == "__main__":
     plan = vanilla.generate_plan()
     print(plan)
     print()
+    trace = vanilla.generate_single_trace_from_plan(plan)
+    tracelist = TraceList()
+    tracelist.append(trace)
+    tracelist.print(wrap="y")
 
     # test changing the goal and generating a plan from files extracted from a problem ID
     vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
@@ -97,3 +75,8 @@ if __name__ == "__main__":
     plan = vanilla.generate_plan()
     print(plan)
     print()
+    trace = vanilla.generate_single_trace_from_plan(plan)
+    tracelist = TraceList()
+    tracelist.append(trace)
+    tracelist.print(wrap="y")
+

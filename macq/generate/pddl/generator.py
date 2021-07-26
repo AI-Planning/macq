@@ -265,11 +265,29 @@ class Generator:
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
+        """Changes the initial state of the `Generator`. The domain and problem PDDL files
+        are rewritten to accomodate the new goal for later use by a planner.
+
+        Args:
+            init_fluents (Union[Set[Fluent], List[Fluent]]):
+                The collection of fluents that will make up the new initial state.
+            new_domain (str):
+                The name of the new domain file.
+            new_prob (str):
+                The name of the new problem file.
+        """
         init = create(self.lang)
         for f in init_fluents:
+            # convert fluents to tarski Atoms
             atom = Atom(self.lang.get_predicate(f.name), [self.lang.get(o.name) for o in f.objects])
             init.add(atom.predicate, *atom.subterms)
         self.problem.init = init
+
+        # rewrite PDDL files appropriately
+        writer = iofs.FstripsWriter(self.problem)
+        writer.write(new_domain, new_prob)
+        self.pddl_dom = new_domain
+        self.pddl_prob = new_prob
 
     def change_goal(
         self,
@@ -346,12 +364,20 @@ class Generator:
                 print("Plan not found. Error output:")
                 print(resp["error"])
 
-        # convert to a list of tarski PlainOperators (actions)
+        # convert to a list of tarski PlainOperators (actions) for a Plan
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
 
     def generate_single_trace_from_plan(self, plan: Plan):
+        """Generates a single trace from the plan taken as input.
+
+        Args:
+            plan (Plan):
+                The plan to generate a trace from.
+
+        Returns:
+            The trace generated from the plan.
+        """
         trace = Trace()
-        trace.clear()
         actions = plan.actions
         plan_len = len(actions)
         # get initial state
@@ -367,5 +393,4 @@ class Generator:
                 state = progress(state, act)
             else:
                 trace.append(Step(macq_state, None, i + 1))
-        pos = {f for f in trace[-1].state if trace[-1].state[f]}
         return trace

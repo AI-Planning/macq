@@ -18,7 +18,7 @@ MAX_TRACE_TIME = 30.0
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
 
-    A basic state trace generator that Generates traces randomly by uniformly sampling applicable actions to find plans
+    A basic state trace generator that generates traces randomly by uniformly sampling applicable actions to find plans
     of the given length.
 
     Attributes:
