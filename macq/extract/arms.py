@@ -429,7 +429,6 @@ class ARMS:
                 relation_constraints.append(
                     Var(f"{relation.var()}_relevant_{ai.details()}_{aj.details()}")
                 )
-            # TODO fix
             constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
 
         return constraints
@@ -470,9 +469,8 @@ class ARMS:
                     constraint, weight, constraints_w_weights[constraint]
                 )
 
-        # dict maintains order, so this should match up properly
         problem: And[Or[Var]] = And(list(constraints_w_weights.keys()))
-        weights = list(constraints_w_weights.keys())
+        weights = list(constraints_w_weights.values())
 
         wcnf, decode = to_wcnf(problem, weights)
         return wcnf, decode
