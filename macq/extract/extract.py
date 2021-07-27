@@ -3,7 +3,7 @@ from enum import Enum, auto
 from ..trace import ObservationLists, Action, State
 from .model import Model
 from .observer import Observer
-from .SLAF import SLAF
+from .slaf import SLAF
 
 
 @dataclass
