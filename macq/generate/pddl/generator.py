@@ -338,14 +338,10 @@ class Generator:
                 plan = [act["name"] for act in resp["result"]["plan"]]
         else:
             f = open(filename, "r")
-            plan = f.read().split("\n")
-            for p in plan:
-                # disregard comments
-                if p[0] == ";":
-                    plan.remove(p)
-
+            plan = list(filter(lambda x: ';' not in x, f.read().splitlines()))
+            
         # convert to a list of tarski PlainOperators (actions)
-        return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
+        return Plan([self.op_dict[p] for p in plan if p in self.op_dict])
 
     def generate_single_trace_from_plan(self, plan: Plan):
         trace = Trace()

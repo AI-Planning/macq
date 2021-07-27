@@ -28,18 +28,18 @@ class Plan:
                 The name of the file to write the plan to.
         """
         with open(filename, "w") as f:
-            string = str(self).split("\n")
-            # convert to IPC format
-            for i in range(len(string)):
-                string[i] = string[i].replace("(", " ").replace(",", "")
-                string[i] = "(" + string[i]
-            f.write("\n".join(string))
+            f.write(str(self))
 
     def __hash__(self):
         return hash(str(self))
 
     def __str__(self):
-        return "\n".join(str(act) for act in self.actions)
+        string = [str(act) for act in self.actions]
+        # convert to IPC format
+        for i in range(len(string)):
+            string[i] = string[i].replace("(", " ").replace(",", "")
+            string[i] = "(" + string[i]
+        return "\n".join(string)
 
     def __eq__(self, other):
         if isinstance(other, Plan):
