@@ -1,19 +1,10 @@
 from logging import warning
+from ..utils import PercentError
 from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 from typing import Set
 import random
-
-
-class PercentError(Exception):
-    """Raised when the user attempts to supply an invalid percentage of fluents to hide."""
-
-    def __init__(
-        self,
-        message="The percentage supplied is invalid.",
-    ):
-        super().__init__(message)
 
 
 class PartialObservation(Observation):
@@ -88,10 +79,7 @@ class PartialObservation(Observation):
         hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
         # get new dict
         for f in fluents:
-            if f in hide_fluents_ls:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+            new_fluents[f] = None if f in hide_fluents_ls else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def hide_subset(self, step: Step, hide: Set[Fluent]):
@@ -108,10 +96,7 @@ class PartialObservation(Observation):
         """
         new_fluents = {}
         for f in step.state.fluents:
-            if f in hide:
-                new_fluents[f] = None
-            else:
-                new_fluents[f] = step.state[f]
+            new_fluents[f] = None if f in hide else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def _matches(self, key: str, value: str):
