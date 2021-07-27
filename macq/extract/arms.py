@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 from typing import Set, List, Dict, Tuple, Hashable
-from nnf import Var, And, Or, false as nnffalse
+from nnf import NNF, Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from . import LearnedAction, Model
@@ -115,12 +115,14 @@ class ARMS:
         info3_default: int,
         plan_default: int,
     ) -> Set[LearnedAction]:
-        connected_actions, learned_actions = ARMS._step1(
-            obs_lists
-        )  # actions = connected_actions.keys()
+        """The main driver for the ARMS algorithm."""
+
+        connected_actions, learned_actions = ARMS._step1(obs_lists)
+
         constraints = ARMS._step2(
             obs_lists, connected_actions, learned_actions, fluents, min_support
         )
+
         max_sat, decode = ARMS._step3(
             constraints,
             action_weight,
@@ -130,15 +132,9 @@ class ARMS:
             plan_default,
         )
 
-        model = ARMS._step4(max_sat)
-        print(model)
+        model = ARMS._step4(max_sat, decode)
 
-        for clause in model:
-            print("  ", decode[abs(clause)], end="")
-            if clause > 0:
-                print(" - true")
-            else:
-                print(" - false")
+        action_models = ARMS._step5(model, list(learned_actions.values()))
 
         return set()  # WARNING temp
 
@@ -500,10 +496,20 @@ class ARMS:
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
-    def _step4(max_sat: WCNF) -> List[int]:
+    def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
         solver = RC2(max_sat)
         solver.compute()
-        model = solver.model
-        if not isinstance(model, list):
-            raise InvalidMaxSATModel(model)
+        encoded_model = solver.model
+        if not isinstance(encoded_model, list):
+            raise InvalidMaxSATModel(encoded_model)
+
+        # decode the model (back to nnf vars)
+        model: Dict[Hashable, bool] = {
+            decode[abs(clause)]: clause > 0 for clause in encoded_model
+        }
+
         return model
+
+    @staticmethod
+    def _step5(model: Dict[Hashable, bool], actions: List[LearnedAction]):
+        print(actions[0].details())
