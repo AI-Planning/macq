@@ -44,9 +44,6 @@ if __name__ == "__main__":
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
     new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
 
-    # test goal sampling
-    states_gen = vanilla.goal_sampling(3, 5, 0.2)
-
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {

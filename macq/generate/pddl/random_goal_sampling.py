@@ -4,7 +4,7 @@ from tarski.syntax.formulas import Atom
 from collections import OrderedDict
 from . import VanillaSampling
 from ...trace import TraceList, State
-from ...observation.partial_observation import PercentError
+from ...utils import PercentError
 from ...utils.timer import basic_timer
 
 
