@@ -84,8 +84,6 @@ class ARMS:
         if not (threshold >= 0 and threshold <= 1):
             raise ARMS.InvalidThreshold(threshold)
 
-        # assert that there is a goal
-        ARMS._check_goal(obs_lists)
         # get fluents from initial state
         fluents = ARMS._get_fluents(obs_lists)
         # call algorithm to get actions
@@ -100,12 +98,6 @@ class ARMS:
             plan_default,
         )
         return Model(fluents, actions)
-
-    @staticmethod
-    def _check_goal(obs_lists: ObservationLists) -> bool:
-        """Checks that there is a goal state in the ObservationLists."""
-        # TODO
-        return True
 
     @staticmethod
     def _get_fluents(obs_lists: ObservationLists) -> Set[Fluent]:
@@ -139,7 +131,6 @@ class ARMS:
         )
 
         model = ARMS._step4(max_sat)
-        print(type(model))
         print(model)
 
         for clause in model:
