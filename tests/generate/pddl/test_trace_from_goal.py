@@ -1,27 +1,21 @@
 import pytest
 from pathlib import Path
-from macq.generate.pddl import VanillaSampling
+from macq.generate.pddl import TraceFromGoal
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject, TraceList
+from macq.trace import Fluent, PlanningObject
 
 
-def test_invalid_vanilla_sampling():
+def test_invalid_goal_change():
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
 
-    with pytest.raises(InvalidPlanLength):
-        VanillaSampling(dom=dom, prob=prob, plan_len=-1, num_traces=5)
-
-    with pytest.raises(InvalidNumberOfTraces):
-        VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=-1)
-
     with pytest.raises(InvalidGoalFluent):
-        vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=5, num_traces=1)
+        goal_traces = TraceFromGoal(dom=dom, prob=prob)
         # test changing the goal and generating a plan from two local files
-        vanilla.change_goal(
+        goal_traces.change_goal(
             {
                 Fluent(
                     "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
@@ -37,34 +31,41 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
     new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
     new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
     new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
 
-    # test changing the goal and generating a plan from two local files
-    vanilla.change_goal(
+    # test sampling using the original goal from a local PDDL problem file
+    goal_traces_sampler = TraceFromGoal(dom=dom, prob=prob)
+    goal_trace = goal_traces_sampler.trace
+    true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
+    print(true_f)
+    print()
+
+    # test changing the goal and regenerating traces from local PDDL files
+    goal_traces_sampler.change_goal(
         {
             Fluent(
-                "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
+                "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
+            ),
+            Fluent(
+                "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
         new_blocks_dom,
         new_blocks_prob,
     )
-    plan = vanilla.generate_plan()
-    print(plan)
+    goal_traces = goal_traces_sampler.generate_trace()
+    goal_trace = goal_traces_sampler.trace
+    true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
+    print(true_f)
     print()
-    trace = vanilla.generate_single_trace_from_plan(plan)
-    tracelist = TraceList()
-    tracelist.append(trace)
-    tracelist.print(wrap="y")
 
-    # test changing the goal and generating a plan from files extracted from a problem ID
-    vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
-    vanilla.change_goal(
+    # test changing the goal and regenerating traces from files extracted from a problem ID
+    goal_traces_sampler = TraceFromGoal(problem_id=123)
+    goal_traces_sampler.change_goal(
         {
             Fluent(
                 "at",
@@ -77,11 +78,7 @@ if __name__ == "__main__":
         new_game_dom,
         new_game_prob,
     )
-    plan = vanilla.generate_plan()
-    print(plan)
-    print()
-    trace = vanilla.generate_single_trace_from_plan(plan)
-    tracelist = TraceList()
-    tracelist.append(trace)
-    tracelist.print(wrap="y")
-
+    goal_traces = goal_traces_sampler.generate_trace()
+    goal_trace = goal_traces_sampler.trace
+    true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
+    print(true_f)
