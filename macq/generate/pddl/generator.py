@@ -17,7 +17,7 @@ from tarski.io import fstrips as iofs
 
 import requests
 from .planning_domains_api import get_problem, get_plan
-from .plan import Plan
+from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 
 
@@ -50,7 +50,7 @@ class Generator:
             The problem definition.
         lang (tarski.fol.FirstOrderLanguage):
             The language definition.
-        instance (tarski.search.model.GroundForwardSearchModel):
+        instance (GroundForwardSearchModel):
             The grounded instance of the problem.
         grounded_fluents (list):
             A list of all grounded (macq) fluents extracted from the given problem definition.
@@ -338,33 +338,44 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self):
-        """Generates a plan. If the goal was changed, the new goal is taken into account.
-        Otherwise, the default goal in the initial problem file is used.
+    def generate_plan(self, from_ipc_file:bool=False, filename:str=None):
+        """Generates a plan. If reading from an IPC file, the `Plan` is read directly. Otherwise, if the initial state or
+        goal was changed, these changes are taken into account through the updated PDDL files. If no changes were made, the
+        default nitial state/goal in the initial problem file is used.
+
+        Args:
+            from_ipc_file (bool):
+                Option to read a `Plan` from an IPC file instead of the `Generator`'s problem file. Defaults to False.
+            filename (str):
+                The name of the file to read the plan from.
 
         Returns:
             A `Plan` object that holds all the actions taken.
         """
-        # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
-        # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
-        if self.problem_id and not self.pddl_dom and not self.pddl_prob:
-            plan = get_plan(self.problem_id)
-        # if you are not just using the unaltered files, use the local files instead
-        else:
-            data = {
-                "domain": open(self.pddl_dom, "r").read(),
-                "problem": open(self.pddl_prob, "r").read(),
-            }
-            try:
+        if not from_ipc_file:
+            # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
+            # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
+            if self.problem_id and not self.pddl_dom and not self.pddl_prob:
+                plan = get_plan(self.problem_id)
+            # if you are not just using the unaltered files, use the local files instead
+            else:
+                data = {
+                    "domain": open(self.pddl_dom, "r").read(),
+                    "problem": open(self.pddl_prob, "r").read(),
+                }
                 resp = requests.post(
                     "http://solver.planning.domains/solve", verify=False, json=data
                 ).json()
                 plan = [act["name"] for act in resp["result"]["plan"]]
-            except KeyError as e:
-                print("Plan not found. Error output:")
-                print(resp["error"])
+        else:
+            f = open(filename, "r")
+            plan = f.read().split("\n")
+            for p in plan:
+                # disregard comments
+                if p[0] == ";":
+                    plan.remove(p)
 
-        # convert to a list of tarski PlainOperators (actions) for a Plan
+        # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict.keys()])
 
     def generate_single_trace_from_plan(self, plan: Plan):

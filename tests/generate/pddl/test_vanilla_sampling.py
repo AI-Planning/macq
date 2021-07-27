@@ -37,7 +37,15 @@ if __name__ == "__main__":
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=20, num_traces=1)
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
+
+    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
+    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+    new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
+    new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
+
+    # test goal sampling
+    states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
@@ -46,8 +54,8 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
             ),
         },
-        "new_blocks_dom.pddl",
-        "new_blocks_prob.pddl",
+        new_blocks_dom,
+        new_blocks_prob,
     )
     plan = vanilla.generate_plan()
     print(plan)
@@ -69,8 +77,8 @@ if __name__ == "__main__":
                 ],
             )
         },
-        "new_game_dom.pddl",
-        "new_game_prob.pddl",
+        new_game_dom,
+        new_game_prob,
     )
     plan = vanilla.generate_plan()
     print(plan)
