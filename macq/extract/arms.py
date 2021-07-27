@@ -6,6 +6,7 @@ from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from . import LearnedAction, Model
 from .exceptions import (
+    ConstraintContradiction,
     IncompatibleObservationToken,
     InconsistentConstraintWeights,
     InvalidMaxSATModel,
@@ -18,7 +19,7 @@ from ..utils.pysat import to_wcnf
 @dataclass
 class Relation:
     name: str
-    types: set
+    types: list
 
     def var(self):
         return f"{self.name} {' '.join(list(self.types))}"
@@ -119,7 +120,7 @@ class ARMS:
 
         connected_actions, learned_actions = ARMS._step1(obs_lists)
 
-        constraints = ARMS._step2(
+        constraints, relations = ARMS._step2(
             obs_lists, connected_actions, learned_actions, fluents, min_support
         )
 
@@ -134,8 +135,9 @@ class ARMS:
 
         model = ARMS._step4(max_sat, decode)
 
-        action_models = ARMS._step5(model, list(learned_actions.values()))
-
+        action_models = ARMS._step5(
+            model, list(learned_actions.values()), list(relations.values())
+        )
         return set()  # WARNING temp
 
     @staticmethod
@@ -177,7 +179,7 @@ class ARMS:
         learned_actions: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
-    ) -> ARMSConstraints:
+    ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
         """Generate action constraints, information constraints, and plan constraints."""
 
         # Map fluents to relations
@@ -188,7 +190,7 @@ class ARMS:
                     f,
                     Relation(
                         f.name,  # the fluent name
-                        set([obj.obj_type for obj in f.objects]),  # the object types
+                        [obj.obj_type for obj in f.objects],  # the object types
                     ),
                 ),
                 fluents,
@@ -196,7 +198,10 @@ class ARMS:
         )
 
         action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
-        info_constraints, info_support_counts = ARMS._step2I(obs_lists, relations)
+        info_constraints, info_support_counts = ARMS._step2I(
+            obs_lists, relations, learned_actions
+        )
+
         plan_constraints = ARMS._step2P(
             obs_lists,
             connected_actions,
@@ -205,8 +210,14 @@ class ARMS:
             min_support,
         )
 
-        return ARMSConstraints(
-            action_constraints, info_constraints, info_support_counts, plan_constraints
+        return (
+            ARMSConstraints(
+                action_constraints,
+                info_constraints,
+                info_support_counts,
+                plan_constraints,
+            ),
+            relations,
         )
 
     @staticmethod
@@ -222,7 +233,7 @@ class ARMS:
         for action in actions:
             for relation in relations:
                 # A relation is relevant to an action if they share parameter types
-                if relation.types.issubset(action.obj_params):
+                if set(relation.types).issubset(action.obj_params):
                     # A1
                     # relation in action.add <=> relation not in action.precond
 
@@ -255,7 +266,9 @@ class ARMS:
 
     @staticmethod
     def _step2I(
-        obs_lists: ObservationLists, relations: dict
+        obs_lists: ObservationLists,
+        relations: Dict[Fluent, Relation],
+        actions: Dict[Action, LearnedAction],
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
         constraints: List[Or[Var]] = []
         support_counts: Dict[Or[Var], int] = defaultdict(int)
@@ -269,7 +282,7 @@ class ARMS:
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
                             for obs_i in obs_list[: i - 1]:
-                                ai = obs_i.action
+                                ai = actions[obs_i.action]
                                 i1.append(
                                     Var(
                                         f"{relations[fluent].var()}_in_add_{ai.details()}"
@@ -279,7 +292,7 @@ class ARMS:
                             # I2
                             # relation not in del list of action n (i-1)
                             i2 = Var(
-                                f"{relations[fluent].var()}_in_del_{obs_list[i-1].action.details()}"
+                                f"{relations[fluent].var()}_in_del_{actions[obs_list[i-1].action].details()}"
                             ).negate()
 
                             constraints.append(Or(i1))
@@ -293,7 +306,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_in_pre_{obs.action.details()}"
+                                                f"{relations[fluent].var()}_in_pre_{actions[obs.action].details()}"
                                             )
                                         ]
                                     )
@@ -304,7 +317,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_in_add_{obs_list[i-1].action.details()}"
+                                                f"{relations[fluent].var()}_in_add_{actions[obs_list[i-1].action].details()}"
                                             )
                                         ]
                                     )
@@ -511,17 +524,55 @@ class ARMS:
         return model
 
     @staticmethod
-    def _step5(model: Dict[Hashable, bool], actions: List[LearnedAction]):
+    def _step5(
+        model: Dict[Hashable, bool],
+        actions: List[LearnedAction],
+        relations: List[Relation],
+    ):
         action_map = {a.details(): a for a in actions}
-        print(actions[0].details())
+        relation_map = {p.var(): p for p in relations}
+
         for constraint, val in model.items():
             constraint = str(constraint).split("_")
-            print(constraint)
+            print(constraint, val)
+            fluent = relation_map[constraint[0]]
             relation = constraint[0]
             ctype = constraint[1]  # constraint type
             if ctype == "in":
-                alist = constraint[2]
-                action = constraint[3]
+                effect = constraint[2]
+                action = action_map[constraint[3]]
+                if val:
+                    action_update = (
+                        action.update_precond
+                        if effect == "pre"
+                        else action.update_add
+                        if effect == "add"
+                        else action.update_delete
+                    )
+                    # action_update({str(fluent)})
+                    action_update({relation})
+                else:
+                    action_effect = (
+                        action.precond
+                        if effect == "pre"
+                        else action.add
+                        if effect == "add"
+                        else action.delete
+                    )
+                    if fluent in action_effect:
+                        # TODO: determine if this is an error, or if it just
+                        # means the effect should be removed (due to more info
+                        # from later iterations)
+                        raise ConstraintContradiction(fluent, effect, action)
             else:
+                # plan constraint
+                # doesn't directly affect actions
                 a1 = constraint[2]
                 a2 = constraint[3]
+
+        for action in action_map.values():
+            print()
+            print(action.details())
+            print("precond:", action.precond)
+            print("add:", action.add)
+            print("delete:", action.delete)
