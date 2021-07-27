@@ -39,6 +39,11 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
+    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
+    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+    new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
+    new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
+
     # test goal sampling
     states_gen = vanilla.goal_sampling(3, 5, 0.2)
 
@@ -52,8 +57,8 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
-        "new_blocks_dom.pddl",
-        "new_blocks_prob.pddl",
+        new_blocks_dom,
+        new_blocks_prob,
     )
     plan = vanilla.generate_plan()
     print(plan)
@@ -71,9 +76,12 @@ if __name__ == "__main__":
                 ],
             )
         },
-        "new_game_dom.pddl",
-        "new_game_prob.pddl",
+        new_game_dom,
+        new_game_prob,
     )
     plan = vanilla.generate_plan()
     print(plan)
     print()
+
+    # test generate trace from plan
+    trace = vanilla.generate_single_trace_from_plan(plan)

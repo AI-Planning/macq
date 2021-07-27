@@ -32,6 +32,11 @@ if __name__ == "__main__":
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
+    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
+    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+    new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
+    new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
+
     # test sampling using the original goal from a local PDDL problem file
     goal_traces_sampler = TraceFromGoal(dom=dom, prob=prob)
     goal_trace = goal_traces_sampler.trace
@@ -49,8 +54,8 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
-        "new_blocks_dom.pddl",
-        "new_blocks_prob.pddl",
+        new_blocks_dom,
+        new_blocks_prob,
     )
     goal_traces = goal_traces_sampler.generate_trace()
     goal_trace = goal_traces_sampler.trace
@@ -70,8 +75,8 @@ if __name__ == "__main__":
                 ],
             )
         },
-        "new_game_dom.pddl",
-        "new_game_prob.pddl",
+        new_game_dom,
+        new_game_prob,
     )
     goal_traces = goal_traces_sampler.generate_trace()
     goal_trace = goal_traces_sampler.trace
