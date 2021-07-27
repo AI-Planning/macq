@@ -1,6 +1,6 @@
-from typing import List, Tuple, Dict, Hashable, Union
+from typing import List, Tuple, Dict, Hashable
 from pysat.formula import WCNF
-from nnf import And, Or, Var, NNF
+from nnf import And, Or, Var
 
 
 class NotCNF(Exception):
