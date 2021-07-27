@@ -6,7 +6,7 @@ from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
 
 
-def test_invalid_goal_sampling():
+def test_invalid_goal_change():
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent.parent
     dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())

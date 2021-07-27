@@ -1,4 +1,4 @@
-from typing import Set, Optional
+from typing import Set, List, Union
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -6,14 +6,15 @@ from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
-from tarski.syntax.ops import CompoundFormula
+from tarski.syntax import land
+from tarski.syntax.ops import CompoundFormula, flatten
 from tarski.syntax.formulas import Atom, neg
 from tarski.syntax.builtins import BuiltinPredicateSymbol
 from tarski.fstrips.action import PlainOperator
 from tarski.fstrips.fstrips import AddEffect
-from tarski.model import Model
-from tarski.syntax import land
+from tarski.model import Model, create
 from tarski.io import fstrips as iofs
+
 import requests
 from .planning_domains_api import get_problem, get_plan
 from ..plan import Plan
@@ -258,9 +259,39 @@ class Generator:
             objs.update(set(fluent.objects))
         return Action(name, list(objs))
 
+    def change_init(
+        self,
+        init_fluents: Union[Set[Fluent], List[Fluent]],
+        new_domain: str = "new_domain.pddl",
+        new_prob: str = "new_prob.pddl",
+    ):
+        """Changes the initial state of the `Generator`. The domain and problem PDDL files
+        are rewritten to accomodate the new goal for later use by a planner.
+
+        Args:
+            init_fluents (Union[Set[Fluent], List[Fluent]]):
+                The collection of fluents that will make up the new initial state.
+            new_domain (str):
+                The name of the new domain file.
+            new_prob (str):
+                The name of the new problem file.
+        """
+        init = create(self.lang)
+        for f in init_fluents:
+            # convert fluents to tarski Atoms
+            atom = Atom(self.lang.get_predicate(f.name), [self.lang.get(o.name) for o in f.objects])
+            init.add(atom.predicate, *atom.subterms)
+        self.problem.init = init
+
+        # rewrite PDDL files appropriately
+        writer = iofs.FstripsWriter(self.problem)
+        writer.write(new_domain, new_prob)
+        self.pddl_dom = new_domain
+        self.pddl_prob = new_prob
+
     def change_goal(
         self,
-        goal_fluents: Set[Fluent],
+        goal_fluents: Union[Set[Fluent], List[Fluent]],
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
@@ -268,19 +299,19 @@ class Generator:
         are rewritten to accomodate the new goal for later use by a planner.
 
         Args:
-            goal_fluents (Set[Fluent]):
-                The set of fluents to make up the new goal.
+            goal_fluents (Union[Set[Fluent], List[Fluent]]):
+                The collection of fluents that will make up the new goal.
             new_domain (str):
-                The name of the new domain file. Defaults to a generic name.
+                The name of the new domain file.
             new_prob (str):
-                The name of the new problem file. Defaults to a generic name.
+                The name of the new problem file.
 
         Raises:
             InvalidGoalFluent:
                 Raised if any of the fluents supplied do not exist in this domain.
         """
         # check if the fluents to add are valid
-        available_f = self.__get_all_grounded_fluents()
+        available_f = self.grounded_fluents
         for f in goal_fluents:
             if f not in available_f:
                 raise InvalidGoalFluent()
@@ -299,7 +330,7 @@ class Generator:
                 ]
             )
         # reset the goal
-        self.problem.goal = goal
+        self.problem.goal = flatten(goal)
 
         # rewrite PDDL files appropriately
         writer = iofs.FstripsWriter(self.problem)
@@ -344,8 +375,16 @@ class Generator:
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict])
 
     def generate_single_trace_from_plan(self, plan: Plan):
+        """Generates a single trace from the plan taken as input.
+
+        Args:
+            plan (Plan):
+                The plan to generate a trace from.
+
+        Returns:
+            The trace generated from the plan.
+        """
         trace = Trace()
-        trace.clear()
         actions = plan.actions
         plan_len = len(actions)
         # get initial state

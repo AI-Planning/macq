@@ -1,8 +1,7 @@
 from tarski.search.operations import progress
 import random
 from . import Generator
-from ...utils.timer import set_timer, TraceSearchTimeOut
-from ...utils.trace_utils import set_num_traces, set_plan_length
+from ...utils import set_timer_throw_exc, TraceSearchTimeOut, basic_timer, set_num_traces, set_plan_length 
 from ...observation.partial_observation import PercentError
 from ...trace import (
     Step,
@@ -18,7 +17,7 @@ MAX_TRACE_TIME = 30.0
 class VanillaSampling(Generator):
     """Vanilla State Trace Sampler - inherits the base Generator class and its attributes.
 
-    A basic state trace generator that Generates traces randomly by uniformly sampling applicable actions to find plans
+    A basic state trace generator that generates traces randomly by uniformly sampling applicable actions to find plans
     of the given length.
 
     Attributes:
@@ -32,8 +31,8 @@ class VanillaSampling(Generator):
 
     def __init__(
         self,
-        plan_len: int = 0,
-        num_traces: int = 0,
+        plan_len: int = 1,
+        num_traces: int = 1,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
@@ -45,9 +44,9 @@ class VanillaSampling(Generator):
 
         Args:
             plan_len (int):
-                The length of each generated trace. Defaults to 0 (in case the sampler is only being used for goal sampling).
+                The length of each generated trace. Defaults to 1.
             num_traces (int):
-                The number of traces to generate. Defaults to 0 (in case the sampler is only being used for goal sampling).
+                The number of traces to generate. Defaults to 1.
             dom (str):
                 The domain filename.
             prob (str):
@@ -75,11 +74,11 @@ class VanillaSampling(Generator):
             traces.append(self.generate_single_trace())
         return traces
 
-    @set_timer(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
+    @set_timer_throw_exc(num_seconds=MAX_TRACE_TIME, exception=TraceSearchTimeOut)
     def generate_single_trace(self, plan_len: int = None):
         """Generates a single trace using the uniform random sampling technique.
         Loops until a valid trace is found. Wrapper does not allow the function
-        to run past the time specified by the time specified.
+        to run past the time specified.
 
         Returns:
             A Trace object (the valid trace generated).
@@ -118,21 +117,4 @@ class VanillaSampling(Generator):
                     valid_trace = True
         return trace
 
-    def goal_sampling(
-        self, num_states: int, steps_deep: int, subset_size_perc: int = 1
-    ):
-        if subset_size_perc < 0 or subset_size_perc > 1:
-            raise PercentError()
-        goal_states = set()
-        while len(goal_states) < num_states:
-            # generate a trace of the specified length and retrieve the state of the last step
-            state = self.generate_single_trace(steps_deep)[-1].state
-            # randomly generate missing fluents according to the size of the partial state/subset specified
-            del_f = list(state.fluents.keys())
-            random.shuffle(del_f)
-            del_f = del_f[: int(len(state.fluents) * (1 - subset_size_perc))]
-            # delete the missing fluents
-            for f in del_f:
-                del state.fluents[f]
-            goal_states.add(state)
-        return goal_states
+
