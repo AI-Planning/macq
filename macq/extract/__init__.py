@@ -1,6 +1,7 @@
-from .model import Model, LearnedAction
-from .extract import Extract, modes, IncompatibleObservationToken
-from .learned_fluent import LearnedFluent
+from .model import Model
+from .extract import Extract, modes, IncompatibleObservationToken, SLAF
+#from .learned_fluent import LearnedFluent
+from .learned_action import LearnedAction
 
 __all__ = [
     "Model",
@@ -8,5 +9,6 @@ __all__ = [
     "modes",
     "IncompatibleObservationToken",
     "LearnedAction",
-    "LearnedFluent"
+    "SLAF",
+    #"LearnedFluent",
 ]
