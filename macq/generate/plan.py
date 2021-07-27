@@ -28,7 +28,7 @@ class Plan:
                 The name of the file to write the plan to.
         """
         with open(filename, "w") as f:
-            f.write(str(self))
+            f.write(str(self) + f"\n; cost = {len(self.actions)} (unit cost)")
 
     def __hash__(self):
         return hash(str(self))
