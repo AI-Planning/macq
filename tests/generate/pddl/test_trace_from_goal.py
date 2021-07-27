@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from macq.generate.pddl import TraceFromGoal
 from macq.generate.pddl.generator import InvalidGoalFluent
-from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
+from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
 
 

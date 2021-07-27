@@ -4,6 +4,7 @@ from collections import defaultdict
 from attr import dataclass
 import macq.extract as extract
 from .model import Model
+from .learned_fluent import LearnedFluent
 from ..trace import ObservationLists
 from ..observation import IdentityObservation
 
@@ -53,7 +54,7 @@ class Observer:
         for obs_list in obs_lists:
             for obs in obs_list:
                 # Update fluents with the fluents in this observation
-                fluents.update(list(obs.state.keys()))
+                fluents.update(LearnedFluent(f.name, [o.details() for o in f.objects]) for f in list(obs.state.keys()))
         return fluents
 
     @staticmethod

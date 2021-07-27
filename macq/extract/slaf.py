@@ -3,6 +3,7 @@ from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
 from bauhaus import Encoding
 from .model import Model
+from .learned_fluent import LearnedFluent
 from ..observation import AtomicPartialObservation
 from ..trace import ObservationLists
 
@@ -166,7 +167,7 @@ class SLAF:
         # iterate through each step
         for o in observations:
             for token in o:
-                model_fluents.update([f for f in token.state])
+                model_fluents.update(LearnedFluent(f.name, [o.details() for o in f.objects]) for f in token.state)
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information

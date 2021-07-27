@@ -1,4 +1,4 @@
-from typing import Set, Union
+from typing import Set
 from json import loads, dumps
 import tarski
 from tarski.syntax.formulas import CompoundFormula, Connective
@@ -6,8 +6,9 @@ from tarski.fol import FirstOrderLanguage
 from tarski.io import fstrips as iofs
 from tarski.syntax import land
 import tarski.fstrips as fs
-from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
+from .learned_fluent import LearnedFluent
+from ..utils import ComplexEncoder
 from ..trace import Fluent
 
 
@@ -27,14 +28,14 @@ class Model:
     """
 
     def __init__(
-        self, fluents: Union[Set[str], Set[Fluent]], actions: Set[LearnedAction]
+        self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
-            fluents (set):
+            fluents (Set[LearnedFluent]):
                 The set of fluents in the model.
-            actions (set):
+            actions (Set[LearnedAction]):
                 The set of actions in the model.
         """
         self.fluents = fluents
@@ -43,15 +44,8 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
-        self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
-            list(other.fluents)[0]
-        )
-        if self_fluent_type == other_fluent_type:
-            return self.fluents == other.fluents and self.actions == other.actions
-        if self_fluent_type == str:
-            return set(map(lambda f: str(f), other.fluents)) == self.fluents
-        if other_fluent_type == str:
-            return set(map(lambda f: str(f), self.fluents)) == other.fluents
+        return self.fluents == other.fluents and self.actions == other.actions
+
 
     def details(self):
         # Set the indent width
