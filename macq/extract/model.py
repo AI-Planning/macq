@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Set, Union
 from json import loads, dumps
 import tarski
 from tarski.syntax.formulas import CompoundFormula, Connective
@@ -28,12 +28,12 @@ class Model:
     """
 
     def __init__(
-        self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]
+        self, fluents: Union[Set[LearnedFluent], Set[str]], actions: Set[LearnedAction]
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
-            fluents (Set[LearnedFluent]):
+            fluents (Union[Set[LearnedFluent], Set[str]]):
                 The set of fluents in the model.
             actions (Set[LearnedAction]):
                 The set of actions in the model.
@@ -44,8 +44,15 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
-        return self.fluents == other.fluents and self.actions == other.actions
-
+        self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
+            list(other.fluents)[0]
+        )
+        if self_fluent_type == other_fluent_type:
+            return self.fluents == other.fluents and self.actions == other.actions
+        if self_fluent_type == str:
+            return set(map(lambda f: str(f), other.fluents)) == self.fluents
+        if other_fluent_type == str:
+            return set(map(lambda f: str(f), self.fluents)) == other.fluents
 
     def details(self):
         # Set the indent width
