@@ -8,12 +8,19 @@ class IncompatibleObservationToken(Exception):
 class InconsistentConstraintWeights(Exception):
     def __init__(self, constraint, weight1, weight2, message=None):
         if message is None:
-            message = f"Tried to assign the constraint {constraint} conflicting weights ({weight1} and {weight2})"
+            message = f"Tried to assign the constraint {constraint} conflicting weights ({weight1} and {weight2})."
         super().__init__()
 
 
 class InvalidMaxSATModel(Exception):
     def __init__(self, model, message=None):
         if message is None:
-            message = f"The MAX-SAT solver generated an invalid model. Model should be a list of integers. model = {model}"
+            message = f"The MAX-SAT solver generated an invalid model. Model should be a list of integers. model = {model}."
+        super().__init__(message)
+
+
+class ConstraintContradiction(Exception):
+    def __init__(self, fluent, effect, action, message=None):
+        if message is None:
+            message = f"Action model has contradictory constraints for {fluent.details()}'s presence in the {effect} list of {action.details()}."
         super().__init__(message)
