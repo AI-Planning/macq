@@ -512,4 +512,16 @@ class ARMS:
 
     @staticmethod
     def _step5(model: Dict[Hashable, bool], actions: List[LearnedAction]):
+        action_map = {a.details(): a for a in actions}
         print(actions[0].details())
+        for constraint, val in model.items():
+            constraint = str(constraint).split("_")
+            print(constraint)
+            relation = constraint[0]
+            ctype = constraint[1]  # constraint type
+            if ctype == "in":
+                alist = constraint[2]
+                action = constraint[3]
+            else:
+                a1 = constraint[2]
+                a2 = constraint[3]
