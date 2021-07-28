@@ -37,5 +37,5 @@ class LearnedFluent:
         """Converts a json object to a LearnedFluent."""
         return cls(
             data["name"],
-            data["obj_params"]
+            data["objects"]
         )
