@@ -1,33 +1,56 @@
 from multiprocessing.pool import ThreadPool
+from typing import Union
 
 
-def set_timer(num_seconds):
-    def timer(generator):
+def set_timer_throw_exc(num_seconds: Union[float, int], exception: Exception):
+    def timer(function):
         """
-        Checks that a trace is generated within the time indicated by the MAX_TRACE_TIME
-        constant in the respective generator.
+        Checks that a function runs within the specified time and raises an exception if it doesn't.
 
         Args:
-            generator (function reference):
+            function (function reference):
                 The generator function to be wrapped with this time-checker.
 
         Returns:
-            The wrapped generator function.
+            The wrapped function.
         """
 
         def wrapper(*args, **kwargs):
             pool = ThreadPool(processes=1)
 
-            thr = pool.apply_async(generator, args=args, kwds=kwargs)
+            thr = pool.apply_async(function, args=args, kwds=kwargs)
             # run the function for the specified seconds
             thr.wait(num_seconds)
-            # return a successful trace, if ready
+            # return successful results, if ready
             if thr.ready():
                 pool.terminate()
                 return thr.get()
             else:
                 # otherwise, raise an exception if the function takes too long
-                raise TraceSearchTimeOut()
+                raise exception()
+
+        return wrapper
+
+    return timer
+
+
+def basic_timer(num_seconds: Union[float, int]):
+    def timer(function):
+        """
+        Runs a function for a specified time.
+
+        Returns:
+            The wrapped function.
+        """
+
+        def wrapper(*args, **kwargs):
+            pool = ThreadPool(processes=1)
+
+            thr = pool.apply_async(function, args=args, kwds=kwargs)
+            # run the function for the specified seconds and exit without checking for/returning results
+            thr.wait(num_seconds)
+            pool.terminate()
+            return
 
         return wrapper
 
@@ -37,12 +60,12 @@ def set_timer(num_seconds):
 class TraceSearchTimeOut(Exception):
     """
     Raised when the time it takes to generate (or attempt to generate) a single trace is
-    longer than the MAX_TIME constant. MAX_TIME is 30 seconds by default.
+    longer than the MAX_TRACE_TIME constant. MAX_TRACE_TIME is 30 seconds by default.
     """
 
     def __init__(
         self,
-        message="The generator function took longer than MAX_TIME in its attempt to generate a trace."
-        + "MAX_TIME can be changed through macq.utils.timer.MAX_TIME.",
+        message="The generator took longer than MAX_TRACE_TIME in its attempt to generate a trace. "
+        + "MAX_TRACE_TIME can be changed through the trace generator used.",
     ):
         super().__init__(message)
