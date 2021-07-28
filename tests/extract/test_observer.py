@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from macq.extract import Extract, modes
 from macq.observation import *
 from macq.trace import *
@@ -16,9 +17,14 @@ def test_observer():
 
 
 if __name__ == "__main__":
+    # exit out to the base macq folder so we can get to /tests
+    base = Path(__file__).parent.parent
+    model_blocks_dom = str((base / "generated_testing_files/model_blocks_domain.pddl").resolve())
+    model_blocks_prob = str((base / "generated_testing_files/model_blocks_problem.pddl").resolve())
+
     traces = blocks_world(5)
     observations = traces.tokenize(IdentityObservation)
     traces.print()
     model = Extract(observations, modes.OBSERVER)
     print(model.details())
-    model.to_pddl("blocks_domain", "blocks_problem")
+    model.to_pddl("model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob)
