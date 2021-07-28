@@ -27,15 +27,4 @@ class LearnedFluent:
         return string
 
     def _serialize(self):
-        return dict(
-            name=self.name,
-            objects=self.objects
-        )
-
-    @classmethod
-    def _deserialize(cls, data):
-        """Converts a json object to a LearnedFluent."""
-        return cls(
-            data["name"],
-            data["objects"]
-        )
+        return str(self)

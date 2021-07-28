@@ -13,3 +13,5 @@ def test_model():
     with open("test_model.json", "r") as f:
         d = f.read()
         assert d == s
+
+test_model()
