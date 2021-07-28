@@ -123,11 +123,14 @@ class ARMS:
         """The main driver for the ARMS algorithm."""
         learned_actions = set()
 
-        connected_actions, actions = ARMS._step1(obs_lists)
-        actions_rev = {l: a for a, l in actions.items()}
+        connected_actions, action_map = ARMS._step1(obs_lists)
+
+        action_map_rev: Dict[LearnedAction, List[Action]] = defaultdict(list)
+        for obs_action, learned_action in action_map.items():
+            action_map_rev[learned_action].append(obs_action)
 
         constraints, relations = ARMS._step2(
-            obs_lists, connected_actions, actions, fluents, min_support
+            obs_lists, connected_actions, action_map, fluents, min_support
         )
 
         max_sat, decode = ARMS._step3(
@@ -142,13 +145,10 @@ class ARMS:
         model = ARMS._step4(max_sat, decode)
 
         # actions mutated in place (don't need to return)
-        ARMS._step5(model, list(actions.values()), list(relations.values()))
-
-        for action in actions.values():
-            print(action.details())
+        ARMS._step5(model, list(action_map.values()), list(relations.values()))
 
         setA = set()
-        for action in actions.values():
+        for action in action_map.values():
             if debug:
                 ARMS.debug(action=action)
             if (
@@ -162,9 +162,9 @@ class ARMS:
                 setA.add(action)
 
         for action in setA:
-            action_key = actions_rev[action]
-            del actions[action_key]
-            del action_key
+            action_keys = action_map_rev[action]
+            for a in action_keys:
+                del action_map[a]
             learned_actions.add(action)
 
         # TODO
