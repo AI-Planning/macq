@@ -117,6 +117,7 @@ class Model:
         Returns:
             The attribute of the LearnedAction, converted to an Atom or CompoundFormula.
         """
+        # return top if there are no constraints
         if not attribute:
             return top
         # creates Atom
