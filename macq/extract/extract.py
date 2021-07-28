@@ -35,7 +35,9 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes, **kwargs) -> Model:
+    def __new__(
+        cls, obs_lists: ObservationLists, mode: modes, debug: bool = False, **kwargs
+    ) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
@@ -62,4 +64,4 @@ class Extract:
             if len(obs_lists) != 1:
                 raise Exception("The SLAF extraction technique only takes one trace.")
 
-        return techniques[mode](obs_lists, **kwargs)
+        return techniques[mode](obs_lists, debug, **kwargs)
