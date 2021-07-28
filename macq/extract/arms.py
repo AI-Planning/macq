@@ -54,6 +54,8 @@ class ARMS:
     def __new__(
         cls,
         obs_lists: ObservationLists,
+        debug: bool,
+        upper_bound: int,
         min_support: int = 2,
         action_weight: int = 110,
         info_weight: int = 100,
@@ -65,6 +67,9 @@ class ARMS:
         Arguments:
             obs_lists (ObservationLists):
                 The observations to extract the model from.
+            upper_bound (int):
+                The upper bound for the maximum size of an action's preconditions and
+                add/delete lists. Determines when an action schemata is fully learned.
             min_support (int):
                 The minimum support count for an action pair to be considered frequent.
             action_weight (int):
@@ -86,10 +91,12 @@ class ARMS:
             raise ARMS.InvalidThreshold(threshold)
 
         # get fluents from initial state
-        fluents = ARMS._get_fluents(obs_lists)
+        fluents = obs_lists.get_fluents()
         # call algorithm to get actions
         actions = ARMS._arms(
             obs_lists,
+            debug,
+            upper_bound,
             fluents,
             min_support,
             action_weight,
@@ -101,13 +108,10 @@ class ARMS:
         return Model(fluents, actions)
 
     @staticmethod
-    def _get_fluents(obs_lists: ObservationLists) -> Set[Fluent]:
-        """Retrieves the set of fluents in the observations."""
-        return obs_lists.get_fluents()
-
-    @staticmethod
     def _arms(
         obs_lists: ObservationLists,
+        debug: bool,
+        upper_bound: int,
         fluents: Set[Fluent],
         min_support: int,
         action_weight: int,
@@ -117,11 +121,13 @@ class ARMS:
         plan_default: int,
     ) -> Set[LearnedAction]:
         """The main driver for the ARMS algorithm."""
+        learned_actions = set()
 
-        connected_actions, learned_actions = ARMS._step1(obs_lists)
+        connected_actions, actions = ARMS._step1(obs_lists)
+        actions_rev = {l: a for a, l in actions.items()}
 
         constraints, relations = ARMS._step2(
-            obs_lists, connected_actions, learned_actions, fluents, min_support
+            obs_lists, connected_actions, actions, fluents, min_support
         )
 
         max_sat, decode = ARMS._step3(
@@ -135,10 +141,35 @@ class ARMS:
 
         model = ARMS._step4(max_sat, decode)
 
-        action_models = ARMS._step5(
-            model, list(learned_actions.values()), list(relations.values())
-        )
-        return set()  # WARNING temp
+        # actions mutated in place (don't need to return)
+        ARMS._step5(model, list(actions.values()), list(relations.values()))
+
+        for action in actions.values():
+            print(action.details())
+
+        setA = set()
+        for action in actions.values():
+            if debug:
+                ARMS.debug(action=action)
+            if (
+                max([len(action.precond), len(action.add), len(action.delete)])
+                >= upper_bound
+            ):
+                if debug:
+                    print(
+                        f"Action schemata for {action.details()} has been fully learned."
+                    )
+                setA.add(action)
+
+        for action in setA:
+            action_key = actions_rev[action]
+            del actions[action_key]
+            del action_key
+            learned_actions.add(action)
+
+        # TODO
+        # return set(learned_actions.values())
+        return set()
 
     @staticmethod
     def _step1(
@@ -534,7 +565,6 @@ class ARMS:
 
         for constraint, val in model.items():
             constraint = str(constraint).split("_")
-            print(constraint, val)
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
             ctype = constraint[1]  # constraint type
@@ -570,7 +600,9 @@ class ARMS:
                 a1 = constraint[2]
                 a2 = constraint[3]
 
-        for action in action_map.values():
+    @staticmethod
+    def debug(action=None):
+        if action:
             print()
             print(action.details())
             print("precond:", action.precond)
