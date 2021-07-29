@@ -151,8 +151,10 @@ class ARMS:
                 model, list(action_map_rev.keys()), list(relations.values()), debug
             )
 
+            # Step 5 updates
             setA = set()
             for action in action_map_rev.keys():
+                # check if actions need to be learned in order
                 if debug:
                     ARMS.debug(action=action)
                 if (
@@ -166,6 +168,7 @@ class ARMS:
                     setA.add(action)
 
             for action in setA:
+                # advance early states
                 action_keys = action_map_rev[action]
                 for obs_action in action_keys:
                     del action_map[obs_action]
@@ -205,7 +208,7 @@ class ARMS:
             action_map[obs_action] = learned_action
 
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]] = {}
-        for i, a1 in enumerate(learned_actions):
+        for a1 in learned_actions:
             connected_actions[a1] = {}
             for a2 in learned_actions.difference({a1}):  # includes connecting with self
                 intersection = a1.obj_params.intersection(a2.obj_params)
@@ -351,7 +354,9 @@ class ARMS:
                         if val:
                             print(
                                 f"  Fluent {fluent} is true.\n"
-                                f"    ({relations[fluent].var()})∈ ({' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )})"  # type: ignore
+                                f"    ({relations[fluent].var()})∈ ("
+                                f"{' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )}"  # type: ignore
+                                ")"
                             )
                             # I1
                             # relation in the add list of an action <= n (i-1)
