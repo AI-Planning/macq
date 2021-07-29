@@ -33,7 +33,6 @@ class ARMSConstraints:
     action: List[Or[Var]]
     info: List[Or[Var]]
     info3: Dict[Or[Var], int]
-    # plan: Dict[And[Or[Var]], int]
     plan: Dict[Or[Var], int]
 
 
@@ -129,43 +128,55 @@ class ARMS:
         for obs_action, learned_action in action_map.items():
             action_map_rev[learned_action].append(obs_action)
 
-        constraints, relations = ARMS._step2(
-            obs_lists, connected_actions, action_map, fluents, min_support
-        )
+        while action_map_rev:
+            constraints, relations = ARMS._step2(
+                obs_lists,
+                connected_actions,
+                action_map,
+                fluents,
+                min_support,
+            )
 
-        max_sat, decode = ARMS._step3(
-            constraints,
-            action_weight,
-            info_weight,
-            threshold,
-            info3_default,
-            plan_default,
-        )
+            max_sat, decode = ARMS._step3(
+                constraints,
+                action_weight,
+                info_weight,
+                threshold,
+                info3_default,
+                plan_default,
+            )
 
-        model = ARMS._step4(max_sat, decode)
+            model = ARMS._step4(max_sat, decode)
 
-        # actions mutated in place (don't need to return)
-        ARMS._step5(model, list(action_map.values()), list(relations.values()))
+            # actions mutated in place (don't need to return)
+            ARMS._step5(model, list(action_map_rev.keys()), list(relations.values()))
 
-        setA = set()
-        for action in action_map.values():
-            if debug:
-                ARMS.debug(action=action)
-            if (
-                max([len(action.precond), len(action.add), len(action.delete)])
-                >= upper_bound
-            ):
+            setA = set()
+            for action in action_map_rev.keys():
                 if debug:
-                    print(
-                        f"Action schemata for {action.details()} has been fully learned."
-                    )
-                setA.add(action)
+                    ARMS.debug(action=action)
+                if (
+                    max([len(action.precond), len(action.add), len(action.delete)])
+                    >= upper_bound
+                ):
+                    if debug:
+                        print(
+                            f"Action schemata for {action.details()} has been fully learned."
+                        )
+                    setA.add(action)
 
-        for action in setA:
-            action_keys = action_map_rev[action]
-            for a in action_keys:
-                del action_map[a]
-            learned_actions.add(action)
+            for action in setA:
+                action_keys = action_map_rev[action]
+                for obs_action in action_keys:
+                    del action_map[obs_action]
+                del action_map_rev[action]
+                del connected_actions[action]
+                action_keys = [
+                    a1 for a1 in connected_actions if action in connected_actions[a1]
+                ]
+                for a1 in action_keys:
+                    del connected_actions[a1][action]
+                learned_actions.add(action)
 
         # TODO
         # return set(learned_actions.values())
@@ -175,7 +186,7 @@ class ARMS:
     def _step1(
         obs_lists: ObservationLists,
     ) -> Tuple[
-        Dict[LearnedAction, Dict[LearnedAction, Set]],
+        Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         Dict[Action, LearnedAction],
     ]:
         """Substitute instantiated objects in each action instance with the object type."""
@@ -193,7 +204,7 @@ class ARMS:
             actions.append(action)
             learned_actions[obs_action] = action
 
-        connected_actions = {}
+        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]] = {}
         for i, a1 in enumerate(actions):
             connected_actions[a1] = {}
             for a2 in actions[i:]:  # includes connecting with self
@@ -207,7 +218,7 @@ class ARMS:
     def _step2(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
-        learned_actions: Dict[Action, LearnedAction],
+        action_map: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
     ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
@@ -230,13 +241,13 @@ class ARMS:
 
         action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
         info_constraints, info_support_counts = ARMS._step2I(
-            obs_lists, relations, learned_actions
+            obs_lists, relations, action_map
         )
 
         plan_constraints = ARMS._step2P(
             obs_lists,
             connected_actions,
-            learned_actions,
+            action_map,
             set(relations.values()),
             min_support,
         )
@@ -313,25 +324,30 @@ class ARMS:
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
                             for obs_i in obs_list[: i - 1]:
-                                ai = actions[obs_i.action]
-                                i1.append(
-                                    Var(
-                                        f"{relations[fluent].var()}_in_add_{ai.details()}"
+                                if obs_i.action in actions:
+                                    ai = actions[obs_i.action]
+                                    i1.append(
+                                        Var(
+                                            f"{relations[fluent].var()}_in_add_{ai.details()}"
+                                        )
                                     )
-                                )
 
                             # I2
                             # relation not in del list of action n (i-1)
-                            i2 = Var(
-                                f"{relations[fluent].var()}_in_del_{actions[obs_list[i-1].action].details()}"
-                            ).negate()
+                            i2 = None
+                            if obs_list[i - 1].action in actions:
+                                i2 = Var(
+                                    f"{relations[fluent].var()}_in_del_{actions[obs_list[i-1].action].details()}"
+                                ).negate()
 
-                            constraints.append(Or(i1))
-                            constraints.append(Or([i2]))
+                            if i1:
+                                constraints.append(Or(i1))
+                            if i2:
+                                constraints.append(Or([i2]))
 
                             # I3
                             # count occurences
-                            if i < len(obs_list) - 1:
+                            if i < len(obs_list) - 1 and obs.action in actions:
                                 # corresponding constraint is related to the current action's precondition list
                                 support_counts[
                                     Or(
@@ -342,7 +358,7 @@ class ARMS:
                                         ]
                                     )
                                 ] += 1
-                            else:
+                            elif obs_list[i - 1].action in actions:
                                 # corresponding constraint is related to the previous action's add list
                                 support_counts[
                                     Or(
@@ -402,7 +418,7 @@ class ARMS:
     def _step2P(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
-        learned_actions: Dict[Action, LearnedAction],
+        action_map: Dict[Action, LearnedAction],
         relations: Set[Relation],
         min_support: int,
     ) -> Dict[Or[Var], int]:
@@ -410,9 +426,9 @@ class ARMS:
         frequent_pairs = ARMS._apriori(
             [
                 [
-                    learned_actions[obs.action]
+                    action_map[obs.action]
                     for obs in obs_list
-                    if obs.action is not None
+                    if obs.action is not None and obs.action in action_map
                 ]
                 for obs_list in obs_lists
             ],
@@ -563,7 +579,7 @@ class ARMS:
         action_map = {a.details(): a for a in actions}
         relation_map = {p.var(): p for p in relations}
 
-        for constraint, val in model.items():
+        for constraint, val in list(model.items())[:50]:
             constraint = str(constraint).split("_")
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
