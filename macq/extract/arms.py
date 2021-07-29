@@ -358,9 +358,10 @@ class ARMS:
                             # I2
                             # relation not in del list of action n (i-1)
                             i2 = None
-                            if obs_list[i - 1].action in actions:
+                            a_n = obs_list[i - 1].action
+                            if a_n in actions and a_n is not None:
                                 i2 = Var(
-                                    f"{relations[fluent].var()}_in_del_{actions[obs_list[i-1].action].details()}"
+                                    f"{relations[fluent].var()}_in_del_{actions[a_n].details()}"
                                 ).negate()
 
                             if i1:
@@ -370,7 +371,11 @@ class ARMS:
 
                             # I3
                             # count occurences
-                            if i < len(obs_list) - 1 and obs.action in actions:
+                            if (
+                                i < len(obs_list) - 1
+                                and obs.action in actions
+                                and obs.action is not None  # for the linter
+                            ):
                                 # corresponding constraint is related to the current action's precondition list
                                 support_counts[
                                     Or(
@@ -381,13 +386,13 @@ class ARMS:
                                         ]
                                     )
                                 ] += 1
-                            elif obs_list[i - 1].action in actions:
+                            elif a_n in actions and a_n is not None:
                                 # corresponding constraint is related to the previous action's add list
                                 support_counts[
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_in_add_{actions[obs_list[i-1].action].details()}"
+                                                f"{relations[fluent].var()}_in_add_{actions[a_n].details()}"
                                             )
                                         ]
                                     )
@@ -523,6 +528,7 @@ class ARMS:
         threshold: float,
         info3_default: int,
         plan_default: int,
+        debug: bool,
     ) -> Tuple[WCNF, Dict[int, Hashable]]:
         """Construct the weighted MAX-SAT problem."""
 
@@ -579,7 +585,9 @@ class ARMS:
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
-    def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+    def _step4(
+        max_sat: WCNF, decode: Dict[int, Hashable], debug: bool
+    ) -> Dict[Hashable, bool]:
         solver = RC2(max_sat)
         solver.compute()
         encoded_model = solver.model
@@ -598,6 +606,7 @@ class ARMS:
         model: Dict[Hashable, bool],
         actions: List[LearnedAction],
         relations: List[Relation],
+        debug: bool,
     ):
         action_map = {a.details(): a for a in actions}
         relation_map = {p.var(): p for p in relations}
