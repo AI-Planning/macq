@@ -9,7 +9,7 @@ class InconsistentConstraintWeights(Exception):
     def __init__(self, constraint, weight1, weight2, message=None):
         if message is None:
             message = f"Tried to assign the constraint {constraint} conflicting weights ({weight1} and {weight2})."
-        super().__init__()
+        super().__init__(message)
 
 
 class InvalidMaxSATModel(Exception):
