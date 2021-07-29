@@ -94,7 +94,6 @@ class ARMS:
         # call algorithm to get actions
         actions = ARMS._arms(
             obs_lists,
-            debug,
             upper_bound,
             fluents,
             min_support,
@@ -103,13 +102,13 @@ class ARMS:
             threshold,
             info3_default,
             plan_default,
+            debug,
         )
         return Model(fluents, actions)
 
     @staticmethod
     def _arms(
         obs_lists: ObservationLists,
-        debug: bool,
         upper_bound: int,
         fluents: Set[Fluent],
         min_support: int,
@@ -118,11 +117,12 @@ class ARMS:
         threshold: float,
         info3_default: int,
         plan_default: int,
+        debug: bool,
     ) -> Set[LearnedAction]:
         """The main driver for the ARMS algorithm."""
         learned_actions = set()
 
-        connected_actions, action_map = ARMS._step1(obs_lists)
+        connected_actions, action_map = ARMS._step1(obs_lists, debug)
 
         action_map_rev: Dict[LearnedAction, List[Action]] = defaultdict(list)
         for obs_action, learned_action in action_map.items():
@@ -130,11 +130,7 @@ class ARMS:
 
         while action_map_rev:
             constraints, relations = ARMS._step2(
-                obs_lists,
-                connected_actions,
-                action_map,
-                fluents,
-                min_support,
+                obs_lists, connected_actions, action_map, fluents, min_support, debug
             )
 
             max_sat, decode = ARMS._step3(
@@ -144,12 +140,15 @@ class ARMS:
                 threshold,
                 info3_default,
                 plan_default,
+                debug,
             )
 
-            model = ARMS._step4(max_sat, decode)
+            model = ARMS._step4(max_sat, decode, debug)
 
             # actions mutated in place (don't need to return)
-            ARMS._step5(model, list(action_map_rev.keys()), list(relations.values()))
+            ARMS._step5(
+                model, list(action_map_rev.keys()), list(relations.values()), debug
+            )
 
             setA = set()
             for action in action_map_rev.keys():
@@ -184,7 +183,7 @@ class ARMS:
 
     @staticmethod
     def _step1(
-        obs_lists: ObservationLists,
+        obs_lists: ObservationLists, debug: bool
     ) -> Tuple[
         Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         Dict[Action, LearnedAction],
@@ -221,6 +220,7 @@ class ARMS:
         action_map: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
+        debug: bool,
     ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
         """Generate action constraints, information constraints, and plan constraints."""
 
@@ -239,9 +239,11 @@ class ARMS:
             )
         )
 
-        action_constraints = ARMS._step2A(connected_actions, set(relations.values()))
+        action_constraints = ARMS._step2A(
+            connected_actions, set(relations.values()), debug
+        )
         info_constraints, info_support_counts = ARMS._step2I(
-            obs_lists, relations, action_map
+            obs_lists, relations, action_map, debug
         )
 
         plan_constraints = ARMS._step2P(
@@ -266,7 +268,12 @@ class ARMS:
     def _step2A(
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
+        debug: bool,
     ) -> List[Or[Var]]:
+
+        if debug:
+            print("Building action constraints...\n")
+
         def implication(a: Var, b: Var):
             return Or([a.negate(), b])
 
@@ -275,13 +282,21 @@ class ARMS:
         for action in actions:
             for relation in relations:
                 # A relation is relevant to an action if they share parameter types
-                if set(relation.types).issubset(action.obj_params):
+                if relation.types and set(relation.types).issubset(action.obj_params):
+                    if debug:
+                        print(
+                            f'relation ({relation.var()}) is relevant to action "{action.details()}"\n'
+                            "A1:\n"
+                            f"  {relation.var()} ∈ add ⇒ {relation.var()} ∉ pre\n"
+                            f"  {relation.var()} ∈ pre ⇒ {relation.var()} ∉ add\n"
+                            "A2:\n"
+                            f"  {relation.var()} ∈ del ⇒ {relation.var()} ∈ pre\n"
+                        )
                     # A1
-                    # relation in action.add <=> relation not in action.precond
+                    # relation in action.add => relation not in action.precond
+                    # relation in action.precond => relation not in action.add
 
-                    # _ is used to mark split locations for parsing later.
-                    # Can't use spaces because both relation.var and
-                    # action.details() contain spaces.
+                    # _ is used to unambiguously mark split locations for parsing later.
                     constraints.append(
                         implication(
                             Var(f"{relation.var()}_in_add_{action.details()}"),
@@ -311,12 +326,18 @@ class ARMS:
         obs_lists: ObservationLists,
         relations: Dict[Fluent, Relation],
         actions: Dict[Action, LearnedAction],
+        debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
         constraints: List[Or[Var]] = []
         support_counts: Dict[Or[Var], int] = defaultdict(int)
-        for obs_list in obs_lists:
+        obs_list: List[Observation]
+        for obs_list_i, obs_list in enumerate(obs_lists):
             for i, obs in enumerate(obs_list):
                 if obs.state is not None and i > 0:
+                    if debug:
+                        print(
+                            f"State {i+1} of observation list {obs_list_i+1} has information."
+                        )
                     for fluent, val in obs.state.items():
                         # Information constraints only apply to true relations
                         if val:
@@ -324,7 +345,9 @@ class ARMS:
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
                             for obs_i in obs_list[: i - 1]:
-                                if obs_i.action in actions:
+                                # action will never be None if it's in actions,
+                                # but the condition is needed to make linting happy
+                                if obs_i.action in actions and obs_i.action is not None:
                                     ai = actions[obs_i.action]
                                     i1.append(
                                         Var(
