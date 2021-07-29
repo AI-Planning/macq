@@ -1,4 +1,4 @@
-from typing import List, Type, Set
+from typing import Iterator, List, Type, Set
 from . import Trace
 from ..observation import Observation
 import macq.trace as TraceAPI
@@ -10,7 +10,6 @@ class ObservationLists(TraceAPI.TraceList):
     generate_more = property()
     get_usage = property()
     tokenize = property()
-    get_fluents = property()
 
     def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
