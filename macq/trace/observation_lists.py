@@ -24,7 +24,7 @@ class ObservationLists(TraceAPI.TraceList):
         for obs_list in self:
             for obs in obs_list:
                 action = obs.action
-                if action:
+                if action is not None:
                     actions.add(action)
         return actions
 

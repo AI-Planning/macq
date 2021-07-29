@@ -1,5 +1,6 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
+from logging import warn
 from typing import Set, List, Dict, Tuple, Hashable
 from nnf import NNF, Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2
@@ -190,8 +191,8 @@ class ARMS:
     ]:
         """Substitute instantiated objects in each action instance with the object type."""
 
-        actions: List[LearnedAction] = []
-        learned_actions = {}
+        learned_actions: Set[LearnedAction] = set()
+        action_map: Dict[Action, LearnedAction] = {}
         for obs_action in obs_lists.get_actions():
             # We don't support objects with multiple types right now, so no
             # multiple type clauses need to be generated.
@@ -199,19 +200,19 @@ class ARMS:
             # Create LearnedActions for each action, replacing instantiated
             # objects with the object type.
             types = {obj.obj_type for obj in obs_action.obj_params}
-            action = LearnedAction(obs_action.name, types)
-            actions.append(action)
-            learned_actions[obs_action] = action
+            learned_action = LearnedAction(obs_action.name, types)
+            learned_actions.add(learned_action)
+            action_map[obs_action] = learned_action
 
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]] = {}
-        for i, a1 in enumerate(actions):
+        for i, a1 in enumerate(learned_actions):
             connected_actions[a1] = {}
-            for a2 in actions[i:]:  # includes connecting with self
+            for a2 in learned_actions.difference({a1}):  # includes connecting with self
                 intersection = a1.obj_params.intersection(a2.obj_params)
                 if intersection:
                     connected_actions[a1][a2] = intersection
 
-        return connected_actions, learned_actions
+        return connected_actions, action_map
 
     @staticmethod
     def _step2(
@@ -242,6 +243,7 @@ class ARMS:
         action_constraints = ARMS._step2A(
             connected_actions, set(relations.values()), debug
         )
+
         info_constraints, info_support_counts = ARMS._step2I(
             obs_lists, relations, action_map, debug
         )
@@ -272,7 +274,7 @@ class ARMS:
     ) -> List[Or[Var]]:
 
         if debug:
-            print("Building action constraints...\n")
+            print("\nBuilding action constraints...\n")
 
         def implication(a: Var, b: Var):
             return Or([a.negate(), b])
@@ -287,16 +289,18 @@ class ARMS:
                         print(
                             f'relation ({relation.var()}) is relevant to action "{action.details()}"\n'
                             "A1:\n"
-                            f"  {relation.var()} ∈ add ⇒ {relation.var()} ∉ pre\n"
-                            f"  {relation.var()} ∈ pre ⇒ {relation.var()} ∉ add\n"
+                            f"  {relation.var()}∈ add ⇒ {relation.var()}∉ pre\n"
+                            f"  {relation.var()}∈ pre ⇒ {relation.var()}∉ add\n"
                             "A2:\n"
-                            f"  {relation.var()} ∈ del ⇒ {relation.var()} ∈ pre\n"
+                            f"  {relation.var()}∈ del ⇒ {relation.var()}∈ pre\n"
                         )
+
                     # A1
                     # relation in action.add => relation not in action.precond
                     # relation in action.precond => relation not in action.add
 
-                    # _ is used to unambiguously mark split locations for parsing later.
+                    # underscores are used to unambiguously mark split locations
+                    # for parsing constraints later.
                     constraints.append(
                         implication(
                             Var(f"{relation.var()}_in_add_{action.details()}"),
@@ -328,19 +332,27 @@ class ARMS:
         actions: Dict[Action, LearnedAction],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
+
+        if debug:
+            print("\nBuilding information constraints...")
         constraints: List[Or[Var]] = []
         support_counts: Dict[Or[Var], int] = defaultdict(int)
         obs_list: List[Observation]
         for obs_list_i, obs_list in enumerate(obs_lists):
             for i, obs in enumerate(obs_list):
                 if obs.state is not None and i > 0:
+                    n = i - 1
                     if debug:
                         print(
-                            f"State {i+1} of observation list {obs_list_i+1} has information."
+                            f"\nStep {i} of observation list {obs_list_i} contains state information."
                         )
                     for fluent, val in obs.state.items():
                         # Information constraints only apply to true relations
                         if val:
+                            print(
+                                f"  Fluent {fluent} is true.\n"
+                                f"    ({relations[fluent].var()})∈ ({' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )})"  # type: ignore
+                            )
                             # I1
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
@@ -555,9 +567,16 @@ class ARMS:
             if constraint not in constraints_w_weights:
                 constraints_w_weights[constraint] = weight
             elif weight != constraints_w_weights[constraint]:
-                raise InconsistentConstraintWeights(
-                    constraint, weight, constraints_w_weights[constraint]
+                warn(
+                    f"The constraint {constraint} has conflicting weights ({weight} and {constraints_w_weights[constraint]}). Choosing the smaller weight."
                 )
+                constraints_w_weights[constraint] = min(
+                    weight, constraints_w_weights[constraint]
+                )
+
+                # raise InconsistentConstraintWeights(
+                #     constraint, weight, constraints_w_weights[constraint]
+                # )
 
         problem: And[Or[Var]] = And(list(constraints_w_weights.keys()))
         weights = list(constraints_w_weights.values())
@@ -611,7 +630,7 @@ class ARMS:
         action_map = {a.details(): a for a in actions}
         relation_map = {p.var(): p for p in relations}
 
-        for constraint, val in list(model.items())[:50]:
+        for constraint, val in list(model.items())[:25]:
             constraint = str(constraint).split("_")
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
