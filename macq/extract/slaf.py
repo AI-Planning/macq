@@ -167,7 +167,7 @@ class SLAF:
         # iterate through each step
         for o in observations:
             for token in o:
-                model_fluents.update([f for f in token.state])
+                model_fluents.update([LearnedFluent(name=f, objects=[]) for f in token.state])
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information
@@ -189,7 +189,7 @@ class SLAF:
                 precond = info_split[0]
                 action = info_split[1]
                 # update the precondition of this action with the appropriate fluent
-                learned_actions[action].update_precond({precond})
+                learned_actions[action].update_precond({f"({precond} )"})
             # if this proposition holds information about an effect
             elif effect in e:
                 # split to separate effect and action, get rid of extra brackets
@@ -201,10 +201,10 @@ class SLAF:
                     # get rid of "~"
                     effect = effect[1:]
                     # update the delete effects of this action with the appropriate fluent
-                    learned_actions[action].update_delete({effect})
+                    learned_actions[action].update_delete({f"({effect} )"})
                 else:
                     # update the add effects of this action with the appropriate fluent
-                    learned_actions[action].update_add({effect})
+                    learned_actions[action].update_add({f"({effect} )"})
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod

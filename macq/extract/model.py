@@ -1,4 +1,4 @@
-from typing import Set, Union
+from typing import Set
 from json import loads, dumps
 import tarski
 from tarski.syntax.formulas import CompoundFormula, Connective, top
@@ -28,7 +28,7 @@ class Model:
     """
 
     def __init__(
-        self, fluents: Union[Set[LearnedFluent], Set[str]], actions: Set[LearnedAction]
+        self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 
