@@ -125,6 +125,8 @@ class ARMS:
 
         connected_actions, action_map = ARMS._step1(obs_lists, debug)
 
+        early_actions = [0] * len(obs_lists)
+
         action_map_rev: Dict[LearnedAction, List[Action]] = defaultdict(list)
         for obs_action, learned_action in action_map.items():
             action_map_rev[learned_action].append(obs_action)
@@ -152,11 +154,21 @@ class ARMS:
             )
 
             # Step 5 updates
+            # makes more sense to perform the updates in this function context
             setA = set()
             for action in action_map_rev.keys():
                 # check if actions need to be learned in order
+                for i, obs_list in enumerate(obs_lists):
+                    # if complete action is the early action for obs_list i
+                    if action == obs_list[early_actions[i]]:
+                        for add in action.add:
+                            print(add)
+                        # make add effects true in state
+                        # make del effects false
+
                 if debug:
                     ARMS.debug(action=action)
+
                 if (
                     max([len(action.precond), len(action.add), len(action.delete)])
                     >= upper_bound
@@ -352,12 +364,13 @@ class ARMS:
                     for fluent, val in obs.state.items():
                         # Information constraints only apply to true relations
                         if val:
-                            print(
-                                f"  Fluent {fluent} is true.\n"
-                                f"    ({relations[fluent].var()})∈ ("
-                                f"{' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )}"  # type: ignore
-                                ")"
-                            )
+                            if debug:
+                                print(
+                                    f"  Fluent {fluent} is true.\n"
+                                    f"    ({relations[fluent].var()})∈ ("
+                                    f"{' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )}"  # type: ignore
+                                    ")"
+                                )
                             # I1
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
