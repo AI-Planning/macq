@@ -1,7 +1,7 @@
 from tarski.search.operations import progress
 import random
 from . import Generator
-from ...utils import set_timer_throw_exc, TraceSearchTimeOut, basic_timer, set_num_traces, set_plan_length 
+from ...utils import set_timer_throw_exc, TraceSearchTimeOut, basic_timer, set_num_traces, set_plan_length
 from ...observation.partial_observation import PercentError
 from ...trace import (
     Step,

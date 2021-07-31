@@ -26,9 +26,9 @@ class LearnedAction:
     def details(self):
         # obj_params can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the action
         try:
-            string = f"{self.name} {' '.join([o for o in self.obj_params])}"
+            string = f"({self.name} {' '.join([o for o in self.obj_params])})"
         except TypeError:
-            string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
+            string = f"({self.name} {' '.join([o.details() for o in self.obj_params])})"
 
         return string
 
