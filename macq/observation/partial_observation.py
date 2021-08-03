@@ -42,7 +42,7 @@ class PartialObservation(Observation):
         # state information available without having to check every mapping in
         # the state (slow in large domains).
         if percent_missing < 1:
-            step = self.random_subset(step, percent_missing)
+            step = self.hide_random_subset(step, percent_missing)
         if hide:
             step = self.hide_subset(step, hide)
 
@@ -56,7 +56,16 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def random_subset(self, step: Step, percent_missing: float):
+    def extract_fluent_subset(self, step: Step, percent: float):
+        fluents = step.state.fluents
+        num_new_f = int(len(fluents) * (percent))
+
+        # shuffle keys and take an appropriate subset of them
+        extracted_f = list(fluents)
+        random.shuffle(extracted_f)
+        return extracted_f[:num_new_f]
+
+    def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
 
         Args:
@@ -68,18 +77,11 @@ class PartialObservation(Observation):
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
-
         fluents = step.state.fluents
-        num_new_fluents = int(len(fluents) * (percent_missing))
-
-        new_fluents = {}
-        # shuffle keys and take an appropriate subset of them
-        hide_fluents_ls = list(fluents)
-        random.shuffle(hide_fluents_ls)
-        hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
+        hidden_f = self.extract_fluent_subset(step, percent_missing)
         # get new dict
         for f in fluents:
-            new_fluents[f] = None if f in hide_fluents_ls else step.state[f]
+            new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def hide_subset(self, step: Step, hide: Set[Fluent]):
