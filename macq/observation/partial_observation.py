@@ -1,6 +1,6 @@
 from logging import warning
 from ..utils import PercentError
-from ..trace import Step, Fluent
+from ..trace import Step, Fluent, State
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 from typing import Set
@@ -56,8 +56,7 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def extract_fluent_subset(self, step: Step, percent: float):
-        fluents = step.state.fluents
+    def extract_fluent_subset(self, fluents: State, percent: float):
         num_new_f = int(len(fluents) * (percent))
 
         # shuffle keys and take an appropriate subset of them
@@ -79,7 +78,7 @@ class PartialObservation(Observation):
         """
         new_fluents = {}
         fluents = step.state.fluents
-        hidden_f = self.extract_fluent_subset(step, percent_missing)
+        hidden_f = self.extract_fluent_subset(fluents, percent_missing)
         # get new dict
         for f in fluents:
             new_fluents[f] = None if f in hidden_f else step.state[f]

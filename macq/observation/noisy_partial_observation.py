@@ -37,24 +37,30 @@ class NoisyPartialObservation(PartialObservation):
                 randomly replaced with the values of other propositions.
         """
 
-        super().__init__(index=step.index, step=step, percent_missing=percent_missing, hide=hide, )
+        super().__init__(step=step, percent_missing=percent_missing, hide=hide, )
 
         if percent_noisy < 1:
-            step = self.random_noisy_subset(step, percent_noisy, replace_noisy)
+            step = self.random_noisy_subset(percent_noisy, replace_noisy)
 
         self.state = None if percent_missing == 1 else step.state.clone()
         self.action = None if step.action is None else step.action.clone()
 
-    def random_noisy_subset(self, step: Step, percent_noisy: float, replace_noisy: bool):
-        fluents = step.state.fluents
+    def random_noisy_subset(self, percent_noisy: float, replace_noisy: bool):
+        # using the updated state after any fluent "hiding" took place (from the partial obs. setting);
+        # exclude any hidden fluents. (we want to keep hidden fluents and noisy fluents separate).
+        fluents = {}
+        for f in self.state:
+            if self.state[f] is not None:
+                fluents[f] = self.state[f] 
         new_fluents = {}
-        noisy_f = self.extract_fluent_subset(step, percent_noisy)
+        noisy_f = self.extract_fluent_subset(fluents, percent_noisy)
+
         if not replace_noisy:
             for f in fluents:
-                new_fluents[f] = not step.state[f] if f in noisy_f else step.state[f]
+                new_fluents[f] = not self.state[f] if f in noisy_f else self.state[f]
         else:
             for f in fluents:
-                new_fluents[f] = step.state[random.choice(fluents)] if f in noisy_f else step.state[f]
-        return Step(State(new_fluents), step.action, step.index)
+                new_fluents[f] = self.state[random.choice(list(fluents.keys()))] if f in noisy_f else self.state[f]
+        return Step(State(new_fluents), self.action, self.index)
 
 
