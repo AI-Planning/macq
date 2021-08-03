@@ -39,7 +39,8 @@ class NoisyPartialObservation(PartialObservation):
 
         super().__init__(step=step, percent_missing=percent_missing, hide=hide, )
 
-        if percent_noisy < 1:
+        # ensure percent_missing is < 1 (that is , there is a state left at all) before attempting to create a noisy subset
+        if percent_noisy < 1 and percent_missing < 1:
             step = self.random_noisy_subset(percent_noisy, replace_noisy)
 
         self.state = None if percent_missing == 1 else step.state.clone()
