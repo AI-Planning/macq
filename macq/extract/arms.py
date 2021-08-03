@@ -132,9 +132,13 @@ class ARMS:
             action_map_rev[learned_action].append(obs_action)
 
         while action_map_rev:
-            constraints, relations = ARMS._step2(
+            constraints, relation_map = ARMS._step2(
                 obs_lists, connected_actions, action_map, fluents, min_support, debug
             )
+
+            relation_map_rev: Dict[Relation, List[Fluent]] = defaultdict(list)
+            for fluent, relation in relation_map.items():
+                relation_map_rev[relation].append(fluent)
 
             max_sat, decode = ARMS._step3(
                 constraints,
@@ -148,23 +152,36 @@ class ARMS:
 
             model = ARMS._step4(max_sat, decode, debug)
 
-            # actions mutated in place (don't need to return)
+            # Mutates the LearnedAction (keys) of action_map_rev
             ARMS._step5(
-                model, list(action_map_rev.keys()), list(relations.values()), debug
+                model, list(action_map_rev.keys()), list(relation_map.values()), debug
             )
 
             # Step 5 updates
-            # makes more sense to perform the updates in this function context
             setA = set()
             for action in action_map_rev.keys():
-                # check if actions need to be learned in order
                 for i, obs_list in enumerate(obs_lists):
-                    # if complete action is the early action for obs_list i
-                    if action == obs_list[early_actions[i]]:
+                    obs_action: Action = obs_list[early_actions[i]].action
+                    # if current action is the early action for obs_list i,
+                    # update the next state with the effects and update the
+                    # early action pointer
+                    if obs_action in action_map and action == action_map[obs_action]:
+                        # Set add effects true
                         for add in action.add:
-                            print(add)
-                        # make add effects true in state
-                        # make del effects false
+                            # get candidate fluents from add relation
+                            # get fluent by cross referencing obs_list.action params
+                            candidates = relation_map_rev[add]
+                            for fluent in candidates:
+                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                    obs_list[early_actions[i] + 1].state[fluent] = True
+                                    early_actions[i] += 1
+                        # Set del effects false
+                        for delete in action.delete:
+                            candidates = relation_map_rev[delete]
+                            for fluent in candidates:
+                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                    obs_list[early_actions[i] + 1].state[fluent] = False
+                                    early_actions[i] += 1
 
                 if debug:
                     ARMS.debug(action=action)
@@ -679,8 +696,7 @@ class ARMS:
                         # means the effect should be removed (due to more info
                         # from later iterations)
                         raise ConstraintContradiction(fluent, effect, action)
-            else:
-                # plan constraint
+            else:  # plan constraint
                 # doesn't directly affect actions
                 a1 = constraint[2]
                 a2 = constraint[3]

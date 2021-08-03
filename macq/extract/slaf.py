@@ -167,7 +167,9 @@ class SLAF:
         # iterate through each step
         for o in observations:
             for token in o:
-                model_fluents.update([LearnedFluent(name=f, objects=[]) for f in token.state])
+                model_fluents.update(
+                    [LearnedFluent(name=f, objects=[]) for f in token.state]
+                )
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information

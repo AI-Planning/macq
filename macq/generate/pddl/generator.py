@@ -279,7 +279,10 @@ class Generator:
         init = create(self.lang)
         for f in init_fluents:
             # convert fluents to tarski Atoms
-            atom = Atom(self.lang.get_predicate(f.name), [self.lang.get(o.name) for o in f.objects])
+            atom = Atom(
+                self.lang.get_predicate(f.name),
+                [self.lang.get(o.name) for o in f.objects],
+            )
             init.add(atom.predicate, *atom.subterms)
         self.problem.init = init
 
@@ -338,7 +341,7 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, from_ipc_file:bool=False, filename:str=None):
+    def generate_plan(self, from_ipc_file: bool = False, filename: str = None):
         """Generates a plan. If reading from an IPC file, the `Plan` is read directly. Otherwise, if the initial state or
         goal was changed, these changes are taken into account through the updated PDDL files. If no changes were made, the
         default nitial state/goal in the initial problem file is used.
@@ -369,8 +372,8 @@ class Generator:
                 plan = [act["name"] for act in resp["result"]["plan"]]
         else:
             f = open(filename, "r")
-            plan = list(filter(lambda x: ';' not in x, f.read().splitlines()))
-            
+            plan = list(filter(lambda x: ";" not in x, f.read().splitlines()))
+
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict])
 

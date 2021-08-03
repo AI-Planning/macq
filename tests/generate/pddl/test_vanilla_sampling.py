@@ -39,8 +39,12 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
 
-    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
-    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+    new_blocks_dom = str(
+        (base / "generated_testing_files/new_blocks_dom.pddl").resolve()
+    )
+    new_blocks_prob = str(
+        (base / "generated_testing_files/new_blocks_prob.pddl").resolve()
+    )
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
     new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
 
@@ -84,4 +88,3 @@ if __name__ == "__main__":
     tracelist = TraceList()
     tracelist.append(trace)
     tracelist.print(wrap="y")
-

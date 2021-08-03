@@ -1,5 +1,6 @@
 from typing import List
 
+
 class LearnedFluent:
     def __init__(self, name: str, objects: List):
         self.name = name
