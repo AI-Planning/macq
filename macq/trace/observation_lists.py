@@ -15,6 +15,9 @@ class ObservationLists(TraceAPI.TraceList):
     def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
         self.type = Token
+        self.tokenize(traces)
+
+    def tokenize(self, traces: TraceAPI.TraceList):
         trace: Trace
         for trace in traces:
             tokens = trace.tokenize(Token, **kwargs)

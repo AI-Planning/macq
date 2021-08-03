@@ -19,7 +19,7 @@ class NoisyPartialObservation(PartialObservation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None, percent_noisy: float = 0, replace_noisy: bool = False):
+        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None, percent_noisy: float = 0):
         """
         Creates an NoisyPartialObservation object, storing the step.
 
@@ -32,9 +32,6 @@ class NoisyPartialObservation(PartialObservation):
                 The set of fluents to explicitly hide in the observation.
             percent_noisy (float):
                 The percentage of fluents to randomly make noisy in the observation.
-            replace_noisy (bool):
-                An optional style of noisiness where instead of directly flipping the values of noisy propositions, the values are 
-                randomly replaced with the values of other propositions.
         """
 
         super().__init__(step=step, percent_missing=percent_missing, hide=hide, )
@@ -56,12 +53,9 @@ class NoisyPartialObservation(PartialObservation):
         new_fluents = {}
         noisy_f = self.extract_fluent_subset(fluents, percent_noisy)
 
-        if not replace_noisy:
-            for f in fluents:
-                new_fluents[f] = not self.state[f] if f in noisy_f else self.state[f]
-        else:
-            for f in fluents:
-                new_fluents[f] = self.state[random.choice(list(fluents.keys()))] if f in noisy_f else self.state[f]
+        for f in fluents:
+            new_fluents[f] = not self.state[f] if f in noisy_f else self.state[f]
+
         return Step(State(new_fluents), self.action, self.index)
 
 
