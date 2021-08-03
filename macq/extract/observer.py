@@ -4,6 +4,8 @@ from collections import defaultdict
 from attr import dataclass
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
+from .model import Model
+from .learned_fluent import LearnedFluent
 from ..trace import ObservationLists
 from ..observation import IdentityObservation
 
@@ -53,7 +55,10 @@ class Observer:
         for obs_list in obs_lists:
             for obs in obs_list:
                 # Update fluents with the fluents in this observation
-                fluents.update(list(obs.state.keys()))
+                fluents.update(
+                    LearnedFluent(f.name, [o.details() for o in f.objects])
+                    for f in obs.state.keys()
+                )
         return fluents
 
     @staticmethod
@@ -82,13 +87,13 @@ class Observer:
                 action_pre_states[model_action].add(pre.state)
                 # Update the action's effects
                 delta = Observer.get_delta(pre.state, post.state)
-                model_action.update_add(delta.added)
-                model_action.update_delete(delta.deleted)
+                model_action.update_add({str(f) for f in delta.added})
+                model_action.update_delete({str(f) for f in delta.deleted})
 
         for action, pre_states in action_pre_states.items():
             # Find the (positive) intersection of the pre-states
             precond = set.intersection(*map(Observer._filter_positive, pre_states))
-            action.update_precond(precond)
+            action.update_precond({str(f) for f in precond})
 
         return {action for action in action_pre_states}
 

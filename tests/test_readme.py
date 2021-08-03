@@ -43,4 +43,3 @@ if __name__ == "__main__":
     # run as a script to look over the extracted model
     traces = generate_traces()
     model = extract_model(traces)
-    print(model.details())

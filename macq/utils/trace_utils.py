@@ -1,4 +1,4 @@
-from ..generate.trace_errors import InvalidNumberOfTraces, InvalidPlanLength
+from . import InvalidNumberOfTraces, InvalidPlanLength
 
 
 def set_num_traces(num_traces: int):
@@ -12,7 +12,7 @@ def set_num_traces(num_traces: int):
         InvalidNumberOfTraces:
             The exception raised when the number of traces provided is invalid.
     """
-    if num_traces > 0:
+    if num_traces >= 0:
         return num_traces
     else:
         raise InvalidNumberOfTraces()
@@ -29,7 +29,7 @@ def set_plan_length(plan_len: int):
         InvalidPlanLength:
             The exception raised when the plan length provided is invalid.
     """
-    if plan_len > 0:
+    if plan_len >= 0:
         return plan_len
     else:
         raise InvalidPlanLength()
