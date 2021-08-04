@@ -121,24 +121,33 @@ class ARMS:
         debug: bool,
     ) -> Set[LearnedAction]:
         """The main driver for the ARMS algorithm."""
-        learned_actions = set()
+        learned_actions = set()  # The set of learned action models Θ
+        # pointers to the earliest unlearned action for each observation list
+        early_actions = [0] * len(obs_lists)
 
         debug1 = ARMS.debug_menu("Debug step 1?") if debug else False
         connected_actions, action_map = ARMS._step1(obs_lists, debug1)
-
         if debug1:
             input("Press enter to continue...")
-
-        early_actions = [0] * len(obs_lists)
 
         action_map_rev: Dict[LearnedAction, List[Action]] = defaultdict(list)
         for obs_action, learned_action in action_map.items():
             action_map_rev[learned_action].append(obs_action)
 
+        count = 1
+        debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
+        debug3 = ARMS.debug_menu("Debug step 3?") if debug else False
+        debug4 = ARMS.debug_menu("Debug step 4?") if debug else False
+        debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
         while action_map_rev:
+            print("Iteration", count)
+            count += 1
+
             constraints, relation_map = ARMS._step2(
-                obs_lists, connected_actions, action_map, fluents, min_support, debug
+                obs_lists, connected_actions, action_map, fluents, min_support, debug2
             )
+            if debug2:
+                input("Press enter to continue...")
 
             relation_map_rev: Dict[Relation, List[Fluent]] = defaultdict(list)
             for fluent, relation in relation_map.items():
@@ -151,15 +160,21 @@ class ARMS:
                 threshold,
                 info3_default,
                 plan_default,
-                debug,
+                debug3,
             )
+            if debug3:
+                input("Press enter to continue...")
 
-            model = ARMS._step4(max_sat, decode, debug)
+            model = ARMS._step4(max_sat, decode, debug4)
+            if debug4:
+                input("Press enter to continue...")
 
             # Mutates the LearnedAction (keys) of action_map_rev
             ARMS._step5(
-                model, list(action_map_rev.keys()), list(relation_map.values()), debug
+                model, list(action_map_rev.keys()), list(relation_map.values()), debug5
             )
+            if debug5:
+                input("Press enter to continue...")
 
             # Step 5 updates
             setA = set()
