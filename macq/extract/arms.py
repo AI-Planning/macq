@@ -123,7 +123,11 @@ class ARMS:
         """The main driver for the ARMS algorithm."""
         learned_actions = set()
 
-        connected_actions, action_map = ARMS._step1(obs_lists, debug)
+        debug1 = ARMS.debug_menu("Debug step 1?") if debug else False
+        connected_actions, action_map = ARMS._step1(obs_lists, debug1)
+
+        if debug1:
+            input("Press enter to continue...")
 
         early_actions = [0] * len(obs_lists)
 
@@ -184,7 +188,11 @@ class ARMS:
                                     early_actions[i] += 1
 
                 if debug:
-                    ARMS.debug(action=action)
+                    print()
+                    print(action.details())
+                    print("precond:", action.precond)
+                    print("add:", action.add)
+                    print("delete:", action.delete)
 
                 if (
                     max([len(action.precond), len(action.add), len(action.delete)])
@@ -196,8 +204,8 @@ class ARMS:
                         )
                     setA.add(action)
 
+            # Update Λ by Λ − A
             for action in setA:
-                # advance early states
                 action_keys = action_map_rev[action]
                 for obs_action in action_keys:
                     del action_map[obs_action]
@@ -208,6 +216,8 @@ class ARMS:
                 ]
                 for a1 in action_keys:
                     del connected_actions[a1][action]
+
+                # Update Θ by adding A
                 learned_actions.add(action)
 
         # TODO
@@ -243,6 +253,10 @@ class ARMS:
                 intersection = a1.obj_params.intersection(a2.obj_params)
                 if intersection:
                     connected_actions[a1][a2] = intersection
+                    if debug:
+                        print(
+                            f"{a1.details()} is connected to {a2.details()} by {intersection}"
+                        )
 
         return connected_actions, action_map
 
@@ -666,6 +680,10 @@ class ARMS:
         relation_map = {p.var(): p for p in relations}
 
         for constraint, val in list(model.items())[:25]:
+            # TODO: Can you get the weight of each constraint in the model?
+            # if so, select only the n highest weighted constraints
+            # or, total the weight per action and select all constraints for
+            # the n highest actions.
             constraint = str(constraint).split("_")
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
@@ -702,10 +720,8 @@ class ARMS:
                 a2 = constraint[3]
 
     @staticmethod
-    def debug(action=None):
-        if action:
-            print()
-            print(action.details())
-            print("precond:", action.precond)
-            print("add:", action.add)
-            print("delete:", action.delete)
+    def debug_menu(prompt: str):
+        choice = input(prompt + " (y/n): ").lower()
+        while choice not in ["y", "n"]:
+            choice = input(prompt + " (y/n): ").lower()
+        return choice == "y"
