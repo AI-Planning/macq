@@ -56,9 +56,11 @@ class Generator:
             A list of all grounded (macq) fluents extracted from the given problem definition.
         op_dict (dict):
             The problem's ground operators, formatted to a dictionary for easy access during plan generation.
+        observe_pres_effs (bool):
+            Option to observe action preconditions and effects upon generation. 
     """
 
-    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None):
+    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None, observe_pres_effs: bool = False):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
 
@@ -69,11 +71,14 @@ class Generator:
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            observe_pres_effs (bool):
+                Option to observe action preconditions and effects upon generation. 
         """
         # get attributes
         self.pddl_dom = dom
         self.pddl_prob = prob
         self.problem_id = problem_id
+        self.observe_pres_effs = observe_pres_effs
         # read the domain and problem
         reader = PDDLReader(raise_on_error=True)
         if not problem_id:
@@ -171,14 +176,14 @@ class Generator:
             The lists of add and delete effects, in the form of a tuple macq Fluents (add, delete).
         """
         effects = act.effects
-        add = []
-        delete = []
+        add = set()
+        delete = set()
         for effect in effects:
             fluent = self.__tarski_atom_to_macq_fluent(effect.atom)
             if isinstance(effect, AddEffect):
-                add.append(fluent)
+                add.add(fluent)
             else:
-                delete.append(fluent)
+                delete.add(fluent)
         return (add, delete)
 
     def __tarski_atom_to_macq_fluent(self, atom: Atom):
@@ -238,18 +243,18 @@ class Generator:
         """
         name = tarski_act.name.split("(")[0]
         objs = set()
-        precond = []
+        precond = set()
         if isinstance(tarski_act.precondition, CompoundFormula):
             raw_precond = tarski_act.precondition.subformulas
             for raw_p in raw_precond:
                 if isinstance(raw_p, CompoundFormula):
-                    precond.append(
+                    precond.add(
                         self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
                     )
                 else:
-                    precond.append(self.__tarski_atom_to_macq_fluent(raw_p))
+                    precond.add(self.__tarski_atom_to_macq_fluent(raw_p))
         else:
-            precond.append(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
+            precond.add(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
         (add, delete) = self.__effect_split(tarski_act)
         for fluent in add:
             objs.update(set(fluent.objects))
@@ -257,7 +262,8 @@ class Generator:
             objs.update(set(fluent.objects))
         for fluent in precond:
             objs.update(set(fluent.objects))
-        return Action(name, list(objs))
+
+        return Action(name=name, obj_params=list(objs), precond=precond, add=add, delete=delete) if self.observe_pres_effs else Action(name=name, obj_params=list(objs))
 
     def change_init(
         self,

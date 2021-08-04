@@ -1,12 +1,26 @@
-import pytest
 from macq.extract import Extract, modes
+from macq.generate.pddl import RandomGoalSampling
 from macq.observation import *
 from macq.trace import *
-from tests.utils.generators import generate_blocks_traces
+from pathlib import Path
+import pytest
 
 if __name__ == "__main__":
-    # TODO: use goal sampling traces here instead for now. will eventually be replaced by a domain-specific random trace generator
-    traces = generate_blocks_traces(plan_len=3, num_traces=1)
+    # exit out to the base macq folder so we can get to /tests
+    base = Path(__file__).parent.parent
+    dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
+    prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
+
+    # TODO: replace with a domain-specific random trace generator
+    traces = RandomGoalSampling(
+        dom=dom,
+        prob=prob,
+        observe_pres_effs=True,
+        num_traces=3,
+        steps_deep=10,
+        subset_size_perc=0.1,
+        enforced_hill_climbing_sampling=True
+    ).traces
     observations = traces.tokenize(
         NoisyPartialObservation,
         percent_missing=0.10,

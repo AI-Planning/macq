@@ -85,3 +85,5 @@ if __name__ == "__main__":
     tracelist.append(trace)
     tracelist.print(wrap="y")
 
+    # test generating traces with action preconditions/effects known
+    vanilla_traces = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10, observe_pres_effs=True).traces

@@ -31,3 +31,5 @@ class ParallelActionsObservationLists(ObservationLists):
                     cur_par_act.add(a)
                     cur_states.add(step.state)
                     cur_par_act_conditions.update(a_conditions)
+        # call tokenize in the superclass...?
+            
