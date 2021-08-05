@@ -22,7 +22,8 @@ if __name__ == "__main__":
         enforced_hill_climbing_sampling=True
     ).traces
     observations = traces.tokenize(
-        NoisyPartialObservation,
+        Token=NoisyPartialObservation,
+        ObservationLists=ParallelActionsObservationLists,
         percent_missing=0.10,
         percent_noisy=0.05,
     )

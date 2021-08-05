@@ -178,7 +178,7 @@ class TraceList:
                 fluents.update(step.state.fluents)
         return fluents
 
-    def tokenize(self, Token: Type[Observation], **kwargs):
+    def tokenize(self, Token: Type[Observation], ObservationLists: Type[ObservationLists] = ObservationLists, **kwargs):
         """Tokenizes the steps in this trace.
 
         Args:

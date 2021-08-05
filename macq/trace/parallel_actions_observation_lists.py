@@ -5,8 +5,8 @@ class ParallelActionsObservationLists(ObservationLists):
         super().__init__(traces, Token, **kwargs)
 
     def tokenize(self, traces: TraceAPI.TraceList):
-        # TODO: implement for multiple traces after testing on one trace
-        #for trace in traces: 
+        # build parallel action sets
+        for trace in traces: 
             par_acts = []
             states = []
             cur_par_act = set()
@@ -31,5 +31,6 @@ class ParallelActionsObservationLists(ObservationLists):
                     cur_par_act.add(a)
                     cur_states.add(step.state)
                     cur_par_act_conditions.update(a_conditions)
-        # call tokenize in the superclass...?
-            
+            tokens = [Token(par_acts=par_acts[i], state=states[i]) for i in range(len(par_acts))]
+            self.append(tokens)            
+        # TODO: generate disordered actions

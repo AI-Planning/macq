@@ -1,9 +1,6 @@
-from ..utils import PercentError
 from ..trace import Step, Fluent, State
-from ..trace import PartialState
 from . import PartialObservation
 from typing import Set
-from logging import warning
 import random
 
 
@@ -38,12 +35,12 @@ class NoisyPartialObservation(PartialObservation):
 
         # ensure percent_missing is < 1 (that is , there is a state left at all) before attempting to create a noisy subset
         if percent_noisy < 1 and percent_missing < 1:
-            step = self.random_noisy_subset(percent_noisy, replace_noisy)
+            step = self.random_noisy_subset(percent_noisy)
 
         self.state = None if percent_missing == 1 else step.state.clone()
         self.action = None if step.action is None else step.action.clone()
 
-    def random_noisy_subset(self, percent_noisy: float, replace_noisy: bool):
+    def random_noisy_subset(self, percent_noisy: float):
         # using the updated state after any fluent "hiding" took place (from the partial obs. setting);
         # exclude any hidden fluents. (we want to keep hidden fluents and noisy fluents separate).
         fluents = {}
