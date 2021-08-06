@@ -26,10 +26,9 @@ class InvalidGoalFluent(Exception):
     Raised when the user attempts to supply a new goal with invalid fluent(s).
     """
 
-    def __init__(
-        self,
-        message="The fluents provided contain one or more fluents not available in this problem.",
-    ):
+    def __init__(self, fluent, message=None):
+        if message is None:
+            message = f"{fluent} is not available in this problem."
         super().__init__(message)
 
 
@@ -317,7 +316,7 @@ class Generator:
         available_f = self.grounded_fluents
         for f in goal_fluents:
             if f not in available_f:
-                raise InvalidGoalFluent()
+                raise InvalidGoalFluent(f)
 
         # convert the given set of fluents into a formula
         if not goal_fluents:

@@ -58,6 +58,11 @@ class LearnedAction:
         """
         self.delete.update(fluents)
 
+    def clear(self):
+        self.precond = set()
+        self.add = set()
+        self.delete = set()
+
     def compare(self, orig_action: LearnedAction):
         """Compares the learned action to an original, ground truth action."""
         precond_diff = orig_action.precond.difference(self.precond)

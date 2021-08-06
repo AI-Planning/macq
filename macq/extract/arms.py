@@ -105,6 +105,7 @@ class ARMS:
             plan_default,
             debug,
         )
+
         return Model(fluents, actions)
 
     @staticmethod
@@ -171,7 +172,11 @@ class ARMS:
             debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
             # Mutates the LearnedAction (keys) of action_map_rev
             ARMS._step5(
-                model, list(action_map_rev.keys()), list(relation_map.values()), debug5
+                model,
+                list(action_map_rev.keys()),
+                list(relation_map.values()),
+                upper_bound,
+                debug5,
             )
             if debug5:
                 input("Press enter to continue...")
@@ -367,14 +372,22 @@ class ARMS:
                     # for parsing constraints later.
                     constraints.append(
                         implication(
-                            Var(f"{relation.var()}_in_add_{action.details()}"),
-                            Var(f"{relation.var()}_in_pre_{action.details()}").negate(),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_add_BREAK_{action.details()}"
+                            ),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                            ).negate(),
                         )
                     )
                     constraints.append(
                         implication(
-                            Var(f"{relation.var()}_in_pre_{action.details()}"),
-                            Var(f"{relation.var()}_in_add_{action.details()}").negate(),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                            ),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_add_BREAK_{action.details()}"
+                            ).negate(),
                         )
                     )
 
@@ -382,8 +395,12 @@ class ARMS:
                     # relation in action.del => relation in action.precond
                     constraints.append(
                         implication(
-                            Var(f"{relation.var()}_in_del_{action.details()}"),
-                            Var(f"{relation.var()}_in_pre_{action.details()}"),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_del_BREAK_{action.details()}"
+                            ),
+                            Var(
+                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                            ),
                         )
                     )
 
@@ -430,7 +447,7 @@ class ARMS:
                                     ai = actions[obs_i.action]
                                     i1.append(
                                         Var(
-                                            f"{relations[fluent].var()}_in_add_{ai.details()}"
+                                            f"{relations[fluent].var()}_BREAK_in_BREAK_add_BREAK_{ai.details()}"
                                         )
                                     )
 
@@ -440,7 +457,7 @@ class ARMS:
                             a_n = obs_list[i - 1].action
                             if a_n in actions and a_n is not None:
                                 i2 = Var(
-                                    f"{relations[fluent].var()}_in_del_{actions[a_n].details()}"
+                                    f"{relations[fluent].var()}_BREAK_in_BREAK_del_BREAK_{actions[a_n].details()}"
                                 ).negate()
 
                             if i1:
@@ -460,7 +477,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_in_pre_{actions[obs.action].details()}"
+                                                f"{relations[fluent].var()}_BREAK_in_BREAK_pre_BREAK_{actions[obs.action].details()}"
                                             )
                                         ]
                                     )
@@ -471,7 +488,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_in_add_{actions[a_n].details()}"
+                                                f"{relations[fluent].var()}_BREAK_in_BREAK_add_BREAK_{actions[a_n].details()}"
                                             )
                                         ]
                                     )
@@ -561,39 +578,10 @@ class ARMS:
             # relation_constraints: List[Or[And[Var]]] = []
             relation_constraints: List[Var] = []
             for relation in relevant_relations:
-                """
-                ∃p(
-                  (p∈ (pre_i ∩ pre_j) ∧ p∉ (del_i)) ∨
-                  (p∈ (add_i ∩ pre_j)) ∨
-                  (p∈ (del_i ∩ add_j))
-                )
-                where p is a relevant relation.
-                """
-                # Phi = Or(
-                #     [
-                #         And(
-                #             [
-                #                 Var(f"{relation.var()}_in_pre_{ai.details()}"),
-                #                 Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                #                 Var(f"{relation.var()}_in_del_{ai.details()}").negate(),
-                #             ]
-                #         ),
-                #         And(
-                #             [
-                #                 Var(f"{relation.var()}_in_add_{ai.details()}"),
-                #                 Var(f"{relation.var()}_in_pre_{aj.details()}"),
-                #             ]
-                #         ),
-                #         And(
-                #             [
-                #                 Var(f"{relation.var()}_in_del_{ai.details()}"),
-                #                 Var(f"{relation.var()}_in_add_{aj.details()}"),
-                #             ]
-                #         ),
-                #     ]
-                # )
                 relation_constraints.append(
-                    Var(f"{relation.var()}_relevant_{ai.details()}_{aj.details()}")
+                    Var(
+                        f"{relation.var()}_BREAK_relevant_BREAK_{ai.details()}_BREAK_{aj.details()}"
+                    )
                 )
             constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
 
@@ -692,6 +680,7 @@ class ARMS:
         model: Dict[Hashable, bool],
         actions: List[LearnedAction],
         relations: List[Relation],
+        upper_bound: int,
         debug: bool,
     ):
         action_map = {a.details(): a for a in actions}
@@ -700,11 +689,7 @@ class ARMS:
         plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
 
         for constraint, val in list(model.items()):
-            # TODO: Can you get the weight of each constraint in the model?
-            # if so, select only the n highest weighted constraints
-            # or, total the weight per action and select all constraints for
-            # the n highest actions.
-            constraint = str(constraint).split("_")
+            constraint = str(constraint).split("_BREAK_")
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
             ctype = constraint[1]  # constraint type
