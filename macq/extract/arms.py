@@ -135,14 +135,11 @@ class ARMS:
             action_map_rev[learned_action].append(obs_action)
 
         count = 1
-        debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
-        debug3 = ARMS.debug_menu("Debug step 3?") if debug else False
-        debug4 = ARMS.debug_menu("Debug step 4?") if debug else False
-        debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
         while action_map_rev:
             print("Iteration", count)
             count += 1
 
+            debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
             constraints, relation_map = ARMS._step2(
                 obs_lists, connected_actions, action_map, fluents, min_support, debug2
             )
@@ -153,6 +150,7 @@ class ARMS:
             for fluent, relation in relation_map.items():
                 relation_map_rev[relation].append(fluent)
 
+            debug3 = ARMS.debug_menu("Debug step 3?") if debug else False
             max_sat, decode = ARMS._step3(
                 constraints,
                 action_weight,
@@ -165,10 +163,12 @@ class ARMS:
             if debug3:
                 input("Press enter to continue...")
 
+            debug4 = ARMS.debug_menu("Debug step 4?") if debug else False
             model = ARMS._step4(max_sat, decode, debug4)
             if debug4:
                 input("Press enter to continue...")
 
+            debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
             # Mutates the LearnedAction (keys) of action_map_rev
             ARMS._step5(
                 model, list(action_map_rev.keys()), list(relation_map.values()), debug5
@@ -235,9 +235,7 @@ class ARMS:
                 # Update Θ by adding A
                 learned_actions.add(action)
 
-        # TODO
-        # return set(learned_actions.values())
-        return set()
+        return learned_actions
 
     @staticmethod
     def _step1(
@@ -301,20 +299,25 @@ class ARMS:
             )
         )
 
+        debuga = ARMS.debug_menu("Debug action constraints?") if debug else False
+
         action_constraints = ARMS._step2A(
-            connected_actions, set(relations.values()), debug
+            connected_actions, set(relations.values()), debuga
         )
 
+        debugi = ARMS.debug_menu("Debug info constraints?") if debug else False
         info_constraints, info_support_counts = ARMS._step2I(
-            obs_lists, relations, action_map, debug
+            obs_lists, relations, action_map, debugi
         )
 
+        debugp = ARMS.debug_menu("Debug plan constraints?") if debug else False
         plan_constraints = ARMS._step2P(
             obs_lists,
             connected_actions,
             action_map,
             set(relations.values()),
             min_support,
+            debugp,
         )
 
         return (
@@ -525,8 +528,8 @@ class ARMS:
         action_map: Dict[Action, LearnedAction],
         relations: Set[Relation],
         min_support: int,
+        debug: bool,
     ) -> Dict[Or[Var], int]:
-        # ) -> Dict[And[Or[Var]], int]:
         frequent_pairs = ARMS._apriori(
             [
                 [
@@ -673,7 +676,7 @@ class ARMS:
     ) -> Dict[Hashable, bool]:
         solver = RC2(max_sat)
         solver.compute()
-        encoded_model = solver.model
+        encoded_model = solver.compute()
         if not isinstance(encoded_model, list):
             raise InvalidMaxSATModel(encoded_model)
 
@@ -693,8 +696,10 @@ class ARMS:
     ):
         action_map = {a.details(): a for a in actions}
         relation_map = {p.var(): p for p in relations}
+        negative_constraints = defaultdict(set)
+        plan_constraints = []
 
-        for constraint, val in list(model.items())[:25]:
+        for constraint, val in list(model.items()):
             # TODO: Can you get the weight of each constraint in the model?
             # if so, select only the n highest weighted constraints
             # or, total the weight per action and select all constraints for
@@ -714,7 +719,6 @@ class ARMS:
                         if effect == "add"
                         else action.update_delete
                     )
-                    # action_update({str(fluent)})
                     action_update({relation})
                 else:
                     action_effect = (
@@ -725,14 +729,26 @@ class ARMS:
                         else action.delete
                     )
                     if fluent in action_effect:
-                        # TODO: determine if this is an error, or if it just
-                        # means the effect should be removed (due to more info
-                        # from later iterations)
                         raise ConstraintContradiction(fluent, effect, action)
-            else:  # plan constraint
-                # doesn't directly affect actions
-                a1 = constraint[2]
-                a2 = constraint[3]
+                    negative_constraints[(relation, action)].add(effect)
+
+            else:  # store plan constraint
+                ai = action_map[constraint[2]]
+                aj = action_map[constraint[3]]
+                plan_constraints.append([relation, ai, aj])
+
+        for p, ai, aj in plan_constraints:
+            # one of the following must be true
+            if not (
+                (p in ai.precond and p in aj.precond and p not in ai.delete)
+                or (p in ai.add and p in aj.precond)
+                or (p in ai.delete and p in aj.add)
+            ):
+                # if not, filter down which should be true by checking for negative constraints
+                if (p, ai) in negative_constraints:
+                    pass
+                elif (p, aj) in negative_constraints:
+                    pass
 
     @staticmethod
     def debug_menu(prompt: str):
