@@ -697,7 +697,7 @@ class ARMS:
         action_map = {a.details(): a for a in actions}
         relation_map = {p.var(): p for p in relations}
         negative_constraints = defaultdict(set)
-        plan_constraints = []
+        plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
 
         for constraint, val in list(model.items()):
             # TODO: Can you get the weight of each constraint in the model?
@@ -735,20 +735,73 @@ class ARMS:
             else:  # store plan constraint
                 ai = action_map[constraint[2]]
                 aj = action_map[constraint[3]]
-                plan_constraints.append([relation, ai, aj])
+                plan_constraints.append((relation, ai, aj))
 
         for p, ai, aj in plan_constraints:
             # one of the following must be true
             if not (
-                (p in ai.precond and p in aj.precond and p not in ai.delete)
-                or (p in ai.add and p in aj.precond)
-                or (p in ai.delete and p in aj.add)
+                (p in ai.precond.intersection(aj.precond) and p not in ai.delete)  # P3
+                or (p in ai.add.intersection(aj.precond))  # P4
+                or (p in ai.delete.intersection(aj.add))  # P5
             ):
-                # if not, filter down which should be true by checking for negative constraints
-                if (p, ai) in negative_constraints:
-                    pass
-                elif (p, aj) in negative_constraints:
-                    pass
+                # check if either P3 or P4 are partially fulfilled and can be satisfied
+                if p in ai.precond.union(aj.precond):
+                    if p in aj.precond:
+                        # if P3 isn't contradicted, add p to ai.precond
+                        if p not in ai.delete and not (
+                            (p, ai) in negative_constraints
+                            and "pre" in negative_constraints[(p, ai)]
+                        ):
+                            ai.update_precond({p})
+
+                        # if P4 isn't contradicted, add p to ai.add
+                        if not (
+                            (p, ai) in negative_constraints
+                            and "add" in negative_constraints[(p, ai)]
+                        ):
+                            ai.update_add({p})
+
+                    # p in ai.precond and P3 not contradicted, add p to aj.precond
+                    elif p not in ai.delete and not (
+                        (p, aj) in negative_constraints
+                        and "pre" in negative_constraints[(p, aj)]
+                    ):
+                        aj.update_precond({p})
+
+                # check if either P3 or P4 can be satisfied
+                elif not (
+                    (p, aj) in negative_constraints
+                    and "pre" in negative_constraints[(p, aj)]
+                ):
+                    # if P3 isn't contradicted, add p to both ai and aj preconds
+                    if p not in ai.delete and not (
+                        (p, ai) in negative_constraints
+                        and "pre" in negative_constraints[(p, ai)]
+                    ):
+                        ai.update_precond({p})
+                        aj.update_precond({p})
+
+                    # if P4 isn't contradicted, add p to ai.add and aj.precond
+                    if not (
+                        (p, ai) in negative_constraints
+                        and "add" in negative_constraints[(p, ai)]
+                    ):
+                        ai.update_add({p})
+                        aj.update_precond({p})
+
+                # check if P5 can be satisfied
+                # if P5 isn't contradicted, add p wherever it is missing
+                if not (
+                    (p, ai) in negative_constraints
+                    and "del" in negative_constraints[(p, ai)]
+                ) and not (
+                    (p, aj) in negative_constraints
+                    and "add" in negative_constraints[(p, aj)]
+                ):
+                    if p not in ai.delete:
+                        ai.update_delete({p})
+                    if p not in aj.add:
+                        aj.update_add({p})
 
     @staticmethod
     def debug_menu(prompt: str):
