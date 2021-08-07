@@ -15,12 +15,12 @@ class ObservationLists(TraceAPI.TraceList):
     def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
         self.type = Token
-        self.tokenize(traces)
+        self.tokenize(traces, **kwargs)
 
     def tokenize(self, traces: TraceAPI.TraceList, **kwargs):
         trace: Trace
         for trace in traces:
-            tokens = trace.tokenize(Token, **kwargs)
+            tokens = trace.tokenize(self.type, **kwargs)
             self.append(tokens)
 
     def fetch_observations(self, query: dict):

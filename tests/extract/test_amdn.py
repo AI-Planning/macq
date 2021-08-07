@@ -1,9 +1,18 @@
+from macq.utils.tokenization_errors import TokenizationError
+from tests.utils.generators import generate_blocks_traces
 from macq.extract import Extract, modes
 from macq.generate.pddl import RandomGoalSampling
 from macq.observation import *
 from macq.trace import *
+
 from pathlib import Path
 import pytest
+
+def test_tokenization_error():
+    with pytest.raises(TokenizationError):
+        trace = generate_blocks_traces(3)[0]
+        trace.tokenize(Token=NoisyPartialDisorderedParallelObservation)
+
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
@@ -21,6 +30,7 @@ if __name__ == "__main__":
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
+    
     observations = traces.tokenize(
         Token=NoisyPartialObservation,
         ObservationLists=ParallelActionsObservationLists,

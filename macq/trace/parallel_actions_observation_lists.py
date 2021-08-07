@@ -1,10 +1,14 @@
+import macq.trace as TraceAPI
+from typing import Type
 from . import ObservationLists
+from ..observation import Observation, NoisyPartialDisorderedParallelObservation
 
 class ParallelActionsObservationLists(ObservationLists):
     def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
         super().__init__(traces, Token, **kwargs)
 
     def tokenize(self, traces: TraceAPI.TraceList):
+        Token = NoisyPartialDisorderedParallelObservation
         # build parallel action sets
         for trace in traces: 
             par_acts = []
@@ -17,7 +21,8 @@ class ParallelActionsObservationLists(ObservationLists):
                 if a:
                     a_conditions = {[p for p in a.precond] + [e for e in a.add] + [e for e in a.delete]}
                     # if the action has any conditions in common with any actions in the previous parallel set
-                    if a is not parallel with cur_par_act: 
+                    # TODO: if a is not parallel with cur_par_act: instead
+                    if a is not cur_par_act: 
                         # add psi_k and s'_k to the final (ordered) lists of parallel action sets and states
                         par_acts.append(cur_par_act) 
                         states.append(cur_states)
