@@ -25,7 +25,7 @@ class AMDN:
 
         #return Model(fluents, actions)
 
-    def __build_disorder_constraints(self):
+    def _build_disorder_constraints(self):
         # TODO:
         # iterate through all pairs of parallel action sets
         # for each pair, iterate through all possible action combinations
@@ -38,13 +38,13 @@ class AMDN:
         # enforce all [constraint 2] with weight p x wmax
         pass
 
-    def __build_hard_parallel_constraints(self):
+    def _build_hard_parallel_constraints(self):
         # TODO:
         # iterate through the list of <a, r> tuples
         # for each action x proposition pair, enforce the two hard constraints with weight wmax
         pass
 
-    def __build_soft_parallel_constraints(self):
+    def _build_soft_parallel_constraints(self):
         # TODO:
         # iterate through all parallel action sets
         # within each parallel action set, iterate through the same action set again to compare
@@ -56,12 +56,12 @@ class AMDN:
         # enforce all [constraint 5] with weight p x wmax
         pass
 
-    def __build_parallel_constraints(self):
+    def _build_parallel_constraints(self):
         # TODO:
         # call the above two functions
         pass
 
-    def __build_noise_constraints(self):
+    def _build_noise_constraints(self):
         # TODO:
         # iterate through all <a, r> tuples
         # for each <a, r> tuple: iterate through each step over ALL the plan traces
@@ -84,12 +84,12 @@ class AMDN:
 
         pass
 
-    def __solve_constraints(self):
+    def _solve_constraints(self):
         # TODO:
         # call the MAXSAT solver
         pass
 
-    def __convert_to_model(self):
+    def _convert_to_model(self):
         # TODO:
         # convert the result to a Model
         pass
