@@ -25,19 +25,6 @@ class AMDN:
 
         #return Model(fluents, actions)
 
-
-    def __calculate_probability(self, action1, action2, lambda1):
-        # TODO:
-        # calculate the probability of two given actions being disordered. 
-        # define f1 and f2 yourself
-        # remember to use stub functions, lambdas, etc.
-        pass
-
-    def __calculate_all_probabilities(self):
-        # TODO:
-        # calculate all probabilities of ALL actions ax and ay being disordered, where ax and ay are actions in adjacent parallel action sets
-        pass
-
     def __build_disorder_constraints(self):
         # TODO:
         # iterate through all pairs of parallel action sets
