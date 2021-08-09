@@ -74,10 +74,12 @@ class ARMS:
                 The minimum support count for an action pair to be considered frequent.
             action_weight (int):
                 The constant weight W_A(a) to assign to each action constraint.
+                Should be set higher than the weight of information constraints.
             info_weight (int):
                 The constant weight W_I(r) to assign to each information constraint.
+                Determined empirically, generally the highest in all constraints' weights.
             threshold (float):
-                (0-1) The probability threshold θ to determine if an I3/plan constraint
+                (0-1). The probability threshold θ to determine if an I3/plan constraint
                 is weighted by its probability or set to a default value.
             info3_default (int):
                 The default weight for I3 constraints with probability below the threshold.
@@ -137,8 +139,9 @@ class ARMS:
 
         count = 1
         while action_map_rev:
-            print("Iteration", count)
-            count += 1
+            if debug:
+                print("Iteration", count)
+                count += 1
 
             debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
             constraints, relation_map = ARMS._step2(
@@ -665,7 +668,9 @@ class ARMS:
         solver = RC2(max_sat)
         solver.compute()
         encoded_model = solver.compute()
+
         if not isinstance(encoded_model, list):
+            # should never be reached
             raise InvalidMaxSATModel(encoded_model)
 
         # decode the model (back to nnf vars)
@@ -688,7 +693,11 @@ class ARMS:
         negative_constraints = defaultdict(set)
         plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
 
-        for constraint, val in list(model.items()):
+        # NOTE: only taking the top n (optimal number varies, determine
+        # empirically) constraints usually results in more accurate action
+        # models, however this is not a part of the paper and therefore not
+        # implemented.
+        for constraint, val in model.items():
             constraint = str(constraint).split("_BREAK_")
             fluent = relation_map[constraint[0]]
             relation = constraint[0]
