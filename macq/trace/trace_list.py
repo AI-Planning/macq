@@ -3,7 +3,7 @@ from typing import List, Callable, Type, Optional, Set
 from rich.console import Console
 from . import Action, Trace
 from ..observation import Observation
-#import macq.trace as TraceAPI
+import macq.trace as TraceAPI
 
 
 
@@ -187,13 +187,13 @@ class TraceList:
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
         """
-        ObsLists : Type[ObservationLists]
+        ObsLists : Type[TraceAPI.ObservationLists]
         if not ObsLists:
-            ObsLists = ObservationLists
+            ObsLists = TraceAPI.ObservationLists
         #return ObservationLists(self, Token, **kwargs)
         return ObsLists(self, Token, **kwargs)
 
-class ObservationLists(TraceList):
+""" class ObservationLists(TraceList):
     traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
@@ -250,4 +250,4 @@ class ObservationLists(TraceList):
                 action: self.get_transitions(action.details()) for action in actions
             }
         except AttributeError:
-            return {action: self.get_transitions(str(action)) for action in actions}
+            return {action: self.get_transitions(str(action)) for action in actions} """

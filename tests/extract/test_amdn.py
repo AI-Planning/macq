@@ -37,5 +37,6 @@ if __name__ == "__main__":
         percent_missing=0.10,
         percent_noisy=0.05,
     )
+    print()
     #model = Extract(observations, modes.SLAF, debug_mode=True)
     #print(model.details())
