@@ -699,12 +699,15 @@ class ARMS:
         # implemented.
         for constraint, val in model.items():
             constraint = str(constraint).split("_BREAK_")
-            fluent = relation_map[constraint[0]]
             relation = constraint[0]
             ctype = constraint[1]  # constraint type
             if ctype == "in":
                 effect = constraint[2]
                 action = action_map[constraint[3]]
+                if debug:
+                    print(
+                        f"Learned constraint: {relation} in {effect}_{action.details()}"
+                    )
                 if val:
                     action_update = (
                         action.update_precond
@@ -722,14 +725,16 @@ class ARMS:
                         if effect == "add"
                         else action.delete
                     )
-                    if fluent in action_effect:
-                        raise ConstraintContradiction(fluent, effect, action)
+                    if relation in action_effect:
+                        raise ConstraintContradiction(relation, effect, action)
                     negative_constraints[(relation, action)].add(effect)
 
             else:  # store plan constraint
                 ai = action_map[constraint[2]]
                 aj = action_map[constraint[3]]
                 plan_constraints.append((relation, ai, aj))
+                if debug:
+                    print(f"{relation} possibly explains action pair ({ai}, {aj})")
 
         for p, ai, aj in plan_constraints:
             # one of the following must be true
