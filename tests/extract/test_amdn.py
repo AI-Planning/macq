@@ -25,11 +25,12 @@ if __name__ == "__main__":
         dom=dom,
         prob=prob,
         observe_pres_effs=True,
-        num_traces=3,
-        steps_deep=10,
+        num_traces=2,
+        steps_deep=3,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
+    traces.print()
     
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,

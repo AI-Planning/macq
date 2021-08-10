@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from macq.trace.fluent import PlanningObject
 from math import exp
 from numpy import dot
 from random import random
@@ -5,19 +7,42 @@ from typing import Callable, Type, List, Set
 from . import ObservationLists, TraceList, Step, Action, State
 from ..observation import Observation, NoisyPartialDisorderedParallelObservation
 
+@dataclass
+class ActionPair:
+    actions : Set[Action]
+
+    def tup(self):
+        actions = list(self.actions)
+        return (actions[0], actions[1])
+
+    def __hash__(self):
+        # order of actions is irrelevant; {a_x, a_y} == {a_y, a_x}
+        sum = 0
+        for a in self.actions:
+            sum += hash(a.details())
+        return sum
+
+
 class ParallelActionsObservationLists(ObservationLists):
     def __init__(self, traces: TraceList, Token: Type[Observation] = NoisyPartialDisorderedParallelObservation, f3_f10: Callable = None, f11_f40: Callable = None, learned_theta: Callable = None, **kwargs):
-
         self.traces = []
         self.type = Token
         self.f3_f10 = f3_f10
         self.f11_f40 = f11_f40
         self.learned_theta = learned_theta
-        self.actions = {step.action for trace in traces for step in trace if step.action}
+        actions = {step.action for trace in traces for step in trace if step.action}
+        # cast to list for iteration purposes
+        self.actions = list(actions)
+
+        # create |A| (action x action set, no duplicates)
+        self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i, len(self.actions)) if i != j]
+        for c in self.cross_actions:
+            c = c.tup()
+            print(" ".join([c[0].details(), c[1].details()]))
+
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities(f3_f10, f11_f40, learned_theta)
         self.tokenize(traces, Token, **kwargs)
-        
 
     def _decision(self, probability):
         return random() < probability
@@ -55,22 +80,16 @@ class ParallelActionsObservationLists(ObservationLists):
         theta_vec = self.learned_theta() if self.learned_theta else self._default_theta_vec(len(f_vec))
         numerator = self._theta_dot_features_calc(f_vec, theta_vec)
         denominator = 0
-        for act_x_prime in self.actions:
-            for act_y_prime in self.actions:
-                if act_x_prime != act_y_prime:
-                    denominator += self._theta_dot_features_calc(self._get_f_vec(act_x_prime, act_y_prime), theta_vec)
+        for combo in self.cross_actions:
+            denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), theta_vec)
         return numerator/denominator
 
     def _calculate_all_probabilities(self, f3_f10: Callable, f11_f40: Callable, learned_theta: Callable):
         probabilities = {}
         # calculate all probabilities of ALL actions ax and ay being disordered
-        for act_x in self.actions:
-            probabilities[act_x] = {}
-            for act_y in self.actions:
-                # prevent comparing the same actions against themselves
-                if act_x != act_y:
-                    # calculate probability of act_x and act_y being disordered
-                    probabilities[act_x][act_y] = self._calculate_probability(act_x, act_y)
+        for combo in self.cross_actions:
+            # calculate probability of act_x and act_y being disordered
+            probabilities[combo] = self._calculate_probability(*combo.tup())
         return probabilities
 
     def tokenize(self, traces: TraceList, Token: Type[Observation], **kwargs):
@@ -89,6 +108,7 @@ class ParallelActionsObservationLists(ObservationLists):
             # last step doesn't have an action/just contains the state after the last action
             for i in range(len(trace) - 1):
                 a = trace[i].action
+                print(a.details())
                 if a:
                     a_conditions.update([p for p in a.precond] + [e for e in a.add] + [e for e in a.delete])
                     
@@ -114,20 +134,24 @@ class ParallelActionsObservationLists(ObservationLists):
                                 cur_state[f] = False
                     cur_par_act_conditions.update(a_conditions)
 
+
             # generate disordered actions - do trace by trace
+            # prevent going over sets twice
             for i in range(len(par_act_sets)):
-                for j in range(len(par_act_sets)):
+                for j in range(i, len(par_act_sets)):
                     # prevent comparing the same sets
                     if i != j:
+                        print("(" + str(i) + ", " + str(j) + ")")
                         for act_x in par_act_sets[i]:
                             for act_y in par_act_sets[j]:
-                                # get probability and divide by distance
-                                prob = self.probabilities[act_x][act_y]/(j - i)
-                                if self._decision(prob):
-                                    par_act_sets[i].discard(act_x)
-                                    par_act_sets[i].add(act_y)
-                                    par_act_sets[j].discard(act_y)
-                                    par_act_sets[j].add(act_x)
+                                if act_x != act_y:
+                                    # get probability and divide by distance
+                                    prob = self.probabilities[ActionPair({act_x, act_y})]/(j - i)
+                                    if self._decision(prob):
+                                        par_act_sets[i].discard(act_x)
+                                        par_act_sets[i].add(act_y)
+                                        par_act_sets[j].discard(act_y)
+                                        par_act_sets[j].add(act_x)
 
             tokens = []
             for i in range(len(par_act_sets)):
