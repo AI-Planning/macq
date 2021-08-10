@@ -38,5 +38,5 @@ if __name__ == "__main__":
         percent_noisy=0.05,
     )
     print()
-    #model = Extract(observations, modes.SLAF, debug_mode=True)
+    model = Extract(observations, modes.AMDN)
     #print(model.details())

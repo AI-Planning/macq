@@ -4,6 +4,7 @@ from ..trace import ObservationLists, Action, State
 from .model import Model
 from .observer import Observer
 from .slaf import SLAF
+from .amdn import AMDN
 
 
 @dataclass
@@ -28,6 +29,7 @@ class modes(Enum):
 
     OBSERVER = auto()
     SLAF = auto()
+    AMDN = auto()
 
 
 class Extract:
@@ -58,6 +60,7 @@ class Extract:
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: SLAF,
+            modes.AMDN: AMDN
         }
         if mode == modes.SLAF:
             # only allow one trace

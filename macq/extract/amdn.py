@@ -20,8 +20,7 @@ add = __set_add
 delete = __set_del
 
 class AMDN:
-
-    def __new__(cls, obs_lists: ObservationLists):
+    def __init__(self, obs_lists: ObservationLists):
         """Creates a new Model object.
 
         Args:
@@ -34,10 +33,10 @@ class AMDN:
         if obs_lists.type is not NoisyPartialDisorderedParallelObservation:
             raise extract.IncompatibleObservationToken(obs_lists.type, AMDN)
 
-
-
         # TODO:
         # iterate through all tokens and create two base sets for all actions and propositions; store as attributes
+        self.actions = obs_lists.actions
+
         # iterate through all pairs of parallel action sets and create a dictionary of the probability of ax and ay being disordered -
         # (this will make it easy and efficient to refer to later, and prevents unnecessary recalculations). store as attribute
         # also create a list of all <a, r> tuples, store as attribute
