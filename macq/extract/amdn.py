@@ -45,24 +45,8 @@ class AMDN:
 
         #return Model(fluents, actions)
 
- 
-
-
-    def __calculate_probability(self, action1, action2, lambda1):
+    def _build_disorder_constraints(self):
         # TODO:
-        # calculate the probability of two given actions being disordered. 
-        # define f1 and f2 yourself
-        # remember to use stub functions, lambdas, etc.
-        pass
-
-    def __calculate_all_probabilities(self):
-        # TODO:
-        # calculate all probabilities of ALL actions ax and ay being disordered, where ax and ay are actions in adjacent parallel action sets
-        pass
-
-    def __build_disorder_constraints(self):
-
-
         # iterate through all pairs of parallel action sets
         for i in range(len(self.par_act_sets) - 1):
             # for each pair, iterate through all possible action combinations
@@ -135,7 +119,7 @@ class AMDN:
         self.__build_hard_parallel_constraints()
         self.__build_soft_parallel_constraints()
 
-    def __build_noise_constraints(self):
+    def _build_noise_constraints(self):
         # TODO:
         # iterate through all <a, r> tuples
         # for each <a, r> tuple: iterate through each step over ALL the plan traces
@@ -158,12 +142,12 @@ class AMDN:
 
         pass
 
-    def __solve_constraints(self):
+    def _solve_constraints(self):
         # TODO:
         # call the MAXSAT solver
         pass
 
-    def __convert_to_model(self):
+    def _convert_to_model(self):
         # TODO:
         # convert the result to a Model
         pass

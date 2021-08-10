@@ -1,8 +1,7 @@
-from typing import List, Type, Set
-from . import Trace
-from ..observation import Observation
 import macq.trace as TraceAPI
-
+from typing import List, Set, Type
+from ..observation import Observation
+from . import Trace
 
 class ObservationLists(TraceAPI.TraceList):
     traces: List[List[Observation]]
