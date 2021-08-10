@@ -34,7 +34,7 @@ if __name__ == "__main__":
     
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
-        ObsLists=ParallelActionsObservationLists,
+        ObsLists=DisorderedParallelActionsObservationLists,
         percent_missing=0.10,
         percent_noisy=0.05,
     )

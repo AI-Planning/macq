@@ -23,7 +23,7 @@ class ActionPair:
         return sum
 
 
-class ParallelActionsObservationLists(ObservationLists):
+class DisorderedParallelActionsObservationLists(ObservationLists):
     def __init__(self, traces: TraceList, Token: Type[Observation] = NoisyPartialDisorderedParallelObservation, f3_f10: Callable = None, f11_f40: Callable = None, learned_theta: Callable = None, **kwargs):
         self.traces = []
         self.type = Token
