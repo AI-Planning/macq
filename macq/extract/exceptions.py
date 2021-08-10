@@ -20,7 +20,7 @@ class InvalidMaxSATModel(Exception):
 
 
 class ConstraintContradiction(Exception):
-    def __init__(self, fluent, effect, action, message=None):
+    def __init__(self, relation, effect, action, message=None):
         if message is None:
-            message = f"Action model has contradictory constraints for {fluent.details()}'s presence in the {effect} list of {action.details()}."
+            message = f"Action model has contradictory constraints for {relation}'s presence in the {effect} list of {action.details()}."
         super().__init__(message)

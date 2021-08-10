@@ -2,14 +2,12 @@ from collections import defaultdict, Counter
 from dataclasses import dataclass
 from logging import warn
 from typing import Set, List, Dict, Tuple, Hashable
-from nnf import NNF, Var, And, Or, false as nnffalse
+from nnf import Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from . import LearnedAction, Model
 from .exceptions import (
-    ConstraintContradiction,
     IncompatibleObservationToken,
-    InconsistentConstraintWeights,
     InvalidMaxSATModel,
 )
 from ..observation import PartialObservation as Observation
@@ -167,18 +165,13 @@ class ARMS:
             if debug3:
                 input("Press enter to continue...")
 
-            debug4 = ARMS.debug_menu("Debug step 4?") if debug else False
-            model = ARMS._step4(max_sat, decode, debug4)
-            if debug4:
-                input("Press enter to continue...")
+            model = ARMS._step4(max_sat, decode)
 
             debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
             # Mutates the LearnedAction (keys) of action_map_rev
             ARMS._step5(
                 model,
                 list(action_map_rev.keys()),
-                list(relation_map.values()),
-                upper_bound,
                 debug5,
             )
             if debug5:
@@ -371,8 +364,7 @@ class ARMS:
                     # relation in action.add => relation not in action.precond
                     # relation in action.precond => relation not in action.add
 
-                    # underscores are used to unambiguously mark split locations
-                    # for parsing constraints later.
+                    # _BREAK_ marks unambiguous breakpoints for parsing later
                     constraints.append(
                         implication(
                             Var(
@@ -572,7 +564,7 @@ class ARMS:
             if aj in connected_actions and ai in connected_actions[aj]:
                 connectors.update(connected_actions[aj][ai])
 
-            # if the actions are not related they are not a valid pair for a plan constraint
+            # if the actions are not related they are not a valid pair for a plan constraint.
             if not connectors:
                 continue
 
@@ -581,11 +573,16 @@ class ARMS:
             # relation_constraints: List[Or[And[Var]]] = []
             relation_constraints: List[Var] = []
             for relation in relevant_relations:
+
                 relation_constraints.append(
                     Var(
                         f"{relation.var()}_BREAK_relevant_BREAK_{ai.details()}_BREAK_{aj.details()}"
                     )
                 )
+                if debug:
+                    print(
+                        f"{relation.var()} might explain action pair ({ai.details()}, {aj.details()})"
+                    )
             constraints[Or(relation_constraints)] = frequent_pairs[(ai, aj)]
 
         return constraints
@@ -625,16 +622,13 @@ class ARMS:
             if constraint not in constraints_w_weights:
                 constraints_w_weights[constraint] = weight
             elif weight != constraints_w_weights[constraint]:
-                warn(
-                    f"The constraint {constraint} has conflicting weights ({weight} and {constraints_w_weights[constraint]}). Choosing the smaller weight."
-                )
+                if debug:
+                    warn(
+                        f"The constraint {constraint} has conflicting weights ({weight} and {constraints_w_weights[constraint]}). Choosing the smaller weight."
+                    )
                 constraints_w_weights[constraint] = min(
                     weight, constraints_w_weights[constraint]
                 )
-
-                # raise InconsistentConstraintWeights(
-                #     constraint, weight, constraints_w_weights[constraint]
-                # )
 
         problem: And[Or[Var]] = And(list(constraints_w_weights.keys()))
         weights = list(constraints_w_weights.values())
@@ -662,11 +656,8 @@ class ARMS:
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
-    def _step4(
-        max_sat: WCNF, decode: Dict[int, Hashable], debug: bool
-    ) -> Dict[Hashable, bool]:
+    def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
         solver = RC2(max_sat)
-        solver.compute()
         encoded_model = solver.compute()
 
         if not isinstance(encoded_model, list):
@@ -684,12 +675,9 @@ class ARMS:
     def _step5(
         model: Dict[Hashable, bool],
         actions: List[LearnedAction],
-        relations: List[Relation],
-        upper_bound: int,
         debug: bool,
     ):
         action_map = {a.details(): a for a in actions}
-        relation_map = {p.var(): p for p in relations}
         negative_constraints = defaultdict(set)
         plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
 
@@ -726,7 +714,11 @@ class ARMS:
                         else action.delete
                     )
                     if relation in action_effect:
-                        raise ConstraintContradiction(relation, effect, action)
+                        if debug:
+                            warn(
+                                f"Removing {relation} from {effect} of {action.details()}"
+                            )
+                        action_effect.remove(relation)
                     negative_constraints[(relation, action)].add(effect)
 
             else:  # store plan constraint
