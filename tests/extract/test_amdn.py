@@ -25,12 +25,12 @@ if __name__ == "__main__":
         problem_id=2337,
         observe_pres_effs=True,
         num_traces=1,
-        steps_deep=30,
+        steps_deep=10,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
     traces.print()
-    
+    # TODO: check tokens
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
         ObsLists=DisorderedParallelActionsObservationLists,

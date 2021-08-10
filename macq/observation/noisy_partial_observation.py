@@ -43,16 +43,15 @@ class NoisyPartialObservation(PartialObservation):
     def random_noisy_subset(self, percent_noisy: float):
         # using the updated state after any fluent "hiding" took place (from the partial obs. setting);
         # exclude any hidden fluents. (we want to keep hidden fluents and noisy fluents separate).
-        fluents = {}
+        available_fluents = {}
         for f in self.state:
             if self.state[f] is not None:
-                fluents[f] = self.state[f] 
-        new_fluents = {}
-        noisy_f = self.extract_fluent_subset(fluents, percent_noisy)
+                available_fluents[f] = self.state[f] 
+        noisy_f = self.extract_fluent_subset(available_fluents, percent_noisy)
 
-        for f in fluents:
-            new_fluents[f] = not self.state[f] if f in noisy_f else self.state[f]
+        for f in self.state.fluents:
+            self.state[f] = not self.state[f] if f in noisy_f else self.state[f]
 
-        return Step(State(new_fluents), self.action, self.index)
+        return Step(State(self.state), self.action, self.index)
 
 

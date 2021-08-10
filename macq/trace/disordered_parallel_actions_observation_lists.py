@@ -36,9 +36,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
 
         # create |A| (action x action set, no duplicates)
         self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i, len(self.actions)) if i != j]
-        # for c in self.cross_actions:
-        #     c = c.tup()
-        #     print(" ".join([c[0].details(), c[1].details()]))
 
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities(f3_f10, f11_f40, learned_theta)
@@ -94,7 +91,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
 
     def tokenize(self, traces: TraceList, Token: Type[Observation], **kwargs):
         # build parallel action sets
-        for trace in traces: 
+          for trace in traces: 
             par_act_sets = []
             states = []
             cur_par_act = set()
@@ -134,7 +131,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                 if i == len(trace) - 1:
                     par_act_sets.append(cur_par_act) 
                     states.append(cur_state)
-
 
             # generate disordered actions - do trace by trace
             # prevent going over sets twice
