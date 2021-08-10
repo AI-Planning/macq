@@ -97,7 +97,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             cur_par_act = set()
             cur_state = {}
             cur_par_act_conditions = set()
-            fluents = {f for trace in traces for step in trace for f in step.state.fluents}
             
             # add initial state
             states.append(trace[0].state)
@@ -105,16 +104,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             for i in range(len(trace)):
                 a = trace[i].action
                 if a:
-                    print(a.details())
                     a_conditions = set([p for p in a.precond] + [e for e in a.add] + [e for e in a.delete])
-                    
                     # if the action has any conditions in common with any actions in the previous parallel set (NOT parallel)
                     if a_conditions.intersection(cur_par_act_conditions) != set(): 
-                        print("intersection:")
-                        inters = a_conditions.intersection(cur_par_act_conditions)
-                        for inter in inters:
-                            print(str(inter))
-                        print()
                         # add psi_k and s'_k to the final (ordered) lists of parallel action sets and states
                         par_act_sets.append(cur_par_act) 
                         states.append(cur_state)

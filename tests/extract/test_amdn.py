@@ -29,8 +29,7 @@ if __name__ == "__main__":
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
-    traces.print()
-    # TODO: check tokens
+
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
         ObsLists=DisorderedParallelActionsObservationLists,
