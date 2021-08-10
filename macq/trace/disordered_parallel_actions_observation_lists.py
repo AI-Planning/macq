@@ -36,9 +36,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
 
         # create |A| (action x action set, no duplicates)
         self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i, len(self.actions)) if i != j]
-        for c in self.cross_actions:
-            c = c.tup()
-            print(" ".join([c[0].details(), c[1].details()]))
+        # for c in self.cross_actions:
+        #     c = c.tup()
+        #     print(" ".join([c[0].details(), c[1].details()]))
 
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities(f3_f10, f11_f40, learned_theta)
@@ -100,39 +100,40 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             cur_par_act = set()
             cur_state = {}
             cur_par_act_conditions = set()
-            a_conditions = set()
             fluents = {f for trace in traces for step in trace for f in step.state.fluents}
             
             # add initial state
             states.append(trace[0].state)
             # last step doesn't have an action/just contains the state after the last action
-            for i in range(len(trace) - 1):
+            for i in range(len(trace)):
                 a = trace[i].action
-                print(a.details())
                 if a:
-                    a_conditions.update([p for p in a.precond] + [e for e in a.add] + [e for e in a.delete])
+                    print(a.details())
+                    a_conditions = set([p for p in a.precond] + [e for e in a.add] + [e for e in a.delete])
                     
-                    # if the action has any conditions in common with any actions in the previous parallel set
+                    # if the action has any conditions in common with any actions in the previous parallel set (NOT parallel)
                     if a_conditions.intersection(cur_par_act_conditions) != set(): 
+                        print("intersection:")
+                        inters = a_conditions.intersection(cur_par_act_conditions)
+                        for inter in inters:
+                            print(str(inter))
+                        print()
                         # add psi_k and s'_k to the final (ordered) lists of parallel action sets and states
                         par_act_sets.append(cur_par_act) 
-                        states.append(State(cur_state))
-                        # reset psi_k and s'_k (that is, create a new parallel action set and corresponding state set)
+                        states.append(cur_state)
+                        # reset psi_k (that is, create a new parallel action set)
                         cur_par_act = set()
-                        cur_state = {}
                         # reset the conditions
                         cur_par_act_conditions = set()
                     # add the action and state to the appropriate psi_k and s'_k (either the existing ones, or
                     # new/empty ones if the current action is NOT parallel with actions in the previous set of actions.)
                     cur_par_act.add(a)
-                    # take the union of fluents. note that the state AFTER the action was taken is the NEXT state.
-                    if cur_state:
-                        for f in fluents:
-                            if trace[i + 1].state[f] and cur_state[f]:
-                                cur_state[f] = True
-                            elif not trace[i + 1].state[f] and not cur_state[f]:
-                                cur_state[f] = False
+                    cur_state = trace[i + 1].state
                     cur_par_act_conditions.update(a_conditions)
+                # if on the last step of the trace, add the current set/state to the final result before exiting the loop
+                if i == len(trace) - 1:
+                    par_act_sets.append(cur_par_act) 
+                    states.append(cur_state)
 
 
             # generate disordered actions - do trace by trace
@@ -141,7 +142,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                 for j in range(i, len(par_act_sets)):
                     # prevent comparing the same sets
                     if i != j:
-                        print("(" + str(i) + ", " + str(j) + ")")
                         for act_x in par_act_sets[i]:
                             for act_y in par_act_sets[j]:
                                 if act_x != act_y:
@@ -152,7 +152,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                         par_act_sets[i].add(act_y)
                                         par_act_sets[j].discard(act_y)
                                         par_act_sets[j].add(act_x)
-
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:

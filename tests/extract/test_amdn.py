@@ -22,11 +22,10 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-        dom=dom,
-        prob=prob,
+        problem_id=2337,
         observe_pres_effs=True,
-        num_traces=2,
-        steps_deep=3,
+        num_traces=1,
+        steps_deep=30,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
