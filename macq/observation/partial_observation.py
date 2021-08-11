@@ -1,4 +1,4 @@
-from logging import warning
+from logging import warn
 from ..utils import PercentError
 from ..trace import Step, Fluent
 from ..trace import PartialState
@@ -33,7 +33,7 @@ class PartialObservation(Observation):
             raise PercentError()
 
         if percent_missing == 0 and not hide:
-            warning("Creating a PartialObseration with no missing information.")
+            warn("Creating a PartialObseration with no missing information.")
 
         super().__init__(index=step.index)
 
@@ -105,6 +105,9 @@ class PartialObservation(Observation):
                 return value is None
             return self.action.details() == value
         elif key == "fluent_holds":
+            if self.state is None:
+                warn("Cannot query an empty state.")
+                return False
             return self.state.holds(value)
         else:
             raise InvalidQueryParameter(PartialObservation, key)

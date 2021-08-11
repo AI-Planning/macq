@@ -1,4 +1,4 @@
-from logging import warning
+from logging import warn
 from json import dumps
 
 
@@ -32,7 +32,7 @@ class Observation:
         if "index" in kwargs.keys():
             self.index = kwargs["index"]
         else:
-            warning("Creating an Observation token without an index.")
+            warn("Creating an Observation token without an index.")
 
     def _matches(self, *_):
         raise NotImplementedError()
