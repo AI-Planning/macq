@@ -46,6 +46,10 @@ class AMDN:
 
         self._solve_constraints(obs_lists)
 
+        # TODO: make a function to calculate all occurrences of propositions for noise constraints.
+        # (the constraint-specific occurrences stored in the dict need to be unique because they take actions
+        # into account, but all_occ doesn't).
+
         #return Model(fluents, actions)
 
 
@@ -111,7 +115,7 @@ class AMDN:
                             for r in self.propositions:
                                 # equivalent: if r is in the add or delete list of an action in the set, that implies it 
                                 # can't be in the add or delete list of any other action in the set
-                                soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_x)], delete(r, act_x)))] = (1 - p) * self.wmax
+                                soft_constraints[implies(Or([add(r, act_x_prime), delete(r, act_x_prime)]), Or([add(r, act_x), delete(r, act_x)]).negate())] = (1 - p) * self.wmax
 
         # iterate through all traces
         for i in range(len(self.all_par_act_sets)):
@@ -125,28 +129,37 @@ class AMDN:
                             p = self.probabilities[ActionPair({act_y, act_x_prime})]
                             # iterate through all propositions and similarly set the constraint
                             for r in self.propositions:
-                                soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_y)], delete(r, act_y)))] = p * self.wmax
+                                soft_constraints[implies(Or([add(r, act_x_prime), delete(r, act_x_prime)]), Or([add(r, act_y), delete(r, act_y)]).negate())] = p * self.wmax
         return soft_constraints
 
     def _build_parallel_constraints(self):
-        return self._build_hard_parallel_constraints() | self._build_soft_parallel_constraints()
+        return {**self._build_hard_parallel_constraints(), **self._build_soft_parallel_constraints()}
 
-    def _noise_constraints_6(self, obs_lists: ObservationLists):
-        noise_constraints_6 = {}
+    def _set_up_occurrences_dict(self):
         # set up dict
         occurrences = {}           
         for a in self.actions:
             occurrences[a] = {}
             for r in self.propositions:
                 occurrences[a][r] = 0
+        return occurrences
+
+    def _noise_constraints_6(self, obs_lists: ObservationLists):
+        noise_constraints_6 = {}
+        # tracks occurrences of all propositions
+        all_occ = 0
+        occurrences = self._set_up_occurrences_dict()
 
         # iterate over ALL the plan traces, adding occurrences accordingly
         for i in range(len(obs_lists)):
             # iterate through each step in each trace, omitting the last step because the last action is None/we access the state in the next step
             for j in range(len(obs_lists[i]) - 1):
-                for r in obs_lists[i][j + 1].state.fluents:
+                true_prop = [f for f in obs_lists[i][j + 1].state if obs_lists[i][j + 1].state[f]]
+                for r in true_prop:
                     # count the number of occurrences of each action and its following proposition
                     occurrences[obs_lists[i][j].action][r] += 1
+                    # TODO: fix bug: does not take last trace into account
+                    all_occ += 1
 
         # iterate through actions
         for a in occurrences:
@@ -156,46 +169,61 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > self.occ_threshold:
                     # set constraint 6 with the calculated weight
-                    # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps? total number of propositions? or something else?
-                    noise_constraints_6[~delete(r, a)] = (occ_r / len(self.propositions))
+                    noise_constraints_6[~delete(r, a)] = (occ_r / all_occ)
         return noise_constraints_6
 
     def _noise_constraints_7(self, obs_lists: ObservationLists):
         noise_constraints_7 = {}
+        # set up dict
+        occurrences = {}           
+        for r in self.propositions:
+            occurrences[r] = 0
+        # tracks occurrences of all propositions
+        all_occ = 0
+        # track occurrences (used later for the weight).
+        # have to do this separately from the algorithm from the algorithm so everything is accounted for (#TODO: still true?)
+        for trace in obs_lists:
+            for step in trace:
+                true_prop = [f for f in step.state if step.state[f]]
+                for r in true_prop:
+                    occurrences[r] += 1
+                    all_occ += 1
+
         # iterate over ALL the plan traces, adding occurrences accordingly
         for i in range(len(obs_lists)):
             actions_taken = []
             # store the initial state s0
-            s0 = obs_lists[i][0].state.fluents
+            s0 = obs_lists[i][0].state
             # iterate through each step in each trace, omitting the last step because we access the state in the next step
             for j in range(len(obs_lists[i]) - 1):
                 actions_taken.append(obs_lists[i][j].action)
+                true_prop = [f for f in obs_lists[i][j + 1].state if obs_lists[i][j + 1].state[f]]
                 # get all fluents in the state after the current action was taken
-                for r in obs_lists[i][j + 1].state.fluents:
+                for r in true_prop:
                     # if r is not in s0, enforce constraint 7 with the calculated weight
                     if r not in s0:
-                        noise_constraints_7[Or([add(r, act) for act in actions_taken])] = 1 # placeholder
+                        noise_constraints_7[Or([add(r, act) for act in actions_taken])] = occurrences[r]/all_occ # placeholder
 
         # TODO: Ask - what happens when you find the first r? I assume you keep iterating through the rest of the trace,
         # continuing the process with different propositions? Do we still count the occurrences of each proposition through
-        # the entire trace to use when we calculate the weight?        
+        # the entire trace to use when we calculate the weight?     
+        return noise_constraints_7
 
     def _noise_constraints_8(self, obs_lists):
+        # tracks occurrences of all propositions
+        all_occ = 0
         noise_constraints_8 = {}
-        # set up dict
-        occurrences = {}           
-        for a in self.actions:
-            occurrences[a] = {}
-            for r in self.propositions:
-                occurrences[a][r] = 0
+        occurrences = self._set_up_occurrences_dict()
 
         # iterate over ALL the plan traces, adding occurrences accordingly
         for i in range(len(obs_lists)):
             # iterate through each step in each trace
             for j in range(len(obs_lists[i])):
-                for r in obs_lists[i][j].state.fluents:
+                true_prop = [f for f in obs_lists[i][j].state if obs_lists[i][j].state[f]]
+                for r in true_prop:
                     # count the number of occurrences of each action and its previous proposition
                     occurrences[obs_lists[i][j].action][r] += 1
+                    all_occ += 1
 
         # iterate through actions
         for a in occurrences:
@@ -205,18 +233,18 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > self.occ_threshold:
                     # set constraint 8 with the calculated weight
-                    # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps? total number of propositions? or something else?
-                    noise_constraints_8[pre(r, a)] = (occ_r / len(self.propositions))
+                    noise_constraints_8[pre(r, a)] = (occ_r / all_occ)
         return noise_constraints_8
 
     def _build_noise_constraints(self, obs_lists: ObservationLists):
-        return self._noise_constraints_6(obs_lists) | self._noise_constraints_7(obs_lists) | self._noise_constraints_8(obs_lists)
+        return{**self._noise_constraints_6(obs_lists), **self._noise_constraints_7(obs_lists), **self._noise_constraints_8(obs_lists)}
 
     def _set_all_constraints(self, obs_lists: ObservationLists):
         #TODO: debug
-        dc_constraints = self._build_disorder_constraints()
+        disorder_constraints = self._build_disorder_constraints()
         parallel_constraints = self._build_parallel_constraints()
-        return dc_constraints | parallel_constraints | self._build_noise_constraints(obs_lists)
+        noise_constraints = self._build_noise_constraints(obs_lists)
+        return {**disorder_constraints, **parallel_constraints, **noise_constraints}
 
     def _solve_constraints(self, obs_lists: ObservationLists):
         constraints = self._set_all_constraints(obs_lists)
