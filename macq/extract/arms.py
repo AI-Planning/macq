@@ -364,24 +364,24 @@ class ARMS:
                     # relation in action.add => relation not in action.precond
                     # relation in action.precond => relation not in action.add
 
-                    # _BREAK_ marks unambiguous breakpoints for parsing later
+                    # (BREAK) marks unambiguous breakpoints for parsing later
                     constraints.append(
                         implication(
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_add_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) add (BREAK) {action.details()}"
                             ),
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) pre (BREAK) {action.details()}"
                             ).negate(),
                         )
                     )
                     constraints.append(
                         implication(
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) pre (BREAK) {action.details()}"
                             ),
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_add_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) add (BREAK) {action.details()}"
                             ).negate(),
                         )
                     )
@@ -391,10 +391,10 @@ class ARMS:
                     constraints.append(
                         implication(
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_del_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) del (BREAK) {action.details()}"
                             ),
                             Var(
-                                f"{relation.var()}_BREAK_in_BREAK_pre_BREAK_{action.details()}"
+                                f"{relation.var()} (BREAK) in (BREAK) pre (BREAK) {action.details()}"
                             ),
                         )
                     )
@@ -442,7 +442,7 @@ class ARMS:
                                     ai = actions[obs_i.action]
                                     i1.append(
                                         Var(
-                                            f"{relations[fluent].var()}_BREAK_in_BREAK_add_BREAK_{ai.details()}"
+                                            f"{relations[fluent].var()} (BREAK) in (BREAK) add (BREAK) {ai.details()}"
                                         )
                                     )
 
@@ -452,7 +452,7 @@ class ARMS:
                             a_n = obs_list[i - 1].action
                             if a_n in actions and a_n is not None:
                                 i2 = Var(
-                                    f"{relations[fluent].var()}_BREAK_in_BREAK_del_BREAK_{actions[a_n].details()}"
+                                    f"{relations[fluent].var()} (BREAK) in (BREAK) del (BREAK) {actions[a_n].details()}"
                                 ).negate()
 
                             if i1:
@@ -472,7 +472,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_BREAK_in_BREAK_pre_BREAK_{actions[obs.action].details()}"
+                                                f"{relations[fluent].var()} (BREAK) in (BREAK) pre (BREAK) {actions[obs.action].details()}"
                                             )
                                         ]
                                     )
@@ -483,7 +483,7 @@ class ARMS:
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()}_BREAK_in_BREAK_add_BREAK_{actions[a_n].details()}"
+                                                f"{relations[fluent].var()} (BREAK) in (BREAK) add (BREAK) {actions[a_n].details()}"
                                             )
                                         ]
                                     )
@@ -576,7 +576,7 @@ class ARMS:
 
                 relation_constraints.append(
                     Var(
-                        f"{relation.var()}_BREAK_relevant_BREAK_{ai.details()}_BREAK_{aj.details()}"
+                        f"{relation.var()} (BREAK) relevant (BREAK) {ai.details()} (BREAK) {aj.details()}"
                     )
                 )
                 if debug:
@@ -658,6 +658,8 @@ class ARMS:
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
         solver = RC2(max_sat)
+
+        # solver.
         encoded_model = solver.compute()
 
         if not isinstance(encoded_model, list):
@@ -686,7 +688,7 @@ class ARMS:
         # models, however this is not a part of the paper and therefore not
         # implemented.
         for constraint, val in model.items():
-            constraint = str(constraint).split("_BREAK_")
+            constraint = str(constraint).split(" (BREAK) ")
             relation = constraint[0]
             ctype = constraint[1]  # constraint type
             if ctype == "in":
@@ -729,11 +731,12 @@ class ARMS:
                     print(f"{relation} possibly explains action pair ({ai}, {aj})")
 
         for p, ai, aj in plan_constraints:
-            # one of the following must be true
-            if not (
-                (p in ai.precond.intersection(aj.precond) and p not in ai.delete)  # P3
-                or (p in ai.add.intersection(aj.precond))  # P4
-                or (p in ai.delete.intersection(aj.add))  # P5
+            if (
+                not (
+                    p in ai.precond.intersection(aj.precond) and p not in ai.delete
+                )  # P3
+                or not (p in ai.add.intersection(aj.precond))  # P4
+                or not (p in ai.delete.intersection(aj.add))  # P5
             ):
                 # check if either P3 or P4 are partially fulfilled and can be satisfied
                 if p in ai.precond.union(aj.precond):
