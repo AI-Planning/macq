@@ -40,7 +40,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities(f3_f10, f11_f40, learned_theta)
         # will hold all the parallel action sets
-        self.par_act_sets = []
+        self.all_par_act_sets = []
         self.tokenize(traces, Token, **kwargs)
 
     def _decision(self, probability):
@@ -142,7 +142,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                         par_act_sets[i].add(act_y)
                                         par_act_sets[j].discard(act_y)
                                         par_act_sets[j].add(act_x)
-            self.par_act_sets.append(par_act_sets)
+            self.all_par_act_sets.append(par_act_sets)
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:

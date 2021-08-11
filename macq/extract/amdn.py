@@ -6,13 +6,13 @@ from ..trace import ObservationLists, ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation
 
 def __set_precond(r, act):
-    return Var(r + " is a precondition of " + act.name)
+    return Var(str(r) + " is a precondition of " + act.details())
 
 def __set_del(r, act):
-    return Var(r + " is deleted by " + act.name)
+    return Var(str(r) + " is deleted by " + act.details())
 
 def __set_add(r, act):
-    return Var(r + " is added by " + act.name)
+    return Var(str(r) + " is added by " + act.details())
 
 # for easier reference
 pre = __set_precond
@@ -40,42 +40,49 @@ class AMDN:
         # get probability dictionary
         self.probabilities = obs_lists.probabilities
          # get parallel action sets
-        self.par_act_sets = obs_lists.par_act_sets
-
+        self.all_par_act_sets = obs_lists.all_par_act_sets
         self.wmax = wmax
         self.occ_threshold = occ_threshold
+
+        self._solve_constraints(obs_lists)
 
         #return Model(fluents, actions)
 
 
-
     def _build_disorder_constraints(self):
         disorder_constraints = {}
-        # iterate through all pairs of parallel action sets
-        for i in range(len(self.par_act_sets) - 1):
-            # for each pair, iterate through all possible action combinations
-            for act_x in self.par_act_sets[i]:
-                for act_y in self.par_act_sets[i + 1]:
-                    if act_x != act_y:
-                        # calculate the probability of the actions being disordered (p)
-                        p = self.probabilities[ActionPair({act_x, act_y})]
-                        # for each action combination, iterate through all possible propositions
-                        for r in self.propositions:
-                            # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
-                            disorder_constraints[Or([
-                                And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
-                                And([add(r, act_x), pre(r, act_y)]),
-                                And([add(r, act_x), delete(r, act_y)]),
-                                And([delete(r, act_x), add(r, act_y)])
-                                ])] = (1 - p) * self.wmax
-                            # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
-                            disorder_constraints[Or([
-                                And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
-                                And([add(r, act_y), pre(r, act_x)]),
-                                And([add(r, act_y), delete(r, act_x)]),
-                                And([delete(r, act_y), add(r, act_x)])
-                                ])] = p * self.wmax
-        return disorder_constraints
+        # iterate through all traces
+        for i in range(len(self.all_par_act_sets)):
+            par_act_sets = self.all_par_act_sets[i]
+            # iterate through all pairs of parallel action sets for this trace
+            for j in range(len(par_act_sets) - 1):
+                # for each pair, iterate through all possible action combinations
+                for act_x in par_act_sets[j]:
+                    for act_y in par_act_sets[j + 1]:
+                        if act_x != act_y:
+                            # calculate the probability of the actions being disordered (p)
+                            p = self.probabilities[ActionPair({act_x, act_y})]
+                            # for each action combination, iterate through all possible propositions
+                            for r in self.propositions:
+                                # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
+                                disorder_constraints[Or([
+                                    And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
+                                    And([add(r, act_x), pre(r, act_y)]),
+                                    And([add(r, act_x), delete(r, act_y)]),
+                                    And([delete(r, act_x), add(r, act_y)])
+                                    ])] = (1 - p) * self.wmax
+                                # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
+                                disorder_constraints[Or([
+                                    And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
+                                    And([add(r, act_y), pre(r, act_x)]),
+                                    And([add(r, act_y), delete(r, act_x)]),
+                                    And([delete(r, act_y), add(r, act_x)])
+                                    ])] = p * self.wmax
+            # for c, v in disorder_constraints.items():
+            #     print(c)
+            #     print(v)
+            #     print()
+            return disorder_constraints
 
     def _build_hard_parallel_constraints(self):
         hard_constraints = {}
@@ -89,30 +96,36 @@ class AMDN:
 
     def _build_soft_parallel_constraints(self):
         soft_constraints = {}
-        # iterate through all parallel action sets
-        for i in range(len(self.par_act_sets)):        
-            # within each parallel action set, iterate through the same action set again to compare
-            # each action to every other action in the set; setting constraints assuming actions are not disordered
-            for act_x in self.par_act_sets[i]:
-                for act_x_prime in self.par_act_sets[i]:
-                    if act_x != act_x_prime:
-                        p = self.probabilities[ActionPair({act_x, act_x_prime})]
-                        # iterate through all propositions
-                        for r in self.propositions:
-                            # equivalent: if r is in the add or delete list of an action in the set, that implies it 
-                            # can't be in the add or delete list of any other action in the set
-                            soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_x)], delete(r, act_x)))] = (1 - p) * self.wmax
+        # iterate through all traces
+        for i in range(len(self.all_par_act_sets)):
+            par_act_sets = self.all_par_act_sets[i]
+            # iterate through all parallel action sets for this trace
+            for j in range(len(par_act_sets)):        
+                # within each parallel action set, iterate through the same action set again to compare
+                # each action to every other action in the set; setting constraints assuming actions are not disordered
+                for act_x in par_act_sets[j]:
+                    for act_x_prime in par_act_sets[j]:
+                        if act_x != act_x_prime:
+                            p = self.probabilities[ActionPair({act_x, act_x_prime})]
+                            # iterate through all propositions
+                            for r in self.propositions:
+                                # equivalent: if r is in the add or delete list of an action in the set, that implies it 
+                                # can't be in the add or delete list of any other action in the set
+                                soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_x)], delete(r, act_x)))] = (1 - p) * self.wmax
 
-        # then, iterate through all pairs of parallel action sets
-        for i in range(len(self.par_act_sets) - 1):
-            # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints assuming actions are disordered
-            for act_y in self.par_act_sets[i + 1]:
-                for act_x_prime in self.par_act_sets[i]:
-                    if act_y != act_x_prime:
-                        p = self.probabilities[ActionPair({act_y, act_x_prime})]
-                        # iterate through all propositions and similarly set the constraint
-                        for r in self.propositions:
-                            soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_y)], delete(r, act_y)))] = p * self.wmax
+        # iterate through all traces
+        for i in range(len(self.all_par_act_sets)):
+            par_act_sets = self.all_par_act_sets[i]
+            # then, iterate through all pairs of parallel action sets for each trace
+            for j in range(len(par_act_sets) - 1):
+                # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints assuming actions are disordered
+                for act_y in par_act_sets[j + 1]:
+                    for act_x_prime in par_act_sets[j]:
+                        if act_y != act_x_prime:
+                            p = self.probabilities[ActionPair({act_y, act_x_prime})]
+                            # iterate through all propositions and similarly set the constraint
+                            for r in self.propositions:
+                                soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_y)], delete(r, act_y)))] = p * self.wmax
         return soft_constraints
 
     def _build_parallel_constraints(self):
@@ -200,7 +213,10 @@ class AMDN:
         return self._noise_constraints_6(obs_lists) | self._noise_constraints_7(obs_lists) | self._noise_constraints_8(obs_lists)
 
     def _set_all_constraints(self, obs_lists: ObservationLists):
-        return self._build_disorder_constraints() | self._build_parallel_constraints() | self._build_noise_constraints(obs_lists)
+        #TODO: debug
+        dc_constraints = self._build_disorder_constraints()
+        parallel_constraints = self._build_parallel_constraints()
+        return dc_constraints | parallel_constraints | self._build_noise_constraints(obs_lists)
 
     def _solve_constraints(self, obs_lists: ObservationLists):
         constraints = self._set_all_constraints(obs_lists)

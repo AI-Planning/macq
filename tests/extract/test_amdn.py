@@ -22,9 +22,11 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-        problem_id=2337,
+        #problem_id=2337,
+        dom=dom,
+        prob=prob,
         observe_pres_effs=True,
-        num_traces=1,
+        num_traces=3,
         steps_deep=10,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
@@ -37,5 +39,5 @@ if __name__ == "__main__":
         percent_noisy=0.05,
     )
     print()
-    model = Extract(observations, modes.AMDN)
+    model = Extract(observations, modes.AMDN, wmax=100, occ_threshold=3)
     #print(model.details())
