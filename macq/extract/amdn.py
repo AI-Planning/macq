@@ -2,7 +2,7 @@ from nnf.operators import implies
 import macq.extract as extract
 from nnf import Var, And, Or
 from .model import Model
-from ..trace import ObservationLists
+from ..trace import ObservationLists, ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation
 
 def __set_precond(r, act):
@@ -20,7 +20,8 @@ add = __set_add
 delete = __set_del
 
 class AMDN:
-    def __init__(self, obs_lists: ObservationLists):
+    # TODO: ask: wmax is a user value...?
+    def __init__(self, obs_lists: ObservationLists, wmax: float, occ_threshold: int):
         """Creates a new Model object.
 
         Args:
@@ -33,61 +34,61 @@ class AMDN:
         if obs_lists.type is not NoisyPartialDisorderedParallelObservation:
             raise extract.IncompatibleObservationToken(obs_lists.type, AMDN)
 
-        # TODO:
-        # iterate through all tokens and create two base sets for all actions and propositions; store as attributes
+        # create two base sets for all actions and propositions; store as attributes
         self.actions = obs_lists.actions
+        self.propositions = {f for trace in obs_lists for step in trace for f in step.state.fluents}
+        # get probability dictionary
+        self.probabilities = obs_lists.probabilities
+         # get parallel action sets
+        self.par_act_sets = obs_lists.par_act_sets
 
-        # iterate through all pairs of parallel action sets and create a dictionary of the probability of ax and ay being disordered -
-        # (this will make it easy and efficient to refer to later, and prevents unnecessary recalculations). store as attribute
-        # also create a list of all <a, r> tuples, store as attribute
-        # get user values (TODO: ask: wmax is a user value...?)
+        self.wmax = wmax
+        self.occ_threshold = occ_threshold
 
         #return Model(fluents, actions)
 
+
+
     def _build_disorder_constraints(self):
-        # TODO:
+        disorder_constraints = {}
         # iterate through all pairs of parallel action sets
         for i in range(len(self.par_act_sets) - 1):
             # for each pair, iterate through all possible action combinations
             for act_x in self.par_act_sets[i]:
                 for act_y in self.par_act_sets[i + 1]:
-                # TODO: calculate the probability of the actions being disordered (p)
-                    # for each action combination, iterate through all possible propositions
-                    # TODO: calculate weights
-                    for r in self.propositions:
-                        # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
-                        constraint1 = Or([
-                            And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
-                            And([add(r, act_x), pre(r, act_y)]),
-                            And([add(r, act_x), delete(r, act_y)]),
-                            And([delete(r, act_x), add(r, act_y)])
-                            ])
-                        # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
-                        constraint2 = Or([
-                            And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
-                            And([add(r, act_y), pre(r, act_x)]),
-                            And([add(r, act_y), delete(r, act_x)]),
-                            And([delete(r, act_y), add(r, act_x)])
-                            ])
+                    if act_x != act_y:
+                        # calculate the probability of the actions being disordered (p)
+                        p = self.probabilities[ActionPair({act_x, act_y})]
+                        # for each action combination, iterate through all possible propositions
+                        for r in self.propositions:
+                            # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
+                            disorder_constraints[Or([
+                                And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
+                                And([add(r, act_x), pre(r, act_y)]),
+                                And([add(r, act_x), delete(r, act_y)]),
+                                And([delete(r, act_x), add(r, act_y)])
+                                ])] = (1 - p) * self.wmax
+                            # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
+                            disorder_constraints[Or([
+                                And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
+                                And([add(r, act_y), pre(r, act_x)]),
+                                And([add(r, act_y), delete(r, act_x)]),
+                                And([delete(r, act_y), add(r, act_x)])
+                                ])] = p * self.wmax
+        return disorder_constraints
 
-    def __build_hard_parallel_constraints(self):
-        # for easier reference
-        pre = self.__set_precond
-        add = self.__set_add
-        delete = self.__set_del
+    def _build_hard_parallel_constraints(self):
+        hard_constraints = {}
+        # create a list of all <a, r> tuples
+        for act in self.actions:
+            for r in self.probabilities:
+                # for each action x proposition pair, enforce the two hard constraints with weight wmax
+                hard_constraints[implies(add(r, act), ~pre(r, act))] = self.wmax
+                hard_constraints[implies(delete(r, act), pre(r, act))] = self.wmax
+        return hard_constraints
 
-        # iterate through the list of <a, r> tuples
-        for tup in self.act_prop_cross_prod:
-            act = tup[0]
-            r = tup[1]
-            # for each action x proposition pair, enforce the two hard constraints with weight wmax
-            constraint1 = implies(add(r, act), ~pre(r, act))
-            constraint2 = implies(delete(r, act), pre(r, act))
-            # TODO: use weight wmax
-
-    def __build_soft_parallel_constraints(self):
-        constraints_4 = set()
-        constraints_5 = set()
+    def _build_soft_parallel_constraints(self):
+        soft_constraints = {}
         # iterate through all parallel action sets
         for i in range(len(self.par_act_sets)):        
             # within each parallel action set, iterate through the same action set again to compare
@@ -95,56 +96,115 @@ class AMDN:
             for act_x in self.par_act_sets[i]:
                 for act_x_prime in self.par_act_sets[i]:
                     if act_x != act_x_prime:
+                        p = self.probabilities[ActionPair({act_x, act_x_prime})]
                         # iterate through all propositions
                         for r in self.propositions:
                             # equivalent: if r is in the add or delete list of an action in the set, that implies it 
                             # can't be in the add or delete list of any other action in the set
-                            constraints_4.add(implies(Or([add(r, act_x)], delete(r, act_x)), ~Or([add(r, act_x_prime)], delete(r, act_x_prime))))
-        # TODO: enforce all [constraint 4] with weight (1 - p) x wmax
+                            soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_x)], delete(r, act_x)))] = (1 - p) * self.wmax
 
         # then, iterate through all pairs of parallel action sets
         for i in range(len(self.par_act_sets) - 1):
-            # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints
-            # assuming actions are disordered
+            # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints assuming actions are disordered
             for act_y in self.par_act_sets[i + 1]:
                 for act_x_prime in self.par_act_sets[i]:
                     if act_y != act_x_prime:
+                        p = self.probabilities[ActionPair({act_y, act_x_prime})]
                         # iterate through all propositions and similarly set the constraint
                         for r in self.propositions:
-                            constraints_5.add(implies(Or([add(r, act_y)], delete(r, act_y)), ~Or([add(r, act_x_prime)], delete(r, act_x_prime))))      
-        # TODO: enforce all [constraint 5] with weight p x wmax
+                            soft_constraints[implies(Or([add(r, act_x_prime)], delete(r, act_x_prime)), ~Or([add(r, act_y)], delete(r, act_y)))] = p * self.wmax
+        return soft_constraints
 
-    def __build_parallel_constraints(self):
-        self.__build_hard_parallel_constraints()
-        self.__build_soft_parallel_constraints()
+    def _build_parallel_constraints(self):
+        return self._build_hard_parallel_constraints() | self._build_soft_parallel_constraints()
 
-    def _build_noise_constraints(self):
-        # TODO:
-        # iterate through all <a, r> tuples
-        # for each <a, r> tuple: iterate through each step over ALL the plan traces
-        # count the number of occurrences; if higher than the user-provided parameter delta,
-        # store this tuple as a dictionary entry in a list of dictionaries (something like 
-        # [{"action and proposition": <a, r>, "occurrences of r:" 5}]).
-        # after all iterations are through, iterate through all the tuples in this dictionary,
-        # and set [constraint 6] with the calculated weight.
-        # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps...?
-        
-        # store the initial state s0
-        # iterate through every step in the plan trace
-        # at each step, check all the propositions r in the current state
-        # if r is not in s0, enforce [constraint 7] with the calculated weight
+    def _noise_constraints_6(self, obs_lists: ObservationLists):
+        noise_constraints_6 = {}
+        # set up dict
+        occurrences = {}           
+        for a in self.actions:
+            occurrences[a] = {}
+            for r in self.propositions:
+                occurrences[a][r] = 0
+
+        # iterate over ALL the plan traces, adding occurrences accordingly
+        for i in range(len(obs_lists)):
+            # iterate through each step in each trace, omitting the last step because the last action is None/we access the state in the next step
+            for j in range(len(obs_lists[i]) - 1):
+                for r in obs_lists[i][j + 1].state.fluents:
+                    # count the number of occurrences of each action and its following proposition
+                    occurrences[obs_lists[i][j].action][r] += 1
+
+        # iterate through actions
+        for a in occurrences:
+            # iterate through all propositions for this action
+            for r in occurrences[a]:
+                occ_r = occurrences[a][r]
+                # if the # of occurrences is higher than the user-provided threshold:
+                if occ_r > self.occ_threshold:
+                    # set constraint 6 with the calculated weight
+                    # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps? total number of propositions? or something else?
+                    noise_constraints_6[~delete(r, a)] = (occ_r / len(self.propositions))
+        return noise_constraints_6
+
+    def _noise_constraints_7(self, obs_lists: ObservationLists):
+        noise_constraints_7 = {}
+        # iterate over ALL the plan traces, adding occurrences accordingly
+        for i in range(len(obs_lists)):
+            actions_taken = []
+            # store the initial state s0
+            s0 = obs_lists[i][0].state.fluents
+            # iterate through each step in each trace, omitting the last step because we access the state in the next step
+            for j in range(len(obs_lists[i]) - 1):
+                actions_taken.append(obs_lists[i][j].action)
+                # get all fluents in the state after the current action was taken
+                for r in obs_lists[i][j + 1].state.fluents:
+                    # if r is not in s0, enforce constraint 7 with the calculated weight
+                    if r not in s0:
+                        noise_constraints_7[Or([add(r, act) for act in actions_taken])] = 1 # placeholder
+
         # TODO: Ask - what happens when you find the first r? I assume you keep iterating through the rest of the trace,
         # continuing the process with different propositions? Do we still count the occurrences of each proposition through
-        # the entire trace to use when we calculate the weight?
+        # the entire trace to use when we calculate the weight?        
 
-        # [constraint 8] is almost identical to [constraint 6]. Watch the order of the tuples. 
+    def _noise_constraints_8(self, obs_lists):
+        noise_constraints_8 = {}
+        # set up dict
+        occurrences = {}           
+        for a in self.actions:
+            occurrences[a] = {}
+            for r in self.propositions:
+                occurrences[a][r] = 0
 
-        pass
+        # iterate over ALL the plan traces, adding occurrences accordingly
+        for i in range(len(obs_lists)):
+            # iterate through each step in each trace
+            for j in range(len(obs_lists[i])):
+                for r in obs_lists[i][j].state.fluents:
+                    # count the number of occurrences of each action and its previous proposition
+                    occurrences[obs_lists[i][j].action][r] += 1
 
-    def _solve_constraints(self):
-        # TODO:
-        # call the MAXSAT solver
-        pass
+        # iterate through actions
+        for a in occurrences:
+            # iterate through all propositions for this action
+            for r in occurrences[a]:
+                occ_r = occurrences[a][r]
+                # if the # of occurrences is higher than the user-provided threshold:
+                if occ_r > self.occ_threshold:
+                    # set constraint 8 with the calculated weight
+                    # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps? total number of propositions? or something else?
+                    noise_constraints_8[pre(r, a)] = (occ_r / len(self.propositions))
+        return noise_constraints_8
+
+    def _build_noise_constraints(self, obs_lists: ObservationLists):
+        return self._noise_constraints_6(obs_lists) | self._noise_constraints_7(obs_lists) | self._noise_constraints_8(obs_lists)
+
+    def _set_all_constraints(self, obs_lists: ObservationLists):
+        return self._build_disorder_constraints() | self._build_parallel_constraints() | self._build_noise_constraints(obs_lists)
+
+    def _solve_constraints(self, obs_lists: ObservationLists):
+        constraints = self._set_all_constraints(obs_lists)
+        # TODO: call the MAXSAT solver
 
     def _convert_to_model(self):
         # TODO:
