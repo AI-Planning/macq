@@ -12,6 +12,25 @@ class NotCNF(Exception):
 def _encode(clauses: And[Or[Var]]) -> Tuple[List[List[int]], Dict[int, Hashable]]:
     decode = dict(enumerate(clauses.vars(), start=1))
     encode = {v: k for k, v in decode.items()}
+
+    # WARNING: debugging
+    for k in encode.keys():
+        if "holding" in str(k) and "del" in str(k) and "put-down" in str(k):
+            global H_DEL_PD
+            H_DEL_PD = encode[k]
+        if "holding" in str(k) and "del" in str(k) and "(stack" in str(k):
+            print(k)
+            print(encode[k])
+            global H_DEL_S
+            H_DEL_S = encode[k]
+        if "holding" in str(k) and "add" in str(k) and "pick-up" in str(k):
+            global H_ADD_PU
+            H_ADD_PU = encode[k]
+        if "on object" in str(k) and "del" in str(k) and "pick-up" in str(k):
+            global O_DEL_PU
+            O_DEL_PU = encode[k]
+    # WARNING: debugging
+
     encoded = [
         [encode[var.name] if var.true else -encode[var.name] for var in clause]
         for clause in clauses

@@ -174,10 +174,10 @@ class ARMS:
                 list(action_map_rev.keys()),
                 debug5,
             )
-            if debug5:
-                input("Press enter to continue...")
 
             # Step 5 updates
+
+            # Progress observed states if early actions have been learned
             setA = set()
             for action in action_map_rev.keys():
                 for i, obs_list in enumerate(obs_lists):
@@ -186,6 +186,7 @@ class ARMS:
                     # update the next state with the effects and update the
                     # early action pointer
                     if obs_action in action_map and action == action_map[obs_action]:
+                        print()
                         # Set add effects true
                         for add in action.add:
                             # get candidate fluents from add relation
@@ -235,6 +236,9 @@ class ARMS:
 
                 # Update Θ by adding A
                 learned_actions.add(action)
+
+            if debug5:
+                input("Press enter to continue...")
 
         return learned_actions
 
@@ -553,6 +557,9 @@ class ARMS:
             ],
             min_support,
         )
+        if debug:
+            print("Frequent pairs:")
+            print(frequent_pairs)
 
         # constraints: Dict[And[Or[Var]], int] = {}
         constraints: Dict[Or[Var], int] = {}
@@ -657,9 +664,15 @@ class ARMS:
 
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+        from ..utils.pysat import H_DEL_PD, H_DEL_S, H_ADD_PU, O_DEL_PU
+
         solver = RC2(max_sat)
 
-        # solver.
+        solver.add_clause([H_DEL_PD])
+        solver.add_clause([H_DEL_S])
+        solver.add_clause([H_ADD_PU])
+        solver.add_clause([O_DEL_PU])
+
         encoded_model = solver.compute()
 
         if not isinstance(encoded_model, list):

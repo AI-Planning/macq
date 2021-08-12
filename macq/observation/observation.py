@@ -1,5 +1,8 @@
 from logging import warn
 from json import dumps
+from typing import Union
+
+from ..trace import State, Action
 
 
 class InvalidQueryParameter(Exception):
@@ -19,6 +22,9 @@ class Observation:
         index (int):
             The index of the associated step in the trace it is a part of.
     """
+
+    state: State
+    action: Union[Action, None]
 
     def __init__(self, **kwargs):
         """

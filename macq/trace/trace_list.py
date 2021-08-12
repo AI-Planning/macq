@@ -108,6 +108,12 @@ class TraceList:
                 detailed summary of each step in a trace. "color" provides a
                 color grid, mapping fluents in a step to either red or green
                 corresponding to the truth value.
+            filter_func (function):
+                Optional; Used to filter which fluents are printed in the
+                colorgrid display.
+            wrap (bool):
+                Determines if the output is wrapped or cut off. Details defaults
+                to cut off (wrap=False), color defaults to wrap (wrap=True).
         """
         console = Console()
 

@@ -1,9 +1,11 @@
 from logging import warn
+
+from rich.console import Console
 from ..utils import PercentError
 from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
-from typing import Set
+from typing import Callable, Set
 import random
 
 

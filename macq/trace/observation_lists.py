@@ -1,4 +1,9 @@
-from typing import Iterator, List, Type, Set
+from logging import warn
+from typing import List, Type, Set
+from inspect import cleandoc
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 from . import Trace
 from ..observation import Observation
 import macq.trace as TraceAPI
@@ -68,3 +73,125 @@ class ObservationLists(TraceAPI.TraceList):
             }
         except AttributeError:
             return {action: self.get_transitions(str(action)) for action in actions}
+
+    def print(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Pretty prints the trace list in the specified view.
+
+        Arguments:
+            view ("details" | "color"):
+                Specifies the view format to print in. "details" provides a
+                detailed summary of each step in a trace. "color" provides a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value.
+            filter_func (function):
+                Optional; Used to filter which fluents are printed in the
+                colorgrid display.
+            wrap (bool):
+                Determines if the output is wrapped or cut off. Details defaults
+                to cut off (wrap=False), color defaults to wrap (wrap=True).
+        """
+        console = Console()
+
+        views = ["details", "color"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        obs_lists = []
+        if view == "details":
+            if wrap is None:
+                wrap = False
+            obs_lists = [self._details(obs_list, wrap=wrap) for obs_list in self]
+
+        elif view == "color":
+            if wrap is None:
+                wrap = True
+            obs_lists = [
+                self._colorgrid(obs_list, filter_func=filter_func, wrap=wrap)
+                for obs_list in self
+            ]
+
+        for obs_list in obs_lists:
+            console.print(obs_list)
+            print()
+
+    @staticmethod
+    def _details(obs_list: List[Observation], wrap: bool):
+        indent = " " * 2
+        # Summarize class attributes
+        details = Table.grid(expand=True)
+        details.title = "Trace"
+        details.add_column()
+        details.add_row(
+            cleandoc(
+                f"""
+            Attributes:
+            {indent}{len(obs_list)} steps
+            """
+            )
+        )
+        steps = Table(
+            title="Steps", box=None, show_edge=False, pad_edge=False, expand=True
+        )
+        steps.add_column("Step", justify="right", width=8)
+        steps.add_column(
+            "State",
+            justify="center",
+            overflow="ellipsis",
+            max_width=100,
+            no_wrap=(not wrap),
+        )
+        steps.add_column("Action", overflow="ellipsis", no_wrap=(not wrap))
+
+        for obs in obs_list:
+            action = obs.action.details() if obs.action else ""
+            steps.add_row(str(obs.index), obs.state.details(), action)
+
+        details.add_row(steps)
+
+        return details
+
+    @staticmethod
+    def _colorgrid(obs_list: List[Observation], filter_func: Callable, wrap: bool):
+        colorgrid = Table(
+            title="Trace", box=None, show_edge=False, pad_edge=False, expand=False
+        )
+        colorgrid.add_column("Fluent", justify="right")
+        colorgrid.add_column(
+            header=Text("Step", justify="center"), overflow="fold", no_wrap=(not wrap)
+        )
+        colorgrid.add_row(
+            "",
+            "".join(
+                [
+                    "|" if i < len(obs_list) and (i + 1) % 5 == 0 else " "
+                    for i in range(len(obs_list))
+                ]
+            ),
+        )
+
+        # TODO: get, sort, and filter fluents
+
+        static = obs_list.get_static_fluents()
+        fluents = list(
+            filter(
+                filter_func,
+                sorted(
+                    obs_list.fluents,
+                    key=lambda f: float("inf") if f in static else len(str(f)),
+                ),
+            )
+        )
+
+        for fluent in fluents:
+            step_str = ""
+            for obs in obs_list:
+                if obs.state[fluent]:
+                    step_str += "[green]"
+                else:
+                    step_str += "[red]"
+                step_str += "■"
+
+            colorgrid.add_row(str(fluent), step_str)
+
+        return colorgrid
