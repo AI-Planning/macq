@@ -39,5 +39,5 @@ if __name__ == "__main__":
         percent_noisy=0.05,
     )
     print()
-    model = Extract(observations, modes.AMDN, wmax=100, occ_threshold=3)
+    model = Extract(observations, modes.AMDN, occ_threshold=3)
     #print(model.details())
