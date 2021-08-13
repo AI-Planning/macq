@@ -1,5 +1,8 @@
-from logging import warning
+from logging import warn
 from json import dumps
+from typing import Union
+
+from ..trace import State, Action
 
 
 class InvalidQueryParameter(Exception):
@@ -20,6 +23,9 @@ class Observation:
             The index of the associated step in the trace it is a part of.
     """
 
+    state: State
+    action: Union[Action, None]
+
     def __init__(self, **kwargs):
         """
         Creates an Observation object, storing the step as a token, as well as its index/"place"
@@ -32,7 +38,7 @@ class Observation:
         if "index" in kwargs.keys():
             self.index = kwargs["index"]
         else:
-            warning("Creating an Observation token without an index.")
+            warn("Creating an Observation token without an index.")
 
     def _matches(self, *_):
         raise NotImplementedError()
