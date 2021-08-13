@@ -42,12 +42,12 @@ class Observation:
             warn("Creating an Observation token without an index.")
 
     def __hash__(self):
-        string = self.details()
+        string = str(self)
         if string == "Observation\n":
             warn("Observation has no unique information. Generating a generic hash.")
         return hash(string)
 
-    def details(self):
+    def __str__(self):
         out = "Observation\n"
         if self.index is not None:
             out += f"  Index: {str(self.index)}\n"
@@ -57,6 +57,12 @@ class Observation:
             out += f"  Action: {str(self.action)}\n"
 
         return out
+
+    def get_details(self):
+        ind = str(self.index) if self.index else "-"
+        state = self.state.details() if self.state else "-"
+        action = self.action.details() if self.action else ""
+        return (ind, state, action)
 
     def _matches(self, *_):
         raise NotImplementedError()
