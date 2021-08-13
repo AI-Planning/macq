@@ -1,6 +1,6 @@
 from collections import defaultdict
 from logging import warn
-from typing import Callable, List, Type, Set
+from typing import Callable, Dict, List, Type, Set, overload
 from inspect import cleandoc
 from rich.console import Console
 from rich.table import Table
@@ -41,8 +41,8 @@ class ObservationLists(TraceAPI.TraceList):
                 fluents.update(list(obs.state.keys()))
         return fluents
 
-    def fetch_observations(self, query: dict):
-        matches: List[Set[Observation]] = list()
+    def fetch_observations(self, query: dict) -> List[Set[Observation]]:
+        matches: List[Set[Observation]] = []
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())
@@ -51,22 +51,24 @@ class ObservationLists(TraceAPI.TraceList):
                     matches[i].add(obs)
         return matches  # list of sets of matching fluents from each trace
 
-    def fetch_observation_windows(self, query: dict, left: int, right: int):
+    def fetch_observation_windows(
+        self, query: dict, left: int, right: int
+    ) -> List[List[Observation]]:
         windows = []
         matches = self.fetch_observations(query)
-        trace: Set[Observation]
-        for i, trace in enumerate(matches):  # note obs.index starts at 1 (index = i+1)
-            for obs in trace:
+        # note obs.index starts at 1 (index = i+1)
+        for i, obs_set in enumerate(matches):
+            for obs in obs_set:
                 start = obs.index - left - 1
                 end = obs.index + right
                 windows.append(self[i][start:end])
         return windows
 
-    def get_transitions(self, action: str):
+    def get_transitions(self, action: str) -> List[List[Observation]]:
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
-    def get_all_transitions(self):
+    def get_all_transitions(self) -> Dict[Action, List[List[Observation]]]:
         actions = self.get_actions()
         try:
             return {
@@ -145,9 +147,8 @@ class ObservationLists(TraceAPI.TraceList):
         steps.add_column("Action", overflow="ellipsis", no_wrap=(not wrap))
 
         for obs in obs_list:
-            action = obs.action.details() if obs.action else ""
-            state = obs.state.details() if obs.state else "n/a"
-            steps.add_row(str(obs.index), state, action)
+            ind, state, action = obs.get_details()
+            steps.add_row(ind, state, action)
 
         details.add_row(steps)
 
