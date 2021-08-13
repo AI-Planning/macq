@@ -42,7 +42,10 @@ class Observation:
             warn("Creating an Observation token without an index.")
 
     def __hash__(self):
-        return hash(self.details())
+        string = self.details()
+        if string == "Observation\n":
+            warn("Observation has no unique information. Generating a generic hash.")
+        return hash(string)
 
     def details(self):
         out = "Observation\n"
