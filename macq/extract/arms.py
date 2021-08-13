@@ -664,14 +664,7 @@ class ARMS:
 
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
-        from ..utils.pysat import H_DEL_PD, H_DEL_S, H_ADD_PU, O_DEL_PU
-
         solver = RC2(max_sat)
-
-        solver.add_clause([H_DEL_PD])
-        solver.add_clause([H_DEL_S])
-        solver.add_clause([H_ADD_PU])
-        solver.add_clause([O_DEL_PU])
 
         encoded_model = solver.compute()
 
