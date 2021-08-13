@@ -1,10 +1,11 @@
+from collections import defaultdict
 from logging import warn
-from typing import List, Type, Set
+from typing import Callable, List, Type, Set
 from inspect import cleandoc
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from . import Trace
+from . import Trace, Action, SAS
 from ..observation import Observation
 import macq.trace as TraceAPI
 
@@ -115,8 +116,7 @@ class ObservationLists(TraceAPI.TraceList):
             console.print(obs_list)
             print()
 
-    @staticmethod
-    def _details(obs_list: List[Observation], wrap: bool):
+    def _details(self, obs_list: List[Observation], wrap: bool):
         indent = " " * 2
         # Summarize class attributes
         details = Table.grid(expand=True)
@@ -127,6 +127,7 @@ class ObservationLists(TraceAPI.TraceList):
                 f"""
             Attributes:
             {indent}{len(obs_list)} steps
+            {indent}{len(self.get_fluents())} fluents
             """
             )
         )
@@ -170,14 +171,12 @@ class ObservationLists(TraceAPI.TraceList):
             ),
         )
 
-        # TODO: get, sort, and filter fluents
-
-        static = obs_list.get_static_fluents()
+        static = ObservationLists.get_obs_static_fluents(obs_list)
         fluents = list(
             filter(
                 filter_func,
                 sorted(
-                    obs_list.fluents,
+                    ObservationLists.get_obs_fluents(obs_list),
                     key=lambda f: float("inf") if f in static else len(str(f)),
                 ),
             )
@@ -195,3 +194,46 @@ class ObservationLists(TraceAPI.TraceList):
             colorgrid.add_row(str(fluent), step_str)
 
         return colorgrid
+
+    @staticmethod
+    def get_obs_fluents(obs_list: List[Observation]):
+        fluents = set()
+        for obs in obs_list:
+            fluents.update(list(obs.state.keys()))
+        return fluents
+
+    @staticmethod
+    def get_obs_static_fluents(obs_list: List[Observation]):
+        fstates = defaultdict(list)
+        for obs in obs_list:
+            for f, v in obs.state.items():
+                fstates[f].append(v)
+
+        static = set()
+        for f, states in fstates.items():
+            if all(states) or not any(states):
+                static.add(f)
+
+        return static
+
+    def get_sas_triples(self, action: Action) -> List[SAS]:
+        """Retrieves the list of (S,A,S') triples for the action in this trace.
+
+        In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
+        the post-state.
+
+        Args:
+            action (Action):
+                The action to retrieve (S,A,S') triples for.
+
+        Returns:
+            A `SAS` object, containing the `pre_state`, `action`, and
+            `post_state`.
+        """
+        sas_triples = []
+        for obs_list in self:
+            for i, obs in enumerate(obs_list):
+                if obs.action == action:
+                    triple = SAS(obs.state, action, self[i + 1].state)
+                    sas_triples.append(triple)
+        return sas_triples
