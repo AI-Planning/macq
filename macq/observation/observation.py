@@ -23,7 +23,7 @@ class Observation:
             The index of the associated step in the trace it is a part of.
     """
 
-    state: State
+    state: Union[State, None]
     action: Union[Action, None]
 
     def __init__(self, **kwargs):

@@ -215,25 +215,3 @@ class ObservationLists(TraceAPI.TraceList):
                 static.add(f)
 
         return static
-
-    def get_sas_triples(self, action: Action) -> List[SAS]:
-        """Retrieves the list of (S,A,S') triples for the action in this trace.
-
-        In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
-        the post-state.
-
-        Args:
-            action (Action):
-                The action to retrieve (S,A,S') triples for.
-
-        Returns:
-            A `SAS` object, containing the `pre_state`, `action`, and
-            `post_state`.
-        """
-        sas_triples = []
-        for obs_list in self:
-            for i, obs in enumerate(obs_list):
-                if obs.action == action:
-                    triple = SAS(obs.state, action, self[i + 1].state)
-                    sas_triples.append(triple)
-        return sas_triples
