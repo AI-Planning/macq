@@ -146,7 +146,8 @@ class ObservationLists(TraceAPI.TraceList):
 
         for obs in obs_list:
             action = obs.action.details() if obs.action else ""
-            steps.add_row(str(obs.index), obs.state.details(), action)
+            state = obs.state.details() if obs.state else "n/a"
+            steps.add_row(str(obs.index), state, action)
 
         details.add_row(steps)
 
@@ -185,7 +186,7 @@ class ObservationLists(TraceAPI.TraceList):
         for fluent in fluents:
             step_str = ""
             for obs in obs_list:
-                if obs.state[fluent]:
+                if obs.state and obs.state[fluent]:
                     step_str += "[green]"
                 else:
                     step_str += "[red]"
@@ -199,15 +200,17 @@ class ObservationLists(TraceAPI.TraceList):
     def get_obs_fluents(obs_list: List[Observation]):
         fluents = set()
         for obs in obs_list:
-            fluents.update(list(obs.state.keys()))
+            if obs.state:
+                fluents.update(list(obs.state.keys()))
         return fluents
 
     @staticmethod
     def get_obs_static_fluents(obs_list: List[Observation]):
         fstates = defaultdict(list)
         for obs in obs_list:
-            for f, v in obs.state.items():
-                fstates[f].append(v)
+            if obs.state:
+                for f, v in obs.state.items():
+                    fstates[f].append(v)
 
         static = set()
         for f, states in fstates.items():
