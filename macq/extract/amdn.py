@@ -4,6 +4,7 @@ from nnf import Var, And, Or
 from .model import Model
 from ..trace import ObservationLists, ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation
+from ..utils.pysat import to_wcnf
 
 def __set_precond(r, act):
     return Var(str(r) + " is a precondition of " + act.details())
@@ -40,7 +41,8 @@ class AMDN:
         self.propositions = {f for trace in obs_lists for step in trace for f in step.state.fluents}
         self.occ_threshold = occ_threshold
 
-        self._solve_constraints(obs_lists)
+        solve = self._solve_constraints(obs_lists)
+        print()
         #return Model(fluents, actions)
 
 
@@ -66,14 +68,19 @@ class AMDN:
                                     And([add(r, act_x), pre(r, act_y)]),
                                     And([add(r, act_x), delete(r, act_y)]),
                                     And([delete(r, act_x), add(r, act_y)])
-                                    ])] = (1 - p) * WMAX
+                                    ]).to_CNF()] = (1 - p) * WMAX
                                 # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
                                 disorder_constraints[Or([
                                     And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
                                     And([add(r, act_y), pre(r, act_x)]),
                                     And([add(r, act_y), delete(r, act_x)]),
                                     And([delete(r, act_y), add(r, act_x)])
-                                    ])] = p * WMAX
+                                    ]).to_CNF()] = p * WMAX
+            # TODO: somehow convert to Or[Var]
+            # for c in disorder_constraints:
+            #     if not c.is_CNF():
+            #         print("ERROR")
+            # print(And(c for c in disorder_constraints).to_CNF().is_CNF())
             return disorder_constraints
 
     def _build_hard_parallel_constraints(self, obs_lists: ObservationLists):
@@ -222,11 +229,21 @@ class AMDN:
         return{**self._noise_constraints_6(obs_lists, all_occ), **self._noise_constraints_7(obs_lists, all_occ), **self._noise_constraints_8(obs_lists, all_occ)}
 
     def _set_all_constraints(self, obs_lists: ObservationLists):
-        return {**self._build_disorder_constraints(obs_lists), ** self._build_parallel_constraints(obs_lists), **self._build_noise_constraints(obs_lists)}
+        return self._build_disorder_constraints(obs_lists)
+        #return {**self._build_disorder_constraints(obs_lists), ** self._build_parallel_constraints(obs_lists), **self._build_noise_constraints(obs_lists)}
 
     def _solve_constraints(self, obs_lists: ObservationLists):
         constraints = self._set_all_constraints(obs_lists)
-        # TODO: call the MAXSAT solver
+        problem = []
+        constraints_ls : And[Or[Var]] = list(constraints.keys())
+        for c in constraints_ls:
+            for f in c.children:
+                problem.append(f)
+        problem = And(problem)
+        print(problem.is_CNF())
+        weights = list(constraints.values())
+        wcnf, decode = to_wcnf(problem, weights)
+        return wcnf, decode
 
     def _convert_to_model(self):
         # TODO:
