@@ -23,6 +23,7 @@ class Observation:
             The index of the associated step in the trace it is a part of.
     """
 
+    index: int
     state: Union[State, None]
     action: Union[Action, None]
 
@@ -39,6 +40,20 @@ class Observation:
             self.index = kwargs["index"]
         else:
             warn("Creating an Observation token without an index.")
+
+    def __hash__(self):
+        return hash(self.details())
+
+    def details(self):
+        out = "Observation\n"
+        if self.index is not None:
+            out += f"  Index: {str(self.index)}\n"
+        if self.state:
+            out += f"  State: {str(self.state)}\n"
+        if self.action:
+            out += f"  Action: {str(self.action)}\n"
+
+        return out
 
     def _matches(self, *_):
         raise NotImplementedError()
