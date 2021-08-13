@@ -1,6 +1,6 @@
 from collections import defaultdict
 from logging import warn
-from typing import Callable, Dict, List, Type, Set, overload
+from typing import Callable, Dict, List, Type, Set, Union
 from inspect import cleandoc
 from rich.console import Console
 from rich.table import Table
@@ -10,6 +10,15 @@ from ..observation import Observation
 import macq.trace as TraceAPI
 
 
+class MissingToken(Exception):
+    def __init__(self, message=None):
+        if message is None:
+            message = (
+                f"Cannot create ObservationLists from a TraceList without a Token."
+            )
+        super().__init__(message)
+
+
 class ObservationLists(TraceAPI.TraceList):
     traces: List[List[Observation]]
     # Disable methods
@@ -17,13 +26,23 @@ class ObservationLists(TraceAPI.TraceList):
     get_usage = property()
     tokenize = property()
 
-    def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
-        self.traces = []
-        self.type = Token
-        trace: Trace
-        for trace in traces:
-            tokens = trace.tokenize(Token, **kwargs)
-            self.append(tokens)
+    def __init__(
+        self,
+        traces: Union[TraceAPI.TraceList, List[List[Observation]]],
+        Token: Type[Observation] = None,
+        **kwargs,
+    ):
+        if isinstance(traces, TraceAPI.TraceList):
+            if not Token:
+                raise MissingToken()
+            self.traces = []
+            self.type = Token
+            trace: Trace
+            for trace in traces:
+                tokens = trace.tokenize(Token, **kwargs)
+                self.append(tokens)
+        else:
+            self.traces = traces
 
     def get_actions(self):
         actions = set()
