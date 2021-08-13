@@ -122,6 +122,7 @@ class ARMS:
         debug: bool,
     ) -> Set[LearnedAction]:
         """The main driver for the ARMS algorithm."""
+
         learned_actions = set()  # The set of learned action models Θ
         # pointers to the earliest unlearned action for each observation list
         early_actions = [0] * len(obs_lists)
@@ -137,9 +138,25 @@ class ARMS:
 
         count = 1
         while action_map_rev:
+            print("=" * 80)
+            print("=" * 80)
+            print("Iteration", count)
+            count += 1
+            print("=" * 80)
+            print("=" * 80)
+            print()
             if debug:
                 print("Iteration", count)
                 count += 1
+
+            for a, transistions in obs_lists.get_all_transitions().items():
+                if "unstack" in a.details():
+                    print("=" * 80)
+                    print(a.details())
+                    print("=" * 80)
+                    otran = ObservationLists(transistions)
+                    # otran.print(view="color", wrap=True)
+                    print()
 
             debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
             constraints, relation_map = ARMS._step2(
