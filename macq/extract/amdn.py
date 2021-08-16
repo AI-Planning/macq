@@ -52,10 +52,10 @@ class AMDN:
         Returns:
             A corresponding fluent of type "Or."
         """
-        return Or([maybe_lit]) if isinstance(maybe_lit, Var) or isinstance(maybe_lit, Aux) else maybe_lit
+        return Or([maybe_lit]) if isinstance(maybe_lit, Var) else maybe_lit
 
     @staticmethod
-    def _set_disorder_constraint_weights(cnf_formula: And[Or[Var]], disorder_constraints: Dict, prob_disordered: float):
+    def _extract_aux_set_weights(cnf_formula: And[Or[Var]], constraints: Dict, prob_disordered: float):
         aux_var = set()
         # find all the auxiliary variables
         for clause in cnf_formula.children:
@@ -63,10 +63,10 @@ class AMDN:
                 if isinstance(var.name, Aux):
                     aux_var.add(var.name)
             # set each original constraint to be a hard clause
-            disorder_constraints[clause] = "HARD"
+            constraints[clause] = "HARD"
         # aux variables are the soft clauses that get the original weight
         for aux in aux_var:
-            disorder_constraints[AMDN._or_refactor(aux)] = prob_disordered * WMAX
+            constraints[AMDN._or_refactor(Var(aux))] = prob_disordered * WMAX
 
     @staticmethod
     def _build_disorder_constraints(obs_lists: ObservationLists):
@@ -85,22 +85,20 @@ class AMDN:
                             # for each action combination, iterate through all possible propositions
                             for r in obs_lists.propositions:
                                 # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
-                                constraint_1 = Or([
+                                AMDN._extract_aux_set_weights(Or([
                                     And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
                                     And([add(r, act_x), pre(r, act_y)]),
                                     And([add(r, act_x), delete(r, act_y)]),
                                     And([delete(r, act_x), add(r, act_y)])
-                                    ]).to_CNF()
-                                AMDN._set_disorder_constraint_weights(constraint_1, disorder_constraints, (1 - p))
+                                    ]).to_CNF(), disorder_constraints, (1 - p))
 
                                 # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
-                                constraint_2 = Or([
+                                AMDN._extract_aux_set_weights(Or([
                                     And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
                                     And([add(r, act_y), pre(r, act_x)]),
                                     And([add(r, act_y), delete(r, act_x)]),
                                     And([delete(r, act_y), add(r, act_x)])
-                                ]).to_CNF()
-                                AMDN._set_disorder_constraint_weights(constraint_2, disorder_constraints, p)
+                                ]).to_CNF(), disorder_constraints, p)
             return disorder_constraints
 
     @staticmethod
@@ -132,7 +130,7 @@ class AMDN:
                             for r in obs_lists.propositions:
                                 # equivalent: if r is in the add or delete list of an action in the set, that implies it 
                                 # can't be in the add or delete list of any other action in the set
-                                soft_constraints[implies(Or([add(r, act_x_prime), delete(r, act_x_prime)]), Or([add(r, act_x), delete(r, act_x)]).negate())] = (1 - p) * WMAX
+                                AMDN._extract_aux_set_weights(Or([And([~add(r, act_x_prime), ~delete(r, act_x_prime)]), And([~add(r, act_x), ~delete(r, act_x)])]).to_CNF(), soft_constraints, (1 - p))
 
         # iterate through all traces
         for i in range(len(obs_lists.all_par_act_sets)):
@@ -146,7 +144,7 @@ class AMDN:
                             p = obs_lists.probabilities[ActionPair({act_y, act_x_prime})]
                             # iterate through all propositions and similarly set the constraint
                             for r in obs_lists.propositions:
-                                soft_constraints[implies(Or([add(r, act_x_prime), delete(r, act_x_prime)]), Or([add(r, act_y), delete(r, act_y)]).negate())] = p * WMAX
+                                AMDN._extract_aux_set_weights(Or([And([~add(r, act_x_prime), ~delete(r, act_x_prime)]), And([~add(r, act_y), ~delete(r, act_y)])]).to_CNF(), soft_constraints, p)
         return soft_constraints
 
     @staticmethod
@@ -194,7 +192,7 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > occ_threshold:
                     # set constraint 6 with the calculated weight
-                    noise_constraints_6[~delete(r, a)] = (occ_r / all_occ)
+                    noise_constraints_6[AMDN._or_refactor(~delete(r, a))] = (occ_r / all_occ)
         return noise_constraints_6
 
     @staticmethod
@@ -229,7 +227,7 @@ class AMDN:
     @staticmethod
     def _noise_constraints_8(obs_lists, all_occ: int, occ_threshold: int):
         noise_constraints_8 = {}
-        occurrences = AMDN._set_up_occurrences_dict()
+        occurrences = AMDN._set_up_occurrences_dict(obs_lists)
 
         # iterate over ALL the plan traces, adding occurrences accordingly
         for i in range(len(obs_lists)):
@@ -248,7 +246,7 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > occ_threshold:
                     # set constraint 8 with the calculated weight
-                    noise_constraints_8[pre(r, a)] = (occ_r / all_occ)
+                    noise_constraints_8[AMDN._or_refactor(pre(r, a))] = (occ_r / all_occ)
         return noise_constraints_8
 
     @staticmethod
@@ -259,22 +257,24 @@ class AMDN:
 
     @staticmethod
     def _set_all_constraints(obs_lists: ObservationLists, occ_threshold: int):
-        return {**AMDN._build_disorder_constraints(obs_lists), ** AMDN._build_parallel_constraints(obs_lists), **AMDN._build_noise_constraints(obs_lists, occ_threshold)}
+        return {**AMDN._build_disorder_constraints(obs_lists), **AMDN._build_parallel_constraints(obs_lists), **AMDN._build_noise_constraints(obs_lists, occ_threshold)}
 
     @staticmethod
     def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int):
         constraints = AMDN._set_all_constraints(obs_lists, occ_threshold)
-        problem = []
-        weights = []
-        constraints_ls : And[Or[Var]] = list(constraints.keys())
-        for c in constraints_ls:
-            for f in c.children:
-                problem.append(f)
-                weights.append(constraints[c])
-        problem = And(problem)
-        print(problem.is_CNF())
-        # weights = list(constraints.values())
-        wcnf, decode = to_wcnf(problem, weights)
+        # extract hard constraints
+        hard_constraints = []
+        for c, weight in constraints.items():
+            if weight == "HARD":
+                hard_constraints.append(c)
+        
+        for c in hard_constraints:
+            del constraints[c]
+
+        wcnf, decode = to_wcnf(And(constraints.keys()), list(constraints.values()))
+        hard_wcnf, decode = to_wcnf(And(hard_constraints), None)
+        wcnf.extend(hard_wcnf.soft)
+
         return wcnf, decode
 
     @staticmethod

@@ -22,9 +22,9 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-        #problem_id=2337,
-        dom=dom,
-        prob=prob,
+        problem_id=2337,
+        # dom=dom,
+        # prob=prob,
         observe_pres_effs=True,
         num_traces=3,
         steps_deep=10,

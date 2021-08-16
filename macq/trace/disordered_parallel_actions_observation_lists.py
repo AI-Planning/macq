@@ -34,7 +34,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         # cast to list for iteration purposes
         self.actions = list(actions)
         # set of all fluents
-        self.propositions = {f for trace in self for step in trace for f in step.state.fluents}
+        self.propositions = {f for trace in traces for step in trace for f in step.state.fluents}
 
         # create |A| (action x action set, no duplicates)
         self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i, len(self.actions)) if i != j]
