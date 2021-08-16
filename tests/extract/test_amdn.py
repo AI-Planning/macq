@@ -32,6 +32,7 @@ if __name__ == "__main__":
         enforced_hill_climbing_sampling=True
     ).traces
 
+
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
         ObsLists=DisorderedParallelActionsObservationLists,
