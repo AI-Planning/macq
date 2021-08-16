@@ -19,8 +19,6 @@ def _encode(clauses: And[Or[Var]]) -> Tuple[List[List[int]], Dict[int, Hashable]
             global H_DEL_PD
             H_DEL_PD = encode[k]
         if "holding" in str(k) and "del" in str(k) and "(stack" in str(k):
-            print(k)
-            print(encode[k])
             global H_DEL_S
             H_DEL_S = encode[k]
         if "holding" in str(k) and "add" in str(k) and "pick-up" in str(k):
@@ -29,6 +27,12 @@ def _encode(clauses: And[Or[Var]]) -> Tuple[List[List[int]], Dict[int, Hashable]
         if "on object" in str(k) and "del" in str(k) and "pick-up" in str(k):
             global O_DEL_PU
             O_DEL_PU = encode[k]
+        if "on object" in str(k) and "add" in str(k) and "unstack" in str(k):
+            global O_ADD_US
+            O_ADD_US = encode[k]
+        if "ontable" in str(k) and "add" in str(k) and "unstack" in str(k):
+            global OT_ADD_US
+            OT_ADD_US = encode[k]
     # WARNING: debugging
 
     encoded = [

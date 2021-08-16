@@ -673,24 +673,50 @@ class ARMS:
 
         z_sigma_p = max(support_counts)
 
-        def get_support_rate(count):
+        def get_support_rate(count) -> int:
             probability = count / z_sigma_p
-            return probability * 100 if probability > threshold else default
+            return int(probability * 100) if probability > threshold else default
 
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
-        from ..utils.pysat import H_DEL_PD, H_DEL_S, H_ADD_PU, O_DEL_PU
+        from ..utils.pysat import (
+            H_DEL_PD,
+            H_DEL_S,
+            H_ADD_PU,
+            O_DEL_PU,
+            O_ADD_US,
+            OT_ADD_US,
+        )
+
+        def printw(wght):
+            for clause, w in wght.items():
+                if abs(clause) in decode:
+                    if clause > 0:
+                        print(f"{decode[clause]}: {w}")
+                    else:
+                        print(f"~({decode[abs(clause)]}): {w}")
+                elif clause > 0:
+                    print(f"{clause}: {w}")
+                else:
+                    print(f"~({clause}): {w}")
 
         solver = RC2(max_sat)
-
-        solver.add_clause([H_DEL_PD])
-        solver.add_clause([H_DEL_S])
-        solver.add_clause([H_ADD_PU])
-        solver.add_clause([O_DEL_PU])
-
         encoded_model = solver.compute()
+        print(f"model cost: {solver.cost}")
+        printw(solver.wght)
+
+        # solver.add_clause([H_DEL_PD])
+        # solver.add_clause([H_DEL_S])
+        # solver.add_clause([H_ADD_PU])
+        # solver.add_clause([O_DEL_PU])
+        solver.add_clause([-O_ADD_US])
+        solver.add_clause([-OT_ADD_US])
+
+        encoded_model_f = solver.compute()
+        print(f"model_f cost: {solver.cost}")
+        printw(solver.wght)
 
         if not isinstance(encoded_model, list):
             # should never be reached
@@ -700,6 +726,23 @@ class ARMS:
         model: Dict[Hashable, bool] = {
             decode[abs(clause)]: clause > 0 for clause in encoded_model
         }
+
+        model_f: Dict[Hashable, bool] = {
+            decode[abs(clause)]: clause > 0 for clause in encoded_model_f  # type: ignore
+        }
+        # compare model to model_f
+        model_true = {k for k in model if model[k]}
+        model_f_true = {k for k in model_f if model_f[k]}
+
+        print(f"true in model, false in model_f:")
+        for d in model_true.difference(model_f_true):
+            print(str(d).replace(" (BREAK) ", " "))
+        print()
+
+        print(f"true in model_f, false in model:")
+        for d in model_f_true.difference(model_true):
+            print(str(d).replace(" (BREAK) ", " "))
+        print()
 
         return model
 
