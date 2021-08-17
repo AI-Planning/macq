@@ -12,7 +12,7 @@ from .exceptions import (
 from .model import Model
 from ..trace import ObservationLists, ActionPair, Fluent # for typing
 from ..observation import NoisyPartialDisorderedParallelObservation
-from ..utils.pysat import to_wcnf
+from ..utils.pysat import to_wcnf, encode
 
 def __set_precond(r, act):
     return Var(str(r)[1:-1] + " is a precondition of " + act.details())
@@ -28,7 +28,7 @@ pre = __set_precond
 add = __set_add
 delete = __set_del
 
-WMAX = 10
+WMAX = 1
 
 class AMDN:
     def __new__(cls, obs_lists: ObservationLists, occ_threshold: int):
@@ -117,7 +117,7 @@ class AMDN:
         hard_constraints = {}
         # create a list of all <a, r> tuples
         for act in obs_lists.actions:
-            for r in obs_lists.probabilities:
+            for r in obs_lists.propositions:
                 # for each action x proposition pair, enforce the two hard constraints with weight wmax
                 hard_constraints[implies(add(r, act), ~pre(r, act))] = WMAX
                 hard_constraints[implies(delete(r, act), pre(r, act))] = WMAX
@@ -282,9 +282,7 @@ class AMDN:
         for c in hard_constraints:
             del constraints[c]
 
-        wcnf, decode = to_wcnf(And(constraints.keys()), list(constraints.values()))
-        hard_wcnf, decode = to_wcnf(And(hard_constraints), None)
-        wcnf.extend(hard_wcnf)
+        wcnf, decode = to_wcnf(soft_clauses=And(constraints.keys()), hard_clauses=And(hard_constraints), weights=list(constraints.values()))
 
         return wcnf, decode
 
