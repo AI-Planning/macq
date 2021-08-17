@@ -1,7 +1,14 @@
+from macq.extract.learned_action import LearnedAction
 from nnf.operators import implies
 import macq.extract as extract
-from typing import Dict, Union, Set
+from typing import Dict, Union, Set, Hashable
 from nnf import Aux, Var, And, Or
+from pysat.formula import WCNF
+from pysat.examples.rc2 import RC2
+from .exceptions import (
+    IncompatibleObservationToken,
+    InvalidMaxSATModel,
+)
 from .model import Model
 from ..trace import ObservationLists, ActionPair, Fluent # for typing
 from ..observation import NoisyPartialDisorderedParallelObservation
@@ -10,18 +17,18 @@ from ..utils.pysat import to_wcnf
 def __set_precond(r, act):
     return Var(str(r)[1:-1] + " is a precondition of " + act.details())
 
-def __set_del(r, act):
-    return Var(str(r)[1:-1] + " is deleted by " + act.details())
-
 def __set_add(r, act):
     return Var(str(r)[1:-1] + " is added by " + act.details())
+
+def __set_del(r, act):
+    return Var(str(r)[1:-1] + " is deleted by " + act.details())
 
 # for easier reference
 pre = __set_precond
 add = __set_add
 delete = __set_del
 
-WMAX = 1
+WMAX = 10
 
 class AMDN:
     def __new__(cls, obs_lists: ObservationLists, occ_threshold: int):
@@ -35,11 +42,15 @@ class AMDN:
                 Raised if the observations are not identity observation.
         """
         if obs_lists.type is not NoisyPartialDisorderedParallelObservation:
-            raise extract.IncompatibleObservationToken(obs_lists.type, AMDN)
+            raise IncompatibleObservationToken(obs_lists.type, AMDN)
 
-        solve = AMDN._solve_constraints(obs_lists, occ_threshold)
-        print()
-        #return Model(fluents, actions)
+        return AMDN._amdn(obs_lists, occ_threshold)
+    
+    @staticmethod
+    def _amdn(obs_lists: ObservationLists, occ_threshold: int):
+        wcnf, decode = AMDN._solve_constraints(obs_lists, occ_threshold)
+        raw_model = AMDN._extract_raw_model(wcnf, decode)
+        return AMDN._extract_model(obs_lists, raw_model)
 
     @staticmethod
     def _or_refactor(maybe_lit: Union[Or, Var]):
@@ -273,12 +284,55 @@ class AMDN:
 
         wcnf, decode = to_wcnf(And(constraints.keys()), list(constraints.values()))
         hard_wcnf, decode = to_wcnf(And(hard_constraints), None)
-        wcnf.extend(hard_wcnf.soft)
+        wcnf.extend(hard_wcnf)
 
         return wcnf, decode
 
+    # TODO: move out to utils
     @staticmethod
-    def _convert_to_model():
-        # TODO:
+    def _extract_raw_model(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+        solver = RC2(max_sat)
+        encoded_model = solver.compute()
+
+        if not isinstance(encoded_model, list):
+            # should never be reached
+            raise InvalidMaxSATModel(encoded_model)
+
+        # decode the model (back to nnf vars)
+        model: Dict[Hashable, bool] = {
+            decode[abs(clause)]: clause > 0 for clause in encoded_model
+        }
+        return model
+
+    @staticmethod
+    def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, LearnedAction]):
+        raw_f = str(raw_f)
+        pre_str = " is a precondition of "
+        add_str = " is added by "
+        del_str = " is deleted by "
+        if pre_str in raw_f:
+            f, act = raw_f.split(pre_str)
+            learned_actions[act].update_precond({f})
+        elif add_str in raw_f:
+            f, act = raw_f.split(add_str)
+            learned_actions[act].update_add({f})   
+        else:
+            f, act = raw_f.split(del_str)
+            learned_actions[act].update_delete({f})         
+
+    @staticmethod
+    def _extract_model(obs_lists: ObservationLists, model: Dict[Hashable, bool]):
         # convert the result to a Model
-        pass
+        fluents = obs_lists.propositions
+        # set up LearnedActions
+        learned_actions = {}
+        for a in obs_lists.actions:
+            # set up a base LearnedAction with the known information
+            learned_actions[a.details()] = extract.LearnedAction(a.name, a.obj_params, cost=a.cost)            
+        # iterate through all fluents
+        for raw_f in model:
+            # update learned_actions (ignore auxiliary variables)
+            if not isinstance(raw_f, Aux):
+                AMDN._split_raw_fluent(raw_f, learned_actions)
+
+        return Model(fluents, learned_actions.values())
