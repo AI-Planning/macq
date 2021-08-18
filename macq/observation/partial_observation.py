@@ -1,10 +1,9 @@
 from logging import warning
-from ..utils import PercentError
-from ..trace import Step, Fluent, State
+from ..utils import PercentError, extract_fluent_subset
+from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 from typing import Set
-import random
 
 
 class PartialObservation(Observation):
@@ -56,14 +55,6 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def extract_fluent_subset(self, fluents: State, percent: float):
-        num_new_f = int(len(fluents) * (percent))
-
-        # shuffle keys and take an appropriate subset of them
-        extracted_f = list(fluents)
-        random.shuffle(extracted_f)
-        return extracted_f[:num_new_f]
-
     def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
 
@@ -78,7 +69,7 @@ class PartialObservation(Observation):
         """
         new_fluents = {}
         fluents = step.state.fluents
-        hidden_f = self.extract_fluent_subset(fluents, percent_missing)
+        hidden_f = extract_fluent_subset(fluents, percent_missing)
         # get new dict
         for f in fluents:
             new_fluents[f] = None if f in hidden_f else step.state[f]
