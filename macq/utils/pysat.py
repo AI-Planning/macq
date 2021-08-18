@@ -3,31 +3,35 @@ from pysat.formula import WCNF
 from nnf import And, Or, Var
 
 
-class NotCNF(Exception):
-    def __init__(self, clauses):
-        self.clauses = clauses
-        super().__init__(f"Cannot convert a non CNF formula to WCNF")
-
-
-def _encode(clauses: And[Or[Var]]) -> Tuple[List[List[int]], Dict[int, Hashable]]:
-    decode = dict(enumerate(clauses.vars(), start=1))
+def get_encoding(
+    clauses: And[Or[Var]], start: int = 1
+) -> Tuple[Dict[Hashable, int], Dict[int, Hashable]]:
+    decode = dict(enumerate(clauses.vars(), start=start))
     encode = {v: k for k, v in decode.items()}
+    return encode, decode
 
+
+def encode(clauses: And[Or[Var]], encode: Dict[Hashable, int]) -> List[List[int]]:
     encoded = [
         [encode[var.name] if var.true else -encode[var.name] for var in clause]
         for clause in clauses
     ]
-
-    return encoded, decode
+    return encoded
 
 
 def to_wcnf(
-    clauses: And[Or[Var]], weights: List[int]
+    soft_clauses: And[Or[Var]], weights: List[int], hard_clauses: And[Or[Var]] = None
 ) -> Tuple[WCNF, Dict[int, Hashable]]:
     """Converts a python-nnf CNF formula to a pysat WCNF."""
-    # if not clauses.is_CNF():
-    #     raise NotCNF(clauses)
-    encoded, decode = _encode(clauses)
     wcnf = WCNF()
+    soft_encode, decode = get_encoding(soft_clauses)
+    encoded = encode(soft_clauses, soft_encode)
     wcnf.extend(encoded, weights)
+
+    if hard_clauses:
+        hard_encode, hard_decode = get_encoding(hard_clauses, start=len(decode) + 1)
+        decode.update(hard_decode)
+        encoded = encode(hard_clauses, hard_encode)
+        wcnf.extend(encoded)
+
     return wcnf, decode
