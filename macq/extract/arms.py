@@ -23,6 +23,15 @@ class Relation:
     def var(self):
         return f"{self.name} {' '.join(list(self.types))}"
 
+    def matches(self, action: LearnedAction):
+        match = False
+        action_types = set(action.obj_params)
+        self_counts = Counter(self.types)
+        action_counts = Counter(action.obj_params)
+        return all([t in action_types for t in self.types]) and all(
+            [self_counts[t] <= action_counts[t] for t in self.types]
+        )
+
     def __hash__(self):
         return hash(self.var())
 
@@ -259,7 +268,7 @@ class ARMS:
 
             # Create LearnedActions for each action, replacing instantiated
             # objects with the object type.
-            types = {obj.obj_type for obj in obs_action.obj_params}
+            types = [obj.obj_type for obj in obs_action.obj_params]
             learned_action = LearnedAction(obs_action.name, types)
             learned_actions.add(learned_action)
             action_map[obs_action] = learned_action
@@ -268,7 +277,7 @@ class ARMS:
         for a1 in learned_actions:
             connected_actions[a1] = {}
             for a2 in learned_actions.difference({a1}):  # includes connecting with self
-                intersection = a1.obj_params.intersection(a2.obj_params)
+                intersection = set(a1.obj_params).intersection(set(a2.obj_params))
                 if intersection:
                     connected_actions[a1][a2] = intersection
                     if debug:
@@ -296,8 +305,8 @@ class ARMS:
                 lambda f: (
                     f,
                     Relation(
-                        f.name,  # the fluent name
-                        [obj.obj_type for obj in f.objects],  # the object types
+                        f.name,
+                        [obj.obj_type for obj in f.objects],
                     ),
                 ),
                 fluents,
@@ -353,7 +362,7 @@ class ARMS:
         for action in actions:
             for relation in relations:
                 # A relation is relevant to an action if they share parameter types
-                if relation.types and set(relation.types).issubset(action.obj_params):
+                if relation.matches(action):
                     if debug:
                         print(
                             f'relation ({relation.var()}) is relevant to action "{action.details()}"\n'
@@ -427,12 +436,13 @@ class ARMS:
                             f"\nStep {i} of observation list {obs_list_i} contains state information."
                         )
                     for fluent, val in obs.state.items():
+                        relation = relations[fluent]
                         # Information constraints only apply to true relations
                         if val:
                             if debug:
                                 print(
                                     f"  Fluent {fluent} is true.\n"
-                                    f"    ({relations[fluent].var()})∈ ("
+                                    f"    ({relation.var()})∈ ("
                                     f"{' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )}"  # type: ignore
                                     ")"
                                 )
@@ -440,15 +450,14 @@ class ARMS:
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
                             for obs_i in obs_list[: i - 1]:
-                                # action will never be None if it's in actions,
-                                # but the condition is needed to make linting happy
                                 if obs_i.action in actions and obs_i.action is not None:
                                     ai = actions[obs_i.action]
-                                    i1.append(
-                                        Var(
-                                            f"{relations[fluent].var()} (BREAK) in (BREAK) add (BREAK) {ai.details()}"
+                                    if relation.matches(ai):
+                                        i1.append(
+                                            Var(
+                                                f"{relation.var()} (BREAK) in (BREAK) add (BREAK) {ai.details()}"
+                                            )
                                         )
-                                    )
 
                             # I2
                             # relation not in del list of action n (i-1)
@@ -456,7 +465,7 @@ class ARMS:
                             a_n = obs_list[i - 1].action
                             if a_n in actions and a_n is not None:
                                 i2 = Var(
-                                    f"{relations[fluent].var()} (BREAK) in (BREAK) del (BREAK) {actions[a_n].details()}"
+                                    f"{relation.var()} (BREAK) in (BREAK) del (BREAK) {actions[a_n].details()}"
                                 ).negate()
 
                             if i1:
@@ -470,24 +479,29 @@ class ARMS:
                                 i < len(obs_list) - 1
                                 and obs.action in actions
                                 and obs.action is not None  # for the linter
+                                and relation.matches(actions[obs.action])
                             ):
                                 # corresponding constraint is related to the current action's precondition list
                                 support_counts[
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()} (BREAK) in (BREAK) pre (BREAK) {actions[obs.action].details()}"
+                                                f"{relation.var()} (BREAK) in (BREAK) pre (BREAK) {actions[obs.action].details()}"
                                             )
                                         ]
                                     )
                                 ] += 1
-                            elif a_n in actions and a_n is not None:
+                            elif (
+                                a_n in actions
+                                and a_n is not None
+                                and relation.matches(actions[a_n])
+                            ):
                                 # corresponding constraint is related to the previous action's add list
                                 support_counts[
                                     Or(
                                         [
                                             Var(
-                                                f"{relations[fluent].var()} (BREAK) in (BREAK) add (BREAK) {actions[a_n].details()}"
+                                                f"{relation.var()} (BREAK) in (BREAK) add (BREAK) {actions[a_n].details()}"
                                             )
                                         ]
                                     )
