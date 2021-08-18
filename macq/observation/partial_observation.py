@@ -19,7 +19,7 @@ class PartialObservation(Observation):
         self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
     ):
         """
-        Creates an PartialObservation object, storing the step.
+        Creates a PartialObservation object, storing the step.
 
         Args:
             step (Step):
@@ -50,11 +50,9 @@ class PartialObservation(Observation):
         self.action = None if step.action is None else step.action.clone()
 
     def __eq__(self, other):
-        return (
-            isinstance(other, PartialObservation)
-            and self.state == other.state
-            and self.action == other.action
-        )
+        if not isinstance(other, PartialObservation):
+            return False
+        return self.state == other.state and self.action == other.action
 
     def random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
@@ -68,7 +66,6 @@ class PartialObservation(Observation):
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
-
         fluents = step.state.fluents
         num_new_fluents = int(len(fluents) * (percent_missing))
 

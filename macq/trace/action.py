@@ -1,5 +1,5 @@
-from typing import List, Set
-from .fluent import Fluent, PlanningObject
+from typing import List
+from .fluent import PlanningObject
 
 
 class Action:
@@ -18,12 +18,7 @@ class Action:
             The cost to perform the action.
     """
 
-    def __init__(
-        self,
-        name: str,
-        obj_params: List[PlanningObject],
-        cost: int = 0,
-    ):
+    def __init__(self, name: str, obj_params: List[PlanningObject], cost: int = 0):
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
         Model deserialization.
@@ -59,7 +54,12 @@ class Action:
         string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
         return string
 
-    def clone(self):
+    def clone(self, atomic=False):
+        if atomic:
+            return AtomicAction(
+                self.name, list(map(lambda o: o.details(), self.obj_params)), self.cost
+            )
+
         return Action(self.name, self.obj_params, self.cost)
 
     def add_parameter(self, obj: PlanningObject):
@@ -73,3 +73,12 @@ class Action:
 
     def _serialize(self):
         return self.name
+
+
+class AtomicAction(Action):
+    """An Action where the objects are represented by strings."""
+
+    def __init__(self, name: str, obj_params: List[str], cost: int = 0):
+        self.name = name
+        self.obj_params = obj_params
+        self.cost = cost

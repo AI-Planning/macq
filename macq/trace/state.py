@@ -1,5 +1,4 @@
 from __future__ import annotations
-from dataclasses import dataclass
 from typing import Dict
 from rich.text import Text
 from . import Fluent
@@ -16,7 +15,7 @@ class State:
             A mapping of `Fluent` objects to their value in this state.
     """
 
-    def __init__(self, fluents: Dict[Fluent, bool] = {}):
+    def __init__(self, fluents: Dict[Fluent, bool] = None):
         """Initializes State with an optional fluent-value mapping.
 
         Args:
@@ -24,7 +23,7 @@ class State:
                 Optional; A mapping of `Fluent` objects to their value in this
                 state. Defaults to an empty `dict`.
         """
-        self.fluents = fluents
+        self.fluents = fluents if fluents is not None else {}
 
     def __eq__(self, other):
         if not isinstance(other, State):
@@ -84,10 +83,19 @@ class State:
             string.append(", ")
         return string[:-2]
 
-    def clone(self):
+    def clone(self, atomic=False):
+        if atomic:
+            return AtomicState({str(fluent): value for fluent, value in self.items()})
         return State(self.fluents)
 
     def holds(self, fluent: str):
         fluents = dict(map(lambda f: (f.name, f), self.keys()))
         if fluent in fluents.keys():
             return self[fluents[fluent]]
+
+
+class AtomicState(State):
+    """A State where the fluents are represented by strings."""
+
+    def __init__(self, fluents: Dict[str, bool] = None):
+        self.fluents = fluents if fluents is not None else {}
