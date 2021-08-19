@@ -31,7 +31,7 @@ class Observer:
     fluents that went from True to False.
     """
 
-    def __new__(cls, obs_lists: ObservationLists):
+    def __new__(cls, obs_lists: ObservationLists, debug: bool):
         """Creates a new Model object.
 
         Args:
