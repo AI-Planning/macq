@@ -1,14 +1,16 @@
 from dataclasses import dataclass
-from macq.trace.fluent import PlanningObject
 from math import exp
 from numpy import dot
 from random import random
-from typing import Callable, Type, List, Set
-from . import ObservationLists, TraceList, Step, Action, State
-from ..observation import Observation, NoisyPartialDisorderedParallelObservation
+from typing import Callable, Type, Set, List
+from . import ObservationLists, TraceList, Step, Action
+from ..observation import Observation
 
 @dataclass
 class ActionPair:
+    """dataclass that allows a pair of actions to be referenced regardless of order
+    (that is, {action1, action2} is equivalent to {action2, action1}.)
+    """
     actions : Set[Action]
 
     def tup(self):
@@ -22,80 +24,192 @@ class ActionPair:
             sum += hash(a.details())
         return sum
 
+def default_theta_vec(k : int):
+    """Generate the default theta vector to be used in the calculation that extracts the probability of
+    actions being disordered; used to "weight" the features.
+
+    Args:
+        k (int):
+            The size of the vector/the denominator of the weight to be used
+
+    Returns:
+        The default theta vector.
+    """
+    return [(1/k)] * k
+
+def objects_shared_feature(act_x: Action, act_y: Action):
+    """Corresponds to default feature 1 from the AMDN paper.
+
+    Args:
+        act_x (Action):
+            The first action to be compared.
+        act_y (Action):
+            The second action to be compared.
+
+    Returns:
+        The number of objects shared by the two actions.
+    """
+    num_shared = 0
+    for obj in act_x.obj_params:
+        for other_obj in act_y. obj_params:
+            if obj == other_obj:
+                num_shared += 1
+    return num_shared
+
+def num_parameters_feature(act_x: Action, act_y: Action):
+    """Corresponds to default feature 2 from the AMDN paper.
+
+    Args:
+        act_x (Action):
+            The first action to be compared.
+        act_y (Action):
+            The second action to be compared.
+
+    Returns:
+        1 if the actions share the same number of parameters, 0 otherwise.
+    """
+    return 1 if len(act_x.obj_params) == len(act_y.obj_params) else 0
+
+def _decision(probability: float):
+    """Makes a decision based on the given probability.
+
+    Args:
+        probability (float):
+            The probability used to make the decision.
+
+     Returns:
+        The (bool) decision made.
+    """
+    return random() < probability
 
 class DisorderedParallelActionsObservationLists(ObservationLists):
-    def __init__(self, traces: TraceList, Token: Type[Observation] = NoisyPartialDisorderedParallelObservation, f3_f10: Callable = None, f11_f40: Callable = None, learned_theta: Callable = None, **kwargs):
+    """Alternate ObservationLists type that enforces appropriate actions to be disordered and/or parallel. 
+    Inherits the base ObservationLists class.
+
+    The default feature functions and theta vector described in the AMDN paper are available for use in this module.
+    
+    Attributes:
+        traces (List[List[Token]]):
+            The trace list converted to a list of lists of tokens.
+        features (List[Callable]):
+            The list of functions to be used to create the feature vector.
+        learned_theta (List[float]):
+            The supplied theta vector.
+        actions (List[Action]):
+            The list of all actions used in the traces given (no duplicates).
+        cross_actions (List[ActionPair]):
+            The list of all possible `ActionPairs`.
+        probabilities (Dict[ActionPair, float]):
+            A dictionary that contains a mapping of each possible `ActionPair` and the probability that the actions
+            in them are disordered.
+    """
+    def __init__(self, traces: TraceList, Token: Type[Observation], features: List[Callable], learned_theta: List[float], **kwargs):
+        """AI is creating summary for __init__
+
+        Args:
+            traces (TraceList):
+                The traces to generate tokens from.
+            Token (Type[Observation]):
+                The Token type to be used.
+            features (List[Callable]):
+                The list of functions to be used to create the feature vector.
+            learned_theta (List[float]):
+                The supplied theta vector.
+            **kwargs:
+                Any extra arguments to be supplied to the Token __init__.
+        """
         self.traces = []
-        self.type = Token
-        self.f3_f10 = f3_f10
-        self.f11_f40 = f11_f40
+        self.features = features
         self.learned_theta = learned_theta
         actions = {step.action for trace in traces for step in trace if step.action}
         # cast to list for iteration purposes
         self.actions = list(actions)
-
         # create |A| (action x action set, no duplicates)
-        self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i, len(self.actions)) if i != j]
-
+        self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i + 1, len(self.actions))]
         # dictionary that holds the probabilities of all actions being disordered
-        self.probabilities = self._calculate_all_probabilities(f3_f10, f11_f40, learned_theta)
+        self.probabilities = self._calculate_all_probabilities()
         self.tokenize(traces, Token, **kwargs)
 
-    def _decision(self, probability):
-        return random() < probability
+    def _theta_dot_features_calc(self, f_vec: List[float], theta_vec: List[float]):
+        """Calculate the dot product of the feature vector and the theta vector, then use that as an exponent
+        for 'e'.
 
-    def _default_theta_vec(self, k : int):
-        return [(1/k) for _ in range(k)]
+        Args:
+            f_vec (List[float]):
+                The feature vector.
+            theta_vec (List[float]):
+                The theta vector.
 
-    def _f1(self, act_x: Action, act_y: Action):
-        num_shared = 0
-        for obj in act_x.obj_params:
-            for other_obj in act_y. obj_params:
-                if obj == other_obj:
-                    num_shared += 1
-        return num_shared
-
-    def _f2(self, act_x: Action, act_y: Action):
-        return 1 if len(act_x.obj_params) == len(act_y.obj_params) else 0
-
-    def _get_f_vec(self, act_x: Action, act_y: Action):
-        # define generic f1 and f2
-        f_vec = [self._f1(act_x, act_y), self._f2(act_x, act_y)]
-        # allow user to optionally define their own feature functions
-        if self.f3_f10:
-            f_vec.append(self.f3_f10(act_x, act_y))
-        if self.f11_f40:
-            f_vec.append(self.f11_f40(act_x, act_y))      
-        return f_vec  
-
-    def _theta_dot_features_calc(self, f_vec, theta_vec):
+        Returns:
+            The result of the calculation.
+        """
         return exp(dot(f_vec, theta_vec))
 
-    def _calculate_probability(self, act_x, act_y):
+    def _get_f_vec(self, act_x: Action, act_y: Action):
+        """Returns the feature vector.
+
+        Args:
+        act_x (Action):
+            The first action to be used in each feature function.
+        act_y (Action):
+            The second action to be used in each feature function.
+
+        Returns:
+            The full feature vector.
+        """
+        return [f(act_x, act_y) for f in self.features]
+
+    def _calculate_probability(self, act_x: Action, act_y: Action):
+        """Calculates the probability of two actions being disordered.
+
+        Args:
+            act_x (Action):
+                The first action.
+            act_y (Action):
+                The second action.
+
+        Returns:
+            The probability of two actions being disordered.
+        """
         # calculate the probability of two given actions being disordered
         f_vec = self._get_f_vec(act_x, act_y)
-        theta_vec = self.learned_theta() if self.learned_theta else self._default_theta_vec(len(f_vec))
+        theta_vec = self.learned_theta
         numerator = self._theta_dot_features_calc(f_vec, theta_vec)
         denominator = 0
         for combo in self.cross_actions:
             denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), theta_vec)
         return numerator/denominator
 
-    def _calculate_all_probabilities(self, f3_f10: Callable, f11_f40: Callable, learned_theta: Callable):
+    def _calculate_all_probabilities(self):
+        """Calculates the probabilities of all combinations of actions being disordered.
+
+        Returns:
+            A dictionary that contains a mapping of each possible `ActionPair` and the probability that the actions
+            in them are disordered.
+        """
         probabilities = {}
-        # calculate all probabilities of ALL actions ax and ay being disordered
+        # access all ActionPairs
         for combo in self.cross_actions:
             # calculate probability of act_x and act_y being disordered
             probabilities[combo] = self._calculate_probability(*combo.tup())
         return probabilities
 
     def tokenize(self, traces: TraceList, Token: Type[Observation], **kwargs):
+        """Main driver that handles the tokenization process.
+
+        Args:
+            traces (TraceList):
+                The traces to generate tokens from.
+            Token (Type[Observation]):
+                The Token type to be used.
+            **kwargs:
+                Any extra arguments to be supplied to the Token __init__.
+        """
         # build parallel action sets
-          for trace in traces: 
+        for trace in traces: 
             par_act_sets = []
             states = []
             cur_par_act = set()
-            cur_state = {}
             cur_par_act_conditions = set()
             
             # add initial state
@@ -127,19 +241,18 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             # generate disordered actions - do trace by trace
             # prevent going over sets twice
             for i in range(len(par_act_sets)):
-                for j in range(i, len(par_act_sets)):
-                    # prevent comparing the same sets
-                    if i != j:
-                        for act_x in par_act_sets[i]:
-                            for act_y in par_act_sets[j]:
-                                if act_x != act_y:
-                                    # get probability and divide by distance
-                                    prob = self.probabilities[ActionPair({act_x, act_y})]/(j - i)
-                                    if self._decision(prob):
-                                        par_act_sets[i].discard(act_x)
-                                        par_act_sets[i].add(act_y)
-                                        par_act_sets[j].discard(act_y)
-                                        par_act_sets[j].add(act_x)
+                # prevent comparing the same sets
+                for j in range(i + 1, len(par_act_sets)):
+                    for act_x in par_act_sets[i]:
+                        for act_y in par_act_sets[j]:
+                            if act_x != act_y:
+                                # get probability and divide by distance
+                                prob = self.probabilities[ActionPair({act_x, act_y})]/(j - i)
+                                if _decision(prob):
+                                    par_act_sets[i].discard(act_x)
+                                    par_act_sets[i].add(act_y)
+                                    par_act_sets[j].discard(act_y)
+                                    par_act_sets[j].add(act_x)
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:

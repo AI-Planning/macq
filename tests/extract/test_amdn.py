@@ -1,3 +1,4 @@
+from macq.trace.disordered_parallel_actions_observation_lists import default_theta_vec, num_parameters_feature, objects_shared_feature
 from macq.utils.tokenization_errors import TokenizationError
 from tests.utils.generators import generate_blocks_traces
 from macq.extract import Extract, modes
@@ -31,13 +32,14 @@ if __name__ == "__main__":
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
+
+    features = [objects_shared_feature, num_parameters_feature]
+    learned_theta = default_theta_vec(2)
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
         ObsLists=DisorderedParallelActionsObservationLists,
+        features=features,
+        learned_theta=learned_theta,
         percent_missing=0.10,
         percent_noisy=0.05,
     )
-    
-    print()
-    #model = Extract(observations, modes.SLAF, debug_mode=True)
-    #print(model.details())

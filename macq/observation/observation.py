@@ -41,6 +41,17 @@ class Observation:
         raise NotImplementedError()
 
     def extract_fluent_subset(self, fluents: State, percent: float):
+        """Randomly extracts a subset of fluents from a state, according to the percentage given.
+
+        Args:
+            fluents (State):
+                The state to extract fluents from.
+            percent (float):
+                The percent of the state to be extracted.
+
+        Returns:
+            The random subset of fluents.
+        """
         num_new_f = int(len(fluents) * (percent))
 
         # shuffle keys and take an appropriate subset of them
