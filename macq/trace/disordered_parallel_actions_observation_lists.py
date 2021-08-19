@@ -93,6 +93,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             The trace list converted to a list of lists of tokens.
         type (Type[Observation]):
             The type of token to be used.
+        all_par_act_sets (List[List[Set[Action]]]):
+            Holds the parallel action sets for all traces.
         features (List[Callable]):
             The list of functions to be used to create the feature vector.
         learned_theta (List[float]):
@@ -125,6 +127,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         """
         self.traces = []
         self.type = Token
+        self.all_par_act_sets = []
         self.features = features
         self.learned_theta = learned_theta
         actions = {step.action for trace in traces for step in trace if step.action}
@@ -266,6 +269,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                     par_act_sets[i].add(act_y)
                                     par_act_sets[j].discard(act_y)
                                     par_act_sets[j].add(act_x)
+            self.all_par_act_sets.append(par_act_sets)
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:
