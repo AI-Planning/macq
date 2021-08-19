@@ -1,5 +1,5 @@
 from logging import warning
-from ..utils import PercentError, extract_fluent_subset
+from ..utils import PercentError#, extract_fluent_subset
 from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
@@ -34,7 +34,8 @@ class PartialObservation(Observation):
         if percent_missing == 0 and not hide:
             warning("Creating a PartialObseration with no missing information.")
 
-        super().__init__(index=step.index)
+        # necessary because multiple inheritance can change the parent of this class
+        Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
         # This allows ARMS (and other algorithms) to skip steps when there is no
@@ -69,7 +70,7 @@ class PartialObservation(Observation):
         """
         new_fluents = {}
         fluents = step.state.fluents
-        hidden_f = extract_fluent_subset(fluents, percent_missing)
+        hidden_f = self.extract_fluent_subset(fluents, percent_missing)
         # get new dict
         for f in fluents:
             new_fluents[f] = None if f in hidden_f else step.state[f]

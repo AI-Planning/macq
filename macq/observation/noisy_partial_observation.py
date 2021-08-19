@@ -28,6 +28,6 @@ class NoisyPartialObservation(PartialObservation, NoisyObservation):
                 The percentage of fluents to randomly make noisy in the observation.
         """
         # get state and action with missing fluents (updates self.state and self.action)
-        PartialObservation.__init__(step, percent_missing, hide)
+        PartialObservation.__init__(self, step=step, percent_missing=percent_missing, hide=hide)
         # get state and action with noisy fluents (updates self.state and self.action)
-        NoisyObservation.__init__(Step(self.state, self.action, step.index), percent_noisy)
+        NoisyObservation.__init__(self, step=Step(self.state, self.action, step.index), percent_noisy=percent_noisy)

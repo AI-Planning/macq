@@ -22,20 +22,22 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-        problem_id=2337,
+        prob=prob,
+        dom=dom,
+        #problem_id=2337,
         observe_pres_effs=True,
         num_traces=1,
         steps_deep=10,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
-
     observations = traces.tokenize(
         Token=NoisyPartialDisorderedParallelObservation,
         ObsLists=DisorderedParallelActionsObservationLists,
         percent_missing=0.10,
         percent_noisy=0.05,
     )
+    
     print()
     #model = Extract(observations, modes.SLAF, debug_mode=True)
     #print(model.details())

@@ -1,6 +1,6 @@
 from . import Observation
 from ..trace import Step
-from ..utils import PercentError, extract_fluent_subset
+from ..utils import PercentError#, extract_fluent_subset
 
 
 class NoisyObservation(Observation):
@@ -36,7 +36,11 @@ class NoisyObservation(Observation):
 
     def random_noisy_subset(self, step: Step, percent_noisy: float):
         state = step.state.clone()
-        noisy_f = extract_fluent_subset(state, percent_noisy)
+        invisible_f = {f for f in state if state[f] is None}
+        visible_f = state.clone()
+        for f in invisible_f:
+            del visible_f[f]
+        noisy_f = self.extract_fluent_subset(visible_f, percent_noisy)
         for f in state:
             state[f] = not state[f] if f in noisy_f else state[f]
         return Step(state, step.action, step.index)
