@@ -211,9 +211,11 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             states = []
             cur_par_act = set()
             cur_par_act_conditions = set()
-            
             # add initial state
             states.append(trace[0].state)
+            # for the compiler
+            cur_state = trace[1].state
+
             # last step doesn't have an action/just contains the state after the last action
             for i in range(len(trace)):
                 a = trace[i].action
