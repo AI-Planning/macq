@@ -1,10 +1,9 @@
 from logging import warning
-from ..utils import PercentError
-from ..trace import Step, Fluent, State
+from ..utils import PercentError#, extract_fluent_subset
+from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 from typing import Set
-import random
 
 
 class PartialObservation(Observation):
@@ -35,7 +34,8 @@ class PartialObservation(Observation):
         if percent_missing == 0 and not hide:
             warning("Creating a PartialObseration with no missing information.")
 
-        super().__init__(index=step.index)
+        # necessary because multiple inheritance can change the parent of this class
+        Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
         # This allows ARMS (and other algorithms) to skip steps when there is no
@@ -55,14 +55,6 @@ class PartialObservation(Observation):
             and self.state == other.state
             and self.action == other.action
         )
-
-    def extract_fluent_subset(self, fluents: State, percent: float):
-        num_new_f = int(len(fluents) * (percent))
-
-        # shuffle keys and take an appropriate subset of them
-        extracted_f = list(fluents)
-        random.shuffle(extracted_f)
-        return extracted_f[:num_new_f]
 
     def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.

@@ -1,24 +1,21 @@
-from ..trace import Step, Fluent, State
+from macq.observation.noisy_observation import NoisyObservation
+from ..trace import Step, Fluent
 from . import PartialObservation
 from typing import Set
-import random
 
 
-class NoisyPartialObservation(PartialObservation):
+class NoisyPartialObservation(PartialObservation, NoisyObservation):
     """The Noisy Partial Observability Token.
 
     The noisy partial observability token stores the step where some of the values of
     the fluents in the step's state are incorrect (noisy) or unknown (partial). Inherits
-    the PartialObservation token class, as this token just adds noisiness. 
-
-    This token can also be used to create states that are noisy but fully observable -- just
-    set percent_missing to 0.
+    both the PartialObservation token class and the NoisyObservation token class.
     """
 
     def __init__(
         self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None, percent_noisy: float = 0):
         """
-        Creates an NoisyPartialObservation object, storing the step.
+        Creates an NoisyPartialObservation object.
 
         Args:
             step (Step):
@@ -30,28 +27,7 @@ class NoisyPartialObservation(PartialObservation):
             percent_noisy (float):
                 The percentage of fluents to randomly make noisy in the observation.
         """
-
-        super().__init__(step=step, percent_missing=percent_missing, hide=hide, )
-
-        # ensure percent_missing is < 1 (that is , there is a state left at all) before attempting to create a noisy subset
-        if percent_noisy < 1 and percent_missing < 1:
-            step = self.random_noisy_subset(percent_noisy)
-
-        self.state = None if percent_missing == 1 else step.state.clone()
-        self.action = None if step.action is None else step.action.clone()
-
-    def random_noisy_subset(self, percent_noisy: float):
-        # using the updated state after any fluent "hiding" took place (from the partial obs. setting);
-        # exclude any hidden fluents. (we want to keep hidden fluents and noisy fluents separate).
-        available_fluents = {}
-        for f in self.state:
-            if self.state[f] is not None:
-                available_fluents[f] = self.state[f] 
-        noisy_f = self.extract_fluent_subset(available_fluents, percent_noisy)
-
-        for f in self.state.fluents:
-            self.state[f] = not self.state[f] if f in noisy_f else self.state[f]
-
-        return Step(State(self.state), self.action, self.index)
-
-
+        # get state and action with missing fluents (updates self.state and self.action)
+        PartialObservation.__init__(self, step=step, percent_missing=percent_missing, hide=hide)
+        # get state and action with noisy fluents, using the updated state and action (then updates self.state and self.action)
+        NoisyObservation.__init__(self, step=Step(self.state, self.action, step.index), percent_noisy=percent_noisy)
