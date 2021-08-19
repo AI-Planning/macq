@@ -671,7 +671,73 @@ class ARMS:
         problem: And[Or[Var]] = And(list(constraints_w_weights.keys()))
         weights = list(constraints_w_weights.values())
 
-        wcnf, decode = to_wcnf(problem, weights)
+        for cons in problem:
+            print(cons)
+
+        hard_clauses = And(
+            [
+                # stack
+                # precond
+                Or([Var("clear object (BREAK) in (BREAK) pre (BREAK) (stack object object)")]),
+                Or([Var("holding object (BREAK) in (BREAK) pre (BREAK) (stack object object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) pre (BREAK) (stack object object)").negate()]),
+                Or([Var("on object object (BREAK) in (BREAK) pre (BREAK) (stack object object)").negate()]),
+                # add
+                Or([Var("handempty  (BREAK) in (BREAK) add (BREAK) (stack object object)")]),
+                Or([Var("on object object (BREAK) in (BREAK) add (BREAK) (stack object object)")]),
+                Or([Var("clear object (BREAK) in (BREAK) add (BREAK) (stack object object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) add (BREAK) (stack object object)").negate()]),
+                # delete
+                Or([Var("holding object (BREAK) in (BREAK) del (BREAK) (stack object object)")]),
+                Or([Var("clear object (BREAK) in (BREAK) del (BREAK) (stack object object)")]),
+
+                # unstack
+                # precond
+                Or([Var("on object object (BREAK) in (BREAK) pre (BREAK) (unstack object object)")]),
+                Or([Var("clear object (BREAK) in (BREAK) pre (BREAK) (unstack object object)")]),
+                Or([Var("handempty  (BREAK) in (BREAK) pre (BREAK) (unstack object object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) pre (BREAK) (unstack object object)").negate()]),
+                # add
+                Or([Var("holding object (BREAK) in (BREAK) add (BREAK) (unstack object object)")]),
+                Or([Var("clear object (BREAK) in (BREAK) add (BREAK) (unstack object object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) add (BREAK) (unstack object object)").negate()]),
+                Or([Var("on object object (BREAK) in (BREAK) add (BREAK) (unstack object object)").negate()]),
+                # delete
+                Or([Var("clear object (BREAK) in (BREAK) del (BREAK) (unstack object object)")]),
+                Or([Var("handempty (BREAK) in (BREAK) del (BREAK) (unstack object object)")]),
+                Or([Var("on object object (BREAK) in (BREAK) del (BREAK) (unstack object object)")]),
+
+                # pick-up
+                # precond
+                Or([Var("ontable object (BREAK) in (BREAK) pre (BREAK) (pick-up object)")]),
+                Or([Var("handempty  (BREAK) in (BREAK) pre (BREAK) (pick-up object)")]),
+                Or([Var("clear object (BREAK) in (BREAK) pre (BREAK) (pick-up object)")]),
+                Or([Var("on object object (BREAK) in (BREAK) pre (BREAK) (pick-up object)").negate()]),
+                # add
+                Or([Var("holding object (BREAK) in (BREAK) add (BREAK) (pick-up object)")]),
+                Or([Var("on object object (BREAK) in (BREAK) add (BREAK) (pick-up object)").negate()]),
+                # delete
+                Or([Var("clear object (BREAK) in (BREAK) del (BREAK) (pick-up object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) del (BREAK) (pick-up object)")]),
+                Or([Var("handempty  (BREAK) in (BREAK) del (BREAK) (pick-up object)")]),
+
+                # put-down
+                # precond
+                Or([Var("holding object (BREAK) in (BREAK) pre (BREAK) (put-down object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) pre (BREAK) (put-down object)").negate()]),
+                Or([Var("clear object (BREAK) in (BREAK) pre (BREAK) (put-down object)").negate()]),
+                Or([Var("on object object (BREAK) in (BREAK) pre (BREAK) (put-down object)").negate()]),
+                # add
+                Or([Var("clear object (BREAK) in (BREAK) add (BREAK) (put-down object)")]),
+                Or([Var("handempty  (BREAK) in (BREAK) add (BREAK) (put-down object)")]),
+                Or([Var("ontable object (BREAK) in (BREAK) add (BREAK) (put-down object)")]),
+                Or([Var("on object object (BREAK) in (BREAK) add (BREAK) (put-down object)").negate()]),
+                # delete
+                Or([Var("holding object (BREAK) in (BREAK) del (BREAK) (put-down object)")]),
+            ]
+        )
+
+        wcnf, decode = to_wcnf(problem, weights, hard_clauses)
         return wcnf, decode
 
     @staticmethod
@@ -695,15 +761,6 @@ class ARMS:
 
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
-        from ..utils.pysat import (
-            H_DEL_PD,
-            H_DEL_S,
-            H_ADD_PU,
-            O_DEL_PU,
-            O_ADD_US,
-            OT_ADD_US,
-        )
-
         def printw(wght):
             for clause, w in wght.items():
                 if abs(clause) in decode:
@@ -718,19 +775,6 @@ class ARMS:
 
         solver = RC2(max_sat)
         encoded_model = solver.compute()
-        print(f"model cost: {solver.cost}")
-        printw(solver.wght)
-
-        # solver.add_clause([H_DEL_PD])
-        # solver.add_clause([H_DEL_S])
-        # solver.add_clause([H_ADD_PU])
-        # solver.add_clause([O_DEL_PU])
-        solver.add_clause([-O_ADD_US])
-        solver.add_clause([-OT_ADD_US])
-
-        encoded_model_f = solver.compute()
-        print(f"model_f cost: {solver.cost}")
-        printw(solver.wght)
 
         if not isinstance(encoded_model, list):
             # should never be reached
@@ -740,23 +784,6 @@ class ARMS:
         model: Dict[Hashable, bool] = {
             decode[abs(clause)]: clause > 0 for clause in encoded_model
         }
-
-        model_f: Dict[Hashable, bool] = {
-            decode[abs(clause)]: clause > 0 for clause in encoded_model_f  # type: ignore
-        }
-        # compare model to model_f
-        model_true = {k for k in model if model[k]}
-        model_f_true = {k for k in model_f if model_f[k]}
-
-        print(f"true in model, false in model_f:")
-        for d in model_true.difference(model_f_true):
-            print(str(d).replace(" (BREAK) ", " "))
-        print()
-
-        print(f"true in model_f, false in model:")
-        for d in model_f_true.difference(model_true):
-            print(str(d).replace(" (BREAK) ", " "))
-        print()
 
         return model
 
