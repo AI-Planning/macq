@@ -91,6 +91,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
     Attributes:
         traces (List[List[Token]]):
             The trace list converted to a list of lists of tokens.
+        type (Type[Observation]):
+            The type of token to be used.
         features (List[Callable]):
             The list of functions to be used to create the feature vector.
         learned_theta (List[float]):
@@ -99,6 +101,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             The list of all actions used in the traces given (no duplicates).
         cross_actions (List[ActionPair]):
             The list of all possible `ActionPairs`.
+        denominator (float):
+            The value used for the denominator in all probability calculations (stored so it doesn't need to be recalculated
+            each time).
         probabilities (Dict[ActionPair, float]):
             A dictionary that contains a mapping of each possible `ActionPair` and the probability that the actions
             in them are disordered.
@@ -119,6 +124,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                 Any extra arguments to be supplied to the Token __init__.
         """
         self.traces = []
+        self.type = Token
         self.features = features
         self.learned_theta = learned_theta
         actions = {step.action for trace in traces for step in trace if step.action}
@@ -126,11 +132,14 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         self.actions = list(actions)
         # create |A| (action x action set, no duplicates)
         self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i + 1, len(self.actions))]
+        self.denominator = self._calculate_denom()
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities()
         self.tokenize(traces, Token, **kwargs)
 
-    def _theta_dot_features_calc(self, f_vec: List[float], theta_vec: List[float]):
+
+    @staticmethod
+    def _theta_dot_features_calc(f_vec: List[float], theta_vec: List[float]):
         """Calculate the dot product of the feature vector and the theta vector, then use that as an exponent
         for 'e'.
 
@@ -144,6 +153,12 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             The result of the calculation.
         """
         return exp(dot(f_vec, theta_vec))
+
+    def _calculate_denom(self):
+        denominator = 0
+        for combo in self.cross_actions:
+            denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), self.learned_theta)
+        return denominator
 
     def _get_f_vec(self, act_x: Action, act_y: Action):
         """Returns the feature vector.
@@ -173,12 +188,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         """
         # calculate the probability of two given actions being disordered
         f_vec = self._get_f_vec(act_x, act_y)
-        theta_vec = self.learned_theta
-        numerator = self._theta_dot_features_calc(f_vec, theta_vec)
-        denominator = 0
-        for combo in self.cross_actions:
-            denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), theta_vec)
-        return numerator/denominator
+        numerator = self._theta_dot_features_calc(f_vec, self.learned_theta)
+        return numerator/self.denominator
 
     def _calculate_all_probabilities(self):
         """Calculates the probabilities of all combinations of actions being disordered.
