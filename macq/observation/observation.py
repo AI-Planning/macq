@@ -1,4 +1,4 @@
-from logging import warn
+from warnings import warn
 from json import dumps
 from typing import Union
 

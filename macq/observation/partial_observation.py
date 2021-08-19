@@ -1,4 +1,4 @@
-from logging import warn
+from warnings import warn
 
 from rich.console import Console
 from ..utils import PercentError

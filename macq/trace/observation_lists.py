@@ -1,5 +1,5 @@
 from collections import defaultdict
-from logging import warn
+from warnings import warn
 from typing import Callable, Dict, List, Type, Set, Union
 from inspect import cleandoc
 from rich.console import Console

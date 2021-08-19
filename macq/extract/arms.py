@@ -1,6 +1,6 @@
 from collections import defaultdict, Counter
 from dataclasses import dataclass
-from logging import warn
+from warnings import warn
 from typing import Set, List, Dict, Tuple, Hashable
 from nnf import Var, And, Or, false as nnffalse
 from pysat.examples.rc2 import RC2

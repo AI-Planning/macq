@@ -1,4 +1,4 @@
-from logging import warn
+from warnings import warn
 from typing import List, Callable, Type, Optional
 from rich.console import Console
 from . import Action, Trace
