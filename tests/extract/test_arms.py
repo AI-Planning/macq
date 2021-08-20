@@ -12,9 +12,9 @@ def get_fluent(name: str, objs: List[str]):
 
 
 def test_arms():
-    base = Path(__file__).parent
-    dom = str((base / "tests/pddl_testing_files/blocks_domain.pddl").resolve())
-    prob = str((base / "tests/pddl_testing_files/blocks_problem.pddl").resolve())
+    base = Path(__file__).parent.parent
+    dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
+    prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     traces = TraceList()
     generator = TraceFromGoal(dom=dom, prob=prob)
