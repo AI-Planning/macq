@@ -1,6 +1,6 @@
 from logging import warning
 from ..trace import Step, Fluent
-from . import PartialObservation
+from . import PartialObservation, Observation
 from typing import Set
 
 
@@ -42,10 +42,10 @@ class AtomicPartialObservation(PartialObservation):
         if percent_missing == 0 and not hide:
             warning("Creating a PartialObseration with no missing information.")
 
-        self.index = step.index
+        Observation.__init__(self, index=step.index)
 
         if percent_missing < 1:
-            step = self.random_subset(step, percent_missing)
+            step = self.hide_random_subset(step, percent_missing)
         if hide:
             step = self.hide_subset(step, hide)
 

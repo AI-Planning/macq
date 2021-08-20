@@ -1,4 +1,8 @@
-from macq.trace.disordered_parallel_actions_observation_lists import default_theta_vec, num_parameters_feature, objects_shared_feature
+from macq.trace.disordered_parallel_actions_observation_lists import (
+    default_theta_vec,
+    num_parameters_feature,
+    objects_shared_feature,
+)
 from macq.utils.tokenization_errors import TokenizationError
 from tests.utils.generators import generate_blocks_traces
 from macq.extract import Extract, modes
@@ -8,6 +12,7 @@ from macq.trace import *
 
 from pathlib import Path
 import pytest
+
 
 def test_tokenization_error():
     with pytest.raises(TokenizationError):
@@ -25,12 +30,12 @@ if __name__ == "__main__":
     traces = RandomGoalSampling(
         prob=prob,
         dom=dom,
-        #problem_id=2337,
+        # problem_id=2337,
         observe_pres_effs=True,
         num_traces=1,
         steps_deep=10,
         subset_size_perc=0.1,
-        enforced_hill_climbing_sampling=True
+        enforced_hill_climbing_sampling=True,
     ).traces
 
     features = [objects_shared_feature, num_parameters_feature]
