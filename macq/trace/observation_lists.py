@@ -1,8 +1,7 @@
-from typing import List, Type, Set
-from . import Trace
-from ..observation import Observation
 import macq.trace as TraceAPI
-
+from typing import List, Set, Type
+from ..observation import Observation
+from . import Trace
 
 class ObservationLists(TraceAPI.TraceList):
     traces: List[List[Observation]]
@@ -15,9 +14,12 @@ class ObservationLists(TraceAPI.TraceList):
     def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
         self.traces = []
         self.type = Token
+        self.tokenize(traces, **kwargs)
+
+    def tokenize(self, traces: TraceAPI.TraceList, **kwargs):
         trace: Trace
         for trace in traces:
-            tokens = trace.tokenize(Token, **kwargs)
+            tokens = trace.tokenize(self.type, **kwargs)
             self.append(tokens)
 
     def fetch_observations(self, query: dict):

@@ -60,7 +60,7 @@ class Action:
                 self.name, list(map(lambda o: o.details(), self.obj_params)), self.cost
             )
 
-        return Action(self.name, self.obj_params, self.cost)
+        return Action(self.name, self.obj_params.copy(), self.cost)
 
     def add_parameter(self, obj: PlanningObject):
         """Adds an object to the action's parameters.

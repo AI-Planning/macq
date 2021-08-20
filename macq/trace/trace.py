@@ -5,7 +5,8 @@ from inspect import cleandoc
 from rich.table import Table
 from rich.text import Text
 from . import Action, Step, State
-from ..observation import Observation
+from ..observation import Observation, NoisyPartialDisorderedParallelObservation
+from ..utils import TokenizationError
 
 
 @dataclass
@@ -368,4 +369,6 @@ class Trace:
             A list of observation tokens, corresponding to the steps in the
             trace.
         """
+        if Token == NoisyPartialDisorderedParallelObservation:
+            raise TokenizationError(Token)
         return [Token(step=step, **kwargs) for step in self]

@@ -86,7 +86,7 @@ class State:
     def clone(self, atomic=False):
         if atomic:
             return AtomicState({str(fluent): value for fluent, value in self.items()})
-        return State(self.fluents)
+        return State(self.fluents.copy())
 
     def holds(self, fluent: str):
         fluents = dict(map(lambda f: (f.name, f), self.keys()))

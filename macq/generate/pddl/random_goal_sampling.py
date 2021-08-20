@@ -41,6 +41,7 @@ class RandomGoalSampling(VanillaSampling):
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
+        observe_pres_effs: bool = False,
     ):
         """
         Initializes a random goal state trace sampler using the plan length, number of traces,
@@ -63,6 +64,8 @@ class RandomGoalSampling(VanillaSampling):
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            observe_pres_effs (bool):
+                Option to observe action preconditions and effects upon generation. 
         """
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
@@ -70,7 +73,7 @@ class RandomGoalSampling(VanillaSampling):
         self.enforced_hill_climbing_sampling = enforced_hill_climbing_sampling
         self.subset_size_perc = subset_size_perc
         self.goals_inits_plans = []
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id, num_traces=num_traces)
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs, num_traces=num_traces)
 
     def goal_sampling(self):
         """Samples goals by randomly generating candidate goal states k (`steps_deep`) steps deep, then running planners on those
