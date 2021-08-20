@@ -1,5 +1,5 @@
-from typing import List
-from .fluent import PlanningObject
+from typing import List, Set
+from .fluent import PlanningObject, Fluent
 
 
 class Action:
@@ -18,11 +18,18 @@ class Action:
             The cost to perform the action.
     """
 
-    def __init__(self, name: str, obj_params: List[PlanningObject], cost: int = 0):
+    def __init__(
+        self,
+        name: str,
+        obj_params: List[PlanningObject],
+        cost: int = 0,
+        precond: Set[Fluent] = None,
+        add: Set[Fluent] = None,
+        delete: Set[Fluent] = None,
+    ):
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
         Model deserialization.
-
         Args:
             name (str):
                 The name of the action.
@@ -30,10 +37,19 @@ class Action:
                 The list of objects the action acts on.
             cost (int):
                 Optional; The cost to perform the action. Defaults to 0.
+            precond (Set[Fluent]):
+                Optional; The set of Fluents that make up the precondition.
+            add (Set[Fluent]):
+                Optional; The set of Fluents that make up the add effects.
+            delete (Set[Fluent]):
+                Optional; The set of Fluents that make up the delete effects.
         """
         self.name = name
         self.obj_params = obj_params
         self.cost = cost
+        self.precond = precond
+        self.add = add
+        self.delete = delete
 
     def __str__(self):
         string = f"{self.name} {' '.join(map(str, self.obj_params))}"

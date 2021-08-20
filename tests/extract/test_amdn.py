@@ -37,8 +37,6 @@ def test_observations():
         enforced_hill_climbing_sampling=True,
     ).traces
 
-    print(traces.traces)
-
     features = [objects_shared_feature, num_parameters_feature]
     learned_theta = default_theta_vec(2)
     observations = traces.tokenize(

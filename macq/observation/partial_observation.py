@@ -33,8 +33,8 @@ class PartialObservation(Observation):
         if percent_missing == 0 and not hide:
             warning("Creating a PartialObseration with no missing information.")
 
-        # Observation.__init__(self, index=step.index)
-        super().__init__(index=step.index)
+        # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
+        Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
         # This allows ARMS (and other algorithms) to skip steps when there is no
