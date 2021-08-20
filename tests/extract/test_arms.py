@@ -1,54 +1,51 @@
+from pathlib import Path
+from typing import List
 from macq.trace import *
 from macq.extract import Extract, modes
 from macq.observation import PartialObservation
 from macq.generate.pddl import *
 
 
-def get_fluent(name: str, objs: list[str]):
+def get_fluent(name: str, objs: List[str]):
     objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
     return Fluent(name, objects)
 
 
-if __name__ == "__main__":
+def test_arms():
+    base = Path(__file__).parent
+    dom = str((base / "tests/pddl_testing_files/blocks_domain.pddl").resolve())
+    prob = str((base / "tests/pddl_testing_files/blocks_problem.pddl").resolve())
+
     traces = TraceList()
-    generator = TraceFromGoal(problem_id=1801)
-    # for f in generator.trace.fluents:
-    #     print(f)
+    generator = TraceFromGoal(dom=dom, prob=prob)
 
     generator.change_goal(
         {
-            get_fluent("communicated_soil_data", ["waypoint waypoint2"]),
-            get_fluent("communicated_rock_data", ["waypoint waypoint3"]),
-            get_fluent(
-                "communicated_image_data", ["objective objective1", "mode high_res"]
-            ),
+            get_fluent("on", ["object a", "object b"]),
+            get_fluent("on", ["object b", "object c"]),
         }
     )
     traces.append(generator.generate_trace())
     generator.change_goal(
         {
-            get_fluent("communicated_soil_data", ["waypoint waypoint0"]),
-            get_fluent("communicated_rock_data", ["waypoint waypoint1"]),
-            get_fluent(
-                "communicated_image_data", ["objective objective1", "mode high_res"]
-            ),
+            get_fluent("on", ["object b", "object a"]),
+            get_fluent("on", ["object c", "object b"]),
         }
     )
     traces.append(generator.generate_trace())
-    # traces.print("color")
 
     observations = traces.tokenize(PartialObservation, percent_missing=0.5)
-    # model = Extract(observations, modes.ARMS, upper_bound=2, debug=True)
     model = Extract(
         observations,
         modes.ARMS,
         debug=False,
-        upper_bound=5,
+        upper_bound=2,
         min_support=2,
         action_weight=110,
         info_weight=100,
-        threshold=0.66,
+        threshold=0.6,
         info3_default=30,
         plan_default=30,
     )
-    print(model.details())
+
+    assert model
