@@ -86,3 +86,6 @@ if __name__ == "__main__":
     goal_trace = goal_traces_sampler.trace
     true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
     print(true_f)
+
+    # test generating traces with action preconditions/effects known
+    goal_traces = TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace

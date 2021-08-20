@@ -6,7 +6,6 @@ from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 from typing import Callable, Set
-import random
 
 
 class PartialObservation(Observation):
@@ -37,14 +36,15 @@ class PartialObservation(Observation):
         if percent_missing == 0 and not hide:
             warn("Creating a PartialObseration with no missing information.")
 
-        super().__init__(index=step.index)
+        # necessary because multiple inheritance can change the parent of this class
+        Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
         # This allows ARMS (and other algorithms) to skip steps when there is no
         # state information available without having to check every mapping in
         # the state (slow in large domains).
         if percent_missing < 1:
-            step = self.random_subset(step, percent_missing)
+            step = self.hide_random_subset(step, percent_missing)
         if hide:
             step = self.hide_subset(step, hide)
 
@@ -61,7 +61,7 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def random_subset(self, step: Step, percent_missing: float):
+    def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
 
         Args:
@@ -73,18 +73,12 @@ class PartialObservation(Observation):
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
-
-        fluents = step.state.fluents
-        num_new_fluents = int(len(fluents) * (percent_missing))
-
         new_fluents = {}
-        # shuffle keys and take an appropriate subset of them
-        hide_fluents_ls = list(fluents)
-        random.shuffle(hide_fluents_ls)
-        hide_fluents_ls = hide_fluents_ls[:num_new_fluents]
+        fluents = step.state
+        hidden_f = self.extract_fluent_subset(fluents, percent_missing)
         # get new dict
         for f in fluents:
-            new_fluents[f] = None if f in hide_fluents_ls else step.state[f]
+            new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def hide_subset(self, step: Step, hide: Set[Fluent]):

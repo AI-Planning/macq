@@ -24,7 +24,6 @@ class ObservationLists(TraceAPI.TraceList):
     # Disable methods
     generate_more = property()
     get_usage = property()
-    tokenize = property()
 
     def __init__(
         self,
@@ -37,10 +36,7 @@ class ObservationLists(TraceAPI.TraceList):
                 raise MissingToken()
             self.traces = []
             self.type = Token
-            trace: Trace
-            for trace in traces:
-                tokens = trace.tokenize(Token, **kwargs)
-                self.append(tokens)
+            self.tokenize(traces, **kwargs)
         else:
             self.traces = traces
 
@@ -60,8 +56,15 @@ class ObservationLists(TraceAPI.TraceList):
                 fluents.update(list(obs.state.keys()))
         return fluents
 
-    def fetch_observations(self, query: dict) -> List[Set[Observation]]:
+    def tokenize(self, traces: TraceAPI.TraceList, **kwargs):
+        trace: Trace
+        for trace in traces:
+            tokens = trace.tokenize(self.type, **kwargs)
+            self.append(tokens)
+
+    def fetch_observations(self, query: dict):
         matches: List[Set[Observation]] = []
+
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())

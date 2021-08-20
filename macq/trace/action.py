@@ -1,5 +1,5 @@
 from typing import Set
-from .fluent import PlanningObject
+from .fluent import PlanningObject, Fluent
 
 
 class Action:
@@ -16,6 +16,12 @@ class Action:
             The set of objects the action acts on.
         cost (int):
             The cost to perform the action.
+        precond (Set[Fluent]):
+            Optional; The set of Fluents that make up the precondition.
+        add (Set[Fluent]):
+            Optional; The set of Fluents that make up the add effects.
+        delete (Set[Fluent]):
+            Optional; The set of Fluents that make up the delete effects.
     """
 
     def __init__(
@@ -23,6 +29,9 @@ class Action:
         name: str,
         obj_params: Set[PlanningObject],
         cost: int = 0,
+        precond: Set[Fluent] = None,
+        add: Set[Fluent] = None,
+        delete: Set[Fluent] = None,
     ):
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
@@ -35,10 +44,19 @@ class Action:
                 The list of objects the action acts on.
             cost (int):
                 Optional; The cost to perform the action. Defaults to 0.
+            precond (Set[Fluent]):
+                Optional; The set of Fluents that make up the precondition.
+            add (Set[Fluent]):
+                Optional; The set of Fluents that make up the add effects.
+            delete (Set[Fluent]):
+                Optional; The set of Fluents that make up the delete effects.
         """
         self.name = name
         self.obj_params = obj_params
         self.cost = cost
+        self.precond = precond
+        self.add = add
+        self.delete = delete
 
     def __str__(self):
         string = f"{self.name} {' '.join(map(str, self.obj_params))}"

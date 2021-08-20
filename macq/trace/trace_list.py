@@ -184,12 +184,17 @@ class TraceList:
                 fluents.update(step.state.fluents)
         return fluents
 
-    def tokenize(self, Token: Type[Observation], **kwargs):
+    def tokenize(self, Token: Type[Observation], ObsLists=None, **kwargs):
         """Tokenizes the steps in this trace.
 
         Args:
             Token (Observation):
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
+            ObsLists (Type[TraceAPI.ObservationLists]):
+                The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
-        return TraceAPI.ObservationLists(self, Token, **kwargs)
+        ObsLists: Type[TraceAPI.ObservationLists]
+        if not ObsLists:
+            ObsLists = TraceAPI.ObservationLists
+        return ObsLists(self, Token, **kwargs)

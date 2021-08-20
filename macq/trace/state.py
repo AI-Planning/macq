@@ -85,7 +85,7 @@ class State:
         return string[:-2]
 
     def clone(self):
-        return State(self.fluents)
+        return State(self.fluents.copy())
 
     def holds(self, fluent: str):
         fluents = dict(map(lambda f: (f.name, f), self.keys()))

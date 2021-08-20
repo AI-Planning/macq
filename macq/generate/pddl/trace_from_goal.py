@@ -7,6 +7,7 @@ class TraceFromGoal(Generator):
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
+        observe_pres_effs: bool = False,
     ):
         """
         Initializes a goal state trace sampler using the domain and problem. This method of sampling
@@ -19,8 +20,10 @@ class TraceFromGoal(Generator):
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            observe_pres_effs (bool):
+                Option to observe action preconditions and effects upon generation.        
         """
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id)
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs)
         self.trace = self.generate_trace()
 
     def generate_trace(self):

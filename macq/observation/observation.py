@@ -4,6 +4,9 @@ from typing import Union
 
 from ..trace import State, Action
 
+import random
+from ..trace import State
+
 
 class InvalidQueryParameter(Exception):
     def __init__(self, obs, param, message=None):
@@ -66,6 +69,25 @@ class Observation:
 
     def _matches(self, *_):
         raise NotImplementedError()
+
+    def extract_fluent_subset(self, fluents: State, percent: float):
+        """Randomly extracts a subset of fluents from a state, according to the percentage given.
+
+        Args:
+            fluents (State):
+                The state to extract fluents from.
+            percent (float):
+                The percent of the state to be extracted.
+
+        Returns:
+            The random subset of fluents.
+        """
+        num_new_f = int(len(fluents) * (percent))
+
+        # shuffle keys and take an appropriate subset of them
+        extracted_f = list(fluents)
+        random.shuffle(extracted_f)
+        return extracted_f[:num_new_f]
 
     def matches(self, query: dict):
         return all([self._matches(key, value) for key, value in query.items()])
