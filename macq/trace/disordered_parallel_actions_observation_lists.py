@@ -24,6 +24,12 @@ class ActionPair:
             sum += hash(a.details())
         return sum
 
+    def __repr__(self):
+        string = ""
+        for a in self.actions:
+            string += a.details() + ", "
+        return string[:-1]
+
 def default_theta_vec(k : int):
     """Generate the default theta vector to be used in the calculation that extracts the probability of
     actions being disordered; used to "weight" the features.
@@ -95,12 +101,16 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             The type of token to be used.
         all_par_act_sets (List[List[Set[Action]]]):
             Holds the parallel action sets for all traces.
+        all_states (List(List[State])):
+            Holds the states for all traces.
         features (List[Callable]):
             The list of functions to be used to create the feature vector.
         learned_theta (List[float]):
             The supplied theta vector.
         actions (List[Action]):
             The list of all actions used in the traces given (no duplicates).
+        propositions (Set[Fluent]):
+            The set of all fluents.
         cross_actions (List[ActionPair]):
             The list of all possible `ActionPairs`.
         denominator (float):
@@ -128,11 +138,14 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         self.traces = []
         self.type = Token
         self.all_par_act_sets = []
+        self.all_states = []
         self.features = features
         self.learned_theta = learned_theta
         actions = {step.action for trace in traces for step in trace if step.action}
         # cast to list for iteration purposes
         self.actions = list(actions)
+        # set of all fluents
+        self.propositions = {f for trace in traces for step in trace for f in step.state.fluents}
         # create |A| (action x action set, no duplicates)
         self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i + 1, len(self.actions))]
         self.denominator = self._calculate_denom()
@@ -270,6 +283,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                     par_act_sets[j].discard(act_y)
                                     par_act_sets[j].add(act_x)
             self.all_par_act_sets.append(par_act_sets)
+            self.all_states.append(states)
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:

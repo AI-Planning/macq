@@ -5,7 +5,6 @@ from macq.extract import Extract, modes
 from macq.generate.pddl import RandomGoalSampling
 from macq.observation import *
 from macq.trace import *
-
 from pathlib import Path
 import pytest
 
@@ -23,12 +22,12 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-        # prob=prob,
-        # dom=dom,
-        problem_id=2337,
+        prob=prob,
+        dom=dom,
+        #problem_id=2337,
         observe_pres_effs=True,
-        num_traces=3,
-        steps_deep=30,
+        num_traces=10,
+        steps_deep=50,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True
     ).traces
@@ -44,4 +43,5 @@ if __name__ == "__main__":
         percent_noisy=0.05,
     )
     model = Extract(observations, modes.AMDN, occ_threshold = 3)
-    print(model.details())
+    f = open("results.txt", "w")
+    f.write(model.details())

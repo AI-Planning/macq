@@ -203,7 +203,7 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > occ_threshold:
                     # set constraint 6 with the calculated weight
-                    noise_constraints_6[AMDN._or_refactor(~delete(r, a))] = (occ_r / all_occ)
+                    noise_constraints_6[AMDN._or_refactor(~delete(r, a))] = (occ_r / all_occ) * WMAX
         return noise_constraints_6
 
     @staticmethod
@@ -214,7 +214,7 @@ class AMDN:
         for r in obs_lists.propositions:
             occurrences[r] = 0
 
-        for trace in obs_lists.states:
+        for trace in obs_lists.all_states:
             for state in trace:
                 true_prop = [r for r in state if state[r]]
                 for r in true_prop:
@@ -224,14 +224,14 @@ class AMDN:
         for i in range(len(obs_lists.all_par_act_sets)):
             # get the next trace/states
             par_act_sets = obs_lists.all_par_act_sets[i]
-            states = obs_lists.states[i]  
+            states = obs_lists.all_states[i]  
             # iterate through all parallel action sets within the trace
             for j in range(len(par_act_sets)):
                 # examine the states before and after each parallel action set; set constraints accordinglly
                 true_prop = [r for r in states[j + 1] if states[j + 1][r]]
                 for r in true_prop:
                     if not states[j][r]:
-                        noise_constraints_7[Or([add(r, act) for act in par_act_sets[j]])] = occurrences[r]/all_occ
+                        noise_constraints_7[Or([add(r, act) for act in par_act_sets[j]])] = (occurrences[r]/all_occ) * WMAX
    
         return noise_constraints_7
 
@@ -257,7 +257,7 @@ class AMDN:
                 # if the # of occurrences is higher than the user-provided threshold:
                 if occ_r > occ_threshold:
                     # set constraint 8 with the calculated weight
-                    noise_constraints_8[AMDN._or_refactor(pre(r, a))] = (occ_r / all_occ)
+                    noise_constraints_8[AMDN._or_refactor(pre(r, a))] = (occ_r / all_occ) * WMAX
         return noise_constraints_8
 
     @staticmethod
