@@ -12,6 +12,7 @@ DEPENDENCIES = [
     "rich",
     "python-sat",
     "bauhaus",
+    "numpy"
 ]
 
 DEV_DEPENDENCIES = [
