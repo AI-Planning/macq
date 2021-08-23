@@ -244,10 +244,12 @@ class AMDN:
         for i in range(len(obs_lists)):
             # iterate through each step in each trace
             for j in range(len(obs_lists[i])):
-                true_prop = [f for f in obs_lists[i][j].state if obs_lists[i][j].state[f]]
-                for r in true_prop:
-                    # count the number of occurrences of each action and its previous proposition
-                    occurrences[obs_lists[i][j].action][r] += 1
+                # if the action is not None
+                if obs_lists[i][j].action:
+                    true_prop = [f for f in obs_lists[i][j].state if obs_lists[i][j].state[f]]
+                    for r in true_prop:
+                        # count the number of occurrences of each action and its previous proposition
+                        occurrences[obs_lists[i][j].action][r] += 1
 
         # iterate through actions
         for a in occurrences:
