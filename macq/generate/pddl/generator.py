@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Set, List, Union
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
@@ -407,12 +408,15 @@ class Generator:
                         plan = get_api_response()
                     except TypeError:
                         try:
+                            sleep(1)
                             plan = get_api_response()
                         except TypeError:
                             try:
+                                sleep(5)
                                 plan = get_api_response()
                             except TypeError:
                                 try:
+                                    sleep(10)
                                     plan = get_api_response()
                                 except TypeError as e:
                                     raise PlanningDomainsAPIError(
