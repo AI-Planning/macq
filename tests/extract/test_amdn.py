@@ -127,8 +127,8 @@ if __name__ == "__main__":
         ObsLists=DisorderedParallelActionsObservationLists,
         features=features,
         learned_theta=learned_theta,
-        percent_missing=0.10,
-        percent_noisy=0.05,
+        percent_missing=0,
+        percent_noisy=0,
     )
     model = Extract(observations, modes.AMDN, occ_threshold = 3)
     f = open("results.txt", "w")
