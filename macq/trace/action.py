@@ -1,4 +1,4 @@
-from typing import Set
+from typing import List, Set
 from .fluent import PlanningObject, Fluent
 
 
@@ -12,22 +12,22 @@ class Action:
     Attributes:
         name (str):
             The name of the action.
-        obj_params (set):
+        obj_params (List[PlanningObject]):
             The set of objects the action acts on.
         cost (int):
             The cost to perform the action.
         precond (Set[Fluent]):
-            Optional; The set of Fluents that make up the precondition.
+            The set of Fluents that make up the precondition.
         add (Set[Fluent]):
-            Optional; The set of Fluents that make up the add effects.
+            The set of Fluents that make up the add effects.
         delete (Set[Fluent]):
-            Optional; The set of Fluents that make up the delete effects.
+            The set of Fluents that make up the delete effects.
     """
 
     def __init__(
         self,
         name: str,
-        obj_params: Set[PlanningObject],
+        obj_params: List[PlanningObject],
         cost: int = 0,
         precond: Set[Fluent] = None,
         add: Set[Fluent] = None,
@@ -36,7 +36,6 @@ class Action:
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
         Model deserialization.
-
         Args:
             name (str):
                 The name of the action.
@@ -77,17 +76,22 @@ class Action:
         string = f"{self.name} {' '.join([o.details() for o in self.obj_params])}"
         return string
 
-    def clone(self):
-        return Action(self.name, self.obj_params, self.cost)
+    def clone(self, atomic=False):
+        if atomic:
+            return AtomicAction(
+                self.name, list(map(lambda o: o.details(), self.obj_params)), self.cost
+            )
 
-    def add_parameter(self, obj: PlanningObject):
-        """Adds an object to the action's parameters.
-
-        Args:
-            obj (PlanningObject):
-                The object to be added to the action's object parameters.
-        """
-        self.obj_params.append(obj)
+        return Action(self.name, self.obj_params.copy(), self.cost)
 
     def _serialize(self):
         return self.name
+
+
+class AtomicAction(Action):
+    """An Action where the objects are represented by strings."""
+
+    def __init__(self, name: str, obj_params: List[str], cost: int = 0):
+        self.name = name
+        self.obj_params = obj_params
+        self.cost = cost

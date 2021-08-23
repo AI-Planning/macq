@@ -44,5 +44,4 @@ class Plan:
         return "\n".join(string)
 
     def __eq__(self, other):
-        if isinstance(other, Plan):
-            return self.actions == other.actions
+        return isinstance(other, Plan) and self.actions == other.actions

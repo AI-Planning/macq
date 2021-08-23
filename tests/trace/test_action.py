@@ -13,5 +13,5 @@ def test_action():
     assert str(a1)
 
     obj = PlanningObject("test_obj", "test")
-    a1.add_parameter(obj)
+    a1.obj_params.append(obj)
     assert obj in a1.obj_params

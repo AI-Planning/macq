@@ -10,7 +10,6 @@ def test_slaf():
     traces = generate_blocks_traces(plan_len=2, num_traces=1)
     observations = traces.tokenize(
         AtomicPartialObservation,
-        method=AtomicPartialObservation.random_subset,
         percent_missing=0.10,
     )
     model = Extract(observations, modes.SLAF)

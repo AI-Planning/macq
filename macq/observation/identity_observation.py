@@ -47,9 +47,11 @@ class IdentityObservation(Observation):
         return super().__hash__()
 
     def __eq__(self, other):
-        if not isinstance(other, IdentityObservation):
-            return False
-        return self.state == other.state and self.action == other.action
+        return (
+            isinstance(other, IdentityObservation)
+            and self.state == other.state
+            and self.action == other.action
+        )
 
     def _matches(self, key: str, value: str):
         if key == "action":
