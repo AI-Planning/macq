@@ -26,9 +26,7 @@ class State:
         self.fluents = fluents if fluents is not None else {}
 
     def __eq__(self, other):
-        if not isinstance(other, State):
-            return False
-        return self.fluents == other.fluents
+        return isinstance(other, State) and self.fluents == other.fluents
 
     def __str__(self):
         return ", ".join([str(fluent) for (fluent, value) in self.items() if value])

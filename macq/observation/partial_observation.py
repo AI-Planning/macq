@@ -49,9 +49,11 @@ class PartialObservation(Observation):
         self.action = None if step.action is None else step.action.clone()
 
     def __eq__(self, other):
-        if not isinstance(other, PartialObservation):
-            return False
-        return self.state == other.state and self.action == other.action
+        return (
+            isinstance(other, PartialObservation)
+            and self.state == other.state
+            and self.action == other.action
+        )
 
     def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.

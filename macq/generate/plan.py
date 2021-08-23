@@ -1,6 +1,7 @@
 from typing import List
 from tarski.fstrips.action import PlainOperator
 
+
 class Plan:
     """A Plan.
 
@@ -11,6 +12,7 @@ class Plan:
         actions (List[PlainOperator]):
             The list of actions that make up the plan.
     """
+
     def __init__(self, actions: List[PlainOperator]):
         """Creates a Plan by instantiating it with the list of actions (of tarski type `PlainOperator`).
 
@@ -42,5 +44,4 @@ class Plan:
         return "\n".join(string)
 
     def __eq__(self, other):
-        if isinstance(other, Plan):
-            return self.actions == other.actions
+        return isinstance(other, Plan) and self.actions == other.actions

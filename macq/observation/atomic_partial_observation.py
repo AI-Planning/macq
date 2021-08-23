@@ -53,9 +53,11 @@ class AtomicPartialObservation(PartialObservation):
         self.action = None if step.action is None else step.action.clone(atomic=True)
 
     def __eq__(self, other):
-        if not isinstance(other, AtomicPartialObservation):
-            return False
-        return self.state == other.state and self.action == other.action
+        return (
+            isinstance(other, AtomicPartialObservation)
+            and self.state == other.state
+            and self.action == other.action
+        )
 
     def details(self):
         return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"

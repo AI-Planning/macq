@@ -45,9 +45,11 @@ class IdentityObservation(Observation):
         return hash(self.details())
 
     def __eq__(self, other):
-        if not isinstance(other, IdentityObservation):
-            return False
-        return self.state == other.state and self.action == other.action
+        return (
+            isinstance(other, IdentityObservation)
+            and self.state == other.state
+            and self.action == other.action
+        )
 
     def details(self):
         return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"

@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Set, List
-from ..trace import Fluent
 
 
 class LearnedAction:
@@ -15,9 +14,11 @@ class LearnedAction:
         self.delete = set() if "delete" not in kwargs else kwargs["delete"]
 
     def __eq__(self, other):
-        if not isinstance(other, LearnedAction):
-            return False
-        return self.name == other.name and self.obj_params == other.obj_params
+        return (
+            isinstance(other, LearnedAction)
+            and self.name == other.name
+            and self.obj_params == other.obj_params
+        )
 
     def __hash__(self):
         # Order of obj_params is important!
