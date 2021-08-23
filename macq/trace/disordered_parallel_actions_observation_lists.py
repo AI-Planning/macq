@@ -57,7 +57,7 @@ def objects_shared_feature(act_x: Action, act_y: Action):
     """
     num_shared = 0
     for obj in act_x.obj_params:
-        for other_obj in act_y. obj_params:
+        for other_obj in act_y.obj_params:
             if obj == other_obj:
                 num_shared += 1
     return num_shared
@@ -102,7 +102,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         all_par_act_sets (List[List[Set[Action]]]):
             Holds the parallel action sets for all traces.
         all_states (List(List[State])):
-            Holds the states for all traces.
+            Holds the relevant states for all traces. Note that these are RELATIVE to the parallel action sets and only
+            contain the states between the sets.
         features (List[Callable]):
             The list of functions to be used to create the feature vector.
         learned_theta (List[float]):
@@ -287,6 +288,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:
-                    tokens.append(Token(Step(state=states[i], action=act, index=i), par_act_set_ID = i, **kwargs))
-            self.append(tokens)            
+                    tokens.append(Token(Step(state=states[i], action=act, index=i), par_act_set_ID=i, **kwargs))
+            # add the final token, with the final state but no action
+            tokens.append(Token(Step(state=states[-1], action=None, index=len(par_act_sets)), par_act_set_ID=len(par_act_sets), **kwargs))
+            self.append(tokens)
         
