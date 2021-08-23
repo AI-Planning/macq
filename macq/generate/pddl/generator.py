@@ -21,6 +21,14 @@ from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 
 
+class PlanningDomainsAPIError(Exception):
+    """Raised when a valid response cannot be obtained from the planning.domains solver."""
+
+    def __init__(self, message, e):
+        self.e = e
+        super().__init__(message)
+
+
 class InvalidGoalFluent(Exception):
     """
     Raised when the user attempts to supply a new goal with invalid fluent(s).
@@ -56,10 +64,16 @@ class Generator:
         op_dict (dict):
             The problem's ground operators, formatted to a dictionary for easy access during plan generation.
         observe_pres_effs (bool):
-            Option to observe action preconditions and effects upon generation. 
+            Option to observe action preconditions and effects upon generation.
     """
 
-    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None, observe_pres_effs: bool = False):
+    def __init__(
+        self,
+        dom: str = None,
+        prob: str = None,
+        problem_id: int = None,
+        observe_pres_effs: bool = False,
+    ):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
 
@@ -71,7 +85,7 @@ class Generator:
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
-                Option to observe action preconditions and effects upon generation. 
+                Option to observe action preconditions and effects upon generation.
         """
         # get attributes
         self.pddl_dom = dom
@@ -247,9 +261,7 @@ class Generator:
             raw_precond = tarski_act.precondition.subformulas
             for raw_p in raw_precond:
                 if isinstance(raw_p, CompoundFormula):
-                    precond.add(
-                        self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
-                    )
+                    precond.add(self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0]))
                 else:
                     precond.add(self.__tarski_atom_to_macq_fluent(raw_p))
         else:
@@ -262,7 +274,17 @@ class Generator:
         for fluent in precond:
             objs.update(set(fluent.objects))
 
-        return Action(name=name, obj_params=list(objs), precond=precond, add=add, delete=delete) if self.observe_pres_effs else Action(name=name, obj_params=list(objs))
+        return (
+            Action(
+                name=name,
+                obj_params=list(objs),
+                precond=precond,
+                add=add,
+                delete=delete,
+            )
+            if self.observe_pres_effs
+            else Action(name=name, obj_params=list(objs))
+        )
 
     def change_init(
         self,
@@ -371,10 +393,33 @@ class Generator:
                     "domain": open(self.pddl_dom, "r").read(),
                     "problem": open(self.pddl_prob, "r").read(),
                 }
-                resp = requests.post(
-                    "http://solver.planning.domains/solve", verify=False, json=data
-                ).json()
-                plan = [act["name"] for act in resp["result"]["plan"]]
+
+                def get_api_response():
+                    resp = requests.post(
+                        "http://solver.planning.domains/solve", verify=False, json=data
+                    ).json()
+                    return [act["name"] for act in resp["result"]["plan"]]
+
+                try:
+                    plan = get_api_response()
+                except TypeError:
+                    try:
+                        plan = get_api_response()
+                    except TypeError:
+                        try:
+                            plan = get_api_response()
+                        except TypeError:
+                            try:
+                                plan = get_api_response()
+                            except TypeError:
+                                try:
+                                    plan = get_api_response()
+                                except TypeError as e:
+                                    raise PlanningDomainsAPIError(
+                                        "Could not get a valid response from the planning.domains solver after 5 attempts.",
+                                        e,
+                                    )
+
         else:
             f = open(filename, "r")
             plan = list(filter(lambda x: ";" not in x, f.read().splitlines()))
