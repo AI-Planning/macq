@@ -16,6 +16,12 @@ class Action:
             The list of objects the action acts on.
         cost (int):
             The cost to perform the action.
+        precond (Set[Fluent]):
+            The set of Fluents that make up the precondition.
+        add (Set[Fluent]):
+            The set of Fluents that make up the add effects.
+        delete (Set[Fluent]):
+            The set of Fluents that make up the delete effects.
     """
 
     def __init__(
@@ -77,15 +83,6 @@ class Action:
             )
 
         return Action(self.name, self.obj_params.copy(), self.cost)
-
-    def add_parameter(self, obj: PlanningObject):
-        """Adds an object to the action's parameters.
-
-        Args:
-            obj (PlanningObject):
-                The object to be added to the action's object parameters.
-        """
-        self.obj_params.append(obj)
 
     def _serialize(self):
         return self.name
