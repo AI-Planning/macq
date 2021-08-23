@@ -1,6 +1,6 @@
 from . import Observation
 from ..trace import Step
-from ..utils import PercentError  # , extract_fluent_subset
+from ..utils import PercentError
 
 
 class NoisyObservation(Observation):
