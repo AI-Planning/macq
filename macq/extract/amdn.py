@@ -92,6 +92,9 @@ class AMDN:
                 # for each action in psi_i+1
                 for act_y in par_act_sets[j + 1]:
                     # for each action in psi_i
+                    # NOTE: we do not use an existential here, as the paper describes (for each act_y in psi_i + 1,
+                    # there exists an act_x in psi_i such that the condition holds.)
+                    # this is due to the fact that the weights must be set for each action pair.
                     for act_x in par_act_sets[j]:
                         if act_x != act_y:
                             # calculate the probability of the actions being disordered (p)
@@ -130,6 +133,11 @@ class AMDN:
     @staticmethod
     def _build_soft_parallel_constraints(obs_lists: ObservationLists):
         soft_constraints = {}
+
+        # NOTE: the paper does not take into account possible conflicts between the preconditions of actions
+        # and the add/delete effects of other actions (similar to the hard constraints, but with other actions
+        # in the parallel action set).
+
         # iterate through all traces
         for i in range(len(obs_lists.all_par_act_sets)):
             par_act_sets = obs_lists.all_par_act_sets[i]
