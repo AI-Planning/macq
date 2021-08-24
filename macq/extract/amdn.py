@@ -91,8 +91,6 @@ class AMDN:
             for j in range(len(par_act_sets) - 1):
                 # for each action in psi_i+1
                 for act_y in par_act_sets[j + 1]:
-                    all_constraint_1 = []
-                    all_constraint_2 = []
                     # for each action in psi_i
                     for act_x in par_act_sets[j]:
                         if act_x != act_y:
@@ -114,11 +112,8 @@ class AMDN:
                                     And([add(r, act_y), delete(r, act_x)]),
                                     And([delete(r, act_y), add(r, act_x)])
                                 ]).to_CNF())
-                            all_constraint_1.append(Or(constraint_1).to_CNF())
-                            all_constraint_2.append(Or(constraint_2).to_CNF())
-                    # each constraint only needs to hold for one action in psi_i to be true
-                    AMDN._extract_aux_set_weights(Or(all_constraint_1).to_CNF(), disorder_constraints, (1 - p))
-                    AMDN._extract_aux_set_weights(Or(all_constraint_2).to_CNF(), disorder_constraints, p)
+                            AMDN._extract_aux_set_weights(Or(constraint_1).to_CNF(), disorder_constraints, (1 - p))
+                            AMDN._extract_aux_set_weights(Or(constraint_2).to_CNF(), disorder_constraints, p)
             return disorder_constraints
 
     @staticmethod
