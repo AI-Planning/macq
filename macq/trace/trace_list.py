@@ -1,10 +1,9 @@
 from logging import warn
 from typing import List, Callable, Type, Optional, Set
 from rich.console import Console
-from . import Action, Trace
-from ..observation import Observation
-import macq.trace as TraceAPI
 
+from . import Action, Trace
+from ..observation import Observation, ObservationLists
 
 
 class TraceList:
@@ -20,8 +19,7 @@ class TraceList:
             The function used to generate the traces.
     """
 
-    # Allow child classes to have traces as a list of any type
-    traces: List
+    traces: List[Trace]
 
     class MissingGenerator(Exception):
         def __init__(
@@ -179,17 +177,19 @@ class TraceList:
                 fluents.update(step.state.fluents)
         return fluents
 
-    def tokenize(self, Token: Type[Observation], ObsLists = None, **kwargs):
+    def tokenize(
+        self,
+        Token: Type[Observation],
+        ObsLists: Type[ObservationLists] = ObservationLists,
+        **kwargs,
+    ):
         """Tokenizes the steps in this trace.
 
         Args:
             Token (Observation):
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
-            ObsLists (Type[TraceAPI.ObservationLists]):
+            ObsLists (Type[ObservationLists]):
                 The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
-        ObsLists : Type[TraceAPI.ObservationLists]
-        if not ObsLists:
-            ObsLists = TraceAPI.ObservationLists
         return ObsLists(self, Token, **kwargs)

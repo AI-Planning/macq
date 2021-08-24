@@ -1,7 +1,7 @@
 import macq.extract as extract
 from .model import Model
-from ..trace import ObservationLists
-from ..observation import NoisyPartialDisorderedParallelObservation
+from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists
+
 
 class AMDN:
     def __new__(cls, obs_lists: ObservationLists):
@@ -23,7 +23,7 @@ class AMDN:
         # (this will make it easy and efficient to refer to later, and prevents unnecessary recalculations). store as attribute
         # also create a list of all <a, r> tuples, store as attribute
 
-        #return Model(fluents, actions)
+        # return Model(fluents, actions)
 
     def _build_disorder_constraints(self):
         # TODO:
@@ -66,12 +66,12 @@ class AMDN:
         # iterate through all <a, r> tuples
         # for each <a, r> tuple: iterate through each step over ALL the plan traces
         # count the number of occurrences; if higher than the user-provided parameter delta,
-        # store this tuple as a dictionary entry in a list of dictionaries (something like 
+        # store this tuple as a dictionary entry in a list of dictionaries (something like
         # [{"action and proposition": <a, r>, "occurrences of r:" 5}]).
         # after all iterations are through, iterate through all the tuples in this dictionary,
         # and set [constraint 6] with the calculated weight.
         # TODO: Ask - what "occurrences of all propositions" refers to - is it the total number of steps...?
-        
+
         # store the initial state s0
         # iterate through every step in the plan trace
         # at each step, check all the propositions r in the current state
@@ -80,7 +80,7 @@ class AMDN:
         # continuing the process with different propositions? Do we still count the occurrences of each proposition through
         # the entire trace to use when we calculate the weight?
 
-        # [constraint 8] is almost identical to [constraint 6]. Watch the order of the tuples. 
+        # [constraint 8] is almost identical to [constraint 6]. Watch the order of the tuples.
 
         pass
 
