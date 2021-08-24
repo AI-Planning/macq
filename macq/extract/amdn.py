@@ -138,14 +138,11 @@ class AMDN:
                 # within each parallel action set, iterate through the same action set again to compare
                 # each action to every other action in the set; setting constraints assuming actions are not disordered
                 for act_x in par_act_sets[j]:
-                    for act_x_prime in par_act_sets[j]:
-                        if act_x != act_x_prime:
-                            p = obs_lists.probabilities[ActionPair({act_x, act_x_prime})]
-                            # iterate through all propositions
-                            for r in obs_lists.propositions:
-                                # equivalent: if r is in the add or delete list of an action in the set, that implies it 
-                                # can't be in the add or delete list of any other action in the set
-                                AMDN._extract_aux_set_weights(Or([And([~add(r, act_x_prime), ~delete(r, act_x_prime)]), And([~add(r, act_x), ~delete(r, act_x)])]).to_CNF(), soft_constraints, (1 - p))
+                    for act_x_prime in par_act_sets[j] - {act_x}:
+                        p = obs_lists.probabilities[ActionPair({act_x, act_x_prime})]
+                        # iterate through all propositions
+                        for r in obs_lists.propositions:
+                            soft_constraints[implies(add(r, act_x), ~delete(r, act_x_prime))] = (1 - p) * WMAX
 
         # iterate through all traces
         for i in range(len(obs_lists.all_par_act_sets)):
@@ -154,12 +151,11 @@ class AMDN:
             for j in range(len(par_act_sets) - 1):
                 # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints assuming actions are disordered
                 for act_y in par_act_sets[j + 1]:
-                    for act_x_prime in par_act_sets[j]:
-                        if act_y != act_x_prime:
-                            p = obs_lists.probabilities[ActionPair({act_y, act_x_prime})]
-                            # iterate through all propositions and similarly set the constraint
-                            for r in obs_lists.propositions:
-                                AMDN._extract_aux_set_weights(Or([And([~add(r, act_x_prime), ~delete(r, act_x_prime)]), And([~add(r, act_y), ~delete(r, act_y)])]).to_CNF(), soft_constraints, p)
+                    for act_x_prime in par_act_sets[j] - {act_y}:
+                        p = obs_lists.probabilities[ActionPair({act_y, act_x_prime})]
+                        # iterate through all propositions and similarly set the constraint
+                        for r in obs_lists.propositions:
+                            soft_constraints[implies(add(r, act_y), ~delete(r, act_x_prime))] = p * WMAX
         return soft_constraints
 
     @staticmethod
