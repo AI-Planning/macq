@@ -92,7 +92,7 @@ class ObservationLists(MutableSequence):
         self.observations[key] = value
         if self.type == Observation:
             self.type = type(value[0])
-        elif type(value[0] != self.type):
+        elif type(value[0]) != self.type:
             raise TokenTypeMismatch(self.type, type(value[0]))
 
     def __delitem__(self, key: int):
@@ -108,7 +108,7 @@ class ObservationLists(MutableSequence):
         self.observations.insert(key, value)
         if self.type == Observation:
             self.type = type(value[0])
-        elif type(value[0] != self.type):
+        elif type(value[0]) != self.type:
             raise TokenTypeMismatch(self.type, type(value[0]))
 
     def get_actions(self) -> Set[Action]:
