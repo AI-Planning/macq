@@ -11,6 +11,7 @@ from rich.text import Text
 from . import Observation
 from ..trace import Action, Fluent
 
+# Prevents circular importing
 if TYPE_CHECKING:
     from macq.trace import TraceList
 
@@ -36,6 +37,17 @@ class TokenTypeMismatch(Exception):
 
 
 class ObservationLists(MutableSequence):
+    """A sequence of observations.
+
+    A `list`-like object, where each element is a list of `Observation`s.
+
+    Attributes:
+        observations (List[List[Observation]]):
+            The internal list of lists of `Observation` objects.
+        type (Type[Observation]):
+            The type (class) of the observations.
+    """
+
     observations: List[List[Observation]]
     type: Type[Observation]
 
@@ -71,12 +83,17 @@ class ObservationLists(MutableSequence):
 
         else:
             self.observations = []
+            self.type = Observation
 
     def __getitem__(self, key: int):
         return self.observations[key]
 
     def __setitem__(self, key: int, value: List[Observation]):
         self.observations[key] = value
+        if self.type == Observation:
+            self.type = type(value[0])
+        elif type(value[0] != self.type):
+            raise TokenTypeMismatch(self.type, type(value[0]))
 
     def __delitem__(self, key: int):
         del self.observations[key]
@@ -89,6 +106,10 @@ class ObservationLists(MutableSequence):
 
     def insert(self, key: int, value: List[Observation]):
         self.observations.insert(key, value)
+        if self.type == Observation:
+            self.type = type(value[0])
+        elif type(value[0] != self.type):
+            raise TokenTypeMismatch(self.type, type(value[0]))
 
     def get_actions(self) -> Set[Action]:
         actions: Set[Action] = set()
