@@ -142,6 +142,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         self.all_states = []
         self.features = features
         self.learned_theta = learned_theta
+        # TODO: use functions here instead?
         actions = {step.action for trace in traces for step in trace if step.action}
         # cast to list for iteration purposes
         self.actions = list(actions)

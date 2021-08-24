@@ -84,32 +84,41 @@ class AMDN:
         disorder_constraints = {}
         # iterate through all traces
         for i in range(len(obs_lists.all_par_act_sets)):
+            # get the parallel action sets for this trace
             par_act_sets = obs_lists.all_par_act_sets[i]
             # iterate through all pairs of parallel action sets for this trace
+            # use -1 since we will be referencing the current parallel action set and the following one
             for j in range(len(par_act_sets) - 1):
-                # for each pair, iterate through all possible action combinations
-                for act_x in par_act_sets[j]:
-                    for act_y in par_act_sets[j + 1]:
+                # for each action in psi_i+1
+                for act_y in par_act_sets[j + 1]:
+                    all_constraint_1 = []
+                    all_constraint_2 = []
+                    # for each action in psi_i
+                    for act_x in par_act_sets[j]:
                         if act_x != act_y:
                             # calculate the probability of the actions being disordered (p)
                             p = obs_lists.probabilities[ActionPair({act_x, act_y})]
-                            # for each action combination, iterate through all possible propositions
+                            # each constraint only needs to hold for one proposition to be true
+                            constraint_1 = []
+                            constraint_2 = []
                             for r in obs_lists.propositions:
-                                # enforce the following constraint if the actions are ordered with weight (1 - p) x wmax:
-                                AMDN._extract_aux_set_weights(Or([
+                                constraint_1.append(Or([
                                     And([pre(r, act_x), ~delete(r, act_x), delete(r, act_y)]),
                                     And([add(r, act_x), pre(r, act_y)]),
                                     And([add(r, act_x), delete(r, act_y)]),
                                     And([delete(r, act_x), add(r, act_y)])
-                                    ]).to_CNF(), disorder_constraints, (1 - p))
-
-                                # likewise, enforce the following constraint if the actions are disordered with weight p x wmax:
-                                AMDN._extract_aux_set_weights(Or([
+                                    ]).to_CNF())
+                                constraint_2.append(Or([
                                     And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
                                     And([add(r, act_y), pre(r, act_x)]),
                                     And([add(r, act_y), delete(r, act_x)]),
                                     And([delete(r, act_y), add(r, act_x)])
-                                ]).to_CNF(), disorder_constraints, p)
+                                ]).to_CNF())
+                            all_constraint_1.append(Or(constraint_1).to_CNF())
+                            all_constraint_2.append(Or(constraint_2).to_CNF())
+                    # each constraint only needs to hold for one action in psi_i to be true
+                    AMDN._extract_aux_set_weights(Or(all_constraint_1).to_CNF(), disorder_constraints, (1 - p))
+                    AMDN._extract_aux_set_weights(Or(all_constraint_2).to_CNF(), disorder_constraints, p)
             return disorder_constraints
 
     @staticmethod
