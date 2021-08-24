@@ -24,7 +24,6 @@ class Relation:
         return f"{self.name} {' '.join(list(self.types))}"
 
     def matches(self, action: LearnedAction):
-        match = False
         action_types = set(action.obj_params)
         self_counts = Counter(self.types)
         action_counts = Counter(action.obj_params)
