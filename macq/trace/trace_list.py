@@ -64,38 +64,11 @@ class TraceList(MutableSequence):
     def __len__(self):
         return len(self.traces)
 
-    #     def __reversed__(self):
-    #         return reversed(self.traces)
-
-    #     def __contains__(self, item):
-    #         return item in self.traces
-
-    #     def append(self, item):
-    #         self.traces.append(item)
-
-    #     def clear(self):
-    #         self.traces.clear()
-
     def copy(self):
         return self.traces.copy()
 
-    #     def extend(self, iterable):
-    #         self.traces.extend(iterable)
-
-    #     def index(self, value):
-    #         return self.traces.index(value)
-
     def insert(self, key: int, value: Trace):
         self.traces.insert(key, value)
-
-    #     def pop(self):
-    #         return self.traces.pop()
-
-    #     def remove(self, value):
-    #         self.traces.remove(value)
-
-    #     def reverse(self):
-    #         self.traces.reverse()
 
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
         self.traces.sort(reverse=reverse, key=key)
