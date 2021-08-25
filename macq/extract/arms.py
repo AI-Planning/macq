@@ -255,7 +255,7 @@ class ARMS:
         Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         Dict[Action, LearnedAction],
     ]:
-        """Substitute instantiated objects in each action instance with the object type."""
+        """(Step 1) Substitute instantiated objects in each action instance with the object type."""
 
         learned_actions: Set[LearnedAction] = set()
         action_map: Dict[Action, LearnedAction] = {}
@@ -293,7 +293,7 @@ class ARMS:
         min_support: int,
         debug: bool,
     ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
-        """Generate action constraints, information constraints, and plan constraints."""
+        """(Step 2) Generate action constraints, information constraints, and plan constraints."""
 
         # Map fluents to relations
         # relations are fluents but with instantiated objects replaced by the object type
@@ -347,6 +347,7 @@ class ARMS:
         relations: Set[Relation],
         debug: bool,
     ) -> List[Or[Var]]:
+        """(Step 2 - Action Constraints)"""
 
         if debug:
             print("\nBuilding action constraints...\n")
@@ -418,6 +419,7 @@ class ARMS:
         actions: Dict[Action, LearnedAction],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
+        """(Step 2 - Info Constraints)"""
 
         if debug:
             print("\nBuilding information constraints...")
@@ -557,6 +559,7 @@ class ARMS:
         min_support: int,
         debug: bool,
     ) -> Dict[Or[Var], int]:
+        """(Step 2 - Plan Constraints)"""
         frequent_pairs = ARMS._apriori(
             [
                 [
@@ -615,7 +618,7 @@ class ARMS:
         plan_default: int,
         debug: bool,
     ) -> Tuple[WCNF, Dict[int, Hashable]]:
-        """Construct the weighted MAX-SAT problem."""
+        """(Step 3) Construct the weighted MAX-SAT problem."""
 
         action_weights = [action_weight] * len(constraints.action)
         info_weights = [info_weight] * len(constraints.info)
@@ -675,6 +678,7 @@ class ARMS:
 
     @staticmethod
     def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+        """(Step 4) Build the MAX-SAT theory."""
         solver = RC2(max_sat)
 
         encoded_model = solver.compute()
@@ -696,6 +700,7 @@ class ARMS:
         actions: List[LearnedAction],
         debug: bool,
     ):
+        """(Step 5) Extract the learned action effects from the solved model."""
         action_map = {a.details(): a for a in actions}
         negative_constraints = defaultdict(set)
         plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
