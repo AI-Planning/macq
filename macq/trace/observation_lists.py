@@ -1,20 +1,60 @@
-import macq.trace as TraceAPI
-from typing import List, Set, Type
+from collections import defaultdict
+from warnings import warn
+from typing import Callable, Dict, List, Type, Set, Union
+from inspect import cleandoc
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
+from . import Trace, Action, SAS
 from ..observation import Observation
-from . import Trace
+import macq.trace as TraceAPI
+
+
+class MissingToken(Exception):
+    def __init__(self, message=None):
+        if message is None:
+            message = (
+                f"Cannot create ObservationLists from a TraceList without a Token."
+            )
+        super().__init__(message)
+
 
 class ObservationLists(TraceAPI.TraceList):
     traces: List[List[Observation]]
     # Disable methods
     generate_more = property()
     get_usage = property()
-    tokenize = property()
-    get_fluents = property()
 
-    def __init__(self, traces: TraceAPI.TraceList, Token: Type[Observation], **kwargs):
-        self.traces = []
-        self.type = Token
-        self.tokenize(traces, **kwargs)
+    def __init__(
+        self,
+        traces: Union[TraceAPI.TraceList, List[List[Observation]]],
+        Token: Type[Observation] = None,
+        **kwargs,
+    ):
+        if isinstance(traces, TraceAPI.TraceList):
+            if not Token:
+                raise MissingToken()
+            self.traces = []
+            self.type = Token
+            self.tokenize(traces, **kwargs)
+        else:
+            self.traces = traces
+
+    def get_actions(self):
+        actions = set()
+        for obs_list in self:
+            for obs in obs_list:
+                action = obs.action
+                if action is not None:
+                    actions.add(action)
+        return actions
+
+    def get_fluents(self):
+        fluents = set()
+        for obs_list in self:
+            for obs in obs_list:
+                fluents.update(list(obs.state.keys()))
+        return fluents
 
     def tokenize(self, traces: TraceAPI.TraceList, **kwargs):
         trace: Trace
@@ -23,7 +63,8 @@ class ObservationLists(TraceAPI.TraceList):
             self.append(tokens)
 
     def fetch_observations(self, query: dict):
-        matches: List[Set[Observation]] = list()
+        matches: List[Set[Observation]] = []
+
         trace: List[Observation]
         for i, trace in enumerate(self):
             matches.append(set())
@@ -32,32 +73,171 @@ class ObservationLists(TraceAPI.TraceList):
                     matches[i].add(obs)
         return matches  # list of sets of matching fluents from each trace
 
-    def fetch_observation_windows(self, query: dict, left: int, right: int):
+    def fetch_observation_windows(
+        self, query: dict, left: int, right: int
+    ) -> List[List[Observation]]:
         windows = []
         matches = self.fetch_observations(query)
-        trace: Set[Observation]
-        for i, trace in enumerate(matches):  # note obs.index starts at 1 (index = i+1)
-            for obs in trace:
+        # note obs.index starts at 1 (index = i+1)
+        for i, obs_set in enumerate(matches):
+            for obs in obs_set:
                 start = obs.index - left - 1
                 end = obs.index + right
                 windows.append(self[i][start:end])
         return windows
 
-    def get_transitions(self, action: str):
+    def get_transitions(self, action: str) -> List[List[Observation]]:
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
-    def get_all_transitions(self):
-        actions = set()
-        for trace in self:
-            for obs in trace:
-                action = obs.action
-                if action:
-                    actions.add(action)
-        # Actions in the observations can be either Action objects or strings depending on the type of observation
+    def get_all_transitions(self) -> Dict[Action, List[List[Observation]]]:
+        actions = self.get_actions()
         try:
             return {
                 action: self.get_transitions(action.details()) for action in actions
             }
         except AttributeError:
             return {action: self.get_transitions(str(action)) for action in actions}
+
+    def print(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Pretty prints the trace list in the specified view.
+
+        Arguments:
+            view ("details" | "color"):
+                Specifies the view format to print in. "details" provides a
+                detailed summary of each step in a trace. "color" provides a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value.
+            filter_func (function):
+                Optional; Used to filter which fluents are printed in the
+                colorgrid display.
+            wrap (bool):
+                Determines if the output is wrapped or cut off. Details defaults
+                to cut off (wrap=False), color defaults to wrap (wrap=True).
+        """
+        console = Console()
+
+        views = ["details", "color"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        obs_lists = []
+        if view == "details":
+            if wrap is None:
+                wrap = False
+            obs_lists = [self._details(obs_list, wrap=wrap) for obs_list in self]
+
+        elif view == "color":
+            if wrap is None:
+                wrap = True
+            obs_lists = [
+                self._colorgrid(obs_list, filter_func=filter_func, wrap=wrap)
+                for obs_list in self
+            ]
+
+        for obs_list in obs_lists:
+            console.print(obs_list)
+            print()
+
+    def _details(self, obs_list: List[Observation], wrap: bool):
+        indent = " " * 2
+        # Summarize class attributes
+        details = Table.grid(expand=True)
+        details.title = "Trace"
+        details.add_column()
+        details.add_row(
+            cleandoc(
+                f"""
+            Attributes:
+            {indent}{len(obs_list)} steps
+            {indent}{len(self.get_fluents())} fluents
+            """
+            )
+        )
+        steps = Table(
+            title="Steps", box=None, show_edge=False, pad_edge=False, expand=True
+        )
+        steps.add_column("Step", justify="right", width=8)
+        steps.add_column(
+            "State",
+            justify="center",
+            overflow="ellipsis",
+            max_width=100,
+            no_wrap=(not wrap),
+        )
+        steps.add_column("Action", overflow="ellipsis", no_wrap=(not wrap))
+
+        for obs in obs_list:
+            ind, state, action = obs.get_details()
+            steps.add_row(ind, state, action)
+
+        details.add_row(steps)
+
+        return details
+
+    @staticmethod
+    def _colorgrid(obs_list: List[Observation], filter_func: Callable, wrap: bool):
+        colorgrid = Table(
+            title="Trace", box=None, show_edge=False, pad_edge=False, expand=False
+        )
+        colorgrid.add_column("Fluent", justify="right")
+        colorgrid.add_column(
+            header=Text("Step", justify="center"), overflow="fold", no_wrap=(not wrap)
+        )
+        colorgrid.add_row(
+            "",
+            "".join(
+                [
+                    "|" if i < len(obs_list) and (i + 1) % 5 == 0 else " "
+                    for i in range(len(obs_list))
+                ]
+            ),
+        )
+
+        static = ObservationLists.get_obs_static_fluents(obs_list)
+        fluents = list(
+            filter(
+                filter_func,
+                sorted(
+                    ObservationLists.get_obs_fluents(obs_list),
+                    key=lambda f: float("inf") if f in static else len(str(f)),
+                ),
+            )
+        )
+
+        for fluent in fluents:
+            step_str = ""
+            for obs in obs_list:
+                if obs.state and obs.state[fluent]:
+                    step_str += "[green]"
+                else:
+                    step_str += "[red]"
+                step_str += "■"
+
+            colorgrid.add_row(str(fluent), step_str)
+
+        return colorgrid
+
+    @staticmethod
+    def get_obs_fluents(obs_list: List[Observation]):
+        fluents = set()
+        for obs in obs_list:
+            if obs.state:
+                fluents.update(list(obs.state.keys()))
+        return fluents
+
+    @staticmethod
+    def get_obs_static_fluents(obs_list: List[Observation]):
+        fstates = defaultdict(list)
+        for obs in obs_list:
+            if obs.state:
+                for f, v in obs.state.items():
+                    fstates[f].append(v)
+
+        static = set()
+        for f, states in fstates.items():
+            if all(states) or not any(states):
+                static.add(f)
+
+        return static

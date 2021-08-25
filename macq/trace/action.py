@@ -12,8 +12,8 @@ class Action:
     Attributes:
         name (str):
             The name of the action.
-        obj_params (list):
-            The list of objects the action acts on.
+        obj_params (List[PlanningObject]):
+            The set of objects the action acts on.
         cost (int):
             The cost to perform the action.
         precond (Set[Fluent]):

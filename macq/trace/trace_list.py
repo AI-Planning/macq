@@ -1,10 +1,9 @@
-from logging import warn
-from typing import List, Callable, Type, Optional, Set
+from warnings import warn
+from typing import List, Callable, Type, Optional
 from rich.console import Console
 from . import Action, Trace
 from ..observation import Observation
 import macq.trace as TraceAPI
-
 
 
 class TraceList:
@@ -109,6 +108,12 @@ class TraceList:
                 detailed summary of each step in a trace. "color" provides a
                 color grid, mapping fluents in a step to either red or green
                 corresponding to the truth value.
+            filter_func (function):
+                Optional; Used to filter which fluents are printed in the
+                colorgrid display.
+            wrap (bool):
+                Determines if the output is wrapped or cut off. Details defaults
+                to cut off (wrap=False), color defaults to wrap (wrap=True).
         """
         console = Console()
 
@@ -179,7 +184,7 @@ class TraceList:
                 fluents.update(step.state.fluents)
         return fluents
 
-    def tokenize(self, Token: Type[Observation], ObsLists = None, **kwargs):
+    def tokenize(self, Token: Type[Observation], ObsLists=None, **kwargs):
         """Tokenizes the steps in this trace.
 
         Args:
@@ -189,7 +194,7 @@ class TraceList:
             ObsLists (Type[TraceAPI.ObservationLists]):
                 The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
-        ObsLists : Type[TraceAPI.ObservationLists]
+        ObsLists: Type[TraceAPI.ObservationLists]
         if not ObsLists:
             ObsLists = TraceAPI.ObservationLists
         return ObsLists(self, Token, **kwargs)

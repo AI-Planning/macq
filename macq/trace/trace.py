@@ -54,6 +54,11 @@ class Trace:
         self.steps = steps if steps is not None else []
         self.__reinit_actions_and_fluents()
 
+    def __eq__(self, other):
+        if not isinstance(other, Trace):
+            return False
+        return self.steps == other.steps
+
     def __len__(self):
         return len(self.steps)
 
@@ -262,7 +267,7 @@ class Trace:
                 post_states.add(self[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action) -> Set[SAS]:
+    def get_sas_triples(self, action: Action) -> List[SAS]:
         """Retrieves the list of (S,A,S') triples for the action in this trace.
 
         In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
@@ -276,11 +281,11 @@ class Trace:
             A `SAS` object, containing the `pre_state`, `action`, and
             `post_state`.
         """
-        sas_triples = set()
+        sas_triples = []
         for i, step in enumerate(self):
             if step.action == action:
                 triple = SAS(step.state, action, self[i + 1].state)
-                sas_triples.add(triple)
+                sas_triples.append(triple)
         return sas_triples
 
     def get_total_cost(self):

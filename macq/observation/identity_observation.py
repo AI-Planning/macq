@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, List
-from ..trace import Step
+from ..trace import Step, State
 from . import Observation, InvalidQueryParameter
 
 
@@ -10,6 +10,8 @@ class IdentityObservation(Observation):
     The identity observation stores the step unmodified. Inherits the base Observation
     class.
     """
+
+    state: State
 
     class IdentityState(dict):
         def __hash__(self):
@@ -42,7 +44,7 @@ class IdentityObservation(Observation):
         self.action = None if step.action is None else step.action.clone()
 
     def __hash__(self):
-        return hash(self.details())
+        return super().__hash__()
 
     def __eq__(self, other):
         return (
@@ -50,9 +52,6 @@ class IdentityObservation(Observation):
             and self.state == other.state
             and self.action == other.action
         )
-
-    def details(self):
-        return f"Obs {str(self.index)}.\n  State: {str(self.state)}\n  Action: {str(self.action)}"
 
     def _matches(self, key: str, value: str):
         if key == "action":
