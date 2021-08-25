@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from warnings import warn
 from typing import Set, List, Dict, Tuple, Hashable
 from nnf import Var, And, Or, false as nnffalse
-from pysat.examples.rc2 import RC2
-from pysat.formula import WCNF
 from . import LearnedAction, Model
 from .exceptions import (
     IncompatibleObservationToken,
@@ -12,7 +10,7 @@ from .exceptions import (
 )
 from ..observation import PartialObservation as Observation
 from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
-from ..utils.pysat import to_wcnf
+from ..utils.pysat import to_wcnf, RC2, WCNF
 
 
 @dataclass

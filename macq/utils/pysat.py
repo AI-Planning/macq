@@ -1,5 +1,6 @@
 from typing import List, Tuple, Dict, Hashable
 from pysat.formula import WCNF
+from pysat.examples.rc2 import RC2
 from nnf import And, Or, Var
 
 
