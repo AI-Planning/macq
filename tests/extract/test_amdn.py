@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
     prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
-    traces = TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace
+    traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
     
     features = [objects_shared_feature, num_parameters_feature]
     learned_theta = default_theta_vec(2)
@@ -192,9 +192,10 @@ if __name__ == "__main__":
         ObsLists=DisorderedParallelActionsObservationLists,
         features=features,
         learned_theta=learned_theta,
-        percent_missing=0,
-        percent_noisy=0,
+        percent_missing=0.50,
+        percent_noisy=0.50,
+        replace=True
     )
-    model = Extract(observations, modes.AMDN, occ_threshold = 1)
+    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 1)
     f = open("results.txt", "w")
     f.write(model.details())

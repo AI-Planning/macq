@@ -5,38 +5,46 @@ from typing import Dict, Union, Set, Hashable
 from nnf import Aux, Var, And, Or
 from pysat.formula import WCNF
 from pysat.examples.rc2 import RC2
+from bauhaus import Encoding # only used for pretty printing in debug mode
 from .exceptions import (
     IncompatibleObservationToken,
     InvalidMaxSATModel,
 )
 from .model import Model
-from ..trace import ObservationLists, ActionPair, Fluent # for typing
+from ..trace import ObservationLists, ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation
-from ..utils.pysat import to_wcnf, encode
+from ..utils.pysat import to_wcnf
 
-def __set_precond(r, act):
-    return Var(str(r)[1:-1] + " is a precondition of " + act.details())
+e = Encoding
 
-def __set_add(r, act):
-    return Var(str(r)[1:-1] + " is added by " + act.details())
+def _set_precond(r, act):
+    return Var("(" + str(r)[1:-1] + " is a precondition of " + act.details() + ")")
 
-def __set_del(r, act):
-    return Var(str(r)[1:-1] + " is deleted by " + act.details())
+def _set_add(r, act):
+    return Var("(" + str(r)[1:-1] + " is added by " + act.details() + ")")
+
+def _set_del(r, act):
+    return Var("(" + str(r)[1:-1] + " is deleted by " + act.details() + ")")
 
 # for easier reference
-pre = __set_precond
-add = __set_add
-delete = __set_del
+pre = _set_precond
+add = _set_add
+delete = _set_del
 
 WMAX = 1
 
 class AMDN:
-    def __new__(cls, obs_lists: ObservationLists, occ_threshold: int):
+    def __new__(cls, obs_lists: ObservationLists, debug: bool = False, occ_threshold: int = 1):
         """Creates a new Model object.
 
         Args:
             obs_lists (ObservationList):
                 The state observations to extract the model from.
+            debug (bool):
+                Optional debugging mode.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+
         Raises:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
@@ -44,11 +52,11 @@ class AMDN:
         if obs_lists.type is not NoisyPartialDisorderedParallelObservation:
             raise IncompatibleObservationToken(obs_lists.type, AMDN)
 
-        return AMDN._amdn(obs_lists, occ_threshold)
+        return AMDN._amdn(obs_lists, debug, occ_threshold)
     
     @staticmethod
-    def _amdn(obs_lists: ObservationLists, occ_threshold: int):
-        wcnf, decode = AMDN._solve_constraints(obs_lists, occ_threshold)
+    def _amdn(obs_lists: ObservationLists, debug: int, occ_threshold: int):
+        wcnf, decode = AMDN._solve_constraints(obs_lists, debug, occ_threshold)
         raw_model = AMDN._extract_raw_model(wcnf, decode)
         return AMDN._extract_model(obs_lists, raw_model)
 
@@ -67,20 +75,28 @@ class AMDN:
 
     @staticmethod
     def _extract_aux_set_weights(cnf_formula: And[Or[Var]], constraints: Dict, prob_disordered: float):
-        aux_var = set()
         # find all the auxiliary variables
         for clause in cnf_formula.children:
             for var in clause.children:
                 if isinstance(var.name, Aux):
-                    aux_var.add(var.name)
+                    # only have the case where the clause is part of an aux <-> formula if the other variables are not aux
+                    valid = True
+                    for other in clause.children - {var}:
+                        if isinstance(other.name, Aux):
+                            valid = False
+                            break
+                    if valid:
+                        # aux variables are the soft clauses that get the original weight
+                        constraints[AMDN._or_refactor(var)] = prob_disordered * WMAX
+                    else:
+                        break
             # set each original constraint to be a hard clause
             constraints[clause] = "HARD"
-        # aux variables are the soft clauses that get the original weight
-        for aux in aux_var:
-            constraints[AMDN._or_refactor(Var(aux))] = prob_disordered * WMAX
 
     @staticmethod
-    def _build_disorder_constraints(obs_lists: ObservationLists):
+    def _build_disorder_constraints(obs_lists: ObservationLists, debug: int):
+        global e
+        
         disorder_constraints = {}
         # iterate through all traces
         for i in range(len(obs_lists.all_par_act_sets)):
@@ -108,19 +124,56 @@ class AMDN:
                                     And([add(r, act_x), pre(r, act_y)]),
                                     And([add(r, act_x), delete(r, act_y)]),
                                     And([delete(r, act_x), add(r, act_y)])
-                                    ]).to_CNF())
+                                    ]))
                                 constraint_2.append(Or([
                                     And([pre(r, act_y), ~delete(r, act_y), delete(r, act_x)]),
                                     And([add(r, act_y), pre(r, act_x)]),
                                     And([add(r, act_y), delete(r, act_x)]),
                                     And([delete(r, act_y), add(r, act_x)])
-                                ]).to_CNF())
-                            AMDN._extract_aux_set_weights(Or(constraint_1).to_CNF(), disorder_constraints, (1 - p))
-                            AMDN._extract_aux_set_weights(Or(constraint_2).to_CNF(), disorder_constraints, p)
+                                ]))
+                            disjunct_all_constr_1 = Or(constraint_1).to_CNF()
+                            disjunct_all_constr_2 = Or(constraint_2).to_CNF()
+                            AMDN._extract_aux_set_weights(disjunct_all_constr_1, disorder_constraints, (1 - p))
+                            AMDN._extract_aux_set_weights(disjunct_all_constr_2, disorder_constraints, p)
+
+                            if debug:
+                                aux_map = {}
+                                print("\nFor the pair: " + act_x.details() + " and " + act_y.details() + ":")
+                                print("DC:\n")
+                                index = 0
+                                for c in disorder_constraints:
+                                    for var in c.children:
+                                        if isinstance(var.name, Aux) and var.name not in aux_map:
+                                            aux_map[var.name] = f"aux {index}"
+                                            index += 1
+
+                                all_pretty_c = {}
+                                for c in disorder_constraints:
+                                    pretty_c = []
+                                    for var in c.children:
+                                        if isinstance(var.name, Aux):
+                                            if var.true:
+                                                pretty_c.append(Var(aux_map[var.name]))
+                                            else:
+                                                pretty_c.append(~Var(aux_map[var.name]))
+                                        else:
+                                            pretty_c.append(var)
+                                    # map disorder constraints to pretty disorder constraints
+                                    all_pretty_c[c] = Or(pretty_c)
+
+                                for aux in aux_map.values():
+                                    for c, v in all_pretty_c.items():
+                                        for child in v.children:
+                                            if aux == child.name:
+                                                e.pprint(e, v)
+                                                print(disorder_constraints[c])
+                                                break
+                                    print()
+
             return disorder_constraints
 
     @staticmethod
-    def _build_hard_parallel_constraints(obs_lists: ObservationLists):
+    def _build_hard_parallel_constraints(obs_lists: ObservationLists, debug: int):
         hard_constraints = {}
         # create a list of all <a, r> tuples
         for act in obs_lists.actions:
@@ -131,7 +184,7 @@ class AMDN:
         return hard_constraints
 
     @staticmethod
-    def _build_soft_parallel_constraints(obs_lists: ObservationLists):
+    def _build_soft_parallel_constraints(obs_lists: ObservationLists, debug: int):
         soft_constraints = {}
 
         # NOTE: the paper does not take into account possible conflicts between the preconditions of actions
@@ -167,8 +220,8 @@ class AMDN:
         return soft_constraints
 
     @staticmethod
-    def _build_parallel_constraints(obs_lists: ObservationLists):
-        return {**AMDN._build_hard_parallel_constraints(obs_lists), **AMDN._build_soft_parallel_constraints(obs_lists)}
+    def _build_parallel_constraints(obs_lists: ObservationLists, debug: int):
+        return {**AMDN._build_hard_parallel_constraints(obs_lists, debug), **AMDN._build_soft_parallel_constraints(obs_lists, debug)}
 
     @staticmethod
     def _calculate_all_r_occ(obs_lists: ObservationLists):
@@ -190,7 +243,7 @@ class AMDN:
         return occurrences
     
     @staticmethod
-    def _noise_constraints_6(obs_lists: ObservationLists, all_occ: int, occ_threshold: int):
+    def _noise_constraints_6(obs_lists: ObservationLists, debug: int, all_occ: int, occ_threshold: int):
         noise_constraints_6 = {}
         occurrences = AMDN._set_up_occurrences_dict(obs_lists)
 
@@ -215,7 +268,7 @@ class AMDN:
         return noise_constraints_6
 
     @staticmethod
-    def _noise_constraints_7(obs_lists: ObservationLists, all_occ: int):
+    def _noise_constraints_7(obs_lists: ObservationLists, debug: int, all_occ: int):
         noise_constraints_7 = {}
         # set up dict
         occurrences = {}           
@@ -244,7 +297,7 @@ class AMDN:
         return noise_constraints_7
 
     @staticmethod
-    def _noise_constraints_8(obs_lists, all_occ: int, occ_threshold: int):
+    def _noise_constraints_8(obs_lists, all_occ: int, debug: int, occ_threshold: int):
         noise_constraints_8 = {}
         occurrences = AMDN._set_up_occurrences_dict(obs_lists)
 
@@ -271,18 +324,18 @@ class AMDN:
         return noise_constraints_8
 
     @staticmethod
-    def _build_noise_constraints(obs_lists: ObservationLists, occ_threshold: int):
+    def _build_noise_constraints(obs_lists: ObservationLists, debug: int, occ_threshold: int):
         # calculate all occurrences for use in weights
         all_occ = AMDN._calculate_all_r_occ(obs_lists)
-        return{**AMDN._noise_constraints_6(obs_lists, all_occ, occ_threshold), **AMDN._noise_constraints_7(obs_lists, all_occ), **AMDN._noise_constraints_8(obs_lists, all_occ, occ_threshold)}
+        return{**AMDN._noise_constraints_6(obs_lists, debug, all_occ, occ_threshold), **AMDN._noise_constraints_7(obs_lists, debug, all_occ), **AMDN._noise_constraints_8(obs_lists, debug, all_occ, occ_threshold)}
 
     @staticmethod
-    def _set_all_constraints(obs_lists: ObservationLists, occ_threshold: int):
-        return {**AMDN._build_disorder_constraints(obs_lists), **AMDN._build_parallel_constraints(obs_lists), **AMDN._build_noise_constraints(obs_lists, occ_threshold)}
+    def _set_all_constraints(obs_lists: ObservationLists, debug: int, occ_threshold: int):
+        return {**AMDN._build_disorder_constraints(obs_lists, debug), **AMDN._build_parallel_constraints(obs_lists, debug), **AMDN._build_noise_constraints(obs_lists, debug, occ_threshold)}
 
     @staticmethod
-    def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int):
-        constraints = AMDN._set_all_constraints(obs_lists, occ_threshold)
+    def _solve_constraints(obs_lists: ObservationLists, debug: int, occ_threshold: int):
+        constraints = AMDN._set_all_constraints(obs_lists, debug, occ_threshold)
         # extract hard constraints
         hard_constraints = []
         for c, weight in constraints.items():
