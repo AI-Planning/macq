@@ -78,18 +78,9 @@ class AMDN:
         # find all the auxiliary variables
         for clause in cnf_formula.children:
             for var in clause.children:
-                if isinstance(var.name, Aux):
-                    # only have the case where the clause is part of an aux <-> formula if the other variables are not aux
-                    valid = True
-                    for other in clause.children - {var}:
-                        if isinstance(other.name, Aux):
-                            valid = False
-                            break
-                    if valid:
-                        # aux variables are the soft clauses that get the original weight
-                        constraints[AMDN._or_refactor(var)] = prob_disordered * WMAX
-                    else:
-                        break
+                if isinstance(var.name, Aux) and var.true:
+                    # aux variables are the soft clauses that get the original weight
+                    constraints[AMDN._or_refactor(var)] = prob_disordered * WMAX
             # set each original constraint to be a hard clause
             constraints[clause] = "HARD"
 
@@ -169,7 +160,6 @@ class AMDN:
                                                 print(disorder_constraints[c])
                                                 break
                                     print()
-
             return disorder_constraints
 
     @staticmethod
@@ -367,7 +357,7 @@ class AMDN:
 
     @staticmethod
     def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, LearnedAction]):
-        raw_f = str(raw_f)
+        raw_f = str(raw_f)[1:-1]
         pre_str = " is a precondition of "
         add_str = " is added by "
         del_str = " is deleted by "
