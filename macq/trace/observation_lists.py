@@ -31,6 +31,16 @@ class ObservationLists(TraceAPI.TraceList):
         Token: Type[Observation] = None,
         **kwargs,
     ):
+        """Initializes an ObservationLists object from either a `TraceList` or a 2D list of `Observation`.
+
+        If `traces` is a `TraceList`, a `Token` class is required to tokenize the `TraceList`.
+
+        Args:
+            traces (TraceList | List[List[Observation]]):
+                Either a `TraceList` or a 2D list of observations.
+            Token (Type[Observation]):
+                A child class of `Observation`. Used to tokenize traces if it is a `TraceList`.
+        """
         if isinstance(traces, TraceAPI.TraceList):
             if not Token:
                 raise MissingToken()
