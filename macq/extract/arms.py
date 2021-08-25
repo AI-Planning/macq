@@ -721,22 +721,18 @@ class ARMS:
                         f"Learned constraint: {relation} in {effect}_{action.details()}"
                     )
                 if val:
-                    action_update = (
-                        action.update_precond
-                        if effect == "pre"
-                        else action.update_add
-                        if effect == "add"
-                        else action.update_delete
-                    )
+                    action_update = {
+                        "pre": action.update_precond,
+                        "add": action.update_add,
+                        "del": action.update_delete,
+                    }[effect]
                     action_update({relation})
                 else:
-                    action_effect = (
-                        action.precond
-                        if effect == "pre"
-                        else action.add
-                        if effect == "add"
-                        else action.delete
-                    )
+                    action_effect = {
+                        "pre": action.precond,
+                        "add": action.add,
+                        "del": action.delete,
+                    }[effect]
                     if relation in action_effect:
                         if debug:
                             warn(
