@@ -47,9 +47,6 @@ class PartialObservation(Observation):
         self.state = None if percent_missing == 1 else step.state.clone()
         self.action = None if step.action is None else step.action.clone()
 
-    def __hash__(self):
-        return super().__hash__()
-
     def __eq__(self, other):
         return (
             isinstance(other, PartialObservation)
