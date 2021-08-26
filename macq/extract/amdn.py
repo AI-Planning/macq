@@ -4,8 +4,7 @@
 
 import macq.extract as extract
 from .model import Model
-from ..trace import ObservationLists
-from ..observation import NoisyPartialDisorderedParallelObservation
+from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists
 
 
 class AMDN:
@@ -98,4 +97,3 @@ class AMDN:
         # TODO:
         # convert the result to a Model
         pass
-

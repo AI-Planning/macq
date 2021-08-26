@@ -10,8 +10,7 @@ from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..trace import ObservationLists
-from ..observation import IdentityObservation
+from ..observation import IdentityObservation, ObservationLists
 
 
 @dataclass

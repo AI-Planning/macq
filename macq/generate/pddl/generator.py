@@ -25,8 +25,7 @@ from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 class PlanningDomainsAPIError(Exception):
     """Raised when a valid response cannot be obtained from the planning.domains solver."""
 
-    def __init__(self, message, e):
-        self.e = e
+    def __init__(self, message):
         super().__init__(message)
 
 
@@ -395,34 +394,24 @@ class Generator:
                     "problem": open(self.pddl_prob, "r").read(),
                 }
 
-                def get_api_response():
-                    resp = requests.post(
-                        "http://solver.planning.domains/solve", verify=False, json=data
-                    ).json()
-                    return [act["name"] for act in resp["result"]["plan"]]
-
-                try:
-                    plan = get_api_response()
-                except TypeError:
-                    try:
-                        plan = get_api_response()
-                    except TypeError:
+                def get_api_response(delays: List[int]):
+                    if delays:
+                        sleep(delays[0])
                         try:
-                            sleep(1)
-                            plan = get_api_response()
+                            resp = requests.post(
+                                "http://solver.planning.domains/solve",
+                                verify=False,
+                                json=data,
+                            ).json()
+                            return [act["name"] for act in resp["result"]["plan"]]
                         except TypeError:
-                            try:
-                                sleep(5)
-                                plan = get_api_response()
-                            except TypeError:
-                                try:
-                                    sleep(10)
-                                    plan = get_api_response()
-                                except TypeError as e:
-                                    raise PlanningDomainsAPIError(
-                                        "Could not get a valid response from the planning.domains solver after 5 attempts.",
-                                        e,
-                                    )
+                            return get_api_response(delays[1:])
+
+                plan = get_api_response([0, 1, 3, 5, 10])
+                if plan is None:
+                    raise PlanningDomainsAPIError(
+                        "Could not get a valid response from the planning.domains solver after 5 attempts.",
+                    )
 
         else:
             f = open(filename, "r")

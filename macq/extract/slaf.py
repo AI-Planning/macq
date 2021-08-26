@@ -7,8 +7,7 @@ from nnf import Var, Or, And, true, false, config
 from bauhaus import Encoding
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import AtomicPartialObservation
-from ..trace import ObservationLists
+from ..observation import AtomicPartialObservation, ObservationLists
 
 # only used for pretty printing in debug mode
 e = Encoding()
