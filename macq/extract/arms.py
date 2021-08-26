@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from warnings import warn
 from typing import Set, List, Dict, Tuple, Hashable
 from nnf import Var, And, Or, false as nnffalse
-from . import LearnedAction, Model
+from . import LearnedAction, Model, LearnedFluent
 from .exceptions import (
     IncompatibleObservationToken,
     InvalidMaxSATModel,
@@ -15,13 +15,17 @@ from ..utils.pysat import to_wcnf, RC2, WCNF
 
 @dataclass
 class Relation:
+    """Fluents with the parameters replaced by their types."""
+
     name: str
     types: list
 
     def var(self):
+        """Generates the variable representation for NNF."""
         return f"{self.name} {' '.join(list(self.types))}"
 
     def matches(self, action: LearnedAction):
+        """Determines if a relation is related to a given action."""
         action_types = set(action.obj_params)
         self_counts = Counter(self.types)
         action_counts = Counter(action.obj_params)
@@ -35,6 +39,8 @@ class Relation:
 
 @dataclass
 class ARMSConstraints:
+    """A dataclass to hold all the constraints and weight information."""
+
     action: List[Or[Var]]
     info: List[Or[Var]]
     info3: Dict[Or[Var], int]
@@ -96,8 +102,8 @@ class ARMS:
         if not (threshold >= 0 and threshold <= 1):
             raise ARMS.InvalidThreshold(threshold)
 
-        # get fluents from initial state
         fluents = obs_lists.get_fluents()
+        # get fluents from initial state
         # call algorithm to get actions
         actions = ARMS._arms(
             obs_lists,
@@ -112,7 +118,8 @@ class ARMS:
             debug,
         )
 
-        return Model(fluents, actions)
+        learned_fluents = set(map(lambda f: LearnedFluent(f.name, f.objects), fluents))
+        return Model(learned_fluents, actions)
 
     @staticmethod
     def _arms(
@@ -435,11 +442,8 @@ class ARMS:
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
         """Information constraints.
 
-        The information constraints are used to explain why the optionally
-        observed intermediate states exist in a plan. The constraints thus derived are
-        given high priority because they need not be guessed.
-            Suppose we observe a relation p to be true between two actions
-        \(a_n\) and \(a_{n+1}\) , and \(p\), \(a_{i_1} , ... ,\) and \(a_{i_k}\) share
+        Suppose we observe a relation p to be true between two actions
+        \(a_n\) and \(a_{n+1}\) , and \(p, a_{i_1} , ... ,\) and \(a_{i_k}\) share
         the same parameter types. We can represent this fact by the following clauses,
         given that \(a_{i_1} , ... ,\) and \(a_{i_k}\) appear in that order.
 
@@ -594,7 +598,40 @@ class ARMS:
         min_support: int,
         debug: bool,
     ) -> Dict[Or[Var], int]:
-        """(Step 2 - Plan Constraints)"""
+        """Plan constraints.
+
+        P1. Every precondition \(p\) of every action \(b\) must be in the add
+        list of a preceding action \(a\) and is not deleted by any actions between
+        \(a\) and \(b\).
+
+        P2. In addition, at least one relation \(r\) in the add list of an action
+        must be useful in achieving a precondition of a later action. That is, for
+        every action \(a\), an add list relation \(r\) must be in the precondition of a
+        later action \(b\), and there is no other action between \(a\) and \(b\)
+        that either adds or deletes \(r\).
+
+        "While constraints P1 and P2 provide the general guiding principle for
+        ensuring a plan’s correctness, in practice there are too many
+        instantiations of these constraints." (more information on the
+        rationelle in the paper) Thus, they are replaced with the following
+        constraints:
+
+        Let there be an action pair \(\langle a_i, a_j \\rangle, 0 \le i < j \le n-1\).
+
+        P3. One of the relevant relations \(p\) must be chosen to be in the
+        preconditions of both \(a_i\) and \(a_j\), but not in the delete list
+        of \(a_i\).
+
+        P4. The first action \(a_i\) adds a relevant relation that is in the
+        precondition list of the second action \(a_j\) in the pair.
+
+        P5. A relevant relation \(p\) that is deleted by the first action
+        \(a_i\) is added by \(a_j\). The second clause is designed for the event
+        when an action re-establishes a fact that is deleted by a previous action.
+
+        The above constraints can be combined into one constraint:
+        $$\exists p ((p \in (pre_i \cap pre_j) \land p \\not \in (del_i)) \lor (p \in (add_i \cap pre_j)) \lor (p \in (del_i \cap add_j)))$$
+        """
         frequent_pairs = ARMS._apriori(
             [
                 [
@@ -653,7 +690,7 @@ class ARMS:
         plan_default: int,
         debug: bool,
     ) -> Tuple[WCNF, Dict[int, Hashable]]:
-        """(Step 3) Construct the weighted MAX-SAT problem."""
+        """(Step 3) Construct the weighted MAX-SAT problem based on the constraints and weight information found in Step 2."""
 
         action_weights = [action_weight] * len(constraints.action)
         info_weights = [info_weight] * len(constraints.info)
@@ -713,7 +750,7 @@ class ARMS:
 
     @staticmethod
     def step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
-        """(Step 4) Build the MAX-SAT theory."""
+        """(Step 4) Solve the MAX-SAT problem built in Step 3."""
         solver = RC2(max_sat)
 
         encoded_model = solver.compute()
