@@ -1,6 +1,5 @@
-"""
-.. include:: ../../docs/extract/slaf.md
-"""
+""".. include:: ../../docs/extract/slaf.md"""
+
 import macq.extract as extract
 from typing import Set, Union
 from nnf import Var, Or, And, true, false, config

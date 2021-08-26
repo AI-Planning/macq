@@ -1,6 +1,4 @@
-"""
-.. include:: ../../docs/extract/amdn.md
-"""
+""".. include:: ../../docs/extract/amdn.md"""
 
 import macq.extract as extract
 from .model import Model

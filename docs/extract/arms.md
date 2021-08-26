@@ -46,11 +46,32 @@ model = extract.Extract(
     info3_default=30,
     plan_default=30,
 )
-model.details()
+
+print(model.details())
 ```
 
 **Output:**
 ```text
+Model:
+  Fluents: (at rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint3), ...
+  Actions:
+    (communicate_image_data rover waypoint mode objective lander waypoint):
+      precond:
+        calibrated camera rover
+        have_rock_analysis rover waypoint
+        communicated_rock_data waypoint
+        channel_free lander
+        at_soil_sample waypoint
+        at_rock_sample waypoint
+      add:
+        calibrated camera rover
+        at rover waypoint
+        have_image rover objective mode
+        channel_free lander
+        communicated_image_data objective mode
+      delete:
+        calibrated camera rover
+    ...
 ```
 
 # API Documentation

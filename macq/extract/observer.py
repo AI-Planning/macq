@@ -1,6 +1,4 @@
-"""
-.. include:: ../../docs/extract/observer.md
-"""
+""".. include:: ../../docs/extract/observer.md"""
 
 from typing import List, Set
 from collections import defaultdict
