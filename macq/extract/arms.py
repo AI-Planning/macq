@@ -8,8 +8,8 @@ from .exceptions import (
     IncompatibleObservationToken,
     InvalidMaxSATModel,
 )
-from ..observation import PartialObservation as Observation
-from ..trace import ObservationLists, Fluent, Action  # Action only used for typing
+from ..observation import PartialObservation as Observation, ObservationLists
+from ..trace import Fluent, Action  # Action only used for typing
 from ..utils.pysat import to_wcnf, RC2, WCNF
 
 
