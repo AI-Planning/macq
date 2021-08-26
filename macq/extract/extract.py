@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-
-from . import Model
-from ..trace import ObservationLists, Action, State
-
-# Techniques
+from ..trace import Action, State
+from ..observation import ObservationLists
+from .model import Model
 from .observer import Observer
 from .slaf import SLAF
 from .arms import ARMS

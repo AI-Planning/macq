@@ -3,15 +3,17 @@ from math import exp
 from numpy import dot
 from random import random
 from typing import Callable, Type, Set, List
-from . import ObservationLists, TraceList, Step, Action
-from ..observation import Observation
+from . import TraceList, Step, Action
+from ..observation import Observation, ObservationLists
+
 
 @dataclass
 class ActionPair:
     """dataclass that allows a pair of actions to be referenced regardless of order
     (that is, {action1, action2} is equivalent to {action2, action1}.)
     """
-    actions : Set[Action]
+
+    actions: Set[Action]
 
     def tup(self):
         actions = list(self.actions)
@@ -24,7 +26,8 @@ class ActionPair:
             sum += hash(a.details())
         return sum
 
-def default_theta_vec(k : int):
+
+def default_theta_vec(k: int):
     """Generate the default theta vector to be used in the calculation that extracts the probability of
     actions being disordered; used to "weight" the features.
 
@@ -35,7 +38,8 @@ def default_theta_vec(k : int):
     Returns:
         The default theta vector.
     """
-    return [(1/k)] * k
+    return [(1 / k)] * k
+
 
 def objects_shared_feature(act_x: Action, act_y: Action):
     """Corresponds to default feature 1 from the AMDN paper.
@@ -51,10 +55,11 @@ def objects_shared_feature(act_x: Action, act_y: Action):
     """
     num_shared = 0
     for obj in act_x.obj_params:
-        for other_obj in act_y. obj_params:
+        for other_obj in act_y.obj_params:
             if obj == other_obj:
                 num_shared += 1
     return num_shared
+
 
 def num_parameters_feature(act_x: Action, act_y: Action):
     """Corresponds to default feature 2 from the AMDN paper.
@@ -70,6 +75,7 @@ def num_parameters_feature(act_x: Action, act_y: Action):
     """
     return 1 if len(act_x.obj_params) == len(act_y.obj_params) else 0
 
+
 def _decision(probability: float):
     """Makes a decision based on the given probability.
 
@@ -82,12 +88,13 @@ def _decision(probability: float):
     """
     return random() < probability
 
+
 class DisorderedParallelActionsObservationLists(ObservationLists):
-    """Alternate ObservationLists type that enforces appropriate actions to be disordered and/or parallel. 
+    """Alternate ObservationLists type that enforces appropriate actions to be disordered and/or parallel.
     Inherits the base ObservationLists class.
 
     The default feature functions and theta vector described in the AMDN paper are available for use in this module.
-    
+
     Attributes:
         traces (List[List[Token]]):
             The trace list converted to a list of lists of tokens.
@@ -105,7 +112,15 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             A dictionary that contains a mapping of each possible `ActionPair` and the probability that the actions
             in them are disordered.
     """
-    def __init__(self, traces: TraceList, Token: Type[Observation], features: List[Callable], learned_theta: List[float], **kwargs):
+
+    def __init__(
+        self,
+        traces: TraceList,
+        Token: Type[Observation],
+        features: List[Callable],
+        learned_theta: List[float],
+        **kwargs
+    ):
         """AI is creating summary for __init__
 
         Args:
@@ -128,7 +143,11 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         # cast to list for iteration purposes
         self.actions = list(actions)
         # create |A| (action x action set, no duplicates)
-        self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i + 1, len(self.actions))]
+        self.cross_actions = [
+            ActionPair({self.actions[i], self.actions[j]})
+            for i in range(len(self.actions))
+            for j in range(i + 1, len(self.actions))
+        ]
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities()
         self.tokenize(traces, Token, **kwargs)
@@ -180,8 +199,10 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         numerator = self._theta_dot_features_calc(f_vec, theta_vec)
         denominator = 0
         for combo in self.cross_actions:
-            denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), theta_vec)
-        return numerator/denominator
+            denominator += self._theta_dot_features_calc(
+                self._get_f_vec(*combo.tup()), theta_vec
+            )
+        return numerator / denominator
 
     def _calculate_all_probabilities(self):
         """Calculates the probabilities of all combinations of actions being disordered.
@@ -209,7 +230,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                 Any extra arguments to be supplied to the Token __init__.
         """
         # build parallel action sets
-        for trace in traces: 
+        for trace in traces:
             par_act_sets = []
             states = []
             cur_par_act = set()
@@ -223,11 +244,15 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             for i in range(len(trace)):
                 a = trace[i].action
                 if a:
-                    a_conditions = set([p for p in a.precond] + [e for e in a.add] + [e for e in a.delete])
+                    a_conditions = set(
+                        [p for p in a.precond]
+                        + [e for e in a.add]
+                        + [e for e in a.delete]
+                    )
                     # if the action has any conditions in common with any actions in the previous parallel set (NOT parallel)
-                    if a_conditions.intersection(cur_par_act_conditions) != set(): 
+                    if a_conditions.intersection(cur_par_act_conditions) != set():
                         # add psi_k and s'_k to the final (ordered) lists of parallel action sets and states
-                        par_act_sets.append(cur_par_act) 
+                        par_act_sets.append(cur_par_act)
                         states.append(cur_state)
                         # reset psi_k (that is, create a new parallel action set)
                         cur_par_act = set()
@@ -240,7 +265,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                     cur_par_act_conditions.update(a_conditions)
                 # if on the last step of the trace, add the current set/state to the final result before exiting the loop
                 if i == len(trace) - 1:
-                    par_act_sets.append(cur_par_act) 
+                    par_act_sets.append(cur_par_act)
                     states.append(cur_state)
 
             # generate disordered actions - do trace by trace
@@ -252,7 +277,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                         for act_y in par_act_sets[j]:
                             if act_x != act_y:
                                 # get probability and divide by distance
-                                prob = self.probabilities[ActionPair({act_x, act_y})]/(j - i)
+                                prob = self.probabilities[
+                                    ActionPair({act_x, act_y})
+                                ] / (j - i)
                                 if _decision(prob):
                                     par_act_sets[i].discard(act_x)
                                     par_act_sets[i].add(act_y)
@@ -262,6 +289,12 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:
-                    tokens.append(Token(Step(state=states[i], action=act, index=i), par_act_set_ID = i, **kwargs))
-            self.append(tokens)            
-        
+                    tokens.append(
+                        Token(
+                            Step(state=states[i], action=act, index=i),
+                            par_act_set_ID=i,
+                            **kwargs
+                        )
+                    )
+            self.append(tokens)
+
