@@ -133,7 +133,7 @@ class ARMS:
         early_actions = [0] * len(obs_lists)
 
         debug1 = ARMS.debug_menu("Debug step 1?") if debug else False
-        connected_actions, action_map = ARMS._step1(obs_lists, debug1)
+        connected_actions, action_map = ARMS.step1(obs_lists, debug1)
         if debug1:
             input("Press enter to continue...")
 
@@ -148,7 +148,7 @@ class ARMS:
                 count += 1
 
             debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
-            constraints, relation_map = ARMS._step2(
+            constraints, relation_map = ARMS.step2(
                 obs_lists, connected_actions, action_map, fluents, min_support, debug2
             )
             if debug2:
@@ -159,7 +159,7 @@ class ARMS:
                 relation_map_rev[relation].append(fluent)
 
             debug3 = ARMS.debug_menu("Debug step 3?") if debug else False
-            max_sat, decode = ARMS._step3(
+            max_sat, decode = ARMS.step3(
                 constraints,
                 action_weight,
                 info_weight,
@@ -171,11 +171,11 @@ class ARMS:
             if debug3:
                 input("Press enter to continue...")
 
-            model = ARMS._step4(max_sat, decode)
+            model = ARMS.step4(max_sat, decode)
 
             debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
             # Mutates the LearnedAction (keys) of action_map_rev
-            ARMS._step5(
+            ARMS.step5(
                 model,
                 list(action_map_rev.keys()),
                 debug5,
@@ -249,7 +249,7 @@ class ARMS:
         return learned_actions
 
     @staticmethod
-    def _step1(
+    def step1(
         obs_lists: ObservationLists, debug: bool
     ) -> Tuple[
         Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
@@ -285,15 +285,22 @@ class ARMS:
         return connected_actions, action_map
 
     @staticmethod
-    def _step2(
+    def step2(
         obs_lists: ObservationLists,
-        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         action_map: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
         min_support: int,
         debug: bool,
     ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
-        """(Step 2) Generate action constraints, information constraints, and plan constraints."""
+        """(Step 2) Generate action constraints, information constraints, and plan constraints.
+
+        For the unexplained actions, build a set of information and action
+        constraints based on individual actions. Apply a frequent-set
+        mining algorithm to find the frequent sets of connected actions and
+        relations. Here connected means the actions and relations must share
+        some common parameters.
+        """
 
         # Map fluents to relations
         # relations are fluents but with instantiated objects replaced by the object type
@@ -312,17 +319,17 @@ class ARMS:
 
         debuga = ARMS.debug_menu("Debug action constraints?") if debug else False
 
-        action_constraints = ARMS._step2A(
+        action_constraints = ARMS.step2A(
             connected_actions, set(relations.values()), debuga
         )
 
         debugi = ARMS.debug_menu("Debug info constraints?") if debug else False
-        info_constraints, info_support_counts = ARMS._step2I(
+        info_constraints, info_support_counts = ARMS.step2I(
             obs_lists, relations, action_map, debugi
         )
 
         debugp = ARMS.debug_menu("Debug plan constraints?") if debug else False
-        plan_constraints = ARMS._step2P(
+        plan_constraints = ARMS.step2P(
             obs_lists,
             connected_actions,
             action_map,
@@ -342,12 +349,19 @@ class ARMS:
         )
 
     @staticmethod
-    def _step2A(
+    def step2A(
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         relations: Set[Relation],
         debug: bool,
     ) -> List[Or[Var]]:
-        """(Step 2 - Action Constraints)"""
+        """Action constraints.
+
+        A1. The intersection of the precondition and add lists of all actions must be empty.
+
+        A2. In addition, if an action’s delete list includes a relation, this relation is
+            in the action’s precondition list. Thus, for every action, we require that
+            the delete list is a subset of the precondition list.
+        """
 
         if debug:
             print("\nBuilding action constraints...\n")
@@ -413,14 +427,35 @@ class ARMS:
         return constraints
 
     @staticmethod
-    def _step2I(
+    def step2I(
         obs_lists: ObservationLists,
         relations: Dict[Fluent, Relation],
         actions: Dict[Action, LearnedAction],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
-        """(Step 2 - Info Constraints)"""
+        """Information constraints.
 
+        The information constraints are used to explain why the optionally
+        observed intermediate states exist in a plan. The constraints thus derived are
+        given high priority because they need not be guessed.
+            Suppose we observe a relation p to be true between two actions
+        \(a_n\) and \(a_{n+1}\) , and \(p\), \(a_{i_1} , ... ,\) and \(a_{i_k}\) share
+        the same parameter types. We can represent this fact by the following clauses,
+        given that \(a_{i_1} , ... ,\) and \(a_{i_k}\) appear in that order.
+
+        I1. The relation \(p\) must be generated by an action \(a_{i_k} (0 \le i_k \le n)\),
+        that is, \(p\) is selected to be in the add-list of \(a_{i_k}\).
+        \(p∈ (add_{i_1} ∪ add_{i_2} ∪ \dots ∪ add_{i_k}) \), where ∪ means logical “or”.
+
+        I2. The last action \(a_{i_k}\) must not delete the relation p; that is,
+        \(p\) must not be selected to be in the delete list of \(a_{i_k}\): \(p \\not\in del_{i_k}\).
+
+        I3. We define the weight value of a relation-action pair \((p, a)\) as the
+        occurrence probability of this pair in all plan examples. If the probability
+        of a relation-action pair is higher than the probability threshold θ ,
+        then we set a corresponding relation constraint \(p ∈ \\text{PRECOND}_a\), which
+        receives a weight value equal to its prior probability.
+        """
         if debug:
             print("\nBuilding information constraints...")
         constraints: List[Or[Var]] = []
@@ -551,7 +586,7 @@ class ARMS:
         return frequent_pairs
 
     @staticmethod
-    def _step2P(
+    def step2P(
         obs_lists: ObservationLists,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         action_map: Dict[Action, LearnedAction],
@@ -609,7 +644,7 @@ class ARMS:
         return constraints
 
     @staticmethod
-    def _step3(
+    def step3(
         constraints: ARMSConstraints,
         action_weight: int,
         info_weight: int,
@@ -677,7 +712,7 @@ class ARMS:
         return list(map(get_support_rate, support_counts))
 
     @staticmethod
-    def _step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+    def step4(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
         """(Step 4) Build the MAX-SAT theory."""
         solver = RC2(max_sat)
 
@@ -695,7 +730,7 @@ class ARMS:
         return model
 
     @staticmethod
-    def _step5(
+    def step5(
         model: Dict[Hashable, bool],
         actions: List[LearnedAction],
         debug: bool,
