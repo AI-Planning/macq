@@ -1,7 +1,7 @@
 from macq.extract.learned_action import LearnedAction
 from nnf.operators import implies
 import macq.extract as extract
-from typing import Dict, List, Union, Set, Hashable
+from typing import Dict, List, Optional, Union, Set, Hashable
 from nnf import Aux, Var, And, Or
 from pysat.formula import WCNF
 from pysat.examples.rc2 import RC2
@@ -210,8 +210,8 @@ class AMDN:
         for act in obs_lists.actions:
             for r in obs_lists.propositions:
                 # for each action x proposition pair, enforce the two hard constraints with weight wmax
-                hard_constraints[implies(add(r, act), ~pre(r, act))] = WMAX
-                hard_constraints[implies(delete(r, act), pre(r, act))] = WMAX
+                hard_constraints[implies(add(r, act), ~pre(r, act))] = "HARD"#WMAX
+                hard_constraints[implies(delete(r, act), pre(r, act))] = "HARD"#WMAX
         return hard_constraints
 
     @staticmethod
@@ -252,7 +252,7 @@ class AMDN:
         return soft_constraints
 
     @staticmethod
-    def _build_parallel_constraints(obs_lists: ObservationLists, debug: int, to_obs: List[str]):
+    def _build_parallel_constraints(obs_lists: ObservationLists, debug: int, to_obs: Optional[List[str]]):
         hard_constraints = AMDN._build_hard_parallel_constraints(obs_lists)
         soft_constraints = AMDN._build_soft_parallel_constraints(obs_lists)
         if debug:
@@ -362,7 +362,7 @@ class AMDN:
         return noise_constraints_8
 
     @staticmethod
-    def _build_noise_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int, to_obs: List[str]):
+    def _build_noise_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int, to_obs: Optional[List[str]]):
         # calculate all occurrences for use in weights
         all_occ = AMDN._calculate_all_r_occ(obs_lists)
         nc_6 = AMDN._noise_constraints_6(obs_lists, all_occ, occ_threshold)
@@ -379,6 +379,7 @@ class AMDN:
 
     @staticmethod
     def _set_all_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
+        to_obs = None
         if debug:
             to_obs = AMDN._get_observe(obs_lists)
         disorder_constraints = AMDN._build_disorder_constraints(obs_lists)
@@ -392,6 +393,7 @@ class AMDN:
     @staticmethod
     def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
         constraints = AMDN._set_all_constraints(obs_lists, occ_threshold, debug)
+
         # extract hard constraints
         hard_constraints = []
         for c, weight in constraints.items():
@@ -400,6 +402,21 @@ class AMDN:
         
         for c in hard_constraints:
             del constraints[c]
+
+        # NOTE: just a test
+        r = list(obs_lists.propositions)[0]
+        act = list(obs_lists.actions)[0]
+        
+        """
+        # hard parallel constraints 1: successfully fails the model 
+        
+        hard_constraints.append(AMDN._or_refactor(add(r, act)))
+        hard_constraints.append(AMDN._or_refactor(pre(r, act)))
+        
+        # hard parallel constraints 2: successfully fails the model 
+        hard_constraints.append(AMDN._or_refactor(delete(r, act)))
+        hard_constraints.append(AMDN._or_refactor(~pre(r, act)))        
+        """
 
         wcnf, decode = to_wcnf(soft_clauses=And(constraints.keys()), hard_clauses=And(hard_constraints), weights=list(constraints.values()))
 
@@ -449,7 +466,7 @@ class AMDN:
         # iterate through all fluents
         for raw_f in model:
             # update learned_actions (ignore auxiliary variables)
-            if not isinstance(raw_f, Aux):
+            if not isinstance(raw_f, Aux) and model[raw_f]:
                 AMDN._split_raw_fluent(raw_f, learned_actions)
 
         return Model(fluents, learned_actions.values())

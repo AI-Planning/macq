@@ -32,7 +32,7 @@ class PartialObservation(Observation):
             raise PercentError()
 
         if percent_missing == 0 and not hide:
-            warning("Creating a PartialObseration with no missing information.")
+            warning("Creating a PartialObservation with no missing information.")
 
         # necessary because multiple inheritance can change the parent of this class
         Observation.__init__(self, index=step.index)

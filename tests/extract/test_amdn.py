@@ -2,7 +2,7 @@ from macq.trace.disordered_parallel_actions_observation_lists import default_the
 from macq.utils.tokenization_errors import TokenizationError
 from tests.utils.generators import generate_blocks_traces
 from macq.extract import Extract, modes
-from macq.generate.pddl import RandomGoalSampling, Generator, TraceFromGoal
+from macq.generate.pddl import *
 from macq.observation import *
 from macq.trace import *
 from pathlib import Path
@@ -161,29 +161,31 @@ def test_tracelist():
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    """
+    
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # TODO: replace with a domain-specific random trace generator
-    traces = RandomGoalSampling(
-        # prob=prob,
-        # dom=dom,
-        problem_id=2337,
+    #traces = RandomGoalSampling(
+    traces = VanillaSampling(
+        prob=prob,
+        dom=dom,
+        #problem_id=2337,
         observe_pres_effs=True,
-        num_traces=1,
-        steps_deep=50,
-        subset_size_perc=0.1,
-        enforced_hill_climbing_sampling=True
+        num_traces=10,
+        plan_len=10,
+        #steps_deep=30,
+        #subset_size_perc=0.1,
+        #enforced_hill_climbing_sampling=True
     ).traces
+
     traces.print()
+    
+    #traces = test_tracelist()
 
-    traces = test_tracelist()
-    """
-
-    dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
-    prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
-    traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
+    # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
+    # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
+    # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
     
     features = [objects_shared_feature, num_parameters_feature]
     learned_theta = default_theta_vec(2)
@@ -196,6 +198,6 @@ if __name__ == "__main__":
         percent_noisy=0,
         replace=True
     )
-    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 0)
+    model = Extract(observations, modes.AMDN, debug=False, occ_threshold = 10)
     f = open("results.txt", "w")
     f.write(model.details())

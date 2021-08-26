@@ -9,7 +9,7 @@ from ...utils.timer import basic_timer
 
 
 
-MAX_GOAL_SEARCH_TIME = 30.0
+MAX_GOAL_SEARCH_TIME = 0.0
 
 
 class RandomGoalSampling(VanillaSampling):
@@ -155,7 +155,7 @@ class RandomGoalSampling(VanillaSampling):
             if len(test_plan.actions) >= self.steps_deep:
                 k_length_plans += 1
             if k_length_plans >= self.num_traces:
-                 break
+                break
             
     def generate_traces(self):
         """Generates traces based on the sampled goals. Traces are generated using the initial state and plan used to achieve the goal.
