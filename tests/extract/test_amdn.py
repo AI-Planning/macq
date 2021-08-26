@@ -192,10 +192,10 @@ if __name__ == "__main__":
         ObsLists=DisorderedParallelActionsObservationLists,
         features=features,
         learned_theta=learned_theta,
-        percent_missing=0.50,
-        percent_noisy=0.50,
+        percent_missing=0,
+        percent_noisy=0,
         replace=True
     )
-    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 1)
+    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 0)
     f = open("results.txt", "w")
     f.write(model.details())
