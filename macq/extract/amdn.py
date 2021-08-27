@@ -208,8 +208,8 @@ class AMDN:
         for act in obs_lists.actions:
             for r in obs_lists.propositions:
                 # for each action x proposition pair, enforce the two hard constraints with weight wmax
-                hard_constraints[implies(add(r, act), ~pre(r, act))] = "HARD"#WMAX
-                hard_constraints[implies(delete(r, act), pre(r, act))] = "HARD"#WMAX
+                hard_constraints[implies(add(r, act), ~pre(r, act))] = WMAX
+                hard_constraints[implies(delete(r, act), pre(r, act))] = WMAX
         return hard_constraints
 
     @staticmethod
@@ -417,22 +417,22 @@ class AMDN:
         #act_y = list(list(obs_lists.all_par_act_sets[0])[1])[0]
 
         # attempt to force the model
-        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of open )")))
-        hard_constraints.append(AMDN._or_refactor(Var("(open  is added by open )")))
-        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of walk )")))
-        hard_constraints.append(AMDN._or_refactor(Var("(open  is a precondition of walk )")))
-        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is deleted by walk )")))
-        hard_constraints.append(AMDN._or_refactor(Var("(roomb  is added by walk )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of open )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(open  is added by open )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of walk )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(open  is a precondition of walk )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is deleted by walk )")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(roomb  is added by walk )")))
 
-        delete = set()
-        # set all "ordered" aux constraints to hard
-        for c in constraints:
-            if len(c.children) == 1: 
-                if constraints[c] > 0:
-                    hard_constraints.append(c)
-                delete.add(c)
-        for c in delete:
-            del constraints[c]
+        # hard_constraints.append(AMDN._or_refactor(Var("(truck  red_truck  is a precondition of drive  red_truck  location_a  location_b)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_a  is a precondition of drive  red_truck  location_a  location_b)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_b  is a precondition of drive  red_truck  location_a  location_b)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(at  red_truck  location_a  is a precondition of drive  red_truck  location_a  location_b)")))
+        # TODO: add add/del effects if you're going to use these
+        # hard_constraints.append(AMDN._or_refactor(Var("(truck  blue_truck  is a precondition of drive  blue_truck  location_c  location_d)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_c  is a precondition of drive  blue_truck  location_c  location_d)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_d  is a precondition of drive  blue_truck  location_c  location_d)")))
+        # hard_constraints.append(AMDN._or_refactor(Var("(at  blue_truck  location_c  is a precondition of drive  blue_truck  location_c  location_d)")))
 
         wcnf, decode = to_wcnf(soft_clauses=And(constraints.keys()), hard_clauses=And(hard_constraints), weights=list(constraints.values()))
 

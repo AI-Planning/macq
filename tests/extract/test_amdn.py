@@ -15,12 +15,12 @@ def test_tokenization_error():
 
 def test_tracelist():
     # define objects
-    red_truck = PlanningObject("object", "red_truck")
-    blue_truck = PlanningObject("object", "blue_truck")
-    location_a = PlanningObject("object", "location_a")
-    location_b = PlanningObject("object", "location_b")
-    location_c = PlanningObject("object", "location_c")
-    location_d = PlanningObject("object", "location_d")
+    red_truck = PlanningObject("", "red_truck")
+    blue_truck = PlanningObject("", "blue_truck")
+    location_a = PlanningObject("", "location_a")
+    location_b = PlanningObject("", "location_b")
+    location_c = PlanningObject("", "location_c")
+    location_d = PlanningObject("", "location_d")
 
     red_truck_is_truck = Fluent("truck", [red_truck])
     blue_truck_is_truck = Fluent("truck", [blue_truck])
@@ -154,8 +154,9 @@ def test_tracelist():
             }),
             None,
             4
-            )        
-
+            ) 
+    #step_2.action = None       
+    #return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
 
 if __name__ == "__main__":
@@ -166,24 +167,24 @@ if __name__ == "__main__":
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # TODO: replace with a domain-specific random trace generator
-    #traces = RandomGoalSampling(
+    traces = RandomGoalSampling(
     # traces = VanillaSampling(
-    #     prob=prob,
-    #     dom=dom,
-    #     #problem_id=2337,
-    #     observe_pres_effs=True,
-    #     num_traces=1,
-    #     plan_len=10,
-    #     #steps_deep=30,
-    #     #subset_size_perc=0.1,
-    #     #enforced_hill_climbing_sampling=True
-    # ).traces
+        prob=prob,
+        dom=dom,
+        #problem_id=2337,
+        observe_pres_effs=True,
+        num_traces=1,
+        # plan_len=10,
+        steps_deep=30,
+        subset_size_perc=0.1,
+        enforced_hill_climbing_sampling=True
+    ).traces
     
-    #traces = test_tracelist()
+    # traces = test_tracelist()
 
-    dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
-    prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
-    traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
+    # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
+    # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
+    # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
 
     traces.print(wrap="y")
     
@@ -198,6 +199,6 @@ if __name__ == "__main__":
         percent_noisy=0,
         replace=True
     )
-    model = Extract(observations, modes.AMDN, debug=False, occ_threshold = 2)
+    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 2)
     f = open("results.txt", "w")
     f.write(model.details())
