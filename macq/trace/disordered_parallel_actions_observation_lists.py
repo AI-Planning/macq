@@ -284,6 +284,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                     par_act_sets[i].add(act_y)
                                     par_act_sets[j].discard(act_y)
                                     par_act_sets[j].add(act_x)
+                                
             self.all_par_act_sets.append(par_act_sets)
             self.all_states.append(states)
             tokens = []

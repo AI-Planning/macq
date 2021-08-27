@@ -107,12 +107,11 @@ class AMDN:
 
     @staticmethod
     def _debug_is_observed(constraint: Or, to_obs: List[str]):
-        observe = False
         for c in constraint.children:
             for v in to_obs:
                 if v in str(c):
-                    observe = True
-        return observe
+                    return True
+        return False
 
     @staticmethod
     def _debug_simple_pprint(constraints: Dict, to_obs: List[str]):
@@ -127,8 +126,7 @@ class AMDN:
         aux_map = {}
         index = 0
         for c in constraints:
-            observe = AMDN._debug_is_observed(c, to_obs)
-            if observe:
+            if AMDN._debug_is_observed(c, to_obs):
                 for var in c.children:
                     if isinstance(var.name, Aux) and var.name not in aux_map:
                         aux_map[var.name] = f"aux {index}"
@@ -136,13 +134,13 @@ class AMDN:
 
         all_pretty_c = {}
         for c in constraints:
-            observe = AMDN._debug_is_observed(c, to_obs)
-            if observe:
+            if AMDN._debug_is_observed(c, to_obs):
                 pretty_c = []
                 for var in c.children:
                     if isinstance(var.name, Aux):
                         if var.true:
                             pretty_c.append(Var(aux_map[var.name]))
+                            all_pretty_c[AMDN._or_refactor(var)] = Or([Var(aux_map[var.name])])
                         else:
                             pretty_c.append(~Var(aux_map[var.name]))
                     else:
@@ -389,6 +387,7 @@ class AMDN:
         parallel_constraints = AMDN._build_parallel_constraints(obs_lists, debug, to_obs)
         noise_constraints = AMDN._build_noise_constraints(obs_lists, occ_threshold, debug, to_obs)
         return {**disorder_constraints, **parallel_constraints, **noise_constraints}
+        #return {**parallel_constraints, **noise_constraints}
 
     @staticmethod
     def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
@@ -404,19 +403,36 @@ class AMDN:
             del constraints[c]
 
         # NOTE: just a test
-        r = list(obs_lists.propositions)[0]
-        act = list(obs_lists.actions)[0]
+        # r = list(obs_lists.propositions)[0]
+        # act = list(obs_lists.actions)[0]
         
-        """
-        # hard parallel constraints 1: successfully fails the model 
-        
-        hard_constraints.append(AMDN._or_refactor(add(r, act)))
-        hard_constraints.append(AMDN._or_refactor(pre(r, act)))
-        
-        # hard parallel constraints 2: successfully fails the model 
-        hard_constraints.append(AMDN._or_refactor(delete(r, act)))
-        hard_constraints.append(AMDN._or_refactor(~pre(r, act)))        
-        """
+        # hard parallel constraints 1: successfully fails the model, but ONLY if WMAX is not used and they are set as direct hard constraints
+        # hard_constraints.append(AMDN._or_refactor(add(r, act)))
+        # hard_constraints.append(AMDN._or_refactor(pre(r, act)))
+        # hard parallel constraints 2: successfully fails the model, but ONLY if WMAX is not used and they are set as direct hard constraints
+        #hard_constraints.append(AMDN._or_refactor(delete(r, act)))
+        #hard_constraints.append(AMDN._or_refactor(~pre(r, act)))        
+
+        #act_x = list(list(obs_lists.all_par_act_sets[0])[0])[0]
+        #act_y = list(list(obs_lists.all_par_act_sets[0])[1])[0]
+
+        # attempt to force the model
+        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of open )")))
+        hard_constraints.append(AMDN._or_refactor(Var("(open  is added by open )")))
+        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of walk )")))
+        hard_constraints.append(AMDN._or_refactor(Var("(open  is a precondition of walk )")))
+        hard_constraints.append(AMDN._or_refactor(Var("(rooma  is deleted by walk )")))
+        hard_constraints.append(AMDN._or_refactor(Var("(roomb  is added by walk )")))
+
+        delete = set()
+        # set all "ordered" aux constraints to hard
+        for c in constraints:
+            if len(c.children) == 1: 
+                if constraints[c] > 0:
+                    hard_constraints.append(c)
+                delete.add(c)
+        for c in delete:
+            del constraints[c]
 
         wcnf, decode = to_wcnf(soft_clauses=And(constraints.keys()), hard_clauses=And(hard_constraints), weights=list(constraints.values()))
 

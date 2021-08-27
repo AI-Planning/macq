@@ -167,25 +167,25 @@ if __name__ == "__main__":
 
     # TODO: replace with a domain-specific random trace generator
     #traces = RandomGoalSampling(
-    traces = VanillaSampling(
-        prob=prob,
-        dom=dom,
-        #problem_id=2337,
-        observe_pres_effs=True,
-        num_traces=10,
-        plan_len=10,
-        #steps_deep=30,
-        #subset_size_perc=0.1,
-        #enforced_hill_climbing_sampling=True
-    ).traces
-
-    traces.print()
+    # traces = VanillaSampling(
+    #     prob=prob,
+    #     dom=dom,
+    #     #problem_id=2337,
+    #     observe_pres_effs=True,
+    #     num_traces=1,
+    #     plan_len=10,
+    #     #steps_deep=30,
+    #     #subset_size_perc=0.1,
+    #     #enforced_hill_climbing_sampling=True
+    # ).traces
     
     #traces = test_tracelist()
 
-    # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
-    # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
-    # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
+    dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
+    prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
+    traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
+
+    traces.print(wrap="y")
     
     features = [objects_shared_feature, num_parameters_feature]
     learned_theta = default_theta_vec(2)
@@ -198,6 +198,6 @@ if __name__ == "__main__":
         percent_noisy=0,
         replace=True
     )
-    model = Extract(observations, modes.AMDN, debug=False, occ_threshold = 10)
+    model = Extract(observations, modes.AMDN, debug=False, occ_threshold = 2)
     f = open("results.txt", "w")
     f.write(model.details())
