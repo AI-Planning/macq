@@ -1,10 +1,9 @@
-from logging import warning
+from warnings import warn
+from typing import Set
 from ..utils import PercentError
 from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
-from typing import Set
-import random
 
 
 class PartialObservation(Observation):
@@ -31,7 +30,7 @@ class PartialObservation(Observation):
             raise PercentError()
 
         if percent_missing == 0 and not hide:
-            warning("Creating a PartialObseration with no missing information.")
+            warn("Creating a PartialObseration with no missing information.")
 
         # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
         Observation.__init__(self, index=step.index)

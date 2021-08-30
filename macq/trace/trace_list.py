@@ -1,6 +1,7 @@
+from warnings import warn
+from typing import List, Callable, Type, Optional, Union
 from logging import warn
 from collections.abc import MutableSequence
-from typing import List, Callable, Type, Union
 from rich.console import Console
 
 from . import Action, Trace

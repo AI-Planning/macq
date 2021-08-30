@@ -8,14 +8,13 @@ from ...utils import PercentError
 from ...utils.timer import basic_timer
 
 
-
 MAX_GOAL_SEARCH_TIME = 30.0
 
 
 class RandomGoalSampling(VanillaSampling):
     """Random Goal State Trace Sampler - inherits the VanillaSampling class and its attributes.
 
-    A state trace generator that generates traces by randomly generating some candidate states/goals k steps deep, 
+    A state trace generator that generates traces by randomly generating some candidate states/goals k steps deep,
     then running a planner on a random subset of the fluents to get plans. The longest plans (those closest to k, thus representing
     goal states that are somewhat complex and take longer to reach) are taken and used to generate traces.
 
@@ -30,8 +29,9 @@ class RandomGoalSampling(VanillaSampling):
             The percentage of fluents to extract to use as a goal state from the generated states.
         goals_inits_plans (List[Dict]):
             A list of dictionaries, where each dictionary stores the generated goal state as the key and the initial state and plan used to
-            reach the goal as values. 
+            reach the goal as values.
     """
+
     def __init__(
         self,
         steps_deep: int,
@@ -65,20 +65,26 @@ class RandomGoalSampling(VanillaSampling):
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
-                Option to observe action preconditions and effects upon generation. 
+                Option to observe action preconditions and effects upon generation.
         """
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
-        self.steps_deep = steps_deep        
+        self.steps_deep = steps_deep
         self.enforced_hill_climbing_sampling = enforced_hill_climbing_sampling
         self.subset_size_perc = subset_size_perc
         self.goals_inits_plans = []
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs, num_traces=num_traces)
+        super().__init__(
+            dom=dom,
+            prob=prob,
+            problem_id=problem_id,
+            observe_pres_effs=observe_pres_effs,
+            num_traces=num_traces,
+        )
 
     def goal_sampling(self):
         """Samples goals by randomly generating candidate goal states k (`steps_deep`) steps deep, then running planners on those
-        goal states to ensure the goals are complex enough (i.e. cannot be reached in too few steps). Candidate 
-        goal states are generated for a set amount of time indicated by MAX_GOAL_SEARCH_TIME, and the goals with the 
+        goal states to ensure the goals are complex enough (i.e. cannot be reached in too few steps). Candidate
+        goal states are generated for a set amount of time indicated by MAX_GOAL_SEARCH_TIME, and the goals with the
         longest plans (the most complex goals) are selected.
 
         Returns: An OrderedDict holding the longest goal states along with the initial state and plans used to reach them.
@@ -86,8 +92,10 @@ class RandomGoalSampling(VanillaSampling):
         goal_states = {}
         self.generate_goals(goal_states=goal_states)
         # sort the results by plan length and get the k largest ones
-        filtered_goals = OrderedDict(sorted(goal_states.items(), key=lambda x : len(x[1]["plan"].actions)))
-        to_del = list(filtered_goals.keys())[:len(filtered_goals) - self.num_traces]
+        filtered_goals = OrderedDict(
+            sorted(goal_states.items(), key=lambda x: len(x[1]["plan"].actions))
+        )
+        to_del = list(filtered_goals.keys())[: len(filtered_goals) - self.num_traces]
         for d in to_del:
             del filtered_goals[d]
         return filtered_goals
@@ -122,12 +130,8 @@ class RandomGoalSampling(VanillaSampling):
             self.change_goal(goal_fluents=goal_f)
 
             # ensure that the goal doesn't hold in the initial state; restart if it does
-            init_state = {
-                str(a) for a in self.problem.init.as_atoms()
-            }
-            goal = {
-                str(a) for a in self.problem.goal.subformulas
-            }
+            init_state = {str(a) for a in self.problem.init.as_atoms()}
+            goal = {str(a) for a in self.problem.goal.subformulas}
 
             if goal.issubset(init_state):
                 continue
@@ -144,7 +148,10 @@ class RandomGoalSampling(VanillaSampling):
             for f in goal_f:
                 state_dict[f] = True
             # map each goal to the initial state and plan used to achieve it
-            goal_states[State(state_dict)] = {"plan": test_plan, "initial state": self.problem.init}
+            goal_states[State(state_dict)] = {
+                "plan": test_plan,
+                "initial state": self.problem.init,
+            }
 
             # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
             # use the full state the goal was extracted from as the initial state to prevent planning errors from incomplete initial states
@@ -155,8 +162,8 @@ class RandomGoalSampling(VanillaSampling):
             if len(test_plan.actions) >= self.steps_deep:
                 k_length_plans += 1
             if k_length_plans >= self.num_traces:
-                 break
-            
+                break
+
     def generate_traces(self):
         """Generates traces based on the sampled goals. Traces are generated using the initial state and plan used to achieve the goal.
 
@@ -172,7 +179,5 @@ class RandomGoalSampling(VanillaSampling):
             if self.enforced_hill_climbing_sampling:
                 self.problem.init = goal["initial state"]
             # generate a plan based on the new goal/initial state, then generate a trace based on that plan
-            traces.append(
-                self.generate_single_trace_from_plan(goal["plan"])
-            )
+            traces.append(self.generate_single_trace_from_plan(goal["plan"]))
         return traces

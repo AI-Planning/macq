@@ -18,7 +18,7 @@ This library is a collection of tools for planning-like action model acquisition
 ## Usage <a name="usage" />
 ```python
 from macq import generate, extract
-from macq.observation import IdentityObservation
+from macq.observation import IdentityObservation, AtomicPartialObservation
 
 # get a domain-specific generator: uses api.planning.domains problem_id/
 # generate 100 traces of length 20 using vanilla sampling
@@ -66,11 +66,12 @@ Model:
         clear location pos-04-04
         at player player-01 location pos-04-06
   ...
+
 ######################################################################
 # Model Extraction - SLAF Technique
 ######################################################################
 traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 2, num_traces = 1).traces
-observations = traces.tokenize(PartialObservabilityToken, method=PartialObservabilityToken.random_subset, percent_missing=0.10)
+observations = traces.tokenize(AtomicPartialObservation, percent_missing=0.10)
 model = Extract(observations, modes.SLAF)
 model.details()
 
@@ -92,9 +93,9 @@ Model:
 - [x] [Learning Planning Operators by Observation and Practice](https://aaai.org/Papers/AIPS/1994/AIPS94-057.pdf) (AIPS'94)
 - [ ] [Learning by Experimentation: Incremental Refinement of Incomplete Planning Domains](https://www.sciencedirect.com/science/article/pii/B9781558603356500192) (ICML'94)
 - [ ] [Learning Probabilistic Relational Planning Rules](https://people.csail.mit.edu/lpk/papers/2005/zpk-aaai05.pdf) (ICAPS'04)
-- [ ] [Learning Action Models from Plan Examples with Incomplete Knowledge](https://www.aaai.org/Papers/ICAPS/2005/ICAPS05-025.pdf) (ICAPS'05)
+- [x] [Learning Action Models from Plan Examples with Incomplete Knowledge](https://www.aaai.org/Papers/ICAPS/2005/ICAPS05-025.pdf) (ICAPS'05)
 - [ ] [Learning Planning Rules in Noisy Stochastic Worlds](https://people.csail.mit.edu/lpk/papers/2005/zpk-aaai05.pdf) (AAAI'05)
-- [ ] [Learning action models from plan examples using weighted MAX-SAT](https://www.sciencedirect.com/science/article/pii/S0004370206001408) (AIJ'07)
+- [x] [Learning action models from plan examples using weighted MAX-SAT](https://www.sciencedirect.com/science/article/pii/S0004370206001408) (AIJ'07)
 - [ ] [Learning Symbolic Models of Stochastic Domains](https://www.aaai.org/Papers/JAIR/Vol29/JAIR-2910.pdf) (JAIR'07)
 - [x] [Learning Partially Observable Deterministic Action Models](https://www.aaai.org/Papers/JAIR/Vol33/JAIR-3310.pdf) (JAIR'08)
 - [ ] [Acquisition of Object-Centred Domain Models from Planning Examples](https://ojs.aaai.org/index.php/ICAPS/article/view/13391) (ICAPS'09)

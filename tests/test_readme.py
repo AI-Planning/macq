@@ -23,6 +23,7 @@ def test_readme():
 
     action1 = traces[0][0].action
     assert action1
+    assert traces.get_usage(action1)
 
     trace = traces[0]
     assert len(trace) == 5
@@ -44,4 +45,3 @@ if __name__ == "__main__":
     traces = generate_traces()
     model = extract_model(traces)
     print(model.details())
-
