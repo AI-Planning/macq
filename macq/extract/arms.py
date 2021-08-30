@@ -368,8 +368,8 @@ class ARMS:
         A1. The intersection of the precondition and add lists of all actions must be empty.
 
         A2. In addition, if an action’s delete list includes a relation, this relation is
-            in the action’s precondition list. Thus, for every action, we require that
-            the delete list is a subset of the precondition list.
+        in the action’s precondition list. Thus, for every action, we require that
+        the delete list is a subset of the precondition list.
         """
 
         if debug:
