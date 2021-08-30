@@ -81,7 +81,7 @@ class VanillaSampling(Generator):
         return traces
 
     def generate_single_trace_setup(self, num_seconds: float, plan_len: int = None):
-        @set_timer_throw_exc(num_seconds=num_seconds, exception=TraceSearchTimeOut)
+        @set_timer_throw_exc(num_seconds=num_seconds, exception=TraceSearchTimeOut, max_time=num_seconds)
         def generate_single_trace(self=self, plan_len=plan_len):
             """Generates a single trace using the uniform random sampling technique.
             Loops until a valid trace is found. The timer wrapper does not allow the function

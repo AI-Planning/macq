@@ -48,6 +48,10 @@ if __name__ == "__main__":
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
     traces = vanilla.traces
     traces.generate_more(3)
+
+    dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
+    prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
+    VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=10, max_time=3)
     
     new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
     new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
@@ -97,5 +101,5 @@ if __name__ == "__main__":
 
     # test generating traces with action preconditions/effects known
     vanilla_traces = VanillaSampling(
-        problem_id=4627, plan_len=7, num_traces=10, observe_pres_effs=True
+        problem_id=123, plan_len=7, num_traces=10, observe_pres_effs=True
     ).traces

@@ -2,7 +2,7 @@ from multiprocessing.pool import ThreadPool
 from typing import Union
 
 
-def set_timer_throw_exc(num_seconds: Union[float, int], exception: Exception):
+def set_timer_throw_exc(num_seconds: Union[float, int], exception: Exception, *exception_args, **exception_kwargs):
     def timer(function):
         """
         Checks that a function runs within the specified time and raises an exception if it doesn't.
@@ -27,7 +27,7 @@ def set_timer_throw_exc(num_seconds: Union[float, int], exception: Exception):
                 return thr.get()
             else:
                 # otherwise, raise an exception if the function takes too long
-                raise exception()
+                raise exception(*exception_args, **exception_kwargs)
 
         return wrapper
 
@@ -65,9 +65,9 @@ class TraceSearchTimeOut(Exception):
 
     def __init__(
         self,
-        message="The generator took longer than `max_time` in its attempt to generate a trace. "
-        + "Change the `max_time` attribute for the trace generator used if you would like to have more time to generate a trace.",
+        max_time: float
     ):
+        message=f"The generator could not find a suitable trace in {max_time} seconds or less. Change the `max_time` attribute for the trace generator used if you would like to have more time to generate a trace."
         super().__init__(message)
 
 class InvalidTime(Exception):
