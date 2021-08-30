@@ -60,12 +60,23 @@ def basic_timer(num_seconds: Union[float, int]):
 class TraceSearchTimeOut(Exception):
     """
     Raised when the time it takes to generate (or attempt to generate) a single trace is
-    longer than the MAX_TRACE_TIME constant. MAX_TRACE_TIME is 30 seconds by default.
+    longer than the generator's `max_time` attribute.
     """
 
     def __init__(
         self,
-        message="The generator took longer than MAX_TRACE_TIME in its attempt to generate a trace. "
-        + "MAX_TRACE_TIME can be changed through the trace generator used.",
+        message="The generator took longer than `max_time` in its attempt to generate a trace. "
+        + "Change the `max_time` attribute for the trace generator used if you would like to have more time to generate a trace.",
+    ):
+        super().__init__(message)
+
+class InvalidTime(Exception):
+    """
+    Raised when the user supplies an invalid maximum time for a trace to be generated
+    to a generator.
+    """
+    def __init__(
+        self,
+        message="The provided maximum time is invalid.",
     ):
         super().__init__(message)

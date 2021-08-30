@@ -1,8 +1,7 @@
 from tarski.search.operations import progress
 import random
 from . import Generator
-from ...utils import set_timer_throw_exc, TraceSearchTimeOut, basic_timer, set_num_traces, set_plan_length 
-from ...observation.partial_observation import PercentError
+from ...utils import set_timer_throw_exc, TraceSearchTimeOut, set_num_traces, set_plan_length, InvalidTime
 from ...trace import (
     Step,
     Trace,
@@ -17,6 +16,8 @@ class VanillaSampling(Generator):
     of the given length.
 
     Attributes:
+        max_time (float):
+            The maximum time allowed for a trace to be generated.
         plan_len (int):
             The length of the traces to be generated.
         num_traces (int):
@@ -50,8 +51,12 @@ class VanillaSampling(Generator):
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            max_time (float):
+                The maximum time allowed for a trace to be generated.
         """
         super().__init__(dom=dom, prob=prob, problem_id=problem_id)
+        if max_time <= 0:
+            raise InvalidTime()
         self.max_time = max_time
         self.plan_len = set_plan_length(plan_len)
         self.num_traces = set_num_traces(num_traces)

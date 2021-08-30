@@ -4,7 +4,7 @@ from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject, TraceList
-from macq.utils import TraceSearchTimeOut
+from macq.utils import TraceSearchTimeOut, InvalidTime
 
 
 def test_invalid_vanilla_sampling():
@@ -34,6 +34,9 @@ def test_invalid_vanilla_sampling():
     
     with pytest.raises(TraceSearchTimeOut):
         VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=5)
+    
+    with pytest.raises(InvalidTime):
+        VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=0)
 
 
 if __name__ == "__main__":

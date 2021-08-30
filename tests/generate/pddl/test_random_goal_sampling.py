@@ -15,7 +15,7 @@ if __name__ == "__main__":
         steps_deep=20,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=False,
-        max_time=15
+        max_time=-15
     )
     traces = random_sampler.traces
     traces.print(wrap="y")

@@ -8,10 +8,6 @@ from ...utils import PercentError
 from ...utils.timer import basic_timer
 
 
-
-MAX_GOAL_SEARCH_TIME = 30.0
-
-
 class RandomGoalSampling(VanillaSampling):
     """Random Goal State Trace Sampler - inherits the VanillaSampling class and its attributes.
 
@@ -64,6 +60,8 @@ class RandomGoalSampling(VanillaSampling):
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            max_time (float):
+                The maximum time allowed for a trace to be generated.
         """
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
