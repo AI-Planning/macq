@@ -1,14 +1,13 @@
 from typing import List
 
+
 class LearnedFluent:
     def __init__(self, name: str, objects: List):
         self.name = name
         self.objects = objects
 
     def __eq__(self, other):
-        if not isinstance(other, LearnedFluent):
-            return False
-        return hash(self) == hash(other)
+        return isinstance(other, LearnedFluent) and hash(self) == hash(other)
 
     def __hash__(self):
         # Order of objects is important!

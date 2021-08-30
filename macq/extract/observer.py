@@ -2,11 +2,11 @@ from typing import List, Set
 from collections import defaultdict
 
 from attr import dataclass
-import macq.extract as extract
+from . import LearnedAction, Model
+from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..trace import ObservationLists
-from ..observation import IdentityObservation
+from ..observation import IdentityObservation, ObservationLists
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Observer:
     fluents that went from True to False.
     """
 
-    def __new__(cls, obs_lists: ObservationLists):
+    def __new__(cls, obs_lists: ObservationLists, debug: bool):
         """Creates a new Model object.
 
         Args:
@@ -41,7 +41,7 @@ class Observer:
                 Raised if the observations are not identity observation.
         """
         if obs_lists.type is not IdentityObservation:
-            raise extract.IncompatibleObservationToken(obs_lists.type, Observer)
+            raise IncompatibleObservationToken(obs_lists.type, Observer)
         fluents = Observer._get_fluents(obs_lists)
         actions = Observer._get_actions(obs_lists)
         return Model(fluents, actions)
@@ -54,7 +54,10 @@ class Observer:
         for obs_list in obs_lists:
             for obs in obs_list:
                 # Update fluents with the fluents in this observation
-                fluents.update(LearnedFluent(f.name, [o.details() for o in f.objects]) for f in obs.state.keys())
+                fluents.update(
+                    LearnedFluent(f.name, [o.details() for o in f.objects])
+                    for f in obs.state.keys()
+                )
         return fluents
 
     @staticmethod
@@ -74,7 +77,7 @@ class Observer:
         action_transitions = obs_lists.get_all_transitions()
         for action, transitions in action_transitions.items():
             # Create a LearnedAction for the current action
-            model_action = extract.LearnedAction(
+            model_action = LearnedAction(
                 action.name, action.obj_params, cost=action.cost
             )
 

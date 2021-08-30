@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from ..trace import ObservationLists, Action, State
+from ..trace import Action, State
+from ..observation import ObservationLists
 from .model import Model
 from .observer import Observer
 from .slaf import SLAF
 from .amdn import AMDN
+from .arms import ARMS
 
 
 @dataclass
@@ -23,6 +25,7 @@ class modes(Enum):
     OBSERVER = auto()
     SLAF = auto()
     AMDN = auto()
+    ARMS = auto()
 
 
 class Extract:
@@ -32,7 +35,9 @@ class Extract:
     from state observations.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, mode: modes, **kwargs) -> Model:
+    def __new__(
+        cls, obs_lists: ObservationLists, mode: modes, debug: bool = False, **kwargs
+    ) -> Model:
         """Extracts a Model object.
 
         Extracts a model from the observations using the specified extraction
@@ -53,12 +58,11 @@ class Extract:
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: SLAF,
-            modes.AMDN: AMDN
+            modes.AMDN: AMDN,
+            modes.ARMS: ARMS,
         }
         if mode == modes.SLAF:
-            # only allow one trace
-            assert (
-                len(obs_lists) == 1
-            ), "The SLAF extraction technique only takes one trace."
+            if len(obs_lists) != 1:
+                raise Exception("The SLAF extraction technique only takes one trace.")
 
-        return techniques[mode](obs_lists, **kwargs)
+        return techniques[mode](obs_lists, debug, **kwargs)

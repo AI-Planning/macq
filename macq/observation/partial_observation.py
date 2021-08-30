@@ -1,14 +1,13 @@
-from logging import warning
-from ..utils import PercentError#, extract_fluent_subset
+from warnings import warn
+from typing import Set
+from ..utils import PercentError
 from ..trace import Step, Fluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
-from typing import Set
 
 
 class PartialObservation(Observation):
     """The Partial Observability Token.
-
     The partial observability token stores the step where some of the values of
     the fluents in the step's state are unknown. Inherits the base Observation
     class.
@@ -18,8 +17,7 @@ class PartialObservation(Observation):
         self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
     ):
         """
-        Creates an PartialObservation object, storing the step.
-
+        Creates a PartialObservation object, storing the step.
         Args:
             step (Step):
                 The step associated with this observation.
@@ -32,9 +30,9 @@ class PartialObservation(Observation):
             raise PercentError()
 
         if percent_missing == 0 and not hide:
-            warning("Creating a PartialObservation with no missing information.")
+            warn("Creating a PartialObseration with no missing information.")
 
-        # necessary because multiple inheritance can change the parent of this class
+        # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
         Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
@@ -58,33 +56,27 @@ class PartialObservation(Observation):
 
     def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
-
         Args:
             step (Step):
                 The step to tokenize.
             percent_missing (float):
                 The percentage of fluents to hide (0-1).
-
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
         new_fluents = {}
-        fluents = step.state.fluents
-        hidden_f = self.extract_fluent_subset(fluents, percent_missing)
-        # get new dict
-        for f in fluents:
+        hidden_f = self.extract_fluent_subset(step.state, percent_missing)
+        for f in step.state:
             new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
     def hide_subset(self, step: Step, hide: Set[Fluent]):
         """Hides the specified set of fluents in the observation.
-
         Args:
             step (Step):
                 The step to tokenize.
             hide (Set[Fluent]):
                 The set of fluents that will be hidden.
-
         Returns:
             A Step whose state is a PartialState with the specified fluents hidden.
         """
@@ -99,6 +91,8 @@ class PartialObservation(Observation):
                 return value is None
             return self.action.details() == value
         elif key == "fluent_holds":
+            if self.state is None:
+                return value is None
             return self.state.holds(value)
         else:
             raise InvalidQueryParameter(PartialObservation, key)

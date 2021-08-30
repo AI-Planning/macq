@@ -5,8 +5,7 @@ from bauhaus import Encoding
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import AtomicPartialObservation
-from ..trace import ObservationLists
+from ..observation import AtomicPartialObservation, ObservationLists
 
 # only used for pretty printing in debug mode
 e = Encoding()
@@ -167,7 +166,9 @@ class SLAF:
         # iterate through each step
         for o in observations:
             for token in o:
-                model_fluents.update([LearnedFluent(name=f, objects=[]) for f in token.state])
+                model_fluents.update(
+                    [LearnedFluent(name=f, objects=[]) for f in token.state]
+                )
                 # if an action was taken on this step
                 if token.action:
                     # set up a base LearnedAction with the known information
@@ -356,7 +357,7 @@ class SLAF:
                         phi["pos expl"] = set()
                         phi["neg expl"] = set()
 
-                        """Steps 1 (a-c) - Update every fluent in the fluent-factored transition belief formula 
+                        """Steps 1 (a-c) - Update every fluent in the fluent-factored transition belief formula
                         with information from the last step."""
 
                         """Step 1 (a) - update the neutral effects."""

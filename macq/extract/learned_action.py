@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Set, List
-from ..trace import Fluent
+from typing import List, Set
 
 
 class LearnedAction:
-    def __init__(self, name: str, obj_params: List, **kwargs):
+    def __init__(self, name: str, obj_params: List[str], **kwargs):
         self.name = name
         self.obj_params = obj_params
         if "cost" in kwargs:
@@ -15,9 +14,11 @@ class LearnedAction:
         self.delete = set() if "delete" not in kwargs else kwargs["delete"]
 
     def __eq__(self, other):
-        if not isinstance(other, LearnedAction):
-            return False
-        return self.name == other.name and self.obj_params == other.obj_params
+        return (
+            isinstance(other, LearnedAction)
+            and self.name == other.name
+            and self.obj_params == other.obj_params
+        )
 
     def __hash__(self):
         # Order of obj_params is important!
@@ -26,7 +27,7 @@ class LearnedAction:
     def details(self):
         # obj_params can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the action
         try:
-            string = f"({self.name} {' '.join([o for o in self.obj_params])})"
+            string = f"({self.name} {' '.join(self.obj_params)})"
         except TypeError:
             string = f"({self.name} {' '.join([o.details() for o in self.obj_params])})"
 
@@ -58,6 +59,11 @@ class LearnedAction:
                 The set of fluents to be added to the action's delete effects.
         """
         self.delete.update(fluents)
+
+    def clear(self):
+        self.precond = set()
+        self.add = set()
+        self.delete = set()
 
     def compare(self, orig_action: LearnedAction):
         """Compares the learned action to an original, ground truth action."""

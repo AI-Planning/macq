@@ -27,9 +27,7 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(
-        self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]
-    ):
+    def __init__(self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -129,7 +127,13 @@ class Model:
                 Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
             )
 
-    def to_pddl(self, domain_name: str, problem_name: str, domain_filename: str, problem_filename: str):
+    def to_pddl(
+        self,
+        domain_name: str,
+        problem_name: str,
+        domain_filename: str,
+        problem_filename: str,
+    ):
         """Dumps a Model to two PDDL files. The conversion only uses 0-arity predicates, and no types, objects,
         or parameters of any kind are used. Actions are represented as ground actions with no parameters.
 
