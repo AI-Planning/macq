@@ -4,6 +4,7 @@ from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject, TraceList
+from macq.utils import TraceSearchTimeOut
 
 
 def test_invalid_vanilla_sampling():
@@ -30,15 +31,21 @@ def test_invalid_vanilla_sampling():
             "new_blocks_dom.pddl",
             "new_blocks_prob.pddl",
         )
+    
+    with pytest.raises(TraceSearchTimeOut):
+        VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=5)
 
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent.parent
+
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
     vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
-
+    traces = vanilla.traces
+    traces.generate_more(3)
+    
     new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
     new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
