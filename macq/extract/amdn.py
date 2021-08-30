@@ -11,8 +11,8 @@ from .exceptions import (
     InvalidMaxSATModel,
 )
 from .model import Model
-from ..trace import ObservationLists, ActionPair
-from ..observation import NoisyPartialDisorderedParallelObservation
+from ..trace import ActionPair
+from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists
 from ..utils.pysat import to_wcnf
 
 e = Encoding
