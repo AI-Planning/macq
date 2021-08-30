@@ -1,13 +1,14 @@
-from typing import Set, Union
+from typing import Set
 from json import loads, dumps
 import tarski
-from tarski.syntax.formulas import CompoundFormula, Connective
+from tarski.syntax.formulas import CompoundFormula, Connective, top
 from tarski.fol import FirstOrderLanguage
 from tarski.io import fstrips as iofs
 from tarski.syntax import land
 import tarski.fstrips as fs
-from ..utils import ComplexEncoder
 from .learned_action import LearnedAction
+from .learned_fluent import LearnedFluent
+from ..utils import ComplexEncoder
 from ..trace import Fluent
 
 
@@ -26,15 +27,13 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(
-        self, fluents: Union[Set[str], Set[Fluent]], actions: Set[LearnedAction]
-    ):
+    def __init__(self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
-            fluents (set):
+            fluents (Union[Set[LearnedFluent], Set[str]]):
                 The set of fluents in the model.
-            actions (set):
+            actions (Set[LearnedAction]):
                 The set of actions in the model.
         """
         self.fluents = fluents
@@ -116,8 +115,9 @@ class Model:
         Returns:
             The attribute of the LearnedAction, converted to an Atom or CompoundFormula.
         """
+        # return top if there are no constraints
         if not attribute:
-            return None
+            return top
         # creates Atom
         elif len(attribute) == 1:
             return lang.get(attribute.replace(" ", "_"))()
@@ -127,14 +127,24 @@ class Model:
                 Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
             )
 
-    def to_pddl(self, domain_name: str, problem_name: str):
+    def to_pddl(
+        self,
+        domain_name: str,
+        problem_name: str,
+        domain_filename: str,
+        problem_filename: str,
+    ):
         """Dumps a Model to two PDDL files. The conversion only uses 0-arity predicates, and no types, objects,
         or parameters of any kind are used. Actions are represented as ground actions with no parameters.
 
         Args:
             domain_name (str):
-                The name of the domain file to be generated.
+                The name of the domain to be generated.
             problem_name (str):
+                The name of the problem to be generated.
+            domain_filename (str):
+                The name of the domain file to be generated.
+            problem_filename (str):
                 The name of the problem file to be generated.
         """
         lang = tarski.language(domain_name)
@@ -144,7 +154,7 @@ class Model:
         if self.fluents:
             # create 0-arity predicates
             for f in self.fluents:
-                lang.predicate(f.replace(" ", "_"))
+                lang.predicate(str(f).replace(" ", "_"))
         if self.actions:
             for a in self.actions:
                 # fetch all the relevant 0-arity predicates and create formulas to set up the ground actions
@@ -165,7 +175,7 @@ class Model:
         problem.goal = land()
         # write to files
         writer = iofs.FstripsWriter(problem)
-        writer.write(domain_name + ".pddl", problem_name + ".pddl")
+        writer.write(domain_filename, problem_filename)
 
     def _serialize(self):
         return dict(fluents=list(self.fluents), actions=list(self.actions))

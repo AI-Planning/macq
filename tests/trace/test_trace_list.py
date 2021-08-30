@@ -22,6 +22,7 @@ def test_trace_list():
     assert trace_list[0] is first
 
     action = trace_list[0].steps[0].action
+    assert action
     usages = trace_list.get_usage(action)
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)

@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from macq.generate.pddl import TraceFromGoal
 from macq.generate.pddl.generator import InvalidGoalFluent
-from macq.generate import InvalidNumberOfTraces, InvalidPlanLength
+from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import Fluent, PlanningObject
 
 
@@ -32,8 +32,12 @@ if __name__ == "__main__":
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
-    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
-    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+    new_blocks_dom = str(
+        (base / "generated_testing_files/new_blocks_dom.pddl").resolve()
+    )
+    new_blocks_prob = str(
+        (base / "generated_testing_files/new_blocks_prob.pddl").resolve()
+    )
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
     new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
 
@@ -82,3 +86,6 @@ if __name__ == "__main__":
     goal_trace = goal_traces_sampler.trace
     true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
     print(true_f)
+
+    # test generating traces with action preconditions/effects known
+    goal_traces = TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace

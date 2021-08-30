@@ -27,12 +27,13 @@ class VanillaSampling(Generator):
     """
 
     def __init__(
-        self,
-        plan_len: int = 1,
-        num_traces: int = 1,
+        self,        
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
+        observe_pres_effs: bool = False,
+        plan_len: int = 1,
+        num_traces: int = 1,
         seed: int = None,
         max_time: float = 30
     ):
@@ -41,10 +42,6 @@ class VanillaSampling(Generator):
         and the domain and problem.
 
         Args:
-            plan_len (int):
-                The length of each generated trace. Defaults to 1.
-            num_traces (int):
-                The number of traces to generate. Defaults to 1.
             dom (str):
                 The domain filename.
             prob (str):
@@ -53,11 +50,17 @@ class VanillaSampling(Generator):
                 The ID of the problem to access.
             max_time (float):
                 The maximum time allowed for a trace to be generated.
+            observe_pres_effs (bool):
+                Option to observe action preconditions and effects upon generation.         
+            plan_len (int):
+                The length of each generated trace. Defaults to 1.
+            num_traces (int):
+                The number of traces to generate. Defaults to 1.
         """
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id)
+        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs)
         if max_time <= 0:
             raise InvalidTime()
-        self.max_time = max_time
+        self.max_time = max_time  
         self.plan_len = set_plan_length(plan_len)
         self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()

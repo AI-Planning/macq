@@ -22,6 +22,8 @@ def test_readme():
     assert len(traces) == 4
 
     action1 = traces[0][0].action
+    assert action1
+    assert traces.get_usage(action1)
 
     trace = traces[0]
     assert len(trace) == 5

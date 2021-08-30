@@ -3,8 +3,7 @@ from macq.extract import IncompatibleObservationToken, Extract, modes
 from macq.observation import Observation
 from tests.utils.test_traces import blocks_world
 
-# Other functionality of extract is implicitly tested by any extraction technique
-# This is reflected in coverage reports
+# Other functionality of extract is tested by extraction technique tests
 
 
 def test_incompatible_observation_token():

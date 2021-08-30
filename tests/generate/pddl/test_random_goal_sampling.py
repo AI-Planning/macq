@@ -15,8 +15,18 @@ if __name__ == "__main__":
         steps_deep=20,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=False,
-        max_time=-15
+        max_time=10
     )
     traces = random_sampler.traces
     traces.print(wrap="y")
-    
+
+    # test generating traces with action preconditions/effects known
+    ramdom_sampler_traces = RandomGoalSampling(
+        dom=dom,
+        prob=prob,
+        observe_pres_effs=True,
+        num_traces=3,
+        steps_deep=10,
+        subset_size_perc=0.1,
+        enforced_hill_climbing_sampling=False,
+    ).traces

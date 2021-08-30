@@ -11,7 +11,7 @@ from ...utils.timer import basic_timer
 class RandomGoalSampling(VanillaSampling):
     """Random Goal State Trace Sampler - inherits the VanillaSampling class and its attributes.
 
-    A state trace generator that generates traces by randomly generating some candidate states/goals k steps deep, 
+    A state trace generator that generates traces by randomly generating some candidate states/goals k steps deep,
     then running a planner on a random subset of the fluents to get plans. The longest plans (those closest to k, thus representing
     goal states that are somewhat complex and take longer to reach) are taken and used to generate traces.
 
@@ -26,8 +26,9 @@ class RandomGoalSampling(VanillaSampling):
             The percentage of fluents to extract to use as a goal state from the generated states.
         goals_inits_plans (List[Dict]):
             A list of dictionaries, where each dictionary stores the generated goal state as the key and the initial state and plan used to
-            reach the goal as values. 
+            reach the goal as values.
     """
+
     def __init__(
         self,
         steps_deep: int,
@@ -37,7 +38,8 @@ class RandomGoalSampling(VanillaSampling):
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
-        max_time: float = 30
+        max_time: float = 30,
+        observe_pres_effs: bool = False,
     ):
         """
         Initializes a random goal state trace sampler using the plan length, number of traces,
@@ -62,19 +64,28 @@ class RandomGoalSampling(VanillaSampling):
                 The ID of the problem to access.
             max_time (float):
                 The maximum time allowed for a trace to be generated.
+            observe_pres_effs (bool):
+                Option to observe action preconditions and effects upon generation.
         """
         if subset_size_perc < 0 or subset_size_perc > 1:
             raise PercentError()
-        self.steps_deep = steps_deep        
+        self.steps_deep = steps_deep
         self.enforced_hill_climbing_sampling = enforced_hill_climbing_sampling
         self.subset_size_perc = subset_size_perc
         self.goals_inits_plans = []
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id, num_traces=num_traces, max_time=max_time)
+        super().__init__(
+            dom=dom,
+            prob=prob,
+            problem_id=problem_id,
+            num_traces=num_traces,
+            observe_pres_effs=observe_pres_effs,
+            max_time=max_time
+        )
 
     def goal_sampling(self):
         """Samples goals by randomly generating candidate goal states k (`steps_deep`) steps deep, then running planners on those
-        goal states to ensure the goals are complex enough (i.e. cannot be reached in too few steps). Candidate 
-        goal states are generated for a set amount of time indicated by MAX_GOAL_SEARCH_TIME, and the goals with the 
+        goal states to ensure the goals are complex enough (i.e. cannot be reached in too few steps). Candidate
+        goal states are generated for a set amount of time indicated by MAX_GOAL_SEARCH_TIME, and the goals with the
         longest plans (the most complex goals) are selected.
 
         Returns: An OrderedDict holding the longest goal states along with the initial state and plans used to reach them.
@@ -82,8 +93,10 @@ class RandomGoalSampling(VanillaSampling):
         goal_states = {}
         self.generate_goals_setup(num_seconds=self.max_time, goal_states=goal_states)()
         # sort the results by plan length and get the k largest ones
-        filtered_goals = OrderedDict(sorted(goal_states.items(), key=lambda x : len(x[1]["plan"].actions)))
-        to_del = list(filtered_goals.keys())[:len(filtered_goals) - self.num_traces]
+        filtered_goals = OrderedDict(
+            sorted(goal_states.items(), key=lambda x: len(x[1]["plan"].actions))
+        )
+        to_del = list(filtered_goals.keys())[: len(filtered_goals) - self.num_traces]
         for d in to_del:
             del filtered_goals[d]
         return filtered_goals
@@ -175,7 +188,5 @@ class RandomGoalSampling(VanillaSampling):
             if self.enforced_hill_climbing_sampling:
                 self.problem.init = goal["initial state"]
             # generate a plan based on the new goal/initial state, then generate a trace based on that plan
-            traces.append(
-                self.generate_single_trace_from_plan(goal["plan"])
-            )
+            traces.append(self.generate_single_trace_from_plan(goal["plan"]))
         return traces

@@ -5,7 +5,8 @@ from inspect import cleandoc
 from rich.table import Table
 from rich.text import Text
 from . import Action, Step, State
-from ..observation import Observation
+from ..observation import Observation, NoisyPartialDisorderedParallelObservation
+from ..utils import TokenizationError
 
 
 @dataclass
@@ -52,6 +53,9 @@ class Trace:
         """
         self.steps = steps if steps is not None else []
         self.__reinit_actions_and_fluents()
+
+    def __eq__(self, other):
+        return isinstance(other, Trace) and self.steps == other.steps
 
     def __len__(self):
         return len(self.steps)
@@ -261,7 +265,7 @@ class Trace:
                 post_states.add(self[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action) -> Set[SAS]:
+    def get_sas_triples(self, action: Action) -> List[SAS]:
         """Retrieves the list of (S,A,S') triples for the action in this trace.
 
         In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
@@ -275,11 +279,11 @@ class Trace:
             A `SAS` object, containing the `pre_state`, `action`, and
             `post_state`.
         """
-        sas_triples = set()
+        sas_triples = []
         for i, step in enumerate(self):
             if step.action == action:
                 triple = SAS(step.state, action, self[i + 1].state)
-                sas_triples.add(triple)
+                sas_triples.append(triple)
         return sas_triples
 
     def get_total_cost(self):
@@ -368,4 +372,6 @@ class Trace:
             A list of observation tokens, corresponding to the steps in the
             trace.
         """
+        if Token == NoisyPartialDisorderedParallelObservation:
+            raise TokenizationError(Token)
         return [Token(step=step, **kwargs) for step in self]
