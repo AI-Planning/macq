@@ -101,7 +101,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
     The default feature functions and theta vector described in the AMDN paper are available for use in this module.
 
     Attributes:
-        traces (List[List[Token]]):
+        observations (List[List[Token]]):
             The trace list converted to a list of lists of tokens.
         type (Type[Observation]):
             The type of token to be used.
@@ -150,7 +150,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             **kwargs:
                 Any extra arguments to be supplied to the Token __init__.
         """
-        self.traces = []
+        self.observations = []
         self.type = Token
         self.all_par_act_sets = []
         self.all_states = []
