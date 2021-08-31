@@ -1,4 +1,4 @@
-from typing import Iterable, Sized
+from typing import Iterable, Iterator, Sized, Any
 
 
 try:
@@ -10,7 +10,7 @@ except ModuleNotFoundError:
     TQDM = False
 
 
-def tqdm_progress(iterable=None, *args, **kwargs):
+def tqdm_progress(iterable=None, *args, **kwargs) -> Any:
     if isinstance(iterable, range):
         return trange(iterable.start, iterable.stop, iterable.step, *args, **kwargs)
     return tqdm(iterable, *args, **kwargs)
@@ -24,7 +24,7 @@ class vanilla_progress:
         self.args = args
         self.kwargs = kwargs
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         if isinstance(self.iterable, range):
             start = self.iterable.start
             stop = self.iterable.stop
