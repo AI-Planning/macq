@@ -186,6 +186,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         return exp(dot(f_vec, theta_vec))
 
     def _calculate_denom(self):
+        """
+        Calculates and returns the denominator used in probability calculations.
+        """
         denominator = 0
         for combo in self.cross_actions:
             denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), self.learned_theta)

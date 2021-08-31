@@ -1,19 +1,16 @@
 from macq.extract.learned_action import LearnedAction
 from nnf.operators import implies
 import macq.extract as extract
-from typing import Dict, List, Optional, Union, Set, Hashable
+from typing import Dict, List, Optional, Union, Hashable
 from nnf import Aux, Var, And, Or
-from pysat.formula import WCNF
-from pysat.examples.rc2 import RC2
 from bauhaus import Encoding # only used for pretty printing in debug mode
 from .exceptions import (
     IncompatibleObservationToken,
-    InvalidMaxSATModel,
 )
 from .model import Model
 from ..trace import ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists
-from ..utils.pysat import to_wcnf
+from ..utils.pysat import to_wcnf, extract_raw_model
 
 e = Encoding
 
@@ -57,7 +54,7 @@ class AMDN:
     @staticmethod
     def _amdn(obs_lists: ObservationLists, debug: int, occ_threshold: int):
         wcnf, decode = AMDN._solve_constraints(obs_lists, occ_threshold, debug)
-        raw_model = AMDN._extract_raw_model(wcnf, decode)
+        raw_model = extract_raw_model(wcnf, decode)
         return AMDN._extract_model(obs_lists, raw_model)
 
     @staticmethod
@@ -387,7 +384,6 @@ class AMDN:
         parallel_constraints = AMDN._build_parallel_constraints(obs_lists, debug, to_obs)
         noise_constraints = AMDN._build_noise_constraints(obs_lists, occ_threshold, debug, to_obs)
         return {**disorder_constraints, **parallel_constraints, **noise_constraints}
-        #return {**parallel_constraints, **noise_constraints}
 
     @staticmethod
     def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
@@ -398,61 +394,11 @@ class AMDN:
         for c, weight in constraints.items():
             if weight == "HARD":
                 hard_constraints.append(c)
-        
         for c in hard_constraints:
             del constraints[c]
 
-        # NOTE: just a test
-        # r = list(obs_lists.propositions)[0]
-        # act = list(obs_lists.actions)[0]
-        
-        # hard parallel constraints 1: successfully fails the model, but ONLY if WMAX is not used and they are set as direct hard constraints
-        # hard_constraints.append(AMDN._or_refactor(add(r, act)))
-        # hard_constraints.append(AMDN._or_refactor(pre(r, act)))
-        # hard parallel constraints 2: successfully fails the model, but ONLY if WMAX is not used and they are set as direct hard constraints
-        #hard_constraints.append(AMDN._or_refactor(delete(r, act)))
-        #hard_constraints.append(AMDN._or_refactor(~pre(r, act)))        
-
-        #act_x = list(list(obs_lists.all_par_act_sets[0])[0])[0]
-        #act_y = list(list(obs_lists.all_par_act_sets[0])[1])[0]
-
-        # attempt to force the model
-        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of open )")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(open  is added by open )")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is a precondition of walk )")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(open  is a precondition of walk )")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(rooma  is deleted by walk )")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(roomb  is added by walk )")))
-
-        # hard_constraints.append(AMDN._or_refactor(Var("(truck  red_truck  is a precondition of drive  red_truck  location_a  location_b)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_a  is a precondition of drive  red_truck  location_a  location_b)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_b  is a precondition of drive  red_truck  location_a  location_b)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(at  red_truck  location_a  is a precondition of drive  red_truck  location_a  location_b)")))
-        # TODO: add add/del effects if you're going to use these
-        # hard_constraints.append(AMDN._or_refactor(Var("(truck  blue_truck  is a precondition of drive  blue_truck  location_c  location_d)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_c  is a precondition of drive  blue_truck  location_c  location_d)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(place  location_d  is a precondition of drive  blue_truck  location_c  location_d)")))
-        # hard_constraints.append(AMDN._or_refactor(Var("(at  blue_truck  location_c  is a precondition of drive  blue_truck  location_c  location_d)")))
-
         wcnf, decode = to_wcnf(soft_clauses=And(constraints.keys()), hard_clauses=And(hard_constraints), weights=list(constraints.values()))
-
         return wcnf, decode
-
-    # TODO: move out to utils
-    @staticmethod
-    def _extract_raw_model(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
-        solver = RC2(max_sat)
-        encoded_model = solver.compute()
-
-        if not isinstance(encoded_model, list):
-            # should never be reached
-            raise InvalidMaxSATModel(encoded_model)
-
-        # decode the model (back to nnf vars)
-        model: Dict[Hashable, bool] = {
-            decode[abs(clause)]: clause > 0 for clause in encoded_model
-        }
-        return model
 
     @staticmethod
     def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, LearnedAction]):
