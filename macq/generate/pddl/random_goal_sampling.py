@@ -4,8 +4,7 @@ from tarski.syntax.formulas import Atom
 from collections import OrderedDict
 from . import VanillaSampling
 from ...trace import TraceList, State
-from ...utils import PercentError
-from ...utils.timer import basic_timer
+from ...utils import PercentError, basic_timer, progress
 
 
 MAX_GOAL_SEARCH_TIME = 30.0
@@ -174,7 +173,7 @@ class RandomGoalSampling(VanillaSampling):
         # retrieve goals and their respective plans
         self.goals_inits_plans = self.goal_sampling()
         # iterate through all plans corresponding to the goals, generating traces
-        for goal in self.goals_inits_plans.values():
+        for goal in progress(self.goals_inits_plans.values()):
             # update the initial state if necessary
             if self.enforced_hill_climbing_sampling:
                 self.problem.init = goal["initial state"]

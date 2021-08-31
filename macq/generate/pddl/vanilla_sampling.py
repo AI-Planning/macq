@@ -4,14 +4,12 @@ from . import Generator
 from ...utils import (
     set_timer_throw_exc,
     TraceSearchTimeOut,
-    basic_timer,
     set_num_traces,
     set_plan_length,
+    progress as print_progress,
 )
-from ...observation.partial_observation import PercentError
 from ...trace import (
     Step,
-    State,
     Trace,
     TraceList,
 )
@@ -36,7 +34,7 @@ class VanillaSampling(Generator):
     """
 
     def __init__(
-        self,        
+        self,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
@@ -57,14 +55,19 @@ class VanillaSampling(Generator):
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
-                Option to observe action preconditions and effects upon generation.         
+                Option to observe action preconditions and effects upon generation.
             plan_len (int):
                 The length of each generated trace. Defaults to 1.
             num_traces (int):
                 The number of traces to generate. Defaults to 1.
 
         """
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs)
+        super().__init__(
+            dom=dom,
+            prob=prob,
+            problem_id=problem_id,
+            observe_pres_effs=observe_pres_effs,
+        )
         self.plan_len = set_plan_length(plan_len)
         self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
@@ -80,7 +83,7 @@ class VanillaSampling(Generator):
         """
         traces = TraceList()
         traces.generator = self.generate_single_trace
-        for _ in range(self.num_traces):
+        for _ in print_progress(range(self.num_traces)):
             traces.append(self.generate_single_trace())
         return traces
 
