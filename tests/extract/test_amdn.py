@@ -167,26 +167,25 @@ def test_tracelist():
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    
+
+    # use blocksworld (NOTE: no actions are parallel in this domain)
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-
     # TODO: replace with a domain-specific random trace generator
     traces = RandomGoalSampling(
-    # traces = VanillaSampling(
         prob=prob,
         dom=dom,
-        # problem_id=2337,
         observe_pres_effs=True,
         num_traces=1,
-        # plan_len=10,
         steps_deep=4,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True,
     ).traces
     
-    traces = test_tracelist()
+    # use the simple truck domain for debugging
+    # traces = test_tracelist()
 
+    # use the simple door domain for debugging
     # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
     # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
     # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
