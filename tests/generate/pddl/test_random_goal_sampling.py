@@ -11,10 +11,11 @@ if __name__ == "__main__":
     random_sampler = RandomGoalSampling(
         dom=dom,
         prob=prob,
-        num_traces=3,
-        steps_deep=10,
+        num_traces=20,
+        steps_deep=20,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=False,
+        max_time=10
     )
     traces = random_sampler.traces
     traces.print(wrap="y")
