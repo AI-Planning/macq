@@ -7,9 +7,6 @@ from ...trace import TraceList, State
 from ...utils import PercentError, basic_timer, progress
 
 
-MAX_GOAL_SEARCH_TIME = 30.0
-
-
 class RandomGoalSampling(VanillaSampling):
     """Random Goal State Trace Sampler - inherits the VanillaSampling class and its attributes.
 
@@ -40,6 +37,7 @@ class RandomGoalSampling(VanillaSampling):
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
+        max_time: float = 30,
         observe_pres_effs: bool = False,
     ):
         """
@@ -63,6 +61,8 @@ class RandomGoalSampling(VanillaSampling):
                 The problem filename.
             problem_id (int):
                 The ID of the problem to access.
+            max_time (float):
+                The maximum time allowed for a trace to be generated.
             observe_pres_effs (bool):
                 Option to observe action preconditions and effects upon generation.
         """
@@ -76,8 +76,9 @@ class RandomGoalSampling(VanillaSampling):
             dom=dom,
             prob=prob,
             problem_id=problem_id,
-            observe_pres_effs=observe_pres_effs,
             num_traces=num_traces,
+            observe_pres_effs=observe_pres_effs,
+            max_time=max_time
         )
 
     def goal_sampling(self):
@@ -89,7 +90,7 @@ class RandomGoalSampling(VanillaSampling):
         Returns: An OrderedDict holding the longest goal states along with the initial state and plans used to reach them.
         """
         goal_states = {}
-        self.generate_goals(goal_states=goal_states)
+        self.generate_goals_setup(num_seconds=self.max_time, goal_states=goal_states)()
         # sort the results by plan length and get the k largest ones
         filtered_goals = OrderedDict(
             sorted(goal_states.items(), key=lambda x: len(x[1]["plan"].actions))
@@ -99,70 +100,78 @@ class RandomGoalSampling(VanillaSampling):
             del filtered_goals[d]
         return filtered_goals
 
-    @basic_timer(num_seconds=MAX_GOAL_SEARCH_TIME)
-    def generate_goals(self, goal_states: Dict):
-        """Helper function for `goal_sampling`. Generates as many goals as possible within MAX_GOAL_SEARCH_TIME seconds.
-        Given the specified number of traces `num_traces`, if `num_traces` plans of length k (`steps_deep`) are found before
-        the time is up, exit early.
+    def generate_goals_setup(self, num_seconds: float, goal_states: Dict):
+        @basic_timer(num_seconds=num_seconds)
+        def generate_goals(self=self, goal_states=goal_states):
+            """Helper function for `goal_sampling`. Generates as many goals as possible within the specified max_time seconds (timing is
+            enforced by the basic_timer wrapper).
 
-        Args:
-            goal_states (Dict):
-                The dictionary to fill with the values of each goal state, initial state, and plan.
-        """
-        # create a sampler to test the complexity of the new goal by running a planner on it
-        k_length_plans = 0
-        while True:
-            # generate a trace of the specified length and retrieve the state of the last step
-            state = self.generate_single_trace(self.steps_deep)[-1].state
+            The outside function is a wrapper that provides parameters for both the timer
+            wrapper and the function.
 
-            # get all positive fluents (only positive fluents can be used for a goal)
-            goal_f = [f for f in state if state[f]]
-            # get next initial state (only used for enforced hill climbing sampling)
-            next_init_f = goal_f.copy()
-            # get the subset size
-            subset_size = int(len(state.fluents) * self.subset_size_perc)
-            # if necessary, take a subset of the fluents
-            if len(goal_f) > subset_size:
-                random.shuffle(goal_f)
-                goal_f = goal_f[:subset_size]
+            Given the specified number of traces `num_traces`, if `num_traces` plans of length k (`steps_deep`) are found before
+            the time is up, exit early.
 
-            self.change_goal(goal_fluents=goal_f)
+            Args:
+                goal_states (Dict):
+                    The dictionary to fill with the values of each goal state, initial state, and plan.
+            """
+            # create a sampler to test the complexity of the new goal by running a planner on it
+            k_length_plans = 0
+            while True:
+                # generate a trace of the specified length and retrieve the state of the last step
+                state = self.generate_single_trace_setup(num_seconds, self.steps_deep)()[-1].state
 
-            # ensure that the goal doesn't hold in the initial state; restart if it does
-            init_state = {str(a) for a in self.problem.init.as_atoms()}
-            goal = {str(a) for a in self.problem.goal.subformulas}
+                # get all positive fluents (only positive fluents can be used for a goal)
+                goal_f = [f for f in state if state[f]]
+                # get next initial state (only used for enforced hill climbing sampling)
+                next_init_f = goal_f.copy()
+                # get the subset size
+                subset_size = int(len(state.fluents) * self.subset_size_perc)
+                # if necessary, take a subset of the fluents
+                if len(goal_f) > subset_size:
+                    random.shuffle(goal_f)
+                    goal_f = goal_f[:subset_size]
 
-            if goal.issubset(init_state):
-                continue
+                self.change_goal(goal_fluents=goal_f)
 
-            try:
-                # attempt to generate a plan, and find a new goal if a plan can't be found
-                # should only crash if there are server issues
-                test_plan = self.generate_plan()
-            except KeyError as e:
-                continue
+                # ensure that the goal doesn't hold in the initial state; restart if it does
+                init_state = {
+                    str(a) for a in self.problem.init.as_atoms()
+                }
+                goal = {
+                    str(a) for a in self.problem.goal.subformulas
+                }
 
-            # create a State and add it to the dictionary
-            state_dict = {}
-            for f in goal_f:
-                state_dict[f] = True
-            # map each goal to the initial state and plan used to achieve it
-            goal_states[State(state_dict)] = {
-                "plan": test_plan,
-                "initial state": self.problem.init,
-            }
+                if goal.issubset(init_state):
+                    continue
 
-            # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
-            # use the full state the goal was extracted from as the initial state to prevent planning errors from incomplete initial states
-            if self.enforced_hill_climbing_sampling:
-                self.change_init(next_init_f)
+                try:
+                    # attempt to generate a plan, and find a new goal if a plan can't be found
+                    # should only crash if there are server issues
+                    test_plan = self.generate_plan()
+                except KeyError:
+                    continue
 
-            # keep track of the number of plans of length k; if we get enough of them, exit early
-            if len(test_plan.actions) >= self.steps_deep:
-                k_length_plans += 1
-            if k_length_plans >= self.num_traces:
-                break
+                # create a State and add it to the dictionary
+                state_dict = {}
+                for f in goal_f:
+                    state_dict[f] = True
+                # map each goal to the initial state and plan used to achieve it
+                goal_states[State(state_dict)] = {"plan": test_plan, "initial state": self.problem.init}
 
+                # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
+                # use the full state the goal was extracted from as the initial state to prevent planning errors from incomplete initial states
+                if self.enforced_hill_climbing_sampling:
+                    self.change_init(next_init_f)
+
+                # keep track of the number of plans of length k; if we get enough of them, exit early
+                if len(test_plan.actions) >= self.steps_deep:
+                    k_length_plans += 1
+                if k_length_plans >= self.num_traces:
+                    break
+        return generate_goals
+            
     def generate_traces(self):
         """Generates traces based on the sampled goals. Traces are generated using the initial state and plan used to achieve the goal.
 

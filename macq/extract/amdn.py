@@ -1,3 +1,5 @@
+""".. include:: ../../docs/extract/amdn.md"""
+
 import macq.extract as extract
 from .model import Model
 from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists

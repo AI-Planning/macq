@@ -1,4 +1,4 @@
-from .timer import set_timer_throw_exc, basic_timer, TraceSearchTimeOut
+from .timer import set_timer_throw_exc, basic_timer, TraceSearchTimeOut, InvalidTime
 from .complex_encoder import ComplexEncoder
 from .common_errors import PercentError
 from .trace_errors import InvalidPlanLength, InvalidNumberOfTraces
@@ -12,6 +12,7 @@ __all__ = [
     "set_timer_throw_exc",
     "basic_timer",
     "TraceSearchTimeOut",
+    "InvalidTime",
     "ComplexEncoder",
     "PercentError",
     "set_num_traces",
