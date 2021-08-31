@@ -3,7 +3,7 @@ from math import exp
 from numpy import dot
 from random import random
 from typing import Callable, Type, Set, List
-from . import TraceList, Step, Action
+from . import TraceList, Step, Action, PartialState, State
 from ..observation import Observation, ObservationLists
 
 
@@ -156,7 +156,6 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         self.all_states = []
         self.features = features
         self.learned_theta = learned_theta
-        # TODO: use functions here instead?
         actions = {step.action for trace in traces for step in trace if step.action}
         # cast to list for iteration purposes
         self.actions = list(actions)
@@ -237,6 +236,25 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             probabilities[combo] = self._calculate_probability(*combo.tup())
         return probabilities
 
+    def _get_new_partial_state(self):
+        """
+        Return a PartialState with the fluents used in this observation, with each fluent set to None as default.
+        """
+        cur_state = PartialState()
+        for f in self.propositions:
+            cur_state[f] = None
+        return cur_state
+
+    def _update_partial_state(self, partial_state: PartialState, orig_state: State, action: Action):
+        """
+        Update the provided PartialState with the fluents provided.
+        """
+        new_partial = partial_state.copy()
+        effects = set([e for e in action.add] + [e for e in action.delete])
+        for e in effects:
+            new_partial[e] = orig_state[e]
+        return new_partial
+
     def tokenize(self, traces: TraceList, Token: Type[Observation], **kwargs):
         """Main driver that handles the tokenization process.
 
@@ -256,8 +274,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             cur_par_act_conditions = set()
             # add initial state
             states.append(trace[0].state)
-            # for the compiler
-            cur_state = trace[1].state
+
+            cur_state = self._get_new_partial_state()
 
             # last step doesn't have an action/just contains the state after the last action
             for i in range(len(trace)):
@@ -273,6 +291,8 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                         # add psi_k and s'_k to the final (ordered) lists of parallel action sets and states
                         par_act_sets.append(cur_par_act)
                         states.append(cur_state)
+                        # reset the state
+                        cur_state = self._get_new_partial_state()
                         # reset psi_k (that is, create a new parallel action set)
                         cur_par_act = set()
                         # reset the conditions
@@ -280,7 +300,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                     # add the action and state to the appropriate psi_k and s'_k (either the existing ones, or
                     # new/empty ones if the current action is NOT parallel with actions in the previous set of actions.)
                     cur_par_act.add(a)
-                    cur_state = trace[i + 1].state
+                    cur_state = self._update_partial_state(cur_state, trace[i + 1].state, trace[i].action)
                     cur_par_act_conditions.update(a_conditions)
                 # if on the last step of the trace, add the current set/state to the final result before exiting the loop
                 if i == len(trace) - 1:

@@ -180,12 +180,12 @@ if __name__ == "__main__":
         observe_pres_effs=True,
         num_traces=1,
         # plan_len=10,
-        steps_deep=30,
+        steps_deep=4,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True,
     ).traces
     
-    # traces = test_tracelist()
+    traces = test_tracelist()
 
     # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
     # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
