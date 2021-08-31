@@ -1,3 +1,6 @@
+from typing import Iterable, Sized
+
+
 try:
     from tqdm import tqdm, trange
 
@@ -14,6 +17,8 @@ def tqdm_progress(iterable=None, *args, **kwargs):
 
 
 class vanilla_progress:
+    iterable: Iterable
+
     def __init__(self, iterable, *args, **kwargs):
         self.iterable = iterable
         self.args = args
@@ -25,20 +30,23 @@ class vanilla_progress:
             stop = self.iterable.stop
             step = self.iterable.step
             total = (stop - start) / step
-        else:
+        elif isinstance(self.iterable, Sized):
             total = len(self.iterable)
+        else:
+            total = None
 
         prev = 0
         it = 1
         for i in self.iterable:
             yield i
-            new = int(str(it / total)[2])
-            if new != prev:
-                prev = new
-                if new == 0:
-                    print("100%")
-                else:
-                    print(f"{new}0% ...")
+            if total is not None:
+                new = int(str(it / total)[2])
+                if new != prev:
+                    prev = new
+                    if new == 0:
+                        print("100%")
+                    else:
+                        print(f"{new}0% ...")
             it += 1
 
 
