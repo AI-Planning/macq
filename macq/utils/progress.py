@@ -11,15 +11,22 @@ except ModuleNotFoundError:
 
 
 def tqdm_progress(iterable=None, *args, **kwargs) -> Any:
+    """Wraps a loop with tqdm to output a progress bar."""
     if isinstance(iterable, range):
         return trange(iterable.start, iterable.stop, iterable.step, *args, **kwargs)
     return tqdm(iterable, *args, **kwargs)
 
 
 class vanilla_progress:
-    iterable: Iterable
+    """Wraps a loop to output progress reports."""
 
-    def __init__(self, iterable, *args, **kwargs):
+    def __init__(self, iterable: Iterable[Any], *args, **kwargs):
+        """Initializes a vanilla_progress object with the given iterable.
+
+        Args:
+            iterable (Iterable):
+                The iterable to loop over and track the progress of.
+        """
         self.iterable = iterable
         self.args = args
         self.kwargs = kwargs
