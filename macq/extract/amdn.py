@@ -1,3 +1,4 @@
+from macq.trace import Fluent, Action # for typing
 from macq.extract.learned_action import LearnedAction
 from nnf.operators import implies
 import macq.extract as extract
@@ -14,19 +15,44 @@ from ..utils.pysat import to_wcnf, extract_raw_model
 
 e = Encoding
 
-def _set_precond(r, act):
+def pre(r: Fluent, act: Action):
+    """Create a Var that enforces that the given fluent is a precondition of the given action.
+
+    Args:
+        r (Fluent):
+            The precondition to be added.
+        act (Action):
+            The action that the precondition will be added to.
+    Returns:
+        The Var that enforces that the given fluent is a precondition of the given action.
+    """
     return Var("(" + str(r)[1:-1] + " is a precondition of " + act.details() + ")")
 
-def _set_add(r, act):
+def add(r: Fluent, act: Action):
+    """Create a Var that enforces that the given fluent is an add effect of the given action.
+
+    Args:
+        r (Fluent):
+            The add effect to be added.
+        act (Action):
+            The action that the add effect will be added to.
+    Returns:
+        The Var that enforces that the given fluent is an add effect of the given action.
+    """
     return Var("(" + str(r)[1:-1] + " is added by " + act.details() + ")")
 
-def _set_del(r, act):
-    return Var("(" + str(r)[1:-1] + " is deleted by " + act.details() + ")")
+def delete(r: Fluent, act: Action):
+    """Create a Var that enforces that the given fluent is a delete effect of the given action.
 
-# for easier reference
-pre = _set_precond
-add = _set_add
-delete = _set_del
+    Args:
+        r (Fluent):
+            The delete effect to be added.
+        act (Action):
+            The action that the delete effect will be added to.
+    Returns:
+        The Var that enforces that the given fluent is a delete effect of the given action.
+    """
+    return Var("(" + str(r)[1:-1] + " is deleted by " + act.details() + ")")
 
 WMAX = 1
 
@@ -52,7 +78,23 @@ class AMDN:
         return AMDN._amdn(obs_lists, debug, occ_threshold)
     
     @staticmethod
-    def _amdn(obs_lists: ObservationLists, debug: int, occ_threshold: int):
+    def _amdn(obs_lists: ObservationLists, debug: bool, occ_threshold: int):
+        """Main driver for the entire AMDN algorithm.
+        The first line contains steps 1-4.
+        The second line contains step 5.
+        Finally, the final line corresponds to step 6 (return the model).
+        
+        Args:
+            obs_lists (ObservationLists): 
+                The tokens to be fed into the algorithm.
+            debug (bool):
+                Optional debugging mode.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+
+        Returns:
+            The extracted `Model`.
+        """
         wcnf, decode = AMDN._solve_constraints(obs_lists, occ_threshold, debug)
         raw_model = extract_raw_model(wcnf, decode)
         return AMDN._extract_model(obs_lists, raw_model)
@@ -72,6 +114,18 @@ class AMDN:
 
     @staticmethod
     def _extract_aux_set_weights(cnf_formula: And[Or[Var]], constraints: Dict, prob_disordered: float):
+        """Sets each clause in a CNF formula as a hard constraint, then sets any auxiliary variables to 
+        the appropriate weight detailed in the "Constraint DC" section of the AMDN paper.
+        Used to help create disorder constraints.
+
+        Args:
+            cnf_formula (And[Or[Var]]):
+                The CNF formula to extract the clauses and auxiliary variables from.
+            constraints (Dict):
+                The existing dictionary of disorder constraints.
+            prob_disordered (float):
+                The probability that the two actions relevant fot this constraint are disordered.
+        """
         # find all the auxiliary variables
         for clause in cnf_formula.children:
             for var in clause.children:
@@ -83,6 +137,15 @@ class AMDN:
 
     @staticmethod
     def _get_observe(obs_lists: ObservationLists):
+        """Gets from the user which fluents they want to observe (for debug mode).
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that contain the fluents.
+
+        Returns:
+            A list of of which fluents the user wants to observe.
+        """
         print("Select a proposition to observe:")
         sorted_f = [str(f) for f in obs_lists.propositions]
         sorted_f.sort()
@@ -104,6 +167,17 @@ class AMDN:
 
     @staticmethod
     def _debug_is_observed(constraint: Or, to_obs: List[str]):
+        """Determines if the given constraint contains a fluent that is being observed in debug mode.
+
+        Args:
+            constraint (Or):
+                The constraint to be analyzed.
+            to_obs (List[str]):
+                The list of fluents being observed.
+
+        Returns:
+            A bool that determines if the constraint should be observed or not.
+        """
         for c in constraint.children:
             for v in to_obs:
                 if v in str(c):
@@ -112,6 +186,14 @@ class AMDN:
 
     @staticmethod
     def _debug_simple_pprint(constraints: Dict, to_obs: List[str]):
+        """Pretty print used for simple formulas in debug mode.
+
+        Args:
+            constraints (Dict):
+                The constraints/weights to be pretty printed.
+            to_obs (List[str]):
+                The fluents being observed.
+        """
         for c in constraints:
             observe = AMDN._debug_is_observed(c, to_obs)
             if observe:
@@ -120,6 +202,14 @@ class AMDN:
 
     @staticmethod
     def _debug_aux_pprint(constraints: Dict, to_obs: List[str]):
+        """Pretty print used for formulas with auxiliary variables in debug mode.
+
+        Args:
+            constraints (Dict):
+                The constraints/weights to be pretty printed.
+            to_obs (List[str]):
+                The fluents being observed.
+        """
         aux_map = {}
         index = 0
         for c in constraints:
@@ -157,6 +247,15 @@ class AMDN:
 
     @staticmethod
     def _build_disorder_constraints(obs_lists: ObservationLists):
+        """Builds disorder constraints. Corresponds to step 1 of the AMDN algorithm.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens to be analyzed.
+
+        Returns:
+            The disorder constraints to be used in the algorithm.
+        """
         disorder_constraints = {}
 
         # iterate through all traces
@@ -200,6 +299,15 @@ class AMDN:
 
     @staticmethod
     def _build_hard_parallel_constraints(obs_lists: ObservationLists):
+        """Builds hard parallel constraints.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens to be analyzed.
+
+        Returns:
+            The hard parallel constraints to be used in the algorithm.
+        """        
         hard_constraints = {}
         # create a list of all <a, r> tuples
         for act in obs_lists.actions:
@@ -211,6 +319,15 @@ class AMDN:
 
     @staticmethod
     def _build_soft_parallel_constraints(obs_lists: ObservationLists):
+        """Builds soft parallel constraints.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens to be analyzed.
+
+        Returns:
+            The soft parallel constraints to be used in the algorithm.
+        """
         soft_constraints = {}
 
         # NOTE: the paper does not take into account possible conflicts between the preconditions of actions
@@ -247,7 +364,20 @@ class AMDN:
         return soft_constraints
 
     @staticmethod
-    def _build_parallel_constraints(obs_lists: ObservationLists, debug: int, to_obs: Optional[List[str]]):
+    def _build_parallel_constraints(obs_lists: ObservationLists, debug: bool, to_obs: Optional[List[str]]):
+        """Main driver for building parallel constraints. Corresponds to step 2 of the AMDN algorithm.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            debug (bool):
+                Optional debugging mode.
+            to_obs (Optional[List[str]]):
+                If in the optional debugging mode, the list of fluents to observe.
+
+        Returns:
+            The parallel constraints.
+        """
         hard_constraints = AMDN._build_hard_parallel_constraints(obs_lists)
         soft_constraints = AMDN._build_soft_parallel_constraints(obs_lists)
         if debug:
@@ -259,6 +389,15 @@ class AMDN:
 
     @staticmethod
     def _calculate_all_r_occ(obs_lists: ObservationLists):
+        """Calculates the total number of (true) propositions in the provided traces/tokens.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens to be analyzed.
+
+        Returns:
+            The total number of (true) propositions in the provided traces/tokens.
+        """
         # tracks occurrences of all propositions
         all_occ = 0
         for trace in obs_lists:
@@ -268,6 +407,17 @@ class AMDN:
 
     @staticmethod
     def _set_up_occurrences_dict(obs_lists: ObservationLists):
+        """Helper function used when constructing noise constraints.
+        Sets up an "occurrence" dictionary used to track the occurrences of propositions
+        before or after actions.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens to be analyzed.
+
+        Returns:
+            The blank "occurrences" dictionary.
+        """
         # set up dict
         occurrences = {}           
         for a in obs_lists.actions:
@@ -278,6 +428,19 @@ class AMDN:
     
     @staticmethod
     def _noise_constraints_6(obs_lists: ObservationLists, all_occ: int, occ_threshold: int):
+        """Noise constraints (6) in the AMDN paper.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            all_occ (int):
+                The number of occurrences of all (true) propositions in the given observation list.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+
+        Returns:
+            The noise constraints.
+        """
         noise_constraints_6 = {}
         occurrences = AMDN._set_up_occurrences_dict(obs_lists)
 
@@ -303,6 +466,17 @@ class AMDN:
 
     @staticmethod
     def _noise_constraints_7(obs_lists: ObservationLists, all_occ: int):
+        """Noise constraints (7) in the AMDN paper.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            all_occ (int):
+                The number of occurrences of all (true) propositions in the given observation list.
+
+        Returns:
+            The noise constraints.
+        """
         noise_constraints_7 = {}
         # set up dict
         occurrences = {}           
@@ -331,6 +505,19 @@ class AMDN:
 
     @staticmethod
     def _noise_constraints_8(obs_lists, all_occ: int, occ_threshold: int):
+        """Noise constraints (8) in the AMDN paper.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            all_occ (int):
+                The number of occurrences of all (true) propositions in the given observation list.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+
+        Returns:
+            The noise constraints.
+        """
         noise_constraints_8 = {}
         occurrences = AMDN._set_up_occurrences_dict(obs_lists)
 
@@ -357,7 +544,19 @@ class AMDN:
         return noise_constraints_8
 
     @staticmethod
-    def _build_noise_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int, to_obs: Optional[List[str]]):
+    def _build_noise_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: bool, to_obs: Optional[List[str]]):
+        """Driver for building all noise constraints. Corresponds to step 3 of the AMDN algorithm.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+            debug (bool):
+                Optional debugging mode.
+            to_obs (Optional[List[str]]):
+                If in the optional debugging mode, the list of fluents to observe.
+        """
         # calculate all occurrences for use in weights
         all_occ = AMDN._calculate_all_r_occ(obs_lists)
         nc_6 = AMDN._noise_constraints_6(obs_lists, all_occ, occ_threshold)
@@ -373,7 +572,20 @@ class AMDN:
         return{**nc_6, **nc_7, **nc_8}
 
     @staticmethod
-    def _set_all_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
+    def _set_all_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: bool):
+        """Main driver for generating all constraints in the AMDN algorithm.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+            debug (bool):
+                Optional debugging mode.
+
+        Returns:
+            A dictionary that constains all of the constraints set and all of their weights.
+        """
         to_obs = None
         if debug:
             to_obs = AMDN._get_observe(obs_lists)
@@ -386,9 +598,22 @@ class AMDN:
         return {**disorder_constraints, **parallel_constraints, **noise_constraints}
 
     @staticmethod
-    def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: int):
-        constraints = AMDN._set_all_constraints(obs_lists, occ_threshold, debug)
+    def _solve_constraints(obs_lists: ObservationLists, occ_threshold: int, debug: bool):
+        """Returns the WCNF and the decoder according to the constraints generated.
+        Corresponds to step 4 of the AMDN algorithm.
 
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            occ_threshold (int):
+                Threshold to be used for noise constraints.
+            debug (bool):
+                Optional debugging mode.
+
+        Returns:
+            The WCNF and corresponding decode dictionary.
+        """
+        constraints = AMDN._set_all_constraints(obs_lists, occ_threshold, debug)
         # extract hard constraints
         hard_constraints = []
         for c, weight in constraints.items():
@@ -402,6 +627,15 @@ class AMDN:
 
     @staticmethod
     def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, LearnedAction]):
+        """Helper function for `_extract_model` that updates takes raw fluents to update
+        a dictionary of `LearnedActions`.
+
+        Args:
+            raw_f (Hashable):
+                The raw fluent to parse.
+            learned_actions (Dict[str, LearnedAction]):
+                The dictionary of learned actions that will be used to create the model.
+        """
         raw_f = str(raw_f)[1:-1]
         pre_str = " is a precondition of "
         add_str = " is added by "
@@ -418,6 +652,18 @@ class AMDN:
 
     @staticmethod
     def _extract_model(obs_lists: ObservationLists, model: Dict[Hashable, bool]):
+        """Converts a raw model generated from the pysat module into a macq `Model`.
+        Corresponds to step 5 of the AMDN algorithm.
+
+        Args:
+            obs_lists (ObservationLists):
+                The tokens that were analyzed.
+            model (Dict[Hashable, bool]):
+                The raw model to parse and analyze.
+
+        Returns:
+            The macq action `Model`.
+        """
         # convert the result to a Model
         fluents = obs_lists.propositions
         # set up LearnedActions
