@@ -1,3 +1,5 @@
+""".. include:: ../../docs/extract/extract.md"""
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from ..trace import Action, State

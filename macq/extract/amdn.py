@@ -1,6 +1,9 @@
+""".. include:: ../../docs/extract/amdn.md"""
+
 from macq.trace import Fluent, Action # for typing
 from macq.extract.learned_action import LearnedAction
 from nnf.operators import implies
+
 import macq.extract as extract
 from typing import Dict, List, Optional, Union, Hashable
 from nnf import Aux, Var, And, Or
