@@ -159,8 +159,12 @@ class Generator:
         """
         op_dict = {}
         for o in self.instance.operators:
-            # reformat so that operators can be referenced by the same string format the planner uses for actions
-            op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
+            # special case for actions that don't take parameters
+            if "()" in o.name:
+                op_dict["".join(["(", o.name[:-2], ")"])] = o
+            else:
+                # reformat so that operators can be referenced by the same string format the planner uses for actions
+                op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
         return op_dict
 
     def __get_all_grounded_fluents(self):

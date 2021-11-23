@@ -7,6 +7,7 @@ from ..observation import ObservationLists
 from .model import Model
 from .observer import Observer
 from .slaf import SLAF
+from .amdn import AMDN
 from .arms import ARMS
 
 
@@ -25,6 +26,7 @@ class modes(Enum):
 
     OBSERVER = auto()
     SLAF = auto()
+    AMDN = auto()
     ARMS = auto()
 
 
@@ -58,6 +60,7 @@ class Extract:
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: SLAF,
+            modes.AMDN: AMDN,
             modes.ARMS: ARMS,
         }
         if mode == modes.SLAF:

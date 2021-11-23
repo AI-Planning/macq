@@ -4,6 +4,7 @@ import macq.extract as extract
 from typing import Set, Union
 from nnf import Var, Or, And, true, false, config
 from bauhaus import Encoding
+from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
 from ..observation import AtomicPartialObservation, ObservationLists
@@ -53,7 +54,7 @@ class SLAF:
                 Raised if the observations are not identity observation.
         """
         if o_list.type is not AtomicPartialObservation:
-            raise extract.IncompatibleObservationToken(o_list.type, SLAF)
+            raise IncompatibleObservationToken(o_list.type, SLAF)
         SLAF.debug_mode = debug_mode
         entailed = SLAF.__as_strips_slaf(o_list)
         # return the Model
@@ -163,7 +164,6 @@ class SLAF:
             The extracted `Model`.
         """
         learned_actions = {}
-        base_fluents = {}
         model_fluents = set()
         # iterate through each step
         for o in observations:

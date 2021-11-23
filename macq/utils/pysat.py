@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict, Hashable
 from pysat.formula import WCNF
 from pysat.examples.rc2 import RC2
 from nnf import And, Or, Var
+from ..extract.exceptions import InvalidMaxSATModel
 
 
 def get_encoding(
@@ -73,3 +74,33 @@ def to_wcnf(
         wcnf.extend(encoded)
 
     return wcnf, decode
+
+def extract_raw_model(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+    """Extracts a raw model given a WCNF and the corresponding decoding dictionary.
+
+    Args:
+        max_sat (WCNF):
+            The WCNF to solve for.
+        decode (Dict[int, Hashable]):
+            The decode dictionary mapping to convert the pysat vars back to NNF.
+
+    Raises:
+        InvalidMaxSATModel:
+            If the model is invalid.
+
+    Returns:
+        Dict[Hashable, bool]:
+            The raw model.
+    """
+    solver = RC2(max_sat)
+    encoded_model = solver.compute()
+
+    if not isinstance(encoded_model, list):
+        # should never be reached
+        raise InvalidMaxSATModel(encoded_model)
+
+    # decode the model (back to nnf vars)
+    model: Dict[Hashable, bool] = {
+        decode[abs(clause)]: clause > 0 for clause in encoded_model
+    }
+    return model

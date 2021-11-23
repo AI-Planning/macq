@@ -13,4 +13,5 @@ generated_testing_files/
 new_domain.pddl
 new_prob.pddl
 test_model.json
+results.txt
 html/

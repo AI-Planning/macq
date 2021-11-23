@@ -57,7 +57,7 @@ class Action:
         self.add = add
         self.delete = delete
 
-    def __str__(self):
+    def __repr__(self):
         string = f"{self.name} {' '.join(map(str, self.obj_params))}"
         return string
 

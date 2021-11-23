@@ -34,6 +34,9 @@ class PlanningObject:
     def details(self):
         return " ".join([self.obj_type, self.name])
 
+    def __repr__(self):
+        return self.details()
+
     def _serialize(self):
         return self.details()
 
@@ -66,7 +69,7 @@ class Fluent:
         # Order of objects is important!
         return hash(str(self))
 
-    def __str__(self):
+    def __repr__(self):
         return f"({self.name} {' '.join([o.details() for o in self.objects])})"
 
     def __eq__(self, other):
