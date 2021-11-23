@@ -61,7 +61,7 @@ def test_trace_get_sas_triples():
     (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
 
     assert isinstance(action2, Action)
-    assert trace.get_sas_triples(action2) == {SAS(state2, action2, state3)}
+    assert trace.get_sas_triples(action2) == [SAS(state2, action2, state3)]
 
 
 # test that the total cost is working correctly

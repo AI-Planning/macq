@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Set, List, Union
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
@@ -21,15 +22,21 @@ from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 
 
+class PlanningDomainsAPIError(Exception):
+    """Raised when a valid response cannot be obtained from the planning.domains solver."""
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class InvalidGoalFluent(Exception):
     """
     Raised when the user attempts to supply a new goal with invalid fluent(s).
     """
 
-    def __init__(
-        self,
-        message="The fluents provided contain one or more fluents not available in this problem.",
-    ):
+    def __init__(self, fluent, message=None):
+        if message is None:
+            message = f"{fluent} is not available in this problem."
         super().__init__(message)
 
 
@@ -57,10 +64,16 @@ class Generator:
         op_dict (dict):
             The problem's ground operators, formatted to a dictionary for easy access during plan generation.
         observe_pres_effs (bool):
-            Option to observe action preconditions and effects upon generation. 
+            Option to observe action preconditions and effects upon generation.
     """
 
-    def __init__(self, dom: str = None, prob: str = None, problem_id: int = None, observe_pres_effs: bool = False):
+    def __init__(
+        self,
+        dom: str = None,
+        prob: str = None,
+        problem_id: int = None,
+        observe_pres_effs: bool = False,
+    ):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
 
@@ -72,7 +85,7 @@ class Generator:
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
-                Option to observe action preconditions and effects upon generation. 
+                Option to observe action preconditions and effects upon generation.
         """
         # get attributes
         self.pddl_dom = dom
@@ -146,8 +159,12 @@ class Generator:
         """
         op_dict = {}
         for o in self.instance.operators:
-            # reformat so that operators can be referenced by the same string format the planner uses for actions
-            op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
+            # special case for actions that don't take parameters
+            if "()" in o.name:
+                op_dict["".join(["(", o.name[:-2], ")"])] = o
+            else:
+                # reformat so that operators can be referenced by the same string format the planner uses for actions
+                op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
         return op_dict
 
     def __get_all_grounded_fluents(self):
@@ -248,9 +265,7 @@ class Generator:
             raw_precond = tarski_act.precondition.subformulas
             for raw_p in raw_precond:
                 if isinstance(raw_p, CompoundFormula):
-                    precond.add(
-                        self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0])
-                    )
+                    precond.add(self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0]))
                 else:
                     precond.add(self.__tarski_atom_to_macq_fluent(raw_p))
         else:
@@ -263,7 +278,17 @@ class Generator:
         for fluent in precond:
             objs.update(set(fluent.objects))
 
-        return Action(name=name, obj_params=list(objs), precond=precond, add=add, delete=delete) if self.observe_pres_effs else Action(name=name, obj_params=list(objs))
+        return (
+            Action(
+                name=name,
+                obj_params=list(objs),
+                precond=precond,
+                add=add,
+                delete=delete,
+            )
+            if self.observe_pres_effs
+            else Action(name=name, obj_params=list(objs))
+        )
 
     def change_init(
         self,
@@ -285,7 +310,10 @@ class Generator:
         init = create(self.lang)
         for f in init_fluents:
             # convert fluents to tarski Atoms
-            atom = Atom(self.lang.get_predicate(f.name), [self.lang.get(o.name) for o in f.objects])
+            atom = Atom(
+                self.lang.get_predicate(f.name),
+                [self.lang.get(o.name) for o in f.objects],
+            )
             init.add(atom.predicate, *atom.subterms)
         self.problem.init = init
 
@@ -320,7 +348,7 @@ class Generator:
         available_f = self.grounded_fluents
         for f in goal_fluents:
             if f not in available_f:
-                raise InvalidGoalFluent()
+                raise InvalidGoalFluent(f)
 
         # convert the given set of fluents into a formula
         if not goal_fluents:
@@ -344,7 +372,7 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, from_ipc_file:bool=False, filename:str=None):
+    def generate_plan(self, from_ipc_file: bool = False, filename: str = None):
         """Generates a plan. If reading from an IPC file, the `Plan` is read directly. Otherwise, if the initial state or
         goal was changed, these changes are taken into account through the updated PDDL files. If no changes were made, the
         default nitial state/goal in the initial problem file is used.
@@ -369,14 +397,30 @@ class Generator:
                     "domain": open(self.pddl_dom, "r").read(),
                     "problem": open(self.pddl_prob, "r").read(),
                 }
-                resp = requests.post(
-                    "http://solver.planning.domains/solve", verify=False, json=data
-                ).json()
-                plan = [act["name"] for act in resp["result"]["plan"]]
+
+                def get_api_response(delays: List[int]):
+                    if delays:
+                        sleep(delays[0])
+                        try:
+                            resp = requests.post(
+                                "http://solver.planning.domains/solve",
+                                verify=False,
+                                json=data,
+                            ).json()
+                            return [act["name"] for act in resp["result"]["plan"]]
+                        except TypeError:
+                            return get_api_response(delays[1:])
+
+                plan = get_api_response([0, 1, 3, 5, 10])
+                if plan is None:
+                    raise PlanningDomainsAPIError(
+                        "Could not get a valid response from the planning.domains solver after 5 attempts.",
+                    )
+
         else:
             f = open(filename, "r")
-            plan = list(filter(lambda x: ';' not in x, f.read().splitlines()))
-            
+            plan = list(filter(lambda x: ";" not in x, f.read().splitlines()))
+
         # convert to a list of tarski PlainOperators (actions)
         return Plan([self.op_dict[p] for p in plan if p in self.op_dict])
 

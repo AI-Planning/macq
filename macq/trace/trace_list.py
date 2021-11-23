@@ -1,27 +1,25 @@
+from warnings import warn
+from typing import List, Callable, Type, Optional, Union
 from logging import warn
-from typing import List, Callable, Type, Optional, Set
+from collections.abc import MutableSequence
 from rich.console import Console
+
 from . import Action, Trace
-from ..observation import Observation
-import macq.trace as TraceAPI
+from ..observation import Observation, ObservationLists
 
 
-
-class TraceList:
-    """A collection of traces.
+class TraceList(MutableSequence):
+    """A sequence of traces.
 
     A `list`-like object, where each element is a `Trace` of the same planning
     problem.
 
     Attributes:
-        traces (list):
+        traces (List[Trace]):
             The list of `Trace` objects.
-        generator (function | None):
+        generator (Callable | None):
             The function used to generate the traces.
     """
-
-    # Allow child classes to have traces as a list of any type
-    traces: List
 
     class MissingGenerator(Exception):
         def __init__(
@@ -33,30 +31,30 @@ class TraceList:
             self.message = message
             super().__init__(message)
 
+    traces: List[Trace]
+    generator: Union[Callable, None]
+
     def __init__(
         self,
         traces: List[Trace] = None,
-        generator: Optional[Callable] = None,
+        generator: Callable = None,
     ):
         """Initializes a TraceList with a list of traces and a generator.
 
         Args:
-            traces (list):
+            traces (List[Trace]):
                 Optional; The list of `Trace` objects.
-            generator (function):
+            generator (Callable):
                 Optional; The function used to generate the traces.
         """
         self.traces = [] if traces is None else traces
         self.generator = generator
 
-    def __len__(self):
-        return len(self.traces)
+    def __getitem__(self, key: int):
+        return self.traces[key]
 
     def __setitem__(self, key: int, value: Trace):
         self.traces[key] = value
-
-    def __getitem__(self, key: int):
-        return self.traces[key]
 
     def __delitem__(self, key: int):
         del self.traces[key]
@@ -64,75 +62,17 @@ class TraceList:
     def __iter__(self):
         return iter(self.traces)
 
-    def __reversed__(self):
-        return reversed(self.traces)
-
-    def __contains__(self, item):
-        return item in self.traces
-
-    def append(self, item):
-        self.traces.append(item)
-
-    def clear(self):
-        self.traces.clear()
+    def __len__(self):
+        return len(self.traces)
 
     def copy(self):
         return self.traces.copy()
 
-    def extend(self, iterable):
-        self.traces.extend(iterable)
-
-    def index(self, value):
-        return self.traces.index(value)
-
-    def insert(self, index: int, item):
-        self.traces.insert(index, item)
-
-    def pop(self):
-        return self.traces.pop()
-
-    def remove(self, value):
-        self.traces.remove(value)
-
-    def reverse(self):
-        self.traces.reverse()
+    def insert(self, key: int, value: Trace):
+        self.traces.insert(key, value)
 
     def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
         self.traces.sort(reverse=reverse, key=key)
-
-    def print(self, view="details", filter_func=lambda _: True, wrap=None):
-        """Pretty prints the trace list in the specified view.
-
-        Arguments:
-            view ("details" | "color"):
-                Specifies the view format to print in. "details" provides a
-                detailed summary of each step in a trace. "color" provides a
-                color grid, mapping fluents in a step to either red or green
-                corresponding to the truth value.
-        """
-        console = Console()
-
-        views = ["details", "color"]
-        if view not in views:
-            warn(f'Invalid view {view}. Defaulting to "details".')
-            view = "details"
-
-        traces = []
-        if view == "details":
-            if wrap is None:
-                wrap = False
-            traces = [trace.details(wrap=wrap) for trace in self]
-
-        elif view == "color":
-            if wrap is None:
-                wrap = True
-            traces = [
-                trace.colorgrid(filter_func=filter_func, wrap=wrap) for trace in self
-            ]
-
-        for trace in traces:
-            console.print(trace)
-            print()
 
     def generate_more(self, num: int):
         """Generates more traces using the generator function.
@@ -179,17 +119,53 @@ class TraceList:
                 fluents.update(step.state.fluents)
         return fluents
 
-    def tokenize(self, Token: Type[Observation], ObsLists = None, **kwargs):
+    def tokenize(
+        self,
+        Token: Type[Observation],
+        ObsLists: Type[ObservationLists] = ObservationLists,
+        **kwargs,
+    ):
         """Tokenizes the steps in this trace.
 
         Args:
             Token (Observation):
                 A subclass of `Observation`, defining the method of tokenization
                 for the steps.
-            ObsLists (Type[TraceAPI.ObservationLists]):
+            ObsLists (Type[ObservationLists]):
                 The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
-        ObsLists : Type[TraceAPI.ObservationLists]
-        if not ObsLists:
-            ObsLists = TraceAPI.ObservationLists
         return ObsLists(self, Token, **kwargs)
+
+    def print(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Pretty prints the trace list in the specified view.
+
+        Arguments:
+            view ("details" | "color"):
+                Specifies the view format to print in. "details" provides a
+                detailed summary of each step in a trace. "color" provides a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value.
+        """
+        console = Console()
+
+        views = ["details", "color"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        traces = []
+        if view == "details":
+            if wrap is None:
+                wrap = False
+            traces = [trace.details(wrap=wrap) for trace in self]
+
+        elif view == "color":
+            if wrap is None:
+                wrap = True
+            traces = [
+                trace.colorgrid(filter_func=filter_func, wrap=wrap) for trace in self
+            ]
+
+        for trace in traces:
+            console.print(trace)
+            print()
