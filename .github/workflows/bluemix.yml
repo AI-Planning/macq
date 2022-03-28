@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - survey_viz
 
 
 # Environment variables available to all jobs and steps in this workflow
@@ -69,5 +70,4 @@ jobs:
     - name: Deploy
       run: |
         cd ./viz/visualizer
-        mv ../manifest.yaml ./
-        ibmcloud cf push
+        ibmcloud cf push -f ../manifest.yaml
