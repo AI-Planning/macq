@@ -1,0 +1,3 @@
+[submodule "viz/visualizer"]
+	path = viz/visualizer
+	url = git@github.com:TathagataChakraborti/survey-visualizer.git
