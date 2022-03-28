@@ -1,0 +1,60 @@
+---
+metadata:
+  title_text: 'MACQ: A Holistic View of Model Acquisition Techniques'
+  citation_text: "@inproceedings{put-it-on-arxiv, \n title={{MACQ: A Holistic View of Model\n\t Acquisition Techniques}}, \n author={Alison Paredes, Ethan Callanan,\n\t Christian Muise, Rebecca De Venezia,\n\t Tathagata Chakraborti, and Victoria\n\t Armstrong}, \n booktitle={arXiv:xxxx.xxxxx}, \n
+    year={2022}}"
+  link_to_code: https://github.com/TathagataChakraborti/survey-visualizer
+  primary_link: https://arxiv.org/abs/xxxx.xxxxx
+  secondary_link: https://hal.archives-ouvertes.fr/hal-02010536/file/A_Review_of_Learning_Planning_Action_Models.pdf
+  community_link: https://join.slack.com/t/theplanningcommunity/shared_invite/enQtNjg0MTIzNTE3MTY4LTQ4YTRiNjhjNmVlNmEwMGMxOTQwNTZlYWM2YTk1YjdkZmIyMTU5MzRjZjYzOWYxMjJkNGM3YTM2MWI0MmM2MGY
+  info_tile: true
+  info_text: Interested in model acquistion for AI planning? Learn more about the MACQ package at the upcoming ICAPS 2022 
+  info_link:
+  - link: http://icaps22.icaps-conference.org/workshops/KEPS/
+    text: KEPS 2022
+  - link: http://icaps22.icaps-conference.org/workshops/RDDPS/
+    text: RDDPS 2022
+default_view: Taxonomy
+min_year: 1984
+views:
+- name: Taxonomy
+  disabled: false
+  default_tab: Taxonomy
+  tabs:
+  - tab_name: Taxonomy
+    disabled: false
+    fancy_chart: true
+    input_file:
+      filename: ./../slug.xlsx
+      active_worksheet: slug
+    papers_list:
+      shuffle_list: true 
+      key_map:
+        title: 2
+        abstract: 5
+        authors: 4
+        venue: 6
+        sessions:
+        year: 7
+        keywords:
+        link: 3
+      rows:
+        start: 5
+        stop: 41
+        exclude:
+          - 39
+    taxonomy:
+      rows:
+        start: 1
+        stop: 4
+      columns:
+        start: 11
+        stop: 40
+- name: Affinity
+  disabled: false
+  scaleX: 2
+  scaleY: 1
+- name: Network
+  files_directory: ./../pdfs
+  match_threshold: 0.15
+  disabled: false

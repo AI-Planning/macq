@@ -1,0 +1,73 @@
+name: Build and Deploy to Bluemix
+
+on:
+  push:
+    branches:
+      - main
+      - survey_viz
+
+
+# Environment variables available to all jobs and steps in this workflow
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  IBM_CLOUD_REGION: us-south
+  IBM_CLOUD_SPACE: macq
+  IBM_CLOUD_API_KEY: ${{ secrets.IBM_CLOUD_API_KEY }}
+  IBM_CLOUD_ORG: ${{ secrets.IBM_CLOUD_ORG }}
+  SLUG: ${{ secrets.SLUG }}
+  PDFS: ${{ secrets.PDFS }}
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Download and Install IBM Cloud CLI
+    - name: Install IBM Cloud CLI
+      run: |
+        curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+        ibmcloud --version
+        ibmcloud config --check-version=false
+        ibmcloud cf install
+
+    # Authenticate with IBM Cloud CLI
+    - name: Authenticate with IBM Cloud CLI
+      run: |
+        ibmcloud login --apikey ${IBM_CLOUD_API_KEY} -r ${IBM_CLOUD_REGION}
+        ibmcloud target -s ${IBM_CLOUD_SPACE} -o ${IBM_CLOUD_ORG}
+
+    # Build Project
+    - name: Build
+      run: |
+        sudo apt update
+        sudo apt install nodejs
+        sudo apt upgrade nodejs
+        node -v
+        sudo npm install -g n
+        sudo n 14.15.1
+        node -v
+        sudo apt install python3-pip
+        sudo apt-get install python3-setuptools &> /dev/null
+        git submodule update --init --recursive
+        cd ./viz
+        chmod +x "run.sh"
+        sh ./run.sh &> /dev/null
+        curl -L "https://docs.google.com/spreadsheets/d/${SLUG}/export?format=xlsx" > slug.xlsx
+        gdown --folder "https://drive.google.com/drive/folders/${PDFS}?usp=sharing"
+        cd ./visualizer
+        python src/compiler/compile.py --file ../macq.yaml
+        export NODE_OPTIONS=--max_old_space_size=16384
+        yarn add node-sass@4.14.1
+        yarn install --ignore-engines
+        CI=false yarn build
+
+    # Deploy
+    - name: Deploy
+      run: |
+        cd ./viz/visualizer
+        ibmcloud cf push -f ../manifest.yaml
