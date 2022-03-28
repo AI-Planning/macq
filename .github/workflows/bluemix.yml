@@ -13,6 +13,7 @@ env:
   IBM_CLOUD_SPACE: macq
   IBM_CLOUD_API_KEY: ${{ secrets.IBM_CLOUD_API_KEY }}
   IBM_CLOUD_ORG: ${{ secrets.IBM_CLOUD_ORG }}
+  SLUG: ${{ secrets.SLUG }}
 
 jobs:
   setup-build-publish-deploy:
@@ -55,6 +56,7 @@ jobs:
         cd ./viz
         chmod +x "run.sh"
         sh ./run.sh &> /dev/null
+        curl -L "https://docs.google.com/spreadsheets/d/${SLUG}/export?format=xlsx" > slug.xlsx
         cd ./visualizer
         python src/compiler/compile.py --file ../macq.yaml
         yarn add node-sass@4.14.1
@@ -65,4 +67,5 @@ jobs:
     - name: Deploy
       run: |
         cd ./viz/visualizer
+        mv ../manifest.yaml ./
         ibmcloud cf push
