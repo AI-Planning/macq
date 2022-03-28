@@ -39,7 +39,6 @@ jobs:
     - name: Authenticate with IBM Cloud CLI
       run: |
         ibmcloud login --apikey ${IBM_CLOUD_API_KEY} -r ${IBM_CLOUD_REGION}
-        export NODE_OPTIONS=--max_old_space_size=8192
         ibmcloud target -s ${IBM_CLOUD_SPACE} -o ${IBM_CLOUD_ORG}
 
     # Build Project
@@ -62,6 +61,7 @@ jobs:
         gdown --folder "https://drive.google.com/drive/folders/${PDFS}?usp=sharing"
         cd ./visualizer
         python src/compiler/compile.py --file ../macq.yaml
+        export NODE_OPTIONS=--max_old_space_size=16384
         yarn add node-sass@4.14.1
         yarn install --ignore-engines
         CI=false yarn build
