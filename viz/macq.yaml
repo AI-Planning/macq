@@ -40,7 +40,7 @@ views:
         link: 3
       rows:
         start: 5
-        stop: 41
+        stop: 48
         exclude:
           - 39
     taxonomy:
