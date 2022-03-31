@@ -52,9 +52,7 @@ views:
         stop: 40
 - name: Affinity
   disabled: false
-  scaleX: 2
-  scaleY: 1
 - name: Network
   files_directory: ./../pdfs
-  match_threshold: 0.15
+  match_threshold: 0.25
   disabled: false
