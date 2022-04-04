@@ -1,7 +1,8 @@
 ---
 metadata:
+  acronym: MACQ
   title_text: 'MACQ: A Holistic View of Model Acquisition Techniques'
-  citation_text: "@inproceedings{put-it-on-arxiv, \n title={{MACQ: A Holistic View of Model\n\t Acquisition Techniques}}, \n author={Alison Paredes, Ethan Callanan,\n\t Christian Muise, Rebecca De Venezia,\n\t Tathagata Chakraborti, and Victoria\n\t Armstrong}, \n booktitle={arXiv:xxxx.xxxxx}, \n
+  citation_text: "@inproceedings{put-it-on-arxiv, \n title={{MACQ: A Holistic View of Model\n\t Acquisition Techniques}}, \n author={Ethan Callanan, Rebecca De Venezia,\n\t Victoria Armstrong, Alison Paredes,\n\t Tathagata Chakraborti, and\n\t Christian Muise}, \n booktitle={arXiv:xxxx.xxxxx}, \n
     year={2022}}"
   link_to_code: https://github.com/TathagataChakraborti/survey-visualizer
   primary_link: https://arxiv.org/abs/xxxx.xxxxx
