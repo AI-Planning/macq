@@ -6,7 +6,13 @@ metadata:
     year={2022}}"
   link_to_code: https://github.com/TathagataChakraborti/survey-visualizer
   primary_link: https://arxiv.org/abs/xxxx.xxxxx
-  secondary_link: https://hal.archives-ouvertes.fr/hal-02010536/file/A_Review_of_Learning_Planning_Action_Models.pdf
+  secondary_links: 
+    - name: Arora et al. 2019
+      link: https://hal.archives-ouvertes.fr/hal-02010536/file/A_Review_of_Learning_Planning_Action_Models.pdf
+    - name: Jilani et al. 2014
+      link: http://eprints.hud.ac.uk/id/eprint/20380/
+    - name: Jimenez et al. 2012
+      link: https://www.cambridge.org/core/journals/knowledge-engineering-review/article/abs/review-of-machine-learning-for-automated-planning/F641360D1F0461D0B323C8A299DBE61E
   community_link: https://join.slack.com/t/theplanningcommunity/shared_invite/enQtNjg0MTIzNTE3MTY4LTQ4YTRiNjhjNmVlNmEwMGMxOTQwNTZlYWM2YTk1YjdkZmIyMTU5MzRjZjYzOWYxMjJkNGM3YTM2MWI0MmM2MGY
   info_tile: true
   info_text: Interested in model acquistion for AI planning? Learn more about the MACQ package at the upcoming ICAPS 2022 
