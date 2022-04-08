@@ -4,7 +4,7 @@
 from macq import generate, extract
 from macq.observation import AtomicPartialObservation
 
-traces = generate.pddl.VanillaSampling(problem_id=123, plan_len=2, num_traces=1).traces
+traces = generate.pddl.VanillaSampling(problem_id=4398, plan_len=2, num_traces=1).traces
 observations = traces.tokenize(AtomicPartialObservation, percent_missing=0.10)
 model = Extract(observations, extract.modes.SLAF)
 print(model.details())
