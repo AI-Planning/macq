@@ -57,7 +57,7 @@ def load(fn: str, act_col: str, plan_id_col: str = None):
     for plan_id in plans:
         trace = Trace()
         for i, bitvec in enumerate(plans[plan_id]):
-            state = State({Fluent(f): state[f] == "1" for f in bitvec if f != act_col})
+            state = State({Fluent(f): bitvec[f] == "1" for f in bitvec if f != act_col})
             act = Action(bitvec[act_col], [])
             step = Step(state, act, i)
             trace.append(step)
