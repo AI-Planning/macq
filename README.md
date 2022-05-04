@@ -37,7 +37,7 @@ trace.get_total_cost()
 
 ## Survey
 
-You can find the full scope of papers considered in the survey (implemented and otherwise) at https://macq.planning.domains/ . This repository of model acquisition techniques will be added to over time.
+You can find the full scope of papers considered in the survey (implemented and otherwise) at http://macq.planning.domains/ . This repository of model acquisition techniques will be added to over time.
 
 ## Survey Papers <a name="survey" />
 
