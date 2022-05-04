@@ -46,7 +46,7 @@ You can find the full scope of papers considered in the survey (implemented and 
 
 ## Citing this work <a name="citing" />
 ```
-@inproceedings{simon-keps-2021,
+@inproceedings{macq-keps-2022,
   author    = {Ethan Callanan and Rebecca De Venezia and Victoria Armstrong and Alison Paredes and Tathagata Chakraborti and Christian Muise},
   title     = {MACQ: A Holistic View of Model Acquisition Techniques},
   booktitle = {The ICAPS Workshop on Knowledge Engineering for Planning and Scheduling (KEPS)},
