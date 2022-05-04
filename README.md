@@ -37,7 +37,7 @@ trace.get_total_cost()
 
 ## Survey
 
-You can find the full scope of papers considered in the survey (implemented and otherwise) at http://macq.planning.domains/ . This repository of model acquisition techniques will be added to over time.
+You can find the full scope of papers considered in the survey (implemented and otherwise) at http://macq.planning.domains . This repository of model acquisition techniques will be added to over time.
 
 ## Survey Papers <a name="survey" />
 
@@ -45,5 +45,11 @@ You can find the full scope of papers considered in the survey (implemented and 
 * [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
 
 ## Citing this work <a name="citing" />
-Coming soon...
-
+```
+@inproceedings{simon-keps-2021,
+  author    = {Ethan Callanan and Rebecca De Venezia and Victoria Armstrong and Alison Paredes and Tathagata Chakraborti and Christian Muise},
+  title     = {MACQ: A Holistic View of Model Acquisition Techniques},
+  booktitle = {The ICAPS Workshop on Knowledge Engineering for Planning and Scheduling (KEPS)},
+  year      = {2022}
+}
+```
