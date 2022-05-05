@@ -3,7 +3,7 @@ name: Build and Deploy to Bluemix
 on:
   push:
     branches:
-      - main
+      # - main
 
 
 # Environment variables available to all jobs and steps in this workflow
