@@ -7,7 +7,7 @@
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
-## Usage <a name="usage" />
+## Usage
 
 ```python
 from macq import generate, extract
@@ -38,12 +38,12 @@ trace.get_total_cost()
 
 You can find the full scope of papers considered in the survey (implemented and otherwise) at http://macq.planning.domains . This repository of model acquisition techniques will be added to over time.
 
-## Survey Papers <a name="survey" />
+## Survey Papers
 
 * [A Review of Machine Learning for Automated Planning](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.4901&rep=rep1&type=pdf) (see Fig 2)
 * [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
 
-## Citing this work <a name="citing" />
+## Citing this work
 
 ```latex
 @inproceedings{macq-keps-2022,
