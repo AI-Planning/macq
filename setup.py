@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.0.1.dev1"
+VERSION = "0.1.0"
 
 NAME = "macq"
 
 DESCRIPTION = "Action model acquisition from state trace data."
 
 DEPENDENCIES = [
-    "tarski@git+https://github.com/aig-upf/tarski@devel#egg=tarski[arithmetic]",
+    "tarski",
     "requests",
     "rich",
     "nnf",
@@ -47,14 +47,14 @@ with open("README.md", "r", encoding="utf-8") as f:
 setup(
     name=NAME,
     version=VERSION,
-    author="Ethan Callanan, Rebecca De Venezia, Christian Muise",
-    author_email="e.callanan@queensu.ca, 18rldv@queensu.ca, christian.muise@queensu.ca",
+    author="Ethan Callanan, Rebecca De Venezia, Victoria Armstrong, Alison Parades, Tathagata Chakraborti, Christian Muise",
+    author_email="christian.muise@queensu.ca",
     license="MIT",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     keywords="planning model acquisition trace",
-    url="https://github.com/QuMuLab/macq",
+    url="https://github.com/ai-planning/macq",
     classifiers=CLASSIFIERS,
     packages=find_packages("macq/macq"),
     python_requires=">=3.7",
