@@ -1,15 +1,14 @@
 # MAcq: The Model Acquisition Toolkit
 
-[![CI](https://github.com/QuMuLab/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/QuMuLab/macq/actions)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json?cacheSeconds=3600)](https://github.com/QuMuLab/macq/actions)
+[![CI](https://github.com/ai-planning/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/ai-planning/macq/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json?cacheSeconds=3600)](https://github.com/ai-planning/macq/actions)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/QuMuLab/macq/blob/main/LICENSE)
-
+[![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/ai-planning/macq/blob/main/LICENSE)
 
 This library is a collection of tools for planning-like action model acquisition from state trace data. It contains a reimplementation from many existing works, and generalizes some of them to new settings.
 
-
 ## Usage <a name="usage" />
+
 ```python
 from macq import generate, extract
 from macq.observation import IdentityObservation, AtomicPartialObservation
@@ -45,7 +44,8 @@ You can find the full scope of papers considered in the survey (implemented and 
 * [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
 
 ## Citing this work <a name="citing" />
-```
+
+```latex
 @inproceedings{macq-keps-2022,
   author    = {Ethan Callanan and Rebecca De Venezia and Victoria Armstrong and Alison Paredes and Tathagata Chakraborti and Christian Muise},
   title     = {MACQ: A Holistic View of Model Acquisition Techniques},
