@@ -21,9 +21,14 @@ class TraceFromGoal(Generator):
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
-                Option to observe action preconditions and effects upon generation.        
+                Option to observe action preconditions and effects upon generation.
         """
-        super().__init__(dom=dom, prob=prob, problem_id=problem_id, observe_pres_effs=observe_pres_effs)
+        super().__init__(
+            dom=dom,
+            prob=prob,
+            problem_id=problem_id,
+            observe_pres_effs=observe_pres_effs,
+        )
         self.trace = self.generate_trace()
 
     def generate_trace(self):

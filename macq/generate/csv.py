@@ -1,4 +1,3 @@
-
 # from ..trace import (
 from macq.trace import (
     Action,
@@ -8,6 +7,7 @@ from macq.trace import (
     Trace,
     TraceList,
 )
+
 
 def load(fname: str, act_col: str, plan_id_col: str = None):
     """Loads a trace file as a csv into a `TraceList`.
@@ -26,7 +26,7 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
             The loaded trace list.
     """
     with open(fname, "r") as f:
-        lines = [l.strip().split(',') for l in f.readlines()]
+        lines = [l.strip().split(",") for l in f.readlines()]
 
     # Make sure we have at least one plan specified
     if plan_id_col is None:
@@ -45,7 +45,7 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
     for line in data:
         for key in line:
             if key not in [plan_id_col, act_col]:
-                assert line[key] in ['0', '1'], "Fluent columns should be 0 or 1"
+                assert line[key] in ["0", "1"], "Fluent columns should be 0 or 1"
 
     # Separate the data based on the plan ID
     plans = {}
@@ -60,7 +60,13 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
     for plan_id in plans:
         trace = Trace()
         for i, bitvec in enumerate(plans[plan_id]):
-            state = State({Fluent(f, []): bitvec[f] == "1" for f in bitvec if f not in [act_col, plan_id_col]})
+            state = State(
+                {
+                    Fluent(f, []): bitvec[f] == "1"
+                    for f in bitvec
+                    if f not in [act_col, plan_id_col]
+                }
+            )
             act = Action(bitvec[act_col], [])
             step = Step(state, act, i)
             trace.append(step)
