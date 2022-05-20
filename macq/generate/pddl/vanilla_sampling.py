@@ -72,12 +72,12 @@ class VanillaSampling(Generator):
         )
         if max_time <= 0:
             raise InvalidTime()
+        if seed:
+            random.seed(seed)
         self.max_time = max_time
         self.plan_len = set_plan_length(plan_len)
         self.num_traces = set_num_traces(num_traces)
         self.traces = self.generate_traces()
-        if seed:
-            random.seed(seed)
 
     def generate_traces(self):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -94,7 +94,7 @@ class VanillaSampling(Generator):
             traces.append(traces.generator())
         return traces
 
-    def generate_single_trace_setup(self, num_seconds: float, plan_len: int = None):
+    def generate_single_trace_setup(self, num_seconds: float, plan_len = None):
         @set_timer_throw_exc(
             num_seconds=num_seconds, exception=TraceSearchTimeOut, max_time=num_seconds
         )
@@ -112,6 +112,8 @@ class VanillaSampling(Generator):
 
             if not plan_len:
                 plan_len = self.plan_len
+            elif callable(plan_len):
+                plan_len = plan_len()
 
             trace = Trace()
 
