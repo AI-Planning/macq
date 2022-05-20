@@ -13,7 +13,7 @@ DEPENDENCIES = [
     "nnf",
     "python-sat",
     "bauhaus",
-    "numpy"
+    "numpy",
 ]
 
 DEV_DEPENDENCIES = [
