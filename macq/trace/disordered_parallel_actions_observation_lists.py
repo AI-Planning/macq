@@ -32,7 +32,8 @@ class ActionPair:
             string += a.details() + ", "
         return string[:-1]
 
-def default_theta_vec(k : int):
+
+def default_theta_vec(k: int):
     """Generate the default theta vector to be used in the calculation that extracts the probability of
     actions being disordered; used to "weight" the features.
 
@@ -160,14 +161,19 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         # cast to list for iteration purposes
         self.actions = list(actions)
         # set of all fluents
-        self.propositions = {f for trace in traces for step in trace for f in step.state.fluents}
+        self.propositions = {
+            f for trace in traces for step in trace for f in step.state.fluents
+        }
         # create |A| (action x action set, no duplicates)
-        self.cross_actions = [ActionPair({self.actions[i], self.actions[j]}) for i in range(len(self.actions)) for j in range(i + 1, len(self.actions))]
+        self.cross_actions = [
+            ActionPair({self.actions[i], self.actions[j]})
+            for i in range(len(self.actions))
+            for j in range(i + 1, len(self.actions))
+        ]
         self.denominator = self._calculate_denom()
         # dictionary that holds the probabilities of all actions being disordered
         self.probabilities = self._calculate_all_probabilities()
         self.tokenize(traces, Token, **kwargs)
-
 
     @staticmethod
     def _theta_dot_features_calc(f_vec: List[float], theta_vec: List[float]):
@@ -191,7 +197,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         """
         denominator = 0
         for combo in self.cross_actions:
-            denominator += self._theta_dot_features_calc(self._get_f_vec(*combo.tup()), self.learned_theta)
+            denominator += self._theta_dot_features_calc(
+                self._get_f_vec(*combo.tup()), self.learned_theta
+            )
         return denominator
 
     def _get_f_vec(self, act_x: Action, act_y: Action):
@@ -223,7 +231,7 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
         # calculate the probability of two given actions being disordered
         f_vec = self._get_f_vec(act_x, act_y)
         numerator = self._theta_dot_features_calc(f_vec, self.learned_theta)
-        return numerator/self.denominator
+        return numerator / self.denominator
 
     def _calculate_all_probabilities(self):
         """Calculates the probabilities of all combinations of actions being disordered.
@@ -248,7 +256,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
             cur_state[f] = None
         return cur_state
 
-    def _update_partial_state(self, partial_state: PartialState, orig_state: State, action: Action):
+    def _update_partial_state(
+        self, partial_state: PartialState, orig_state: State, action: Action
+    ):
         """
         Update the provided PartialState with the fluents provided.
         """
@@ -303,7 +313,9 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                     # add the action and state to the appropriate psi_k and s'_k (either the existing ones, or
                     # new/empty ones if the current action is NOT parallel with actions in the previous set of actions.)
                     cur_par_act.add(a)
-                    cur_state = self._update_partial_state(cur_state, trace[i + 1].state, trace[i].action)
+                    cur_state = self._update_partial_state(
+                        cur_state, trace[i + 1].state, trace[i].action
+                    )
                     cur_par_act_conditions.update(a_conditions)
                 # if on the last step of the trace, add the current set/state to the final result before exiting the loop
                 if i == len(trace) - 1:
@@ -327,13 +339,25 @@ class DisorderedParallelActionsObservationLists(ObservationLists):
                                     par_act_sets[i].add(act_y)
                                     par_act_sets[j].discard(act_y)
                                     par_act_sets[j].add(act_x)
-                                
+
             self.all_par_act_sets.append(par_act_sets)
             self.all_states.append(states)
             tokens = []
             for i in range(len(par_act_sets)):
                 for act in par_act_sets[i]:
-                    tokens.append(Token(Step(state=states[i], action=act, index=i), par_act_set_ID=i, **kwargs))
+                    tokens.append(
+                        Token(
+                            Step(state=states[i], action=act, index=i),
+                            par_act_set_ID=i,
+                            **kwargs
+                        )
+                    )
             # add the final token, with the final state but no action
-            tokens.append(Token(Step(state=states[-1], action=None, index=len(par_act_sets)), par_act_set_ID=len(par_act_sets), **kwargs))
+            tokens.append(
+                Token(
+                    Step(state=states[-1], action=None, index=len(par_act_sets)),
+                    par_act_set_ID=len(par_act_sets),
+                    **kwargs
+                )
+            )
             self.append(tokens)
