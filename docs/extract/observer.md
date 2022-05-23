@@ -1,4 +1,6 @@
-# Usage
+# Observer
+
+## Usage
 
 ```python
 from macq import generate, extract
@@ -12,6 +14,7 @@ print(model.details())
 ```
 
 **Output:**
+
 ```text
 Model:
   Fluents: at stone stone-03 location pos-04-06, at stone stone-01 location pos-04-06, at stone stone-02 location pos-05-06, at stone stone-06 location pos-07-04, at stone stone-11 ...
@@ -33,5 +36,3 @@ Model:
         at player player-01 location pos-04-06
   ...
 ```
-
-# API Documentation

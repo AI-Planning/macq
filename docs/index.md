@@ -1,17 +1,19 @@
 # Usage Documentation
 
 ## Trace Generation
-- [VanillaSampling](extract/observer/#usage)
+
+- [VanillaSampling](macq/extract.html#observer)
 
 ## Tokenization
-- [IdentityObservation](extract/observer#usage)
-- [AtomicPartialObservation](extract/slaf#usage)
+
+- [IdentityObservation](macq/extract.html#observer)
+- [AtomicPartialObservation](macq/extract.html#slaf)
 
 ## Extraction Techniques
-- [Observer](extract/observer#usage)
-- [SLAF](extract/slaf#usage)
-- [ARMS](extract/arms#usage)
-- [AMDN](extract/amdn#usage)
 
+- [Observer](macq/extract.html#observer)
+- [SLAF](macq/extract.html#slaf)
+- [ARMS](macq/extract.html#arms)
+- [AMDN](macq/extract.html#amdn)
 
 # API Documentation
