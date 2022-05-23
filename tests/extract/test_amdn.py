@@ -18,6 +18,7 @@ def test_tokenization_error():
         trace = generate_blocks_traces(3)[0]
         trace.tokenize(Token=NoisyPartialDisorderedParallelObservation)
 
+
 def test_tracelist():
     # define objects
     red_truck = PlanningObject("", "red_truck")
@@ -40,15 +41,56 @@ def test_tracelist():
     blue_at_a = Fluent("at", [blue_truck, location_a])
     blue_at_b = Fluent("at", [blue_truck, location_b])
     blue_at_c = Fluent("at", [blue_truck, location_c])
-    blue_at_d = Fluent("at", [blue_truck, location_d])    
-    
-    
+    blue_at_d = Fluent("at", [blue_truck, location_d])
 
-    drive_red_a_b = Action("drive", [red_truck, location_a, location_b], precond={red_truck_is_truck, location_a_is_place, location_b_is_place, red_at_a}, add={red_at_b}, delete={red_at_a})
-    drive_blue_c_d = Action("drive", [blue_truck, location_c, location_d], precond={blue_truck_is_truck, location_c_is_place, location_d_is_place, blue_at_c}, add={blue_at_d}, delete={blue_at_c})
-    drive_blue_d_b = Action("drive", [blue_truck, location_d, location_b], precond={blue_truck_is_truck, location_d_is_place, location_b_is_place, blue_at_d}, add={blue_at_b}, delete={blue_at_d})
-    drive_red_b_d = Action("drive", [red_truck, location_b, location_d], precond={red_truck_is_truck, location_b_is_place, location_d_is_place, red_at_b}, add={red_at_d}, delete={red_at_b})
-
+    drive_red_a_b = Action(
+        "drive",
+        [red_truck, location_a, location_b],
+        precond={
+            red_truck_is_truck,
+            location_a_is_place,
+            location_b_is_place,
+            red_at_a,
+        },
+        add={red_at_b},
+        delete={red_at_a},
+    )
+    drive_blue_c_d = Action(
+        "drive",
+        [blue_truck, location_c, location_d],
+        precond={
+            blue_truck_is_truck,
+            location_c_is_place,
+            location_d_is_place,
+            blue_at_c,
+        },
+        add={blue_at_d},
+        delete={blue_at_c},
+    )
+    drive_blue_d_b = Action(
+        "drive",
+        [blue_truck, location_d, location_b],
+        precond={
+            blue_truck_is_truck,
+            location_d_is_place,
+            location_b_is_place,
+            blue_at_d,
+        },
+        add={blue_at_b},
+        delete={blue_at_d},
+    )
+    drive_red_b_d = Action(
+        "drive",
+        [red_truck, location_b, location_d],
+        precond={
+            red_truck_is_truck,
+            location_b_is_place,
+            location_d_is_place,
+            red_at_b,
+        },
+        add={red_at_d},
+        delete={red_at_b},
+    )
 
     # trace:  {red a -> b, blue c -> d}, {blue d -> b}, {red b -> d}, {red d -> a, blue b -> c}
     step_0 = Step(
@@ -61,17 +103,18 @@ def test_tracelist():
                 location_c_is_place: True,
                 location_d_is_place: True,
                 red_at_a: True,
-                red_at_b: False, 
+                red_at_b: False,
                 red_at_c: False,
                 red_at_d: False,
                 blue_at_a: False,
                 blue_at_b: False,
-                blue_at_c: True, 
-                blue_at_d: False, 
-            }),
-            drive_red_a_b,
-            0
-            )
+                blue_at_c: True,
+                blue_at_d: False,
+            }
+        ),
+        drive_red_a_b,
+        0,
+    )
 
     step_1 = Step(
         State(
@@ -83,17 +126,18 @@ def test_tracelist():
                 location_c_is_place: True,
                 location_d_is_place: True,
                 red_at_a: False,
-                red_at_b: True, 
+                red_at_b: True,
                 red_at_c: False,
                 red_at_d: False,
                 blue_at_a: False,
                 blue_at_b: False,
-                blue_at_c: True, 
-                blue_at_d: False, 
-            }),
-            drive_blue_c_d,
-            1
-            )
+                blue_at_c: True,
+                blue_at_d: False,
+            }
+        ),
+        drive_blue_c_d,
+        1,
+    )
 
     step_2 = Step(
         State(
@@ -105,17 +149,18 @@ def test_tracelist():
                 location_c_is_place: True,
                 location_d_is_place: True,
                 red_at_a: False,
-                red_at_b: True, 
+                red_at_b: True,
                 red_at_c: False,
                 red_at_d: False,
                 blue_at_a: False,
                 blue_at_b: False,
-                blue_at_c: False, 
-                blue_at_d: True, 
-            }),
-            drive_blue_d_b,
-            2
-            )
+                blue_at_c: False,
+                blue_at_d: True,
+            }
+        ),
+        drive_blue_d_b,
+        2,
+    )
 
     step_3 = Step(
         State(
@@ -127,17 +172,18 @@ def test_tracelist():
                 location_c_is_place: True,
                 location_d_is_place: True,
                 red_at_a: False,
-                red_at_b: True, 
+                red_at_b: True,
                 red_at_c: False,
                 red_at_d: False,
                 blue_at_a: False,
                 blue_at_b: True,
-                blue_at_c: False, 
-                blue_at_d: False, 
-            }),
-            drive_red_b_d,
-            3
-            )
+                blue_at_c: False,
+                blue_at_d: False,
+            }
+        ),
+        drive_red_b_d,
+        3,
+    )
 
     step_4 = Step(
         State(
@@ -149,20 +195,22 @@ def test_tracelist():
                 location_c_is_place: True,
                 location_d_is_place: True,
                 red_at_a: False,
-                red_at_b: False, 
+                red_at_b: False,
                 red_at_c: False,
                 red_at_d: True,
                 blue_at_a: False,
                 blue_at_b: True,
-                blue_at_c: False, 
-                blue_at_d: False, 
-            }),
-            None,
-            4
-            ) 
-    #step_2.action = None       
-    #return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
+                blue_at_c: False,
+                blue_at_d: False,
+            }
+        ),
+        None,
+        4,
+    )
+    # step_2.action = None
+    # return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
+
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
@@ -181,17 +229,17 @@ if __name__ == "__main__":
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=True,
     ).traces
-    
+
     # use the simple truck domain for debugging
     # traces = test_tracelist()
 
     # use the simple door domain for debugging
     # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
     # prob = str((base / "pddl_testing_files/door_prob.pddl").resolve())
-    # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace]) 
+    # traces = TraceList([TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace])
 
     traces.print(wrap="y")
-    
+
     features = [objects_shared_feature, num_parameters_feature]
     learned_theta = default_theta_vec(2)
     observations = traces.tokenize(
@@ -201,8 +249,8 @@ if __name__ == "__main__":
         learned_theta=learned_theta,
         percent_missing=0,
         percent_noisy=0,
-        replace=True
+        replace=True,
     )
-    model = Extract(observations, modes.AMDN, debug=True, occ_threshold = 2)
+    model = Extract(observations, modes.AMDN, debug=True, occ_threshold=2)
     f = open("results.txt", "w")
     f.write(model.details())

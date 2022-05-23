@@ -70,7 +70,11 @@ class Fluent:
         return hash(str(self))
 
     def __repr__(self):
-        return f"({self.name} {' '.join([o.details() for o in self.objects])})"
+        return (
+            f"({self.name} {' '.join([o.details() for o in self.objects])})"
+            if self.objects
+            else f"({self.name})"
+        )
 
     def __eq__(self, other):
         return (

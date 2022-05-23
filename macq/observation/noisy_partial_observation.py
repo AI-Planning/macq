@@ -13,7 +13,13 @@ class NoisyPartialObservation(PartialObservation, NoisyObservation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None, percent_noisy: float = 0, replace: bool = False):
+        self,
+        step: Step,
+        percent_missing: float = 0,
+        hide: Set[Fluent] = None,
+        percent_noisy: float = 0,
+        replace: bool = False,
+    ):
         """
         Creates an NoisyPartialObservation object.
 
@@ -31,6 +37,13 @@ class NoisyPartialObservation(PartialObservation, NoisyObservation):
                 of just flipping their values.
         """
         # get state and action with missing fluents (updates self.state and self.action)
-        PartialObservation.__init__(self, step=step, percent_missing=percent_missing, hide=hide)
+        PartialObservation.__init__(
+            self, step=step, percent_missing=percent_missing, hide=hide
+        )
         # get state and action with noisy fluents, using the updated state and action (then updates self.state and self.action)
-        NoisyObservation.__init__(self, step=Step(self.state, self.action, step.index), percent_noisy=percent_noisy, replace=replace)
+        NoisyObservation.__init__(
+            self,
+            step=Step(self.state, self.action, step.index),
+            percent_noisy=percent_noisy,
+            replace=replace,
+        )

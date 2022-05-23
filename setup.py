@@ -14,6 +14,7 @@ DEPENDENCIES = [
     "python-sat",
     "bauhaus",
     "numpy",
+    "clingo",
 ]
 
 DEV_DEPENDENCIES = [

@@ -75,7 +75,10 @@ def to_wcnf(
 
     return wcnf, decode
 
-def extract_raw_model(max_sat: WCNF, decode: Dict[int, Hashable]) -> Dict[Hashable, bool]:
+
+def extract_raw_model(
+    max_sat: WCNF, decode: Dict[int, Hashable]
+) -> Dict[Hashable, bool]:
     """Extracts a raw model given a WCNF and the corresponding decoding dictionary.
 
     Args:

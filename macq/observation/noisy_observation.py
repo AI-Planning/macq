@@ -13,8 +13,7 @@ class NoisyObservation(Observation):
     This token can be used to create states that are noisy but fully observable.
     """
 
-    def __init__(
-        self, step: Step, percent_noisy: float = 0, replace: bool = False):
+    def __init__(self, step: Step, percent_noisy: float = 0, replace: bool = False):
         """
         Creates an NoisyObservation object, storing the state and action.
 
@@ -38,7 +37,9 @@ class NoisyObservation(Observation):
         self.state = step.state.clone()
         self.action = None if step.action is None else step.action.clone()
 
-    def random_noisy_subset(self, step: Step, percent_noisy: float, replace: bool = False):
+    def random_noisy_subset(
+        self, step: Step, percent_noisy: float, replace: bool = False
+    ):
         """Generates a random subset of fluents corresponding to the percent provided
         and flips their value to create noise.
 
@@ -66,5 +67,9 @@ class NoisyObservation(Observation):
                 state[f] = not state[f] if f in noisy_f else state[f]
         else:
             for f in state:
-                state[f] = state[random.choice(list(visible_f.keys()))] if f in noisy_f else state[f]
+                state[f] = (
+                    state[random.choice(list(visible_f.keys()))]
+                    if f in noisy_f
+                    else state[f]
+                )
         return Step(state, step.action, step.index)

@@ -78,7 +78,7 @@ class RandomGoalSampling(VanillaSampling):
             problem_id=problem_id,
             num_traces=num_traces,
             observe_pres_effs=observe_pres_effs,
-            max_time=max_time
+            max_time=max_time,
         )
 
     def goal_sampling(self):
@@ -120,7 +120,9 @@ class RandomGoalSampling(VanillaSampling):
             k_length_plans = 0
             while True:
                 # generate a trace of the specified length and retrieve the state of the last step
-                state = self.generate_single_trace_setup(num_seconds, self.steps_deep)()[-1].state
+                state = self.generate_single_trace_setup(
+                    num_seconds, self.steps_deep
+                )()[-1].state
 
                 # get all positive fluents (only positive fluents can be used for a goal)
                 goal_f = [f for f in state if state[f]]
@@ -136,12 +138,8 @@ class RandomGoalSampling(VanillaSampling):
                 self.change_goal(goal_fluents=goal_f)
 
                 # ensure that the goal doesn't hold in the initial state; restart if it does
-                init_state = {
-                    str(a) for a in self.problem.init.as_atoms()
-                }
-                goal = {
-                    str(a) for a in self.problem.goal.subformulas
-                }
+                init_state = {str(a) for a in self.problem.init.as_atoms()}
+                goal = {str(a) for a in self.problem.goal.subformulas}
 
                 if goal.issubset(init_state):
                     continue
@@ -158,7 +156,10 @@ class RandomGoalSampling(VanillaSampling):
                 for f in goal_f:
                     state_dict[f] = True
                 # map each goal to the initial state and plan used to achieve it
-                goal_states[State(state_dict)] = {"plan": test_plan, "initial state": self.problem.init}
+                goal_states[State(state_dict)] = {
+                    "plan": test_plan,
+                    "initial state": self.problem.init,
+                }
 
                 # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
                 # use the full state the goal was extracted from as the initial state to prevent planning errors from incomplete initial states
@@ -170,8 +171,9 @@ class RandomGoalSampling(VanillaSampling):
                     k_length_plans += 1
                 if k_length_plans >= self.num_traces:
                     break
+
         return generate_goals
-            
+
     def generate_traces(self):
         """Generates traces based on the sampled goals. Traces are generated using the initial state and plan used to achieve the goal.
 

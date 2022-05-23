@@ -31,10 +31,10 @@ def test_invalid_vanilla_sampling():
             "new_blocks_dom.pddl",
             "new_blocks_prob.pddl",
         )
-    
+
     with pytest.raises(TraceSearchTimeOut):
         VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=5)
-    
+
     with pytest.raises(InvalidTime):
         VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=0)
 
@@ -52,9 +52,13 @@ if __name__ == "__main__":
     dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
     VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=10, max_time=3)
-    
-    new_blocks_dom = str((base / "generated_testing_files/new_blocks_dom.pddl").resolve())
-    new_blocks_prob = str((base / "generated_testing_files/new_blocks_prob.pddl").resolve())
+
+    new_blocks_dom = str(
+        (base / "generated_testing_files/new_blocks_dom.pddl").resolve()
+    )
+    new_blocks_prob = str(
+        (base / "generated_testing_files/new_blocks_prob.pddl").resolve()
+    )
     new_game_dom = str((base / "generated_testing_files/new_game_dom.pddl").resolve())
     new_game_prob = str((base / "generated_testing_files/new_game_prob.pddl").resolve())
 

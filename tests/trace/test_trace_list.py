@@ -1,10 +1,12 @@
+from inspect import trace
+from pathlib import Path
 import pytest
-from macq.trace import TraceList
+from macq.trace import TraceList, Fluent
 from tests.utils.generators import (
     generate_test_trace_list,
     generate_test_trace,
-    generate_blocks_traces,
 )
+from macq.generate.csv import load
 
 MissingGenerator = TraceList.MissingGenerator
 
@@ -55,3 +57,17 @@ def test_trace_list():
 
     trace_list.sort()
     trace_list.print()
+
+
+def test_trace_list_csv_load():
+    base = Path(__file__).parent.parent
+    f = str((base / "csv_testing_files/test_load.csv").resolve())
+    trace_list = load(f, "actions", "plan_id")
+
+    assert isinstance(trace_list, TraceList)
+    assert trace_list[0][0].action.name == "unstack object a object d"
+    assert trace_list[1][1].state[Fluent("ontable object d", [])] == True
+    assert trace_list[2][0].action.name == "pick-up object e"
+    assert trace_list[2][2].state[Fluent("holding object i", [])] == False
+    assert trace_list[2][2].state[Fluent("ontable object g", [])] == False
+    assert trace_list[2][2].state[Fluent("ontable object c", [])] == True
