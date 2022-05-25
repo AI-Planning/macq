@@ -18,19 +18,19 @@ _Note: debugging output and interfaces are unique to each method._
 - [ARMS](#arms)
 - [AMDN](#amdn)
 
-.. include:: ../../docs/extract/observer.md
+.. include:: ../../../docs/templates/extract/observer.md
 
 ---
 
-.. include:: ../../docs/extract/slaf.md
+.. include:: ../../../docs/templates/extract/slaf.md
 
 ---
 
-.. include:: ../../docs/extract/arms.md
+.. include:: ../../../docs/templates/extract/arms.md
 
 ---
 
-.. include:: ../../docs/extract/amdn.md
+.. include:: ../../../docs/templates/extract/amdn.md
 
 ---
 
