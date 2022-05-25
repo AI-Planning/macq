@@ -1,4 +1,4 @@
-""".. include:: ../../docs/extract/extract.md"""
+""".. include:: ../../docs/templates/extract/extract.md"""
 
 from .learned_fluent import LearnedFluent
 from .learned_action import LearnedAction

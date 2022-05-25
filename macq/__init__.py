@@ -1,3 +1,3 @@
 """
-.. include:: ../docs/index.md
+.. include:: ../docs/templates/index.md
 """
