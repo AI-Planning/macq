@@ -2,12 +2,12 @@
 
 ## Trace Generation
 
-- [VanillaSampling](macq/extract.html#observer)
+- [VanillaSampling](macq/generate/pddl.html#VanillaSampling)
 
 ## Tokenization
 
-- [IdentityObservation](macq/extract.html#observer)
-- [AtomicPartialObservation](macq/extract.html#slaf)
+- [IdentityObservation](macq/observation.html#IdentityObservation)
+- [AtomicPartialObservation](macq/observation.html#AtomicPartialObservation)
 
 ## Extraction Techniques
 
