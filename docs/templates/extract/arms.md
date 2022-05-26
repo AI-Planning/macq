@@ -1,4 +1,6 @@
-# Usage
+# ARMS
+
+## Usage
 
 ```python
 from macq import generate, extract
@@ -51,6 +53,7 @@ print(model.details())
 ```
 
 **Output:**
+
 ```text
 Model:
   Fluents: (at rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint3), ...
@@ -73,5 +76,3 @@ Model:
         calibrated camera rover
     ...
 ```
-
-# API Documentation

@@ -1,4 +1,6 @@
-# Usage
+# SLAF
+
+## Usage
 
 ```python
 from macq import generate, extract
@@ -11,6 +13,7 @@ print(model.details())
 ```
 
 **Output:**
+
 ```text
 Model:
   Fluents: clear location pos-06-09, clear location pos-02-05, clear location pos-08-08, clear location pos-10-05, ...
@@ -24,5 +27,3 @@ Model:
         ...
     ...
 ```
-
-# API Documentation

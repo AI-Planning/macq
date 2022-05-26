@@ -1,4 +1,4 @@
-""".. include:: ../../docs/extract/extract.md"""
+""".. include:: ../../docs/templates/extract/extract.md"""
 
 from dataclasses import dataclass
 from enum import Enum, auto
