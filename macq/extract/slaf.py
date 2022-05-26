@@ -1,4 +1,4 @@
-""".. include:: ../../docs/extract/slaf.md"""
+""".. include:: ../../docs/templates/extract/slaf.md"""
 
 import macq.extract as extract
 from typing import Set, Union

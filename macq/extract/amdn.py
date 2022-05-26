@@ -1,4 +1,4 @@
-""".. include:: ../../docs/extract/amdn.md"""
+""".. include:: ../../docs/templates/extract/amdn.md"""
 
 from macq.trace import Fluent, Action  # for typing
 from macq.extract.learned_action import LearnedAction
