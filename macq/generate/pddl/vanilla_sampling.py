@@ -112,7 +112,7 @@ class VanillaSampling(Generator):
 
             if not plan_len:
                 plan_len = self.plan_len
-            elif callable(plan_len):
+            if callable(plan_len):
                 plan_len = plan_len()
 
             trace = Trace()
