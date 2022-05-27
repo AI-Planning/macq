@@ -25,21 +25,22 @@ jobs:
       - name: Build binary wheel and a source tarball
         run: |
           python -m build --sdist --wheel --outdir dist/ .
-      - name: Publish distribution package to PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Generate Docs
         run: |
           pdoc macq --math -o docs
-      - name: Push Docs
+      - name: Push Docs and dist
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "[auto] Update docs"
+          commit_message: "[auto] Update docs and distribution"
           branch: main
-          file_pattern: docs/*
+          file_pattern: docs/* dist/*
+          add_options: "-f"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
           skip_dirty_check: true
           skip_fetch: true
           skip_checkout: true
+      - name: Publish distribution package to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
