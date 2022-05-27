@@ -1,6 +1,6 @@
 # MAcq: The Model Acquisition Toolkit
 
-[![CI](https://github.com/ai-planning/macq/actions/workflows/CI.yml/badge.svg)](https://github.com/ai-planning/macq/actions)
+[![CI](https://github.com/ai-planning/macq/actions/workflows/check.yml/badge.svg)](https://github.com/ai-planning/macq/actions)
 [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/haz/03ac305b42d7c9ad4ef3213341bf3f2f/raw/macq__heads_main.json?cacheSeconds=3600)](https://github.com/ai-planning/macq/actions)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/ai-planning/macq/blob/main/LICENSE)
@@ -40,8 +40,8 @@ You can find the full scope of papers considered in the survey (implemented and 
 
 ## Survey Papers
 
-* [A Review of Machine Learning for Automated Planning](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.4901&rep=rep1&type=pdf) (see Fig 2)
-* [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
+- [A Review of Machine Learning for Automated Planning](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.4901&rep=rep1&type=pdf) (see Fig 2)
+- [A Review of Learning Planning Action Models](https://hal.archives-ouvertes.fr/hal-02010536/document) (see Tbl 3)
 
 ## Citing this work
 
