@@ -20,6 +20,9 @@ jobs:
         run: |
           python -m pip install build --user
           python -m pip install pdoc
+      - name: Cleanup dist
+        run: |
+          rm -rf dist
       - name: Build binary wheel and a source tarball
         run: |
           python -m build --sdist --wheel --outdir dist/ .
