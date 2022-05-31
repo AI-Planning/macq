@@ -102,7 +102,14 @@ class FDRandomWalkSampling(VanillaSampling):
 
     def _avg_op_cost(self):
         """Computes the average operator cost"""
-        costs = {a: float(str(self.problem.get_action(a).cost)) for a in self.problem.actions}
+
+        def _op_cost(a):
+            if self.problem.get_action(a).cost is None:
+                return 1
+            else:
+                return float(str(self.problem.get_action(a).cost))
+
+        costs = {a: _op_cost(a) for a in self.problem.actions}
         total = 0
         for o in self.instance.operators:
             total += costs[o.name.split('(')[0]]
