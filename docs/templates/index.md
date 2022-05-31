@@ -3,6 +3,8 @@
 ## Trace Generation
 
 - [VanillaSampling](macq/generate/pddl.html#VanillaSampling)
+- [RandomGoalSampling](macq/generate/pddl.html#RandomGoalSampling)
+- [FDRandomWalkSampling](macq/generate/pddl.html#FDRandomWalkSampling)
 
 ## Tokenization
 
