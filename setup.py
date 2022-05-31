@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.2.0"
+VERSION = "0.2.3"
 
 NAME = "macq"
 
@@ -57,7 +57,6 @@ setup(
     keywords="planning model acquisition trace",
     url="https://github.com/ai-planning/macq",
     classifiers=CLASSIFIERS,
-    packages=find_packages("macq/macq"),
     python_requires=">=3.7",
     install_requires=DEPENDENCIES,
     extras_require={"dev": DEV_DEPENDENCIES},
