@@ -58,10 +58,10 @@ if __name__ == "__main__":
                 "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
             ),
         },
-        new_blocks_dom,
-        new_blocks_prob,
+        # new_blocks_dom,
+        # new_blocks_prob,
     )
-    goal_traces = goal_traces_sampler.generate_trace()
+    goal_traces_sampler.generate_trace()
     goal_trace = goal_traces_sampler.trace
     true_f = [str(f) for f in goal_trace[-1].state if goal_trace[-1].state[f]]
     print(true_f)
