@@ -40,7 +40,7 @@ class VanillaSampling(Generator):
         problem_id: int = None,
         observe_pres_effs: bool = False,
         plan_len: int = 1,
-        num_traces: int = 1,
+        num_traces: int = 0,
         seed: int = None,
         max_time: float = 30,
     ):
@@ -75,7 +75,10 @@ class VanillaSampling(Generator):
         self.max_time = max_time
         self.plan_len = set_plan_length(plan_len)
         self.num_traces = set_num_traces(num_traces)
-        self.traces = self.generate_traces()
+        if self.num_traces > 0:
+            self.generate_traces()
+        else:
+            self.traces = None
         if seed:
             random.seed(seed)
 
@@ -92,6 +95,7 @@ class VanillaSampling(Generator):
         )
         for _ in print_progress(range(self.num_traces)):
             traces.append(traces.generator())
+        self.traces = traces
         return traces
 
     def generate_single_trace_setup(self, num_seconds: float, plan_len: int = None):

@@ -45,9 +45,17 @@ if __name__ == "__main__":
 
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7, num_traces=10)
+
+    vanilla = VanillaSampling(dom=dom, prob=prob, plan_len=7)
+    vanilla.num_traces = 10
+    vanilla.generate_traces()
     traces = vanilla.traces
     traces.generate_more(3)
+
+    # updates the traces within the Vanilla Generator
+    vanilla.num_traces = 3
+    vanilla.generate_traces()
+    traces = vanilla.traces
 
     dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
