@@ -59,6 +59,8 @@ if __name__ == "__main__":
 
     dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
+    
+    # ensure max_time (3 seconds) shows up in the error message raised here
     VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=10, max_time=3)
 
     new_blocks_dom = str(
