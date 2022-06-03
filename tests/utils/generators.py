@@ -126,7 +126,7 @@ def generate_test_trace_list(length: int):
 
     traces = []
     for _ in range(length):
-        comp = randint(1, 3)
+        comp = randint(2, 4)
         trace = generate_test_trace(comp)
         traces.append(trace)
     return TraceList(traces)
