@@ -168,7 +168,7 @@ class Model:
                 effects.extend([fs.DelEffect(e) for e in dels])
                 # set up action
                 problem.action(
-                    name=a.details(),
+                    name=a.details().replace("(", "").replace(")", "").replace(" ","_"),
                     parameters=[],
                     precondition=preconds,
                     effects=effects,
