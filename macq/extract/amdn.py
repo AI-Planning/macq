@@ -750,5 +750,10 @@ class AMDN:
             # update learned_actions (ignore auxiliary variables)
             if not isinstance(raw_f, Aux) and model[raw_f]:
                 AMDN._split_raw_fluent(raw_f, learned_actions)
-
-        return Model(fluents, learned_actions.values())
+        # format
+        actions = set(learned_actions.values())
+        for act in actions:
+            act.precond = {f"({p})" for p in act.precond}
+            act.add = {f"({p})" for p in act.add}
+            act.delete = {f"({p})" for p in act.delete}
+        return Model(fluents, actions)

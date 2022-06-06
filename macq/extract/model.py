@@ -120,7 +120,7 @@ class Model:
             return top
         # creates Atom
         elif len(attribute) == 1:
-            return lang.get(attribute.replace(" ", "_"))()
+            return lang.get(list(attribute)[0].replace(" ", "_"))()
         # creates CompoundFormula
         else:
             return CompoundFormula(

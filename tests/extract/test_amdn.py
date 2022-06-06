@@ -251,6 +251,16 @@ if __name__ == "__main__":
         percent_noisy=0,
         replace=True,
     )
-    model = Extract(observations, modes.AMDN, debug=True, occ_threshold=2)
+    model = Extract(observations, modes.AMDN, debug=False, occ_threshold=2)
     f = open("results.txt", "w")
     f.write(model.details())
+
+    model_blocks_dom = str(
+        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
+    )
+    model_blocks_prob = str(
+        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
+    )
+    model.to_pddl(
+        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
+    )
