@@ -120,12 +120,16 @@ class ARMS:
             debug,
         )
 
-        learned_fluents = set(map(lambda f: LearnedFluent(f.name, f.objects), fluents))
+        # learned_fluents = set(map(lambda f: LearnedFluent(f.name, f.objects), fluents))
+        learned_fluents = set()
         # format
         for act in actions:
             act.precond = {f"({p})" for p in act.precond}
             act.add = {f"({p})" for p in act.add}
             act.delete = {f"({p})" for p in act.delete}
+            learned_fluents.update(act.precond)
+            learned_fluents.update(act.add)
+            learned_fluents.update(act.delete)
         return Model(learned_fluents, actions)
 
     @staticmethod

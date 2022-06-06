@@ -59,5 +59,3 @@ def test_arms():
     model.to_pddl(
         "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
     )
-
-test_arms()

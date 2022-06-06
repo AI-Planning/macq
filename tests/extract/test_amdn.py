@@ -211,8 +211,7 @@ def test_tracelist():
     # return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
 
-
-if __name__ == "__main__":
+def test_amdn():
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
 
@@ -252,8 +251,7 @@ if __name__ == "__main__":
         replace=True,
     )
     model = Extract(observations, modes.AMDN, debug=False, occ_threshold=2)
-    f = open("results.txt", "w")
-    f.write(model.details())
+    assert model
 
     model_blocks_dom = str(
         (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
