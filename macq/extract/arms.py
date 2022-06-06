@@ -121,6 +121,11 @@ class ARMS:
         )
 
         learned_fluents = set(map(lambda f: LearnedFluent(f.name, f.objects), fluents))
+        # format
+        for act in actions:
+            act.precond = {f"({p})" for p in act.precond}
+            act.add = {f"({p})" for p in act.add}
+            act.delete = {f"({p})" for p in act.delete}
         return Model(learned_fluents, actions)
 
     @staticmethod

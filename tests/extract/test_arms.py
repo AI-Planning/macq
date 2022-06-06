@@ -49,3 +49,15 @@ def test_arms():
     )
 
     assert model
+
+    model_blocks_dom = str(
+        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
+    )
+    model_blocks_prob = str(
+        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
+    )
+    model.to_pddl(
+        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
+    )
+
+test_arms()

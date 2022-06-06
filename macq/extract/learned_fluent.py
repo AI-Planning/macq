@@ -18,13 +18,14 @@ class LearnedFluent:
 
     def details(self):
         # objects can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the fluent
-        try:
-            string = f"{self.name} {' '.join([o for o in self.objects])}"
-        except TypeError:
-            string = f"{self.name} {' '.join([o.details() for o in self.objects])}"
-        string = f"({string})"
-
-        return string
+        if len(self.objects) > 0:
+            try:
+                string = f"{self.name} {' '.join([o for o in self.objects])}"
+            except TypeError:
+                string = f"{self.name} {' '.join([o.details() for o in self.objects])}"
+        else:
+            string = self.name
+        return f"({string})"
 
     def _serialize(self):
         return str(self)

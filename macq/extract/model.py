@@ -154,13 +154,16 @@ class Model:
         if self.fluents:
             # create 0-arity predicates
             for f in self.fluents:
-                lang.predicate(str(f).replace(" ", "_"))
+                # NOTE: want there to be no brackets in any fluents referenced as tarski adds these later.
+                # fluents (their string conversion) must be in the following format: (on object a object b)
+                test = str(f)
+                lang.predicate(str(f)[1:-1].replace(" ", "_"))
         if self.actions:
             for a in self.actions:
                 # fetch all the relevant 0-arity predicates and create formulas to set up the ground actions
-                preconds = self.__to_tarski_formula(a.precond, lang)
-                adds = [lang.get(e.replace(" ", "_"))() for e in a.add]
-                dels = [lang.get(e.replace(" ", "_"))() for e in a.delete]
+                preconds = self.__to_tarski_formula({a[1:-1] for a in a.precond}, lang)
+                adds = [lang.get(f"{e.replace(' ', '_')[1:-1]}")() for e in a.add]
+                dels = [lang.get(f"{e.replace(' ', '_')[1:-1]}")() for e in a.delete]
                 effects = [fs.AddEffect(e) for e in adds]
                 effects.extend([fs.DelEffect(e) for e in dels])
                 # set up action
