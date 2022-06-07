@@ -11,17 +11,23 @@ if __name__ == "__main__":
     random_sampler = RandomGoalSampling(
         dom=dom,
         prob=prob,
-        num_traces=20,
         steps_deep=20,
         subset_size_perc=0.1,
         enforced_hill_climbing_sampling=False,
         max_time=10,
     )
+    random_sampler.num_traces = 10
+    random_sampler.generate_traces()
     traces = random_sampler.traces
     traces.print(wrap="y")
 
+    # ensure traces are reassigned
+    random_sampler.num_traces = 5
+    random_sampler.generate_traces()
+    traces = random_sampler.traces
+
     # test generating traces with action preconditions/effects known
-    ramdom_sampler_traces = RandomGoalSampling(
+    random_sampler_traces = RandomGoalSampling(
         dom=dom,
         prob=prob,
         observe_pres_effs=True,

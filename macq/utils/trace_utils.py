@@ -29,7 +29,7 @@ def set_plan_length(plan_len: int):
         InvalidPlanLength:
             The exception raised when the plan length provided is invalid.
     """
-    if plan_len >= 0:
+    if plan_len > 0:
         return plan_len
     else:
         raise InvalidPlanLength()

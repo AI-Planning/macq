@@ -32,4 +32,5 @@ class TraceFromGoal(Generator):
         self.trace = self.generate_trace()
 
     def generate_trace(self):
-        return self.generate_single_trace_from_plan(self.generate_plan())
+        self.trace = self.generate_single_trace_from_plan(self.generate_plan())
+        return self.trace

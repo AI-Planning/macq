@@ -33,7 +33,7 @@ class RandomGoalSampling(VanillaSampling):
         steps_deep: int,
         enforced_hill_climbing_sampling: bool = True,
         subset_size_perc: float = 1,
-        num_traces: int = 1,
+        num_traces: int = 0,
         dom: str = None,
         prob: str = None,
         problem_id: int = None,
@@ -190,4 +190,5 @@ class RandomGoalSampling(VanillaSampling):
                 self.problem.init = goal["initial state"]
             # generate a plan based on the new goal/initial state, then generate a trace based on that plan
             traces.append(self.generate_single_trace_from_plan(goal["plan"]))
+        self.traces = traces
         return traces
