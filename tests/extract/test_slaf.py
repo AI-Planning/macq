@@ -7,6 +7,14 @@ from tests.utils.generators import generate_blocks_traces
 
 
 def test_slaf():
+    # exit out to the base macq folder so we can get to /tests
+    base = Path(__file__).parent.parent
+    model_blocks_dom = str(
+        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
+    )
+    model_blocks_prob = str(
+        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
+    )
     traces = generate_blocks_traces(plan_len=2, num_traces=1)
     observations = traces.tokenize(
         AtomicPartialObservation,
@@ -17,16 +25,18 @@ def test_slaf():
 
     with pytest.raises(InvalidQueryParameter):
         observations.fetch_observations({"test": "test"})
-
+    model.to_pddl(
+        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
+    )
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
     model_blocks_dom = str(
-        (base / "generated_testing_files/model_blocks_domain.pddl").resolve()
+        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
     )
     model_blocks_prob = str(
-        (base / "generated_testing_files/model_blocks_problem.pddl").resolve()
+        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
     )
 
     traces = generate_blocks_traces(plan_len=2, num_traces=1)
