@@ -1,11 +1,8 @@
 from warnings import warn
 from json import dumps
 from typing import Union
-
-from ..trace import State, Action
-
 import random
-from ..trace import State
+from ..trace import State, Action
 
 
 class InvalidQueryParameter(Exception):

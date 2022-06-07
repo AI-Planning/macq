@@ -258,8 +258,11 @@ class Generator:
         Returns:
             An action, defined using the macq Action class.
         """
-        name = tarski_act.name.split("(")[0]
-        objs = set()
+        name_split = tarski_act.name.replace(")", "").split("(")
+        name = name_split[0]
+        obj_names = name_split[1].split(", ")
+
+        tarski_objs_mapping = {}
         precond = set()
         if isinstance(tarski_act.precondition, CompoundFormula):
             raw_precond = tarski_act.precondition.subformulas
@@ -271,23 +274,23 @@ class Generator:
         else:
             precond.add(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
         (add, delete) = self.__effect_split(tarski_act)
-        for fluent in add:
-            objs.update(set(fluent.objects))
-        for fluent in delete:
-            objs.update(set(fluent.objects))
-        for fluent in precond:
-            objs.update(set(fluent.objects))
+
+        tarski_objs_mapping.update({o.name:o for fluent in add for o in fluent.objects })
+        tarski_objs_mapping.update({o.name:o for fluent in delete for o in fluent.objects })
+        tarski_objs_mapping.update({o.name:o for fluent in precond for o in fluent.objects })
+
+        obj_params = [tarski_objs_mapping[o] for o in obj_names]
 
         return (
             Action(
                 name=name,
-                obj_params=list(objs),
+                obj_params=obj_params,
                 precond=precond,
                 add=add,
                 delete=delete,
             )
             if self.observe_pres_effs
-            else Action(name=name, obj_params=list(objs))
+            else Action(name=name, obj_params=obj_params)
         )
 
     def change_init(
