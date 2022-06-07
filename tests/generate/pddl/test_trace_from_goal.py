@@ -25,6 +25,29 @@ def test_invalid_goal_change():
             "new_blocks_prob.pddl",
         )
 
+def test_parameter_order():
+    # assert accuracy
+    goal_generator = TraceFromGoal(problem_id=4398)
+    goal_generator.change_init(
+        {
+            Fluent("on", [PlanningObject("object", "c"), PlanningObject("object", "a")]),
+            Fluent("clear", [PlanningObject("object", "c")]),
+            Fluent("clear", [PlanningObject("object", "b")]),
+            Fluent("ontable", [PlanningObject("object", "b")]),
+            Fluent("ontable", [PlanningObject("object", "a")]),
+            Fluent("handempty", [])
+        }
+    )
+    goal_generator.change_goal({
+        Fluent("on", [PlanningObject("object", "b"), PlanningObject("object", "a")]),
+    })
+    trace = goal_generator.generate_trace()
+    # assert object order
+    for act in trace.actions:
+        if act.name == "unstack":
+            assert act.obj_params == [PlanningObject("object", "c"), PlanningObject("object", "a")]
+        elif act.name == "stack":
+            assert act.obj_params == [PlanningObject("object", "b"), PlanningObject("object", "a")]   
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
@@ -89,3 +112,5 @@ if __name__ == "__main__":
 
     # test generating traces with action preconditions/effects known
     goal_traces = TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace
+
+test_parameter_order()
