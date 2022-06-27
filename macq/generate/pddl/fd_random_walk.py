@@ -107,7 +107,7 @@ class FDRandomWalkSampling(VanillaSampling):
             if self.problem.get_action(a).cost is None:
                 return 1
             else:
-                return float(str(self.problem.get_action(a).cost))
+                return float(self.problem.get_action(a).cost.symbol)
 
         costs = {a: _op_cost(a) for a in self.problem.actions}
         total = 0
