@@ -1,4 +1,5 @@
 from tarski.search.operations import progress
+import networkx as nx
 import random
 import macq
 from macq.generate.pddl import Generator
@@ -45,6 +46,8 @@ class Graph_enum(Generator):
         if seed:
             random.seed(seed)
 
+        DG=nx.DiGraph()
+
     def generate_traces(self):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
         of the given length.
@@ -60,6 +63,20 @@ class Graph_enum(Generator):
             traces.append(traces.generator())
         self.traces = traces
         return traces
+
+    def bfs():
+        Visited={node:False for node in G.nodes}
+        Queue[StartNode]
+        Visited[StartNode]=True
+        Result=[]
+        while Queue:
+            cur_node Queue.pop(0)
+            Result.append(cur_node)
+            for node in G.neighbors(cur_node):
+                if not Visited[node]:
+                    Queue.append(node)
+                    Visited[node]=True
+        print("Result:","->".join(Result))
 
     def generate_single_trace_setup(self, num_seconds: float, plan_len = None):
         @set_timer_throw_exc(
@@ -83,8 +100,61 @@ class Graph_enum(Generator):
                 plan_len = plan_len()
 
             trace = Trace()
+            
 
             state = self.problem.init
+            DG.add_node(state)
+            Visited={node:False for node in G.nodes}
+
+            Queue= [state]
+            Visited[state]=True
+            while Queue:
+                cur_node = Queue.pop(0)
+                Result.append(cur_node)
+                app_act = list(self.instance.applicable(cur_node))
+                for act in app_act:
+                    next_state = progress(cur_node, act)
+                    if next_state not in list(G.nodes): 
+                        G.add_node(next_state)
+                        Visited[next_state]=False
+                    G.add_edge(cur_node,next_state, action= act)
+                for node in G.neighbors(cur_node):
+                    if (Visited[node]==False):
+                        if node not in Result:
+                            Queue.append(node)
+                            Visited[node]=True
+'''print(Result)
+nx.draw(G, with_labels=True)
+plt.draw
+plt.show
+
+
+
+            Visited={node:False for node in G.nodes}
+            Queue[state]
+            Visited[state]=True
+            while Queue:
+                cur_node = Queue.pop(0)
+                app_act = list(self.instance.applicable(cur_node))
+
+                Result.append(cur_node)
+                for node in G.neighbors(cur_node):
+                    if not Visited[node]:
+                        Queue.append(node)
+                        Visited[node]=True
+                print("Result:","->".join(Result))
+            app_act = list(self.instance.applicable(state))
+            for i in app_act:
+                next_state=progress(state, i)
+                            if next_state in digraph:
+                                add edge(next_state, old_state , action=i)
+                            
+                            else:
+                                add_edge(state, next_state, action=i)
+'''
+
+
+
             valid_trace = False
             while not valid_trace:
                 trace.clear()
