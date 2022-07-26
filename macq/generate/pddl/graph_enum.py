@@ -46,7 +46,7 @@ class Graph_enum(Generator):
         if seed:
             random.seed(seed)
 
-        DG=nx.DiGraph()
+        G=nx.DiGraph()
 
     def generate_traces(self):
         """Generates traces randomly by uniformly sampling applicable actions to find plans
@@ -106,9 +106,10 @@ class Graph_enum(Generator):
                     G.add_edge(cur_node,next_state, action= act)
                 for node in G.neighbors(cur_node):
                     if (Visited[node]==False):
-                            Queue.append(node)
-                            Visited[node]=True
-            
+                        Queue.append(node)
+                        Visited[node]=True
+            return 
+
 '''print(Result)
 nx.draw(G, with_labels=True)
 plt.draw
@@ -138,6 +139,45 @@ plt.show
                             else:
                                 add_edge(state, next_state, action=i)
 '''
+            '''valid_trace = False
+            while not valid_trace:
+                trace.clear()
+                # add more steps while the trace has not yet reached the desired length
+                for j in range(plan_len):
+                    # if we have not yet reached the last step
+                    if len(trace) < plan_len - 1:
+                        # find the next applicable actions
+                        app_act = list(self.instance.applicable(state))
+                        # if the trace reaches a dead lock, disregard this trace and try again
+                        if not app_act:
+                            break
+                        # pick a random applicable action and apply it
+'''
+                        for i in app_act:
+                            next_state=progress(state, i)
+                            if next_state in digraph:
+                                add edge(next_state, old_state , action=i)
+                            
+                            else:
+                                add_edge(state, next_state, action=i)
+
+'''
+                        act = random.choice(app_act)
+                        # create the trace and progress the state
+                        macq_action = self.tarski_act_to_macq(act)
+                        macq_state = self.tarski_state_to_macq(state)
+                        step = Step(macq_state, macq_action, j + 1)
+                        trace.append(step)
+                        state = progress(state, act)
+                    else:
+                        macq_state = self.tarski_state_to_macq(state)
+                        step = Step(state=macq_state, action=None, index=j + 1)
+                        trace.append(step)
+                        valid_trace = True
+            return trace
+            '''
+
+        return generate_single_trace
 
 
-
+traces= Graph_enum(problem_id=198, num_traces=1)
