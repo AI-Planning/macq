@@ -72,5 +72,12 @@ class Graph_enum(Generator):
 
 DG= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl',num_traces=1).traces
 plt.figure(figsize=(50,50))
-nx.draw(DG)
+pos = nx.spring_layout(DG)
+nx.draw(DG,pos)
+
+edge_labels = dict([((n1, n2), d['action'])
+                    for n1, n2, d in DG.edges(data=True)])
+
+nx.draw_networkx_edge_labels(DG,pos,edge_labels=edge_labels,font_size=5, font_weight='bold')
+
 plt.show()
