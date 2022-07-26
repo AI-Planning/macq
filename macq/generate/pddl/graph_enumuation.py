@@ -1,4 +1,4 @@
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from tarski.search.operations import progress
 import networkx as nx
 import macq
@@ -70,7 +70,7 @@ class Graph_enum(Generator):
         return G
             
 
-traces= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl',num_traces=1)
-#nx.draw(traces, with_labels=True)
-#plt.draw
-#plt.show
+DG= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl',num_traces=1).traces
+plt.figure(figsize=(50,50))
+nx.draw(DG)
+plt.show()
