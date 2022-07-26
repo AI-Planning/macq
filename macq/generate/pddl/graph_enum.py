@@ -64,20 +64,6 @@ class Graph_enum(Generator):
         self.traces = traces
         return traces
 
-    def bfs():
-        Visited={node:False for node in G.nodes}
-        Queue[StartNode]
-        Visited[StartNode]=True
-        Result=[]
-        while Queue:
-            cur_node Queue.pop(0)
-            Result.append(cur_node)
-            for node in G.neighbors(cur_node):
-                if not Visited[node]:
-                    Queue.append(node)
-                    Visited[node]=True
-        print("Result:","->".join(Result))
-
     def generate_single_trace_setup(self, num_seconds: float, plan_len = None):
         @set_timer_throw_exc(
             num_seconds=num_seconds, exception=TraceSearchTimeOut, max_time=num_seconds
@@ -168,7 +154,7 @@ plt.show
                         if not app_act:
                             break
                         # pick a random applicable action and apply it
-
+'''
                         for i in app_act:
                             next_state=progress(state, i)
                             if next_state in digraph:
@@ -177,7 +163,7 @@ plt.show
                             else:
                                 add_edge(state, next_state, action=i)
 
-
+'''
                         act = random.choice(app_act)
                         # create the trace and progress the state
                         macq_action = self.tarski_act_to_macq(act)
