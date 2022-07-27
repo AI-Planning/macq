@@ -1,0 +1,32 @@
+strict digraph "" {
+	node [shape=point]
+	"Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]"	[label="pick-up(d)"];
+	"Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]"	[label="pick-up(a)"];
+	"Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]"	[label="unstack(c, b)"];
+	"Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]" -> "Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]"	[label="put-down(d)"];
+	"Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]" -> "Model[clear(c), clear(d), handempty(), on(c,b), on(d,a), ontable(a), ontable(b)]"	[label="stack(d, a)"];
+	"Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]" -> "Model[clear(a), clear(d), handempty(), on(c,b), on(d,c), ontable(a), ontable(b)]"	[label="stack(d, c)"];
+	"Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]"	[label="put-down(a)"];
+	"Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(a), clear(d), handempty(), on(a,c), on(c,b), ontable(b), ontable(d)]"	[label="stack(a, c)"];
+	"Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(a), clear(c), handempty(), on(a,d), on(c,b), ontable(b), ontable(d)]"	[label="stack(a, d)"];
+	"Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(c), clear(d), handempty(), on(c,b), ontable(a), ontable(b), ontable(d)]"	[label="stack(c, b)"];
+	"Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(b), clear(c), clear(d), handempty(), ontable(a), ontable(b), ontable(c), ontable(d)]"	[label="put-down(c)"];
+	"Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(b), clear(c), clear(d), handempty(), on(c,a), ontable(a), ontable(b), ontable(d)]"	[label="stack(c, a)"];
+	"Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(b), clear(c), handempty(), on(c,d), ontable(a), ontable(b), ontable(d)]"	[label="stack(c, d)"];
+	"Model[clear(c), clear(d), handempty(), on(c,b), on(d,a), ontable(a), ontable(b)]" -> "Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]"	[label="unstack(d, a)"];
+	"Model[clear(c), clear(d), handempty(), on(c,b), on(d,a), ontable(a), ontable(b)]" -> "Model[clear(b), clear(d), holding(c), on(d,a), ontable(a), ontable(b)]"	[label="unstack(c, b)"];
+	"Model[clear(a), clear(d), handempty(), on(c,b), on(d,c), ontable(a), ontable(b)]" -> "Model[clear(a), clear(c), holding(d), on(c,b), ontable(a), ontable(b)]"	[label="unstack(d, c)"];
+	"Model[clear(a), clear(d), handempty(), on(c,b), on(d,c), ontable(a), ontable(b)]" -> "Model[clear(d), holding(a), on(c,b), on(d,c), ontable(b)]"	[label="pick-up(a)"];
+	"Model[clear(a), clear(d), handempty(), on(a,c), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]"	[label="unstack(a, c)"];
+	"Model[clear(a), clear(d), handempty(), on(a,c), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(a), holding(d), on(a,c), on(c,b), ontable(b)]"	[label="pick-up(d)"];
+	"Model[clear(a), clear(c), handempty(), on(a,d), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(c), clear(d), holding(a), on(c,b), ontable(b), ontable(d)]"	[label="unstack(a, d)"];
+	"Model[clear(a), clear(c), handempty(), on(a,d), on(c,b), ontable(b), ontable(d)]" -> "Model[clear(a), clear(b), holding(c), on(a,d), ontable(b), ontable(d)]"	[label="unstack(c, b)"];
+	"Model[clear(a), clear(b), clear(c), clear(d), handempty(), ontable(a), ontable(b), ontable(c), ontable(d)]" -> "Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]"	[label="pick-up(c)"];
+	"Model[clear(a), clear(b), clear(c), clear(d), handempty(), ontable(a), ontable(b), ontable(c), ontable(d)]" -> "Model[clear(a), clear(b), clear(c), holding(d), ontable(a), ontable(b), ontable(c)]"	[label="pick-up(d)"];
+	"Model[clear(a), clear(b), clear(c), clear(d), handempty(), ontable(a), ontable(b), ontable(c), ontable(d)]" -> "Model[clear(b), clear(c), clear(d), holding(a), ontable(b), ontable(c), ontable(d)]"	[label="pick-up(a)"];
+	"Model[clear(a), clear(b), clear(c), clear(d), handempty(), ontable(a), ontable(b), ontable(c), ontable(d)]" -> "Model[clear(a), clear(c), clear(d), holding(b), ontable(a), ontable(c), ontable(d)]"	[label="pick-up(b)"];
+	"Model[clear(b), clear(c), clear(d), handempty(), on(c,a), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(a), clear(b), clear(d), holding(c), ontable(a), ontable(b), ontable(d)]"	[label="unstack(c, a)"];
+	"Model[clear(b), clear(c), clear(d), handempty(), on(c,a), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(b), clear(c), holding(d), on(c,a), ontable(a), ontable(b)]"	[label="pick-up(d)"];
+	"Model[clear(b), clear(c), clear(d), handempty(), on(c,a), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(c), clear(d), holding(b), on(c,a), ontable(a), ontable(d)]"	[label="pick-up(b)"];
+	"Model[clear(a), clear(b), clear(c), handempty(), on(c,d), ontable(a), ontable(b), ontable(d)]" -> "Model[clear(b), clear(c), holding(a), on(c,d), ontable(b), ontable(d)]"	[label="pick-up(a)"];
+}
