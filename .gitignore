@@ -16,4 +16,5 @@ test_model.json
 results.txt
 html/
 
+*.dot
 *.DS_Store
