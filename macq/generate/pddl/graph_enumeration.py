@@ -1,14 +1,15 @@
 import matplotlib.pyplot as plt
 from tarski.search.operations import progress
 import networkx as nx
-import macq
 import pygraphviz
 from macq.generate.pddl import Generator
 import math
+from macq.utils import progress as print_progress
 from macq.trace import (
     State,
     Trace,
     Action,
+    TraceList,
 )
 
 class Step:
@@ -46,8 +47,10 @@ class Graph_enum(Generator):
 
 
     def generate_traces(self):
-        traces = self.generate_single_trace()
-        self.traces=traces
+
+        traces = TraceList()
+        traces=self.generate_single_trace()
+        self.traces = traces
         return traces
 
         
@@ -105,8 +108,8 @@ class Graph_enum(Generator):
         return G
             
 
-DG= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl').traces
-print(DG)
+DG= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl',num_nodes=10).traces
+print(DG.traces)
 '''plt.figure(figsize=(50,50))
 pos = nx.spring_layout(DG)
 nx.draw(DG,pos)
