@@ -20,6 +20,12 @@ class Step:
         self.action = action
         self.index = index
         self.next_state=next_state
+    def print_step(self):
+        print(self.index)
+        print(self.state)
+        print(self.action)
+        print(self.next_state)
+        print("-----")
 
 
 class Graph_enum(Generator):
@@ -49,7 +55,9 @@ class Graph_enum(Generator):
     def generate_traces(self):
 
         traces = TraceList()
-        traces=self.generate_single_trace()
+        traces.generator=self.generate_single_trace()
+        for _ in print_progress(range(1)):
+            traces.append(traces.generator)
         self.traces = traces
         return traces
 
@@ -72,6 +80,7 @@ class Graph_enum(Generator):
             macq_cur_state = self.tarski_state_to_macq(i[0])
             macq_next_state = self.tarski_state_to_macq(i[1])
             step = Step(macq_cur_state, macq_action,macq_next_state, count)
+            #step.print_step()
             count+=1
             trace.append(step)
             
@@ -109,7 +118,7 @@ class Graph_enum(Generator):
             
 
 DG= Graph_enum(prob='C:/Users/User/tarski/docs/notebooks/benchmarks/probBLOCKS-4-2.pddl', dom='C:/Users/User/tarski/docs/notebooks/benchmarks/blocksworld.pddl',num_nodes=10).traces
-print(DG.traces)
+DG.print()
 '''plt.figure(figsize=(50,50))
 pos = nx.spring_layout(DG)
 nx.draw(DG,pos)
