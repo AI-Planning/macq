@@ -13,6 +13,20 @@ from macq.trace import (
 
 class StateEnumerator(Generator):
     
+    """State Enumerator - inherits the base Generator class and its attributes.
+
+    A trace generator that generates traces of length 2 from a graph where nodes are the states and the edges represent the applicable actions
+
+    Attributes:
+        num_nodes (int):
+            The number of nodes to be generated in the state space.
+        traces (TraceList):
+            The list of traces generated.
+        dom (str):
+            Describes the problem domain
+        prob (str):
+            Describes the problem
+            """
     def __init__(
         self,
         dom: str = None,
@@ -36,10 +50,17 @@ class StateEnumerator(Generator):
 
 
     def generate_traces(self):
+        """Generates n traces of length 2 using the graph generated 
+        where n= num_nodes or for all the possible states if num_nodes is not defined
+
+        Returns:
+            A TraceList object with the list of traces generated.
+        """
         traces = TraceList()
         
         graph= self.generate_graph()
-                
+
+        #act is a dictionary with key='label' of the form {'label': action}       
         for cur_state, next_state, act in graph.edges(data=True):
             trace = Trace()
             
@@ -57,17 +78,28 @@ class StateEnumerator(Generator):
         return traces
      
     def generate_graph(self):
-        G=nx.DiGraph()
-        state = self.problem.init
-        G.add_node(state)
-        Visited={node:False for node in G.nodes}
+        """Generates a networkx strictly directed graph for the given problem by expanding the tree using bfs.
+        
+        Queue[]= Keeps track of all the nodes to be explored
+        Visited{node: Bool}= Keeps track of the explored nodes
 
+        Returns:
+            A networkx graph with nodes representing states and edges describing the reachable states and action.
+        
+        """
+        G=nx.DiGraph()
+        state = self.problem.init #initial state/ root node
+        G.add_node(state)
+        Visited={ }
         Queue= [state]
+
         Visited[state]=True
         while Queue:
             cur_node = Queue.pop(0)
             app_act = list(self.instance.applicable(cur_node))
             for act in app_act:
+
+                #creating new node if it doesn't exist in Visited as all the nodes are added to Visited with bool T/F
                 next_state = progress(cur_node, act)
                 if next_state not in Visited: 
                     if self.num_nodes>1:
@@ -77,6 +109,8 @@ class StateEnumerator(Generator):
                     else:
                         return G
                 G.add_edge(cur_node,next_state, label= act)
+            
+            #adding node to queue if it hasn't been explored
             for node in G.neighbors(cur_node):
                 if (Visited[node]==False):
                     Queue.append(node)
