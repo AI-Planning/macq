@@ -76,7 +76,6 @@ class VanillaSampling(Generator):
             random.seed(seed)
         self.max_time = max_time
         self.plan_len = set_plan_length(plan_len)
-
         self.num_traces = set_num_traces(num_traces)
         if self.num_traces > 0:
             self.traces = self.generate_traces()
