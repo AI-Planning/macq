@@ -58,10 +58,10 @@ class StateEnumerator(Generator):
         """
         traces = TraceList()
         
-        graph= self.generate_graph()
+        self.graph = self.generate_graph()
 
         #act is a dictionary with key='label' of the form {'label': action}       
-        for cur_state, next_state, act in graph.edges(data=True):
+        for cur_state, next_state, act in self.graph.edges(data=True):
             trace = Trace()
             
             macq_action = self.tarski_act_to_macq(act['label'])
