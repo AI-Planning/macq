@@ -20,13 +20,49 @@ class BGLearner:
     def __new__(
         cls,
         obs_lists: ObservationLists,
-        max_hyper: int,
-        action(x):x=num_act
-        arity
-        predicate
-        m
-        arg    
+        max_hyper: int,   
     ):
+
+    def proposition_layer0():
+         pre0(a,mk) # meta-feature mk appears negated in precondition of action a
+         pre1(a,mk) # meta-feature mk appears positive in precondition of action a
+         eff0(a,mk) # meta-feature mk appears negated in effect of action a
+         eff1(a,mk) # meta-feature mk appears positive in effect of action a
+         label(a,l) # action a is mapped to label l
+
+         arity(p,i) # atom p has arity i
+         atom(mk,p) # meta-feature mk is atom p
+         atom(mk,i,mo) # meta-object mo is mapped to i-th arg of meta-feature mk
+         unary(u,a,mo) # action a uses static unary predicate u on argument mo
+         binary(b,a,mo,mo') # action a uses static binary predicate b on arguments mo and mo'
+         
+         args(a,mo) # meta-object mo is argument of action a
+         relevant(a,mo,mk,i) # using(a,mk) & atom(mk,i,mo)
+         using(mk) # meta-feature mk is used by some action
+         using(a,mk) # meta-feature mk is used by action a
+
+    def proposition_layer1():
+         gr(k,p) # feature k is ground instance of atom p
+         gr(k,i,o) # i-th arg of feature k is object o
+         r(u,o) # tuple for static unary predicate u in layer l
+         s(b,o,o') #tuple for static binary predicate b in layer l
+         mf(t,k,i,mo) #> [ ground(k,i,o) <=> mapt(t,mo,o) ]
+         map(t,a) # transition t is mapped to action a
+         mapf(t,k,mk) #feature k is mapped to meta-feature mk for transition t
+         phi(k,s) # value of (boolean) feature k at state s
+
+
+         U(l,u,a,mo,o) # unary(u,a,mo) & -r(l,u,o)
+         B(l,b,a,mo,mo',o,o') # binary(b,a,mo,mo') & -s(l,b,o,o')
+         ordi(o,k,i,s) # ground(k,i,o) & phi(k,s) [ for ordering objects ]
+         appl(a,t,s) #action a as in transition t is applicable in state s
+         mapeq(t,a,t') # map(t,a) & eq(t,t')
+         eq(t,t') # transitions t and t' are "equivalent"
+         Z0(t,k,a,s) # [ OR { pre0(t,k,a) & mapf(t,k,mk) : mk } => -phi(k,s) ]
+         Z1(t,k,a,s) # [ OR { pre1(t,k,a) & mapf(t,k,mk) : mk } => phi(k,s) ]
+         X0(a,t,k,mk) # [ pre0(a,mk) & mapf(t,k,mk) ]
+         X1(a,t,k,mk) # [ pre1(a,mk) & mapf(t,k,mk) ]
+
 
     def constraits_layer0():
 
@@ -97,7 +133,7 @@ class BGLearner:
             """
             pass
 
-def constraits_layer1():
+    def constraits_layer1():
 
         def binding_transitions():
             """
@@ -158,7 +194,7 @@ def constraits_layer1():
             """
             pass
         
-        def staticpred_actarg():
+        def sync_groundatom_and_schema():
             """
             mf(t, k, m) ⇒ at(m, p) ⇔ gr(k, p) (48)
             mf(t, k, m) ∧ at(m, i, ν) ⇒ gr(k, i, o) (49)
@@ -166,7 +202,7 @@ def constraits_layer1():
             """
             pass
 
-        def precond_and_effect():
+        def exclusive_binding_statpred():
             """
             U(u, a, ν, o) ⇔ un(u, a, ν) ∧ ¬r(u, o) (51)
             B(b, a, ν, ν', o, o') ⇔ bin(b, a, ν, ν')∧ ¬s(b, o, o') (52)
@@ -174,7 +210,7 @@ def constraits_layer1():
             pass
 
 
-         def precond_and_effect():
+         def assoc_binding_transitions_pt1():
             """
             At-Most-1 {mt(t, ν, o) : o} (53)
             mp(t, a) ∧ arg(a, ν) ⇒ mt(t, ν, o) (54)
@@ -182,37 +218,37 @@ def constraits_layer1():
             """
             pass
 
-         def precond_and_effect():
+         def assoc_binding_transitions_pt2():
             """
             mf(t, k, m) ∧ at(m, i, ν) ⇒ W(t, k, i, ν) (56)
             W(t, k, i, ν) ⇒ gr(k, i, o) ⇔ mt(t, ν, o) (57)
             """
             pass
 
-         def precond_and_effect():
+         def nonexist_gtuple():
             """
             ¬gtuple(a, o¯) ⇒ ¬arg(a, νi) ∨ U(u, a, νi, oi) ∨ B(b, a, νi, νj , oi, oj ) (58)
             """
             pass
 
-         def precond_and_effect():
+         def exist_groundatom():
             """
             mp(t, a) ∧ mt(t, ν, o) ∧ un(u, a, ν) ⇒ r(u, o) (59)
             mp(t, a) ∧ mt(t, ν, o) ∧ mt(t, ν', o') ∧ bin(b, a, ν, ν') (60) ⇒ s(b, o, o') (61)
             """
             pass
 
-         def precond_and_effect():
+         def groundaction_tran_mandate():
             """
             gtuple(a, o¯) ⇒G(t, a, o¯) (62)
             G(t, a, o¯) ⇒ gtuple(a, o¯) (63)
             G(t, a, o¯) ⇒ mp(t, a) ∧ mt(t, νi, oi) ∧ arg(a, νi) ⇒ mt(t, νi, oi) (64)
-            At-Most-1 {G(t, a, o¯) : t.src = s} (65)
+            At-Most-1 {G(t, a, o¯) : t.src # s} (65)
             Exactly-1 {G(t, a, o¯) : a, o¯} (66)
             """
             pass
 
-         def precond_and_effect():
+         def app_actions_mandate():
             """
             G(t, a, o¯) ⇒ appl(a, o, t.src ¯ ) (67)
             appl(a, o, s  ) ⇒ G(t, a, o¯) (68)
