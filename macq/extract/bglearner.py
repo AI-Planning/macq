@@ -4,24 +4,124 @@ from collections import defaultdict
 from macq.extract import Model
 from attr import dataclass
 from bauhaus import Encoding, constraint, proposition
+from dataclasses import dataclass
 
-e = Encoding()
 
 class BGLearner:
-    """ max arity for atom schema
-        atom schemas: p0, p1, ...
-        max arity for action schema (defines meta-objects: mo0, mo1, ...)
-        action schemas: a0, a1, ...
-        meta-features: mk0, mk1, ...
-        num unary predicates: u0, u1, ... (unary preds)
-        num binary predicates: b0, b1, ... (binary preds)
-        """
 
     def __new__(
         cls,
         obs_lists: ObservationLists,
         max_hyper: int,   
     ):
+    
+     def __init__(self):
+        e = Encoding()
+
+        #decision propositions
+
+        @dataclass
+        @proposition(E)
+        class PRE0(Hashable):
+            m: int # atom name
+            a: str # action name
+
+            def __str__(self):
+                return f"pre0({self.a},{self.m})"
+
+        
+        @dataclass
+        @proposition(E)
+        class PRE1(Hashable):
+            m: str # atom name
+            a: str # action name
+
+            def __str__(self):
+                return f"pre1({self.a},{self.m})"
+
+        
+        @dataclass
+        @proposition(E)
+        class EFF0(Hashable):
+            m: str # atom name
+            a: str # action name
+
+            def __str__(self):
+                return f"eff0({self.a},{self.m})"
+
+        @dataclass
+        @proposition(E)
+        class EFF1(Hashable):
+            m: str # atom name
+            a: str # action name
+
+            def __str__(self):
+                return f"eff0({self.a},{self.m})"
+
+        
+        @dataclass
+        @proposition(E)
+        class LABEL(Hashable):
+            l: str # label name
+            a: str # action name
+
+            def __str__(self):
+                return f"label({self.a},{self.l})"
+
+        @dataclass
+        @proposition(E)
+        class ARITY(Hashable):
+            p: int # predicate id
+            a: str # action name
+
+            def __str__(self):
+                return f"arity({self.p},{self.l})"
+
+        @dataclass
+        @proposition(E)
+        class ATOM2(Hashable):
+            p: int # predicate ID
+            m: str # atom name
+
+            def __str__(self):
+                return f"atom2({self.m},{self.p})"
+
+        @dataclass
+        @proposition(E)
+        class ATOM3(Hashable):
+            v: int # argument num of action
+            m: str # atom name
+            i: int # argument num of atom
+
+
+            def __str__(self):
+                return f"atom3({self.m},{self.i},{self.v})" 
+
+        @dataclass
+        @proposition(E)
+        class UN(Hashable):
+            u: int # unary predicate
+            a: str # action name
+            v: int # argument num of action
+
+
+            def __str__(self):
+                return f"un({self.u},{self.a},{self.v})"   
+
+        @dataclass
+        @proposition(E)
+        class BIN(Hashable):
+            b: int # binary predicate
+            a: str # action name
+            v: int # argument num of action
+            v1: int # argument num of action
+
+
+            def __str__(self):
+                return f"un({self.b},{self.a},{self.v},{self.v1})"                
+
+
+        
 
     def proposition_layer0():
          pre0(a,mk) # meta-feature mk appears negated in precondition of action a
@@ -31,8 +131,8 @@ class BGLearner:
          label(a,l) # action a is mapped to label l
 
          arity(p,i) # atom p has arity i
-         atom(mk,p) # meta-feature mk is atom p
-         atom(mk,i,mo) # meta-object mo is mapped to i-th arg of meta-feature mk
+         atom2(mk,p) # meta-feature mk is atom p, arg2
+         atom3(mk,i,mo) # meta-object mo is mapped to i-th arg of meta-feature mk, arg3
          unary(u,a,mo) # action a uses static unary predicate u on argument mo
          binary(b,a,mo,mo') # action a uses static binary predicate b on arguments mo and mo'
          
