@@ -1,8 +1,5 @@
-
-from typing import List, Set
-from collections import defaultdict
+from typing import Hashable
 from macq.extract import Model
-from attr import dataclass
 from bauhaus import Encoding, constraint, proposition
 from dataclasses import dataclass
 from macq.observation import ObservationLists
@@ -12,12 +9,15 @@ class BGLearner:
     def __new__(
         cls,
         obs_lists: ObservationLists,
-        max_hyper: int,   
+        max_hyper: int  ,   
     ):
     
-     def __init__(self):
-        E = Encoding()
-        self.encode()
+        def __init__(self):
+            E = Encoding()
+            self.max_hyper = max_hyper
+            self.obs_lists= obs_lists
+            
+            self.encode()
 
         #decision propositions layer 0
     """
