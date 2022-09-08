@@ -16,15 +16,34 @@ class BGLearner:
     ):
     
      def __init__(self):
-        e = Encoding()
+        E = Encoding()
+        self.encode()
 
-        #decision propositions
+        #decision propositions layer 0
+    '''
+         pre0(a,mk) # meta-feature mk appears negated in precondition of action a
+         pre1(a,mk) # meta-feature mk appears positive in precondition of action a
+         eff0(a,mk) # meta-feature mk appears negated in effect of action a
+         eff1(a,mk) # meta-feature mk appears positive in effect of action a
+         label(a,l) # action a is mapped to label l
+
+         arity(p,i) # atom p has arity i
+         atom2(mk,p) # meta-feature mk is atom p, arg2
+        (mk,i,mo) # meta-object mo is mapped to i-th arg of meta-feature mk, arg3
+         unary(u,a,mo) # action a uses static unary predicate u on argument mo
+         binary(b,a,mo,mo') # action a uses static binary predicate b on arguments mo and mo
+         
+         args(a,mo) # meta-object mo is argument of action a
+         relevant(a,mo,mk,i) # using(a,mk) & atom(mk,i,mo)
+         using(mk) # meta-feature mk is used by some action
+         using(a,mk) # meta-feature mk is used by action a
+    '''
 
         @dataclass
         @proposition(E)
         class PRE0(Hashable):
             m: int # atom name
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
                 return f"pre0({self.a},{self.m})"
@@ -34,7 +53,7 @@ class BGLearner:
         @proposition(E)
         class PRE1(Hashable):
             m: str # atom name
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
                 return f"pre1({self.a},{self.m})"
@@ -44,7 +63,7 @@ class BGLearner:
         @proposition(E)
         class EFF0(Hashable):
             m: str # atom name
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
                 return f"eff0({self.a},{self.m})"
@@ -53,17 +72,17 @@ class BGLearner:
         @proposition(E)
         class EFF1(Hashable):
             m: str # atom name
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
-                return f"eff0({self.a},{self.m})"
+                return f"eff1({self.a},{self.m})"
 
         
         @dataclass
         @proposition(E)
         class LABEL(Hashable):
             l: str # label name
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
                 return f"label({self.a},{self.l})"
@@ -72,36 +91,36 @@ class BGLearner:
         @proposition(E)
         class ARITY(Hashable):
             p: int # predicate id
-            a: str # action name
+            a: str # action name 
 
             def __str__(self):
                 return f"arity({self.p},{self.l})"
 
         @dataclass
         @proposition(E)
-        class ATOM2(Hashable):
+        class AT2(Hashable):
             p: int # predicate ID
             m: str # atom name
 
             def __str__(self):
-                return f"atom2({self.m},{self.p})"
+                return f"at2({self.m},{self.p})"
 
         @dataclass
         @proposition(E)
-        class ATOM3(Hashable):
+        class AT3(Hashable):
             v: int # argument num of action
             m: str # atom name
             i: int # argument num of atom
 
 
             def __str__(self):
-                return f"atom3({self.m},{self.i},{self.v})" 
+                return f"at3({self.m},{self.i},{self.v})" 
 
         @dataclass
         @proposition(E)
         class UN(Hashable):
             u: int # unary predicate
-            a: str # action name
+            a: str # action name 
             v: int # argument num of action
 
 
@@ -112,36 +131,264 @@ class BGLearner:
         @proposition(E)
         class BIN(Hashable):
             b: int # binary predicate
-            a: str # action name
+            a: str # action name 
             v: int # argument num of action
             v1: int # argument num of action
 
 
             def __str__(self):
-                return f"un({self.b},{self.a},{self.v},{self.v1})"                
+                return f"bin({self.b},{self.a},{self.v},{self.v1})"                
 
+        #implied propositions layer 0
+        @dataclass
+        @proposition(E)
+        class USE1(Hashable):
+            m: str # atom name
+
+            def __str__(self):
+                return f"use1({self.m})" 
+
+        @dataclass
+        @proposition(E)
+        class USE2(Hashable):
+            m: str # atom name
+            a: str # action name 
+
+            def __str__(self):
+                return f"use2({self.a},{self.m})"
+
+        @dataclass
+        @proposition(E)
+        class ARG(Hashable):
+            v: int # argument num
+            a: str # action name 
+
+            def __str__(self):
+                return f"arg({self.a},{self.v})"
+
+        @dataclass
+        @proposition(E)
+        class ARGVAL(Hashable):
+            v: int # argument num
+            a: str # action name 
+            m: str # atom name
+            i: int # argument num of atom
+
+            def __str__(self):
+                return f"argval({self.a},{self.v},{self.m},{self.i})" 
 
         
+        #decision propositions instance layer
 
-    def proposition_layer0():
-         pre0(a,mk) # meta-feature mk appears negated in precondition of action a
-         pre1(a,mk) # meta-feature mk appears positive in precondition of action a
-         eff0(a,mk) # meta-feature mk appears negated in effect of action a
-         eff1(a,mk) # meta-feature mk appears positive in effect of action a
-         label(a,l) # action a is mapped to label l
+        @dataclass
+        @proposition(E)
+        class MP(Hashable):
+            a: str # action name 
+            t: str # transition name corresponding to edge
 
-         arity(p,i) # atom p has arity i
-         atom2(mk,p) # meta-feature mk is atom p, arg2
-         atom3(mk,i,mo) # meta-object mo is mapped to i-th arg of meta-feature mk, arg3
-         unary(u,a,mo) # action a uses static unary predicate u on argument mo
-         binary(b,a,mo,mo') # action a uses static binary predicate b on arguments mo and mo'
-         
-         args(a,mo) # meta-object mo is argument of action a
-         relevant(a,mo,mk,i) # using(a,mk) & atom(mk,i,mo)
-         using(mk) # meta-feature mk is used by some action
-         using(a,mk) # meta-feature mk is used by action a
+            def __str__(self):
+                return f"mp({self.t},{self.a})" 
 
-    def proposition_layer1():
+        @dataclass
+        @proposition(E)
+        class MF(Hashable):
+            m: str # atom name
+            k: str # ground atom name   
+            t: str # transition name corresponding to edge
+
+            def __str__(self):
+                return f"mf({self.t},{self.k},{self.m})" 
+
+        @dataclass
+        @proposition(E)
+        class PHI(Hashable):
+            k: str # ground atom name   
+            s: str # state name corresponding to node 
+
+            def __str__(self):
+                return f"phi({self.k},{self.s}" 
+
+        @dataclass
+        @proposition(E)
+        class GR2(Hashable):
+            k: str # ground atom name   
+            p: int # predicate ID
+            def __str__(self):
+                return f"gr({self.k},{self.p}" 
+        
+        @dataclass
+        @proposition(E)
+        class GR3(Hashable):
+            k: str # ground atom name   
+            i: int # argument num of atom
+            o: int # object id 
+            def __str__(self):
+                return f"gr({self.k},{self.p}"
+
+        @dataclass
+        @proposition(E)
+        class R(Hashable):
+            u: int # unary predicate
+            o: int # object id 
+            def __str__(self):
+                return f"r({self.u},{self.o}"       
+
+        @dataclass
+        @proposition(E)
+        class S(Hashable):
+            b: int # binary predicate
+            o: int # object id 
+            o1: int #object id 
+            def __str__(self):
+                return f"s({self.b},{self.o},{self.o1}"
+
+        @dataclass
+        @proposition(E)
+        class GTUPLE(Hashable):
+            a: str # action name 
+            o2: tuple # tuple of objects 
+            def __str__(self):
+                return f"gtuple({self.a},{self.o2}"
+        
+        @dataclass
+        @proposition(E)
+        class FREE(Hashable):
+            a: str # action name 
+            k: str # ground atom name   
+            t: str # transition name corresponding to edge
+            def __str__(self):
+                return f"free({self.k},{self.t},{self.a}"
+
+        @dataclass
+        @proposition(E)
+        class G(Hashable):
+            k: str # ground atom name   
+            s: str # state name corresponding to node 
+            s1: str # state name corresponding to node 
+
+            def __str__(self):
+                return f"g({self.k},{self.s},{self.s1}" 
+
+        @dataclass
+        @proposition(E)
+        class U(Hashable):
+            u: int # unary predicate
+            a: str # action name
+            v: int # argument num
+            o: int # object id
+
+            def __str__(self):
+                return f"u({self.u},{self.a},{self.v},{self.o}"
+
+        @dataclass
+        @proposition(E)
+        class B(Hashable):
+            b: int # binary predicate
+            a: str # action name
+            v: int # argument num
+            v1: int # argument num
+            o: int # object id
+            o1: int # object id
+
+            def __str__(self):
+                return f"b({self.b},{self.a},{self.v},{self.v1},{self.o},{self.o1}"         
+
+        @dataclass
+        @proposition(E)
+        class MT(Hashable):
+            t: str # transition name corresponding to edge
+            v: int # argument num
+            o: int # object id
+
+            def __str__(self):
+                return f"MT({self.t},{self.v},{self.o}" 
+
+        @dataclass
+        @proposition(E)
+        class W(Hashable):
+            t: str # transition name corresponding to edge
+            k: str # ground atom name  
+            i: int # argument num of atom
+            v: int # argument num
+
+            def __str__(self):
+                return f"w({self.t},{self.k},{self.i},{self.v}" 
+
+        @dataclass
+        @proposition(E)
+        class G(Hashable):
+            t: str # transition name corresponding to edge
+            a: str # action name
+            o2: tuple # tuple of objects
+
+            def __str__(self):
+                return f"g({self.t},{self.a},{self.o2}" 
+
+        @dataclass
+        @proposition(E)
+        class APP1(Hashable):
+            a: str # action name
+            s: str # state name corresponding to node
+            o2: tuple # tuple of objects 
+
+            def __str__(self):
+                return f"app1({self.a},{self.o2},{self.s}" 
+
+        @dataclass
+        @proposition(E)
+        class VIO0(Hashable):
+            a: str # action name
+            s: str # state name corresponding to node
+            o2: tuple # tuple of objects
+            k: str # ground atom name  
+
+            def __str__(self):
+                return f"vio0({self.a},{self.o2},{self.s},{self.k}" 
+
+        @dataclass
+        @proposition(E)
+        class VIO1(Hashable):
+            a: str # action name
+            s: str # state name corresponding to node
+            o2: tuple # tuple of objects
+            k: str # ground atom name  
+
+            def __str__(self):
+                return f"vio1({self.a},{self.o2},{self.s},{self.k}" 
+
+        @dataclass
+        @proposition(E)
+        class PRE0EQ(Hashable):
+            a: str # action name
+            m: str # atom name
+            o2: tuple # tuple of objects
+            k: str # ground atom name  
+
+            def __str__(self):
+                return f"pre0eq({self.a},{self.o2},{self.k},{self.m}" 
+
+        @dataclass
+        @proposition(E)
+        class PRE1EQ(Hashable):
+            a: str # action name
+            m: str # atom name
+            o2: tuple # tuple of objects
+            k: str # ground atom name  
+
+            def __str__(self):
+                return f"pre1eq({self.a},{self.o2},{self.k},{self.m}"
+
+        @dataclass
+        @proposition(E)
+        class EQ(Hashable):
+            m: str # atom name
+            o2: tuple # tuple of objects
+            k: str # ground atom name  
+
+            def __str__(self):
+                return f"eq({self.o2},{self.m},{self.k}"
+
+"""
          gr(k,p) # feature k is ground instance of atom p
          gr(k,i,o) # i-th arg of feature k is object o
          r(u,o) # tuple for static unary predicate u in layer l
@@ -163,7 +410,7 @@ class BGLearner:
          X0(a,t,k,mk) # [ pre0(a,mk) & mapf(t,k,mk) ]
          X1(a,t,k,mk) # [ pre1(a,mk) & mapf(t,k,mk) ]
 
-
+"""
     def constraits_layer0():
 
         def precond_and_effect():
