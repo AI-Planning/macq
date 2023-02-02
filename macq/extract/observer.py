@@ -3,11 +3,8 @@
 from typing import List, Set
 from collections import defaultdict
 
-from attr import dataclass
-from . import LearnedAction, Model
-from .exceptions import IncompatibleObservationToken
-from .model import Model
-from .learned_fluent import LearnedFluent
+from dataclasses import dataclass
+from . import LearnedAction, Model, LearnedFluent, IncompatibleObservationToken
 from ..observation import IdentityObservation, ObservationLists
 
 

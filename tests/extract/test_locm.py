@@ -24,11 +24,7 @@ def test_locm():
 
     observations = traces.tokenize(ActionObservation, percent_missing=0.5)
 
-    model = Extract(
-        observations,
-        modes.LOCM,
-        debug=False
-    )
+    model = Extract(observations, modes.LOCM, debug=False)
 
     assert model
 
@@ -41,7 +37,6 @@ def test_locm():
     model.to_pddl(
         "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
     )
-
 
 
 if __name__ == "__main__":

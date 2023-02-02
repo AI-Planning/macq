@@ -10,7 +10,7 @@ from .exceptions import (
     IncompatibleObservationToken,
     InvalidMaxSATModel,
 )
-from ..observation import PartialObservation as Observation, ObservationLists
+from ..observation import PartialObservation, ObservationLists
 from ..trace import Fluent, Action  # Action only used for typing
 from ..utils.pysat import to_wcnf, RC2, WCNF
 
@@ -98,7 +98,7 @@ class ARMS:
             plan_default (int):
                 The default weight for plan constraints with probability below the threshold.
         """
-        if obs_lists.type is not Observation:
+        if obs_lists.type is not PartialObservation:
             raise IncompatibleObservationToken(obs_lists.type, ARMS)
 
         if not (threshold >= 0 and threshold <= 1):
