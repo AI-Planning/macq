@@ -1,8 +1,6 @@
 from warnings import warn
 from typing import Set
-from ..utils import PercentError
 from ..trace import Step, Fluent
-from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 
 
@@ -12,7 +10,8 @@ class ActionObservation(Observation):
     """
 
     def __init__(
-        self, step: Step,
+        self,
+        step: Step,
     ):
         """
         Creates a PartialObservation object, storing the step.
@@ -38,40 +37,9 @@ class ActionObservation(Observation):
     def __eq__(self, other):
         return (
             isinstance(other, ActionObservation)
-            and self.state == None #
+            and self.state == None  #
             and self.action == other.action
         )
-
-    def hide_random_subset(self, step: Step, percent_missing: float):
-        """Hides a random subset of the fluents in the step.
-        Args:
-            step (Step):
-                The step to tokenize.
-            percent_missing (float):
-                The percentage of fluents to hide (0-1).
-        Returns:
-            A Step whose state is a PartialState with the random fluents hidden.
-        """
-        new_fluents = {}
-        hidden_f = self.extract_fluent_subset(step.state, percent_missing)
-        for f in step.state:
-            new_fluents[f] = None if f in hidden_f else step.state[f]
-        return Step(PartialState(new_fluents), step.action, step.index)
-
-    def hide_subset(self, step: Step, hide: Set[Fluent]):
-        """Hides the specified set of fluents in the observation.
-        Args:
-            step (Step):
-                The step to tokenize.
-            hide (Set[Fluent]):
-                The set of fluents that will be hidden.
-        Returns:
-            A Step whose state is a PartialState with the specified fluents hidden.
-        """
-        new_fluents = {}
-        for f in step.state.fluents:
-            new_fluents[f] = None if f in hide else step.state[f]
-        return Step(PartialState(new_fluents), step.action, step.index)
 
     def _matches(self, key: str, value: str):
         if key == "action":

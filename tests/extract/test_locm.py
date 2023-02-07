@@ -39,5 +39,45 @@ def test_locm():
     )
 
 
+def test_locm_phase1():
+    # open(c1); fetchjack(j,c1); fetchwrench(wr1,c1); close(c1);
+    objects = {
+        "c": PlanningObject("c", "c1"),
+        "j": PlanningObject("j", "j"),
+        "w": PlanningObject("w", "w1"),
+    }
+    fluents = {
+        "open": Fluent("open", [objects["c"]]),
+        "jin": Fluent("in c", [objects["j"], objects["c"]]),
+        "win": Fluent("in c", [objects["w"], objects["c"]]),
+    }
+    actions = {
+        "open": Action("open", [objects["c"]]),
+        "fetchj": Action("fetch_jack", [objects["j"], objects["c"]]),
+        "fetchw": Action("fetch_wrench", [objects["w"], objects["c"]]),
+        "close": Action("close", [objects["c"]]),
+    }
+    states = [
+        State({fluents["open"]: False, fluents["jin"]: True, fluents["win"]: True}),
+        State({fluents["open"]: True, fluents["jin"]: True, fluents["win"]: True}),
+        State({fluents["open"]: True, fluents["jin"]: False, fluents["win"]: True}),
+        State({fluents["open"]: True, fluents["jin"]: False, fluents["win"]: False}),
+        State({fluents["open"]: False, fluents["jin"]: False, fluents["win"]: False}),
+    ]
+    tracelist = TraceList(
+        [
+            Trace(
+                [
+                    Step(states[0], actions["open"], 1),
+                    Step(states[1], actions["fetchjack"], 2),
+                    Step(states[2], actions["fetchwrench"], 3),
+                    Step(states[3], actions["close"], 4),
+                    Step(states[4], None, 5),
+                ]
+            ),
+        ]
+    )
+
+
 if __name__ == "__main__":
     test_locm()
