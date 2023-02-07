@@ -4,7 +4,7 @@ from numpy import dot
 from random import random
 from typing import Callable, Type, Set, List
 from . import TraceList, Step, Action, PartialState, State
-from ..observation import Observation, ObservationLists
+from ..observation import Observation, ObservedTraceList
 
 
 @dataclass
@@ -95,7 +95,7 @@ def _decision(probability: float):
     return random() < probability
 
 
-class DisorderedParallelActionsObservationLists(ObservationLists):
+class DisorderedParallelActionsObservationLists(ObservedTraceList):
     """Alternate ObservationLists type that enforces appropriate actions to be disordered and/or parallel.
     Inherits the base ObservationLists class.
 

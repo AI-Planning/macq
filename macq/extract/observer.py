@@ -8,7 +8,7 @@ from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import IdentityObservation, ObservationLists
+from ..observation import IdentityObservation, ObservedTraceList
 
 
 @dataclass
@@ -32,7 +32,7 @@ class Observer:
     fluents that went from True to False.
     """
 
-    def __new__(cls, obs_lists: ObservationLists, debug: bool):
+    def __new__(cls, obs_tracelist: ObservedTraceList, debug: bool):
         """Creates a new Model object.
 
         Args:
@@ -42,19 +42,19 @@ class Observer:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if obs_lists.type is not IdentityObservation:
-            raise IncompatibleObservationToken(obs_lists.type, Observer)
-        fluents = Observer._get_fluents(obs_lists)
-        actions = Observer._get_actions(obs_lists)
+        if obs_tracelist.type is not IdentityObservation:
+            raise IncompatibleObservationToken(obs_tracelist.type, Observer)
+        fluents = Observer._get_fluents(obs_tracelist)
+        actions = Observer._get_actions(obs_tracelist)
         return Model(fluents, actions)
 
     @staticmethod
-    def _get_fluents(obs_lists: ObservationLists):
+    def _get_fluents(obs_tracelist: ObservedTraceList):
         """Retrieves the set of fluents in the observations."""
         fluents = set()
-        obs_list: List[IdentityObservation]
-        for obs_list in obs_lists:
-            for obs in obs_list:
+        obs_trace: List[IdentityObservation]
+        for obs_trace in obs_tracelist:
+            for obs in obs_trace:
                 # Update fluents with the fluents in this observation
                 fluents.update(
                     LearnedFluent(f.name, [o.details() for o in f.objects])
@@ -63,20 +63,20 @@ class Observer:
         return fluents
 
     @staticmethod
-    def _get_actions(obs_lists: ObservationLists):
+    def _get_actions(obs_tracelist: ObservedTraceList):
         """Retrieves and augments the set of actions in the observations."""
         # Get the unique actions and the relevant traces
         action_obs = defaultdict(list)
-        obs_list: List[IdentityObservation]
-        for obs_list in obs_lists:
-            for obs in obs_list:
+        obs_trace: List[IdentityObservation]
+        for obs_trace in obs_tracelist:
+            for obs in obs_trace:
                 action = obs.action
                 if action:  # Final step has no action
-                    action_obs[action].append(obs_list)
+                    action_obs[action].append(obs_trace)
 
         action_pre_states = defaultdict(set)
         # Get transitions for each action
-        action_transitions = obs_lists.get_all_transitions()
+        action_transitions = obs_tracelist.get_all_transitions()
         for action, transitions in action_transitions.items():
             # Create a LearnedAction for the current action
             model_action = LearnedAction(

@@ -11,7 +11,7 @@ from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import ActionObservation, ObservationLists
+from ..observation import ActionObservation, ObservedTraceList
 
 # rename ObservationLists -> ObservedTraceList
 #         ObservationList -> ObservedTrace
@@ -41,7 +41,7 @@ class OS:
 class LOCM:
     """LOCM"""
 
-    def __new__(cls, obs_tracelist: ObservationLists, debug: bool):
+    def __new__(cls, obs_tracelist: ObservedTraceList, debug: bool):
         """Creates a new Model object.
 
         Args:
@@ -60,9 +60,8 @@ class LOCM:
         return Model(fluents, actions)
 
     @staticmethod
-    def _phase1(obs_tracelist: ObservationLists):
+    def _phase1(obs_tracelist: ObservedTraceList):
         seq = obs_tracelist[0]
-        n = len(seq)
         ts = []
         os = []
         obj_state_ind = defaultdict(int)

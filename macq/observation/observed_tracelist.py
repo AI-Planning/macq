@@ -36,7 +36,7 @@ class TokenTypeMismatch(Exception):
         super().__init__(message)
 
 
-class ObservationLists(MutableSequence):
+class ObservedTraceList(MutableSequence):
     """A sequence of observations.
 
     A `list`-like object, where each element is a list of `Observation`s.
@@ -113,8 +113,8 @@ class ObservationLists(MutableSequence):
 
     def get_actions(self) -> Set[Action]:
         actions: Set[Action] = set()
-        for obs_list in self:
-            for obs in obs_list:
+        for obs_trace in self:
+            for obs in obs_trace:
                 action = obs.action
                 if action is not None:
                     actions.add(action)
@@ -122,8 +122,8 @@ class ObservationLists(MutableSequence):
 
     def get_fluents(self) -> Set[Fluent]:
         fluents: Set[Fluent] = set()
-        for obs_list in self:
-            for obs in obs_list:
+        for obs_trace in self:
+            for obs in obs_trace:
                 if obs.state:
                     fluents.update(list(obs.state.keys()))
         return fluents
@@ -135,9 +135,9 @@ class ObservationLists(MutableSequence):
 
     def fetch_observations(self, query: dict) -> List[Set[Observation]]:
         matches: List[Set[Observation]] = []
-        for i, obs_list in enumerate(self.observations):
+        for i, obs_trace in enumerate(self.observations):
             matches.append(set())
-            for obs in obs_list:
+            for obs in obs_trace:
                 if obs.matches(query):
                     matches[i].add(obs)
         return matches
@@ -191,25 +191,25 @@ class ObservationLists(MutableSequence):
             warn(f'Invalid view {view}. Defaulting to "details".')
             view = "details"
 
-        obs_lists = []
+        obs_tracelist = []
         if view == "details":
             if wrap is None:
                 wrap = False
-            obs_lists = [self._details(obs_list, wrap=wrap) for obs_list in self]
+            obs_tracelist = [self._details(obs_trace, wrap=wrap) for obs_trace in self]
 
         elif view == "color":
             if wrap is None:
                 wrap = True
-            obs_lists = [
-                self._colorgrid(obs_list, filter_func=filter_func, wrap=wrap)
-                for obs_list in self
+            obs_tracelist = [
+                self._colorgrid(obs_trace, filter_func=filter_func, wrap=wrap)
+                for obs_trace in self
             ]
 
-        for obs_list in obs_lists:
-            console.print(obs_list)
+        for obs_trace in obs_tracelist:
+            console.print(obs_trace)
             print()
 
-    def _details(self, obs_list: List[Observation], wrap: bool):
+    def _details(self, obs_trace: List[Observation], wrap: bool):
         indent = " " * 2
         # Summarize class attributes
         details = Table.grid(expand=True)
@@ -219,7 +219,7 @@ class ObservationLists(MutableSequence):
             cleandoc(
                 f"""
             Attributes:
-            {indent}{len(obs_list)} steps
+            {indent}{len(obs_trace)} steps
             {indent}{len(self.get_fluents())} fluents
             """
             )
@@ -237,7 +237,7 @@ class ObservationLists(MutableSequence):
         )
         steps.add_column("Action", overflow="ellipsis", no_wrap=(not wrap))
 
-        for obs in obs_list:
+        for obs in obs_trace:
             ind, state, action = obs.get_details()
             steps.add_row(ind, state, action)
 
@@ -246,7 +246,7 @@ class ObservationLists(MutableSequence):
         return details
 
     @staticmethod
-    def _colorgrid(obs_list: List[Observation], filter_func: Callable, wrap: bool):
+    def _colorgrid(obs_trace: List[Observation], filter_func: Callable, wrap: bool):
         colorgrid = Table(
             title="Trace", box=None, show_edge=False, pad_edge=False, expand=False
         )
@@ -258,18 +258,18 @@ class ObservationLists(MutableSequence):
             "",
             "".join(
                 [
-                    "|" if i < len(obs_list) and (i + 1) % 5 == 0 else " "
-                    for i in range(len(obs_list))
+                    "|" if i < len(obs_trace) and (i + 1) % 5 == 0 else " "
+                    for i in range(len(obs_trace))
                 ]
             ),
         )
 
-        static = ObservationLists.get_obs_static_fluents(obs_list)
+        static = ObservedTraceList.get_obs_static_fluents(obs_trace)
         fluents = list(
             filter(
                 filter_func,
                 sorted(
-                    ObservationLists.get_obs_fluents(obs_list),
+                    ObservedTraceList.get_obs_fluents(obs_trace),
                     key=lambda f: float("inf") if f in static else len(str(f)),
                 ),
             )
@@ -277,7 +277,7 @@ class ObservationLists(MutableSequence):
 
         for fluent in fluents:
             step_str = ""
-            for obs in obs_list:
+            for obs in obs_trace:
                 if obs.state and obs.state[fluent]:
                     step_str += "[green]"
                 else:
@@ -289,17 +289,17 @@ class ObservationLists(MutableSequence):
         return colorgrid
 
     @staticmethod
-    def get_obs_fluents(obs_list: List[Observation]):
+    def get_obs_fluents(obs_trace: List[Observation]):
         fluents = set()
-        for obs in obs_list:
+        for obs in obs_trace:
             if obs.state:
                 fluents.update(list(obs.state.keys()))
         return fluents
 
     @staticmethod
-    def get_obs_static_fluents(obs_list: List[Observation]):
+    def get_obs_static_fluents(obs_trace: List[Observation]):
         fstates = defaultdict(list)
-        for obs in obs_list:
+        for obs in obs_trace:
             if obs.state:
                 for f, v in obs.state.items():
                     fstates[f].append(v)

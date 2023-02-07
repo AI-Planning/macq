@@ -10,8 +10,8 @@ from .exceptions import (
     IncompatibleObservationToken,
     InvalidMaxSATModel,
 )
-from ..observation import PartialObservation, ObservationLists
-from ..trace import Fluent, Action  # Action only used for typing
+from ..observation import PartialObservation, ObservedTraceList
+from ..trace import Fluent, Action
 from ..utils.pysat import to_wcnf, RC2, WCNF
 
 
@@ -65,7 +65,7 @@ class ARMS:
 
     def __new__(
         cls,
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         debug: bool,
         upper_bound: int,
         min_support: int = 2,
@@ -77,7 +77,7 @@ class ARMS:
     ):
         """
         Arguments:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The observations to extract the model from.
             upper_bound (int):
                 The upper bound for the maximum size of an action's preconditions and
@@ -98,17 +98,17 @@ class ARMS:
             plan_default (int):
                 The default weight for plan constraints with probability below the threshold.
         """
-        if obs_lists.type is not PartialObservation:
-            raise IncompatibleObservationToken(obs_lists.type, ARMS)
+        if obs_tracelist.type is not PartialObservation:
+            raise IncompatibleObservationToken(obs_tracelist.type, ARMS)
 
         if not (threshold >= 0 and threshold <= 1):
             raise ARMS.InvalidThreshold(threshold)
 
-        fluents = obs_lists.get_fluents()
+        fluents = obs_tracelist.get_fluents()
         # get fluents from initial state
         # call algorithm to get actions
         actions = ARMS._arms(
-            obs_lists,
+            obs_tracelist,
             upper_bound,
             fluents,
             min_support,
@@ -134,7 +134,7 @@ class ARMS:
 
     @staticmethod
     def _arms(
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         upper_bound: int,
         fluents: Set[Fluent],
         min_support: int,
@@ -148,10 +148,10 @@ class ARMS:
         """The main driver for the ARMS algorithm."""
         learned_actions = set()  # The set of learned action models Θ
         # pointers to the earliest unlearned action for each observation list
-        early_actions = [0] * len(obs_lists)
+        early_actions = [0] * len(obs_tracelist)
 
         debug1 = ARMS.debug_menu("Debug step 1?") if debug else False
-        connected_actions, action_map = ARMS.step1(obs_lists, debug1)
+        connected_actions, action_map = ARMS.step1(obs_tracelist, debug1)
         if debug1:
             input("Press enter to continue...")
 
@@ -167,7 +167,12 @@ class ARMS:
 
             debug2 = ARMS.debug_menu("Debug step 2?") if debug else False
             constraints, relation_map = ARMS.step2(
-                obs_lists, connected_actions, action_map, fluents, min_support, debug2
+                obs_tracelist,
+                connected_actions,
+                action_map,
+                fluents,
+                min_support,
+                debug2,
             )
             if debug2:
                 input("Press enter to continue...")
@@ -204,9 +209,9 @@ class ARMS:
             # Progress observed states if early actions have been learned
             setA = set()
             for action in action_map_rev.keys():
-                for i, obs_list in enumerate(obs_lists):
-                    obs_action: Action = obs_list[early_actions[i]].action
-                    # if current action is the early action for obs_list i,
+                for i, obs_trace in enumerate(obs_tracelist):
+                    obs_action: Action = obs_trace[early_actions[i]].action
+                    # if current action is the early action for obs_trace i,
                     # update the next state with the effects and update the
                     # early action pointer
                     if obs_action in action_map and action == action_map[obs_action]:
@@ -214,18 +219,20 @@ class ARMS:
                         # Set add effects true
                         for add in action.add:
                             # get candidate fluents from add relation
-                            # get fluent by cross referencing obs_list.action params
+                            # get fluent by cross referencing obs_trace.action params
                             candidates = relation_map_rev[add]
                             for fluent in candidates:
                                 if set(fluent.objects).issubset(obs_action.obj_params):
-                                    obs_list[early_actions[i] + 1].state[fluent] = True
+                                    obs_trace[early_actions[i] + 1].state[fluent] = True
                                     early_actions[i] += 1
                         # Set del effects false
                         for delete in action.delete:
                             candidates = relation_map_rev[delete]
                             for fluent in candidates:
                                 if set(fluent.objects).issubset(obs_action.obj_params):
-                                    obs_list[early_actions[i] + 1].state[fluent] = False
+                                    obs_trace[early_actions[i] + 1].state[
+                                        fluent
+                                    ] = False
                                     early_actions[i] += 1
 
                 if debug:
@@ -268,7 +275,7 @@ class ARMS:
 
     @staticmethod
     def step1(
-        obs_lists: ObservationLists, debug: bool
+        obs_tracelist: ObservedTraceList, debug: bool
     ) -> Tuple[
         Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         Dict[Action, LearnedAction],
@@ -277,7 +284,7 @@ class ARMS:
 
         learned_actions: Set[LearnedAction] = set()
         action_map: Dict[Action, LearnedAction] = {}
-        for obs_action in obs_lists.get_actions():
+        for obs_action in obs_tracelist.get_actions():
             # We don't support objects with multiple types right now, so no
             # multiple type clauses need to be generated.
 
@@ -304,7 +311,7 @@ class ARMS:
 
     @staticmethod
     def step2(
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
         action_map: Dict[Action, LearnedAction],
         fluents: Set[Fluent],
@@ -343,12 +350,12 @@ class ARMS:
 
         debugi = ARMS.debug_menu("Debug info constraints?") if debug else False
         info_constraints, info_support_counts = ARMS.step2I(
-            obs_lists, relations, action_map, debugi
+            obs_tracelist, relations, action_map, debugi
         )
 
         debugp = ARMS.debug_menu("Debug plan constraints?") if debug else False
         plan_constraints = ARMS.step2P(
-            obs_lists,
+            obs_tracelist,
             connected_actions,
             action_map,
             set(relations.values()),
@@ -446,7 +453,7 @@ class ARMS:
 
     @staticmethod
     def step2I(
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         relations: Dict[Fluent, Relation],
         actions: Dict[Action, LearnedAction],
         debug: bool,
@@ -475,14 +482,14 @@ class ARMS:
             print("\nBuilding information constraints...")
         constraints: List[Or[Var]] = []
         support_counts: Dict[Or[Var], int] = defaultdict(int)
-        obs_list: List[Observation]
-        for obs_list_i, obs_list in enumerate(obs_lists):
-            for i, obs in enumerate(obs_list):
+        obs_trace: List[Observation]
+        for obs_trace_i, obs_trace in enumerate(obs_tracelist):
+            for i, obs in enumerate(obs_trace):
                 if obs.state is not None and i > 0:
                     n = i - 1
                     if debug:
                         print(
-                            f"\nStep {i} of observation list {obs_list_i} contains state information."
+                            f"\nStep {i} of observation list {obs_trace_i} contains state information."
                         )
                     for fluent, val in obs.state.items():
                         relation = relations[fluent]
@@ -492,13 +499,13 @@ class ARMS:
                                 print(
                                     f"  Fluent {fluent} is true.\n"
                                     f"    ({relation.var()})∈ ("
-                                    f"{' ∪ '.join([f'add_{{ {actions[obs_list[ik].action].details()} }}' for ik in range(0,n+1) if obs_list[ik].action in actions] )}"  # type: ignore
+                                    f"{' ∪ '.join([f'add_{{ {actions[obs_trace[ik].action].details()} }}' for ik in range(0,n+1) if obs_trace[ik].action in actions] )}"  # type: ignore
                                     ")"
                                 )
                             # I1
                             # relation in the add list of an action <= n (i-1)
                             i1: List[Var] = []
-                            for obs_i in obs_list[: i - 1]:
+                            for obs_i in obs_trace[: i - 1]:
                                 if obs_i.action in actions and obs_i.action is not None:
                                     ai = actions[obs_i.action]
                                     if relation.matches(ai):
@@ -511,7 +518,7 @@ class ARMS:
                             # I2
                             # relation not in del list of action n (i-1)
                             i2 = None
-                            a_n = obs_list[i - 1].action
+                            a_n = obs_trace[i - 1].action
                             if a_n in actions and a_n is not None:
                                 i2 = Var(
                                     f"{relation.var()} (BREAK) in (BREAK) del (BREAK) {actions[a_n].details()}"
@@ -525,7 +532,7 @@ class ARMS:
                             # I3
                             # count occurences
                             if (
-                                i < len(obs_list) - 1
+                                i < len(obs_trace) - 1
                                 and obs.action in actions
                                 and obs.action is not None  # for the linter
                                 and relation.matches(actions[obs.action])
@@ -602,7 +609,7 @@ class ARMS:
 
     @staticmethod
     def step2P(
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
         action_map: Dict[Action, LearnedAction],
         relations: Set[Relation],
@@ -647,10 +654,10 @@ class ARMS:
             [
                 [
                     action_map[obs.action]
-                    for obs in obs_list
+                    for obs in obs_trace
                     if obs.action is not None and obs.action in action_map
                 ]
-                for obs_list in obs_lists
+                for obs_trace in obs_tracelist
             ],
             min_support,
         )

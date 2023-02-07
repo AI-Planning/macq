@@ -1,5 +1,5 @@
 from .observation import Observation, InvalidQueryParameter
-from .observation_lists import ObservationLists
+from .observed_tracelist import ObservedTraceList
 from .identity_observation import IdentityObservation
 from .partial_observation import PartialObservation
 from .atomic_partial_observation import AtomicPartialObservation
@@ -13,7 +13,7 @@ from .noisy_partial_disordered_parallel_observation import (
 
 __all__ = [
     "Observation",
-    "ObservationLists",
+    "ObservedTraceList",
     "InvalidQueryParameter",
     "IdentityObservation",
     "PartialObservation",

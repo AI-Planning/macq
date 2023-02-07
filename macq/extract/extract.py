@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from ..trace import Action, State
-from ..observation import ObservationLists
+from ..observation import ObservedTraceList
 from .model import Model
 from .observer import Observer
 from .slaf import SLAF
@@ -40,7 +40,11 @@ class Extract:
     """
 
     def __new__(
-        cls, obs_lists: ObservationLists, mode: modes, debug: bool = False, **kwargs
+        cls,
+        obs_tracelist: ObservedTraceList,
+        mode: modes,
+        debug: bool = False,
+        **kwargs
     ) -> Model:
         """Extracts a Model object.
 
@@ -48,7 +52,7 @@ class Extract:
         technique.
 
         Args:
-            obs_lists (ObservationList):
+            obs_tracelist (ObservationList):
                 The state observations to extract the model from.
             mode (Enum):
                 The extraction technique to use.
@@ -67,7 +71,7 @@ class Extract:
             modes.LOCM: LOCM,
         }
         if mode == modes.SLAF:
-            if len(obs_lists) != 1:
+            if len(obs_tracelist) != 1:
                 raise Exception("The SLAF extraction technique only takes one trace.")
 
-        return techniques[mode](obs_lists, debug, **kwargs)
+        return techniques[mode](obs_tracelist, debug, **kwargs)

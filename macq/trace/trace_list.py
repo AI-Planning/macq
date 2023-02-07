@@ -5,7 +5,7 @@ from collections.abc import MutableSequence
 from rich.console import Console
 
 from . import Action, Trace
-from ..observation import Observation, ObservationLists
+from ..observation import Observation, ObservedTraceList
 
 
 class TraceList(MutableSequence):
@@ -122,7 +122,7 @@ class TraceList(MutableSequence):
     def tokenize(
         self,
         Token: Type[Observation],
-        ObsLists: Type[ObservationLists] = ObservationLists,
+        ObsLists: Type[ObservedTraceList] = ObservedTraceList,
         **kwargs,
     ):
         """Tokenizes the steps in this trace.

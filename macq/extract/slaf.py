@@ -7,7 +7,7 @@ from bauhaus import Encoding
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import AtomicPartialObservation, ObservationLists
+from ..observation import AtomicPartialObservation, ObservedTraceList
 
 # only used for pretty printing in debug mode
 e = Encoding()
@@ -40,7 +40,7 @@ class SLAF:
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservationLists, debug_mode: bool = False):
+    def __new__(cls, o_list: ObservedTraceList, debug_mode: bool = False):
         """Creates a new Model object.
 
         Args:
@@ -61,7 +61,7 @@ class SLAF:
         return SLAF.__sort_results(o_list, entailed)
 
     @staticmethod
-    def __get_initial_fluent_factored(o_list: ObservationLists):
+    def __get_initial_fluent_factored(o_list: ObservedTraceList):
         """Gets the initial fluent-factored formula of an observation/trace.
 
         Args:
@@ -151,7 +151,7 @@ class SLAF:
         return Or([maybe_lit]) if isinstance(maybe_lit, Var) else maybe_lit
 
     @staticmethod
-    def __sort_results(observations: ObservationLists, entailed: Set):
+    def __sort_results(observations: ObservedTraceList, entailed: Set):
         """Generates a `Model` given the set of entailed propositions.
 
         Args:
@@ -165,7 +165,7 @@ class SLAF:
         """
         learned_actions = {}
         model_fluents = observations.get_fluents()
-        
+
         # iterate through each step
         for o in observations:
             for token in o:
@@ -209,7 +209,7 @@ class SLAF:
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
-    def __as_strips_slaf(o_list: ObservationLists):
+    def __as_strips_slaf(o_list: ObservedTraceList):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
