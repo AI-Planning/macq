@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+from macq.extract.locm import LOCM
 from macq.trace import *
 from macq.extract import Extract, modes
 from macq.observation import ActionObservation
@@ -22,7 +23,7 @@ def test_locm():
 
     print(generator.traces.print())
 
-    observations = traces.tokenize(ActionObservation, percent_missing=0.5)
+    observations = traces.tokenize(ActionObservation)
 
     model = Extract(observations, modes.LOCM, debug=False)
 
@@ -39,12 +40,12 @@ def test_locm():
     )
 
 
-def test_locm_phase1():
+def get_example_obs(print_trace=False):
     # open(c1); fetchjack(j,c1); fetchwrench(wr1,c1); close(c1);
     objects = {
-        "c": PlanningObject("c", "c1"),
-        "j": PlanningObject("j", "j"),
-        "w": PlanningObject("w", "w1"),
+        "c": PlanningObject("container", "c1"),
+        "j": PlanningObject("jack", "j1"),
+        "w": PlanningObject("wrench", "w1"),
     }
     fluents = {
         "open": Fluent("open", [objects["c"]]),
@@ -64,13 +65,13 @@ def test_locm_phase1():
         State({fluents["open"]: True, fluents["jin"]: False, fluents["win"]: False}),
         State({fluents["open"]: False, fluents["jin"]: False, fluents["win"]: False}),
     ]
-    tracelist = TraceList(
+    traces = TraceList(
         [
             Trace(
                 [
                     Step(states[0], actions["open"], 1),
-                    Step(states[1], actions["fetchjack"], 2),
-                    Step(states[2], actions["fetchwrench"], 3),
+                    Step(states[1], actions["fetchj"], 2),
+                    Step(states[2], actions["fetchw"], 3),
                     Step(states[3], actions["close"], 4),
                     Step(states[4], None, 5),
                 ]
@@ -78,6 +79,18 @@ def test_locm_phase1():
         ]
     )
 
+    if print_trace:
+        traces.print()
+
+    obs = traces.tokenize(ActionObservation)[0]
+    return obs
+
+
+def test_locm_phase1():
+    obs = get_example_obs(True)
+    phase1 = LOCM._phase1(obs)
+    print(phase1)
+
 
 if __name__ == "__main__":
-    test_locm()
+    test_locm_phase1()
