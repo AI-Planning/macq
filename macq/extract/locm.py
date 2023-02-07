@@ -1,11 +1,15 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
+
 from typing import List, Set
 from collections import defaultdict
 
-from dataclasses import dataclass
-from . import LearnedAction, Model, LearnedFluent, IncompatibleObservationToken
-from ..observation import ObservationLists, ActionObservation
+from attr import dataclass
+from . import LearnedAction, Model
+from .exceptions import IncompatibleObservationToken
+from .model import Model
+from .learned_fluent import LearnedFluent
+from ..observation import ActionObservation, ObservationLists
 
 # rename ObservationLists -> ObservedTraceList
 #         ObservationList -> ObservedTrace
