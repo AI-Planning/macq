@@ -29,7 +29,7 @@ class AP:
 
 
 @dataclass
-class OS:
+class APState:
     """Object state"""
 
     ap: AP
