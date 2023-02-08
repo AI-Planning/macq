@@ -33,9 +33,8 @@ class APState:
     """Object state"""
 
     ap: AP
-    obj: PlanningObject
-    start: str
-    end: str
+    start: int
+    end: int
 
     def __hash__(self):
         # hash using only A.P to enforce assumption 5: the name of each action
