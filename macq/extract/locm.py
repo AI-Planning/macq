@@ -70,7 +70,7 @@ class LOCM:
             if action:
                 i = obs.index
                 for j, obj in enumerate(action.obj_params):
-                    ap = AP(action.name, j)
+                    ap = AP(action.name, j + 1)  # 1-indexed object position
                     # if ap already in ts, use start = prev.start
                     # === don't add to os?
                     os.append(
@@ -84,3 +84,5 @@ class LOCM:
                     ts.append(ap)
                     obj_state_ind[obj.obj_type] += 1
                     # missing assumption 5
+
+        return ts, os
