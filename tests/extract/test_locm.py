@@ -41,55 +41,101 @@ def test_locm():
 
 
 def get_example_obs(print_trace=False):
-    # open(c1); fetchjack(j,c1); fetchwrench(wr1,c1); close(c1);
+    """
+    open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
+    open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
+    open(c3); close(c3)
+    """
     objects = {
-        "c": PlanningObject("container", "c1"),
-        "j": PlanningObject("jack", "j1"),
-        "w": PlanningObject("wrench", "w1"),
+        "c1": PlanningObject("container", "c1"),
+        "c2": PlanningObject("container", "c2"),
+        "c3": PlanningObject("container", "c3"),
+        "j1": PlanningObject("jack", "j1"),
+        "j2": PlanningObject("jack", "j2"),
+        "wr1": PlanningObject("wrench", "wr1"),
+        "wr2": PlanningObject("wrench", "wr2"),
     }
     fluents = {
-        "open": Fluent("open", [objects["c"]]),
-        "jin": Fluent("in c", [objects["j"], objects["c"]]),
-        "win": Fluent("in c", [objects["w"], objects["c"]]),
+        "open1": Fluent("open", [objects["c1"]]),
+        "open2": Fluent("open", [objects["c2"]]),
+        "open3": Fluent("open", [objects["c3"]]),
+        "j1in": Fluent("in", [objects["j1"], objects["c1"]]),
+        "j2in": Fluent("in", [objects["j2"], objects["c1"]]),
+        "wr1in": Fluent("in", [objects["wr1"], objects["c1"]]),
+        "wr2in": Fluent("in", [objects["wr2"], objects["c1"]]),
     }
     actions = {
-        "open": Action("open", [objects["c"]]),
-        "fetchj": Action("fetch_jack", [objects["j"], objects["c"]]),
-        "fetchw": Action("fetch_wrench", [objects["w"], objects["c"]]),
-        "close": Action("close", [objects["c"]]),
+        "open1": Action("open", [objects["c1"]]),
+        "open2": Action("open", [objects["c2"]]),
+        "open3": Action("open", [objects["c3"]]),
+        "close1": Action("close", [objects["c1"]]),
+        "close2": Action("close", [objects["c2"]]),
+        "close3": Action("close", [objects["c3"]]),
+        "fetchj1": Action("fetch_jack", [objects["j1"], objects["c1"]]),
+        "fetchj2": Action("fetch_jack", [objects["j2"], objects["c2"]]),
+        "fetchwr1": Action("fetch_wrench", [objects["wr1"], objects["c1"]]),
+        "fetchwr2": Action("fetch_wrench", [objects["wr2"], objects["c2"]]),
     }
-    states = [
-        State({fluents["open"]: False, fluents["jin"]: True, fluents["win"]: True}),
-        State({fluents["open"]: True, fluents["jin"]: True, fluents["win"]: True}),
-        State({fluents["open"]: True, fluents["jin"]: False, fluents["win"]: True}),
-        State({fluents["open"]: True, fluents["jin"]: False, fluents["win"]: False}),
-        State({fluents["open"]: False, fluents["jin"]: False, fluents["win"]: False}),
+
+    # construct states, filling in false ones implicitly
+    """
+    open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
+    open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
+    open(c3); close(c3)
+    """
+    states_true = [
+        ["j1in", "j2in", "wr1in", "wr2in"],
+        ["open1", "j1in", "j2in", "wr1in", "wr2in"],
+        ["open1", "j2in", "wr1in", "wr2in"],
+        ["open1", "j2in", "wr2in"],
+        ["j2in", "wr2in"],
+        ["open2", "j2in", "wr2in"],
+        ["open2", "j2in"],
+        ["open2"],
+        [],
+        ["open3"],
+        [],
     ]
+    states = [
+        State({fluent: name in state_true for name, fluent in fluents.items()})
+        for state_true in states_true
+    ]
+
     traces = TraceList(
         [
             Trace(
                 [
-                    Step(states[0], actions["open"], 1),
-                    Step(states[1], actions["fetchj"], 2),
-                    Step(states[2], actions["fetchw"], 3),
-                    Step(states[3], actions["close"], 4),
-                    Step(states[4], None, 5),
+                    Step(states[0], actions["open1"], 1),
+                    Step(states[1], actions["fetchj1"], 2),
+                    Step(states[2], actions["fetchwr1"], 3),
+                    Step(states[3], actions["close1"], 4),
+                    Step(states[4], actions["open2"], 5),
+                    Step(states[5], actions["fetchwr2"], 6),
+                    Step(states[6], actions["fetchj2"], 7),
+                    Step(states[7], actions["close2"], 8),
+                    Step(states[8], actions["open3"], 9),
+                    Step(states[9], actions["close3"], 10),
+                    Step(states[10], None, 11),
                 ]
             ),
         ]
     )
 
     if print_trace:
-        traces.print()
+        traces.print("color")
 
-    obs = traces.tokenize(ActionObservation)[0]
+    obs = traces.tokenize(ActionObservation)
     return obs
 
 
 def test_locm_phase1():
+    from pprint import pprint
+
     obs = get_example_obs(True)
-    phase1 = LOCM._phase1(obs)
-    print(phase1)
+    ts, os = LOCM._phase1(obs)
+    pprint(ts)
+    print()
+    pprint(os)
 
 
 if __name__ == "__main__":
