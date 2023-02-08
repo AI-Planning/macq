@@ -4,7 +4,7 @@
 from typing import List, Set
 from collections import defaultdict
 
-from attr import dataclass
+from dataclasses import dataclass
 
 from macq.trace.fluent import PlanningObject
 from . import LearnedAction, Model
@@ -24,8 +24,8 @@ class AP:
     action_name: str
     pos: int
 
-    def __hash__(self) -> int:
-        return hash(self.action_name + str(self.pos) + str(self.start))
+    def __hash__(self):
+        return hash(self.action_name + str(self.pos))
 
 
 @dataclass
@@ -36,6 +36,9 @@ class OS:
     obj: PlanningObject
     start: str
     end: str
+
+    def __hash__(self):
+        return hash(str(hash(self.ap)) + self.start + self.end)
 
 
 class LOCM:
@@ -62,8 +65,9 @@ class LOCM:
     @staticmethod
     def _phase1(obs_tracelist: ObservedTraceList):
         seq = obs_tracelist[0]
-        ts = []
-        os = []
+        ts = set()
+        os = set()
+        os_objs = defaultdict(set)
         obj_state_ind = defaultdict(int)
         for obs in seq:
             action = obs.action
@@ -71,9 +75,8 @@ class LOCM:
                 i = obs.index
                 for j, obj in enumerate(action.obj_params):
                     ap = AP(action.name, j + 1)  # 1-indexed object position
-                    # if ap already in ts, use start = prev.start
-                    # === don't add to os?
-                    os.append(
+                    # os.append(
+                    os_objs[obj].add(
                         OS(
                             ap,
                             obj,
@@ -81,8 +84,26 @@ class LOCM:
                             f"{obj.obj_type}state{str(obj_state_ind[obj.obj_type] + 1)}",
                         )
                     )
-                    ts.append(ap)
+                    ts.add(ap)
                     obj_state_ind[obj.obj_type] += 1
-                    # missing assumption 5
+
+        for obj in os_objs:
+            actions = set()
+            remove = set()
+            for t in os_objs[obj]:
+                if t.ap in actions:
+                    remove.add(t.ap)
+                else:
+                    actions.add(t.ap)
+            for ap in remove:
+                os_objs[obj].remove(ap)
+
+        # >>>>>>>>>>>>>>>>>>>>>>>
+        from IPython import embed
+
+        embed()
+        # >>>>>>>>>>>>>>>>>>>>>>>
+
+        os = {t for obj in os_objs for t in os_objs[obj]}
 
         return ts, os
