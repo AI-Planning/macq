@@ -38,7 +38,10 @@ class OS:
     end: str
 
     def __hash__(self):
-        return hash(str(hash(self.ap)) + self.start + self.end)
+        # hash using only A.P to enforce assumption 5: the name of each action
+        # restricted to any of its transitions forms a 1-1 map between object
+        # states
+        return hash(self.ap)
 
 
 class LOCM:
