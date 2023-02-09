@@ -1,20 +1,16 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
 
-from typing import List, Set
+from typing import Dict
 from collections import defaultdict
 
 from dataclasses import dataclass
 
-from macq.trace.fluent import PlanningObject
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .model import Model
 from .learned_fluent import LearnedFluent
 from ..observation import ActionObservation, ObservedTraceList
-
-# rename ObservationLists -> ObservedTraceList
-#         ObservationList -> ObservedTrace
 
 
 @dataclass
@@ -30,23 +26,16 @@ class AP:
 
 @dataclass
 class APState:
-    """Object state"""
+    """Object state identifiers"""
 
-    ap: AP
     start: int
     end: int
-
-    def __hash__(self):
-        # hash using only A.P to enforce assumption 5: the name of each action
-        # restricted to any of its transitions forms a 1-1 map between object
-        # states
-        return hash(self.ap)
 
 
 class LOCM:
     """LOCM"""
 
-    def __new__(cls, obs_tracelist: ObservedTraceList, debug: bool):
+    def __new__(cls, obs_tracelist: ObservedTraceList):
         """Creates a new Model object.
 
         Args:
@@ -67,45 +56,38 @@ class LOCM:
     @staticmethod
     def _phase1(obs_tracelist: ObservedTraceList):
         seq = obs_tracelist[0]
+
+        # initialize state set OS and transition set TS to empty
         ts = set()
-        os = set()
-        os_objs = defaultdict(set)
-        obj_state_ind = defaultdict(int)
+
+        # making OS a dict with AP as key enforces assumption 5
+        # (transitions are 1-1 with respect to same action for a given object sort)
+        os: Dict[AP, APState] = {}
+
+        ts_objs = defaultdict(list)
+
+        # for actions occurring in seq
         for obs in seq:
+            i = obs.index
             action = obs.action
-            if action:
-                i = obs.index
+            if action is not None:
+                # for each combination of action name A and argument pos P
                 for j, obj in enumerate(action.obj_params):
-                    ap = AP(action.name, j + 1)  # 1-indexed object position
-                    # os.append(
-                    os_objs[obj].add(
-                        OS(
-                            ap,
-                            obj,
-                            f"{obj.obj_type}state{str(obj_state_ind[obj.obj_type])}",
-                            f"{obj.obj_type}state{str(obj_state_ind[obj.obj_type] + 1)}",
-                        )
-                    )
-                    ts.add(ap)
-                    obj_state_ind[obj.obj_type] += 1
+                    # create transition A.P
+                    ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
+                    # add state identifiers start(A.P) and end(A.P) to OS
+                    os[ap] = APState(i, i + 1)
+                    # add A.P to the transition set TS
+                    # + collect the set of objects in seq
+                    ts_objs[obj].append(ap)
 
-        for obj in os_objs:
-            actions = set()
-            remove = set()
-            for t in os_objs[obj]:
-                if t.ap in actions:
-                    remove.add(t.ap)
-                else:
-                    actions.add(t.ap)
-            for ap in remove:
-                os_objs[obj].remove(ap)
+        # for each object
+        for obj, trans in ts_objs.items():
+            # for each pair of transitions consectutive for obj
+            for t1, t2 in zip(trans, trans[1:]):
+                # unify states end(t1) and start(t2) in set OS
+                os[t2].end = os[t1].start
 
-        # >>>>>>>>>>>>>>>>>>>>>>>
-        from IPython import embed
-
-        embed()
-        # >>>>>>>>>>>>>>>>>>>>>>>
-
-        os = {t for obj in os_objs for t in os_objs[obj]}
-
+        # retrieve and flatten set of all transitions
+        ts = set(sum(list(ts_objs.values()), []))
         return ts, os
