@@ -37,7 +37,6 @@ class LOCM:
 
     def __new__(cls, obs_tracelist: ObservedTraceList):
         """Creates a new Model object.
-
         Args:
             observations (ObservationList):
                 The state observations to extract the model from.
