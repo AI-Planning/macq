@@ -31,11 +31,19 @@ class APState:
     start: int
     end: int
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, APState):
+            return self.start == other.start and self.end == other.end
+        return False
+
+    def __hash__(self) -> int:
+        return hash((self.start, self.end))
+
 
 class LOCM:
     """LOCM"""
 
-    def __new__(cls, obs_tracelist: ObservedTraceList):
+    def __new__(cls, obs_tracelist: ObservedTraceList, viz=False):
         """Creates a new Model object.
         Args:
             observations (ObservationList):
@@ -48,7 +56,11 @@ class LOCM:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
         fluents, actions = None, None
-        state_machines = LOCM._phase1(obs_tracelist)
+        transitions, obj_states = LOCM._phase1(obs_tracelist)
+
+        if viz:
+            graph = LOCM.viz_state_machines(obj_states)
+            graph.render(view=True)  # type: ignore
 
         return Model(fluents, actions)
 
@@ -57,13 +69,10 @@ class LOCM:
         seq = obs_tracelist[0]
 
         # initialize state set OS and transition set TS to empty
-        ts = set()
-
+        ts = defaultdict(list)
         # making OS a dict with AP as key enforces assumption 5
         # (transitions are 1-1 with respect to same action for a given object sort)
         os: Dict[AP, APState] = {}
-
-        ts_objs = defaultdict(list)
 
         # for actions occurring in seq
         for obs in seq:
@@ -78,15 +87,34 @@ class LOCM:
                     os[ap] = APState(i, i + 1)
                     # add A.P to the transition set TS
                     # + collect the set of objects in seq
-                    ts_objs[obj].append(ap)
+                    ts[obj].append(ap)
 
         # for each object
-        for obj, trans in ts_objs.items():
+        for obj, trans in ts.items():
             # for each pair of transitions consectutive for obj
             for t1, t2 in zip(trans, trans[1:]):
                 # unify states end(t1) and start(t2) in set OS
                 os[t2].end = os[t1].start
 
-        # retrieve and flatten set of all transitions
-        ts = set(sum(list(ts_objs.values()), []))
-        return ts, os
+        return dict(ts), os
+
+    @staticmethod
+    def viz_state_machines(os: Dict[AP, APState]):
+        from graphviz import Digraph
+
+        graph = Digraph("LOCM-phase1")
+
+        states = set(os.values())
+
+        for i, state in enumerate(states):
+            graph.node(i, label="state")
+
+            """
+            graph.node(
+                node_id,
+                label=node.value,
+                shape="triangle" if is_alpha else "invtriangle",
+                color=color,
+            )
+            graph.edge(node_id, str(id(node.left)), color=color)
+            """
