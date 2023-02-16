@@ -147,6 +147,17 @@ def test_locm_phase2():
     pprint(os)
 
 
+def test_locm_get_sorts():
+    from pprint import pprint
+
+    obs = get_example_obs(False)
+    ts, os = LOCM._phase1(obs)
+    pprint(ts)
+    print()
+    pprint(os)
+
+
 if __name__ == "__main__":
+    test_locm_get_sorts()
     test_locm_phase1()
     test_locm_phase2()

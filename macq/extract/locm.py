@@ -1,10 +1,12 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
 
-from typing import Dict
+from typing import Dict, List
 from collections import defaultdict
 
 from dataclasses import dataclass
+
+from macq.trace.fluent import PlanningObject
 
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
@@ -56,6 +58,8 @@ class LOCM:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
         fluents, actions = None, None
+
+        sorts = LOCM._get_sorts(obs_tracelist)
         transitions, obj_states = LOCM._phase1(obs_tracelist)
 
         if viz:
@@ -63,6 +67,50 @@ class LOCM:
             graph.render(view=True)  # type: ignore
 
         return Model(fluents, actions)
+
+    @staticmethod
+    def _get_sorts(obs_tracelist: ObservedTraceList):
+        """Given 2 distinct steps (i & j), if action i = action j
+        their list of objects contain the same sorts in the same order
+
+        e.g. open(c1) + open(c2) = c1 and c2 are the same sort
+
+        fetch_jack(j1, c1) ... j's are the same sort AND cs are the same
+
+        need to track what idxs belong to action name
+
+        returns [
+                sets containing all objects belonging to sort i
+                ]
+        """
+
+        sorts = []
+        for obs_trace in obs_tracelist:
+            seq_sorts = []  # initialize list of sorts for this trace
+            seen_actions = {}
+            for obs in obs_trace:
+                action = obs.action
+                if action is not None:
+                    if action.name in seen_actions:
+                        for sort_idx, obj in zip(
+                            seen_actions[action.name], action.obj_params
+                        ):
+                            seq_sorts[sort_idx].add(obj)
+                    else:  # if we haven't seen this action yet
+                        idxs = []
+                        prev_end = len(seq_sorts) - 1
+                        for i, obj in enumerate(action.obj_params):
+                            seq_sorts.append(
+                                {obj}
+                            )  # add a set to the list of sorts for each object
+                            idxs.append(
+                                prev_end + i + 1
+                            )  # track what indexes correspond to this action
+                        seen_actions[action.name] = idxs
+
+            sorts.append(seq_sorts)
+
+        return sorts
 
     @staticmethod
     def _phase1(obs_tracelist: ObservedTraceList):
@@ -134,22 +182,18 @@ class LOCM:
         return ts, os
 
     @staticmethod
-    def viz_state_machines(os: Dict[AP, APState]):
+    def viz_state_machines(ts: Dict[PlanningObject, List[AP]], os: Dict[AP, APState]):
         from graphviz import Digraph
 
-        graph = Digraph("LOCM-phase1")
+        state_machines = []
 
-        states = set(os.values())
+        for obj, trans in ts.items():
+            graph = Digraph(f"LOCM-phase1-{obj.name}")
+            for i, ap in enumerate(trans):
+                graph.node(str(i), label=f"{obj.name}state{i}", shape="oval")
+                if i > 0:
+                    graph.edge(str(i), str(i - 1))
 
-        for i, state in enumerate(states):
-            graph.node(i, label="state")
+            state_machines.append(graph)
 
-            """
-            graph.node(
-                node_id,
-                label=node.value,
-                shape="triangle" if is_alpha else "invtriangle",
-                color=color,
-            )
-            graph.edge(node_id, str(id(node.left)), color=color)
-            """
+        return state_machines
