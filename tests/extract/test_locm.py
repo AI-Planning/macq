@@ -128,6 +128,15 @@ def get_example_obs(print_trace=False):
     return obs
 
 
+def test_locm_get_sorts():
+    from pprint import pprint
+
+    obs = get_example_obs(False)
+    sorts = LOCM._get_sorts(obs)
+    pprint(sorts)
+    print()
+
+
 def test_locm_phase1():
     from pprint import pprint
 
@@ -137,21 +146,12 @@ def test_locm_phase1():
     print()
     pprint(os)
 
+
 def test_locm_phase2():
     from pprint import pprint
 
     obs = get_example_obs(True)
     ts, os = LOCM._phase2(obs)
-    pprint(ts)
-    print()
-    pprint(os)
-
-
-def test_locm_get_sorts():
-    from pprint import pprint
-
-    obs = get_example_obs(False)
-    ts, os = LOCM._phase1(obs)
     pprint(ts)
     print()
     pprint(os)

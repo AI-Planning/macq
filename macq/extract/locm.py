@@ -91,7 +91,11 @@ class LOCM:
             for obs in obs_trace:
                 action = obs.action
                 if action is not None:
+                    print("=" * 80)
+                    print(action.name)
+                    print(f"seen actions: {seen_actions}")
                     if action.name in seen_actions:
+                        print("seen")
                         for sort_idx, obj in zip(
                             seen_actions[action.name], action.obj_params
                         ):
@@ -100,12 +104,10 @@ class LOCM:
                         idxs = []
                         prev_end = len(seq_sorts) - 1
                         for i, obj in enumerate(action.obj_params):
-                            seq_sorts.append(
-                                {obj}
-                            )  # add a set to the list of sorts for each object
-                            idxs.append(
-                                prev_end + i + 1
-                            )  # track what indexes correspond to this action
+                            # add a set to the list of sorts for each object
+                            seq_sorts.append({obj})
+                            # track what indexes correspond to this action
+                            idxs.append(prev_end + i + 1)
                         seen_actions[action.name] = idxs
 
             sorts.append(seq_sorts)
