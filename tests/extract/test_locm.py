@@ -137,6 +137,16 @@ def test_locm_phase1():
     print()
     pprint(os)
 
+def test_locm_phase2():
+    from pprint import pprint
+
+    obs = get_example_obs(True)
+    ts, os = LOCM._phase2(obs)
+    pprint(ts)
+    print()
+    pprint(os)
+
 
 if __name__ == "__main__":
     test_locm_phase1()
+    test_locm_phase2()
