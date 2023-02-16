@@ -60,6 +60,7 @@ class LOCM:
         fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_tracelist)
+        # TODO: use sorts in phase 1
         transitions, obj_states = LOCM._phase1(obs_tracelist)
 
         if viz:
@@ -73,43 +74,95 @@ class LOCM:
         """Given 2 distinct steps (i & j), if action i = action j
         their list of objects contain the same sorts in the same order
 
-        e.g. open(c1) + open(c2) = c1 and c2 are the same sort
 
-        fetch_jack(j1, c1) ... j's are the same sort AND cs are the same
+        Example 1:
+            open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
+            fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3)
 
-        need to track what idxs belong to action name
+            This trace is composed of 3 sorts {c1, c2, c3}, {wr1, wr2}, {j1,j2}.
 
-        returns [
-                sets containing all objects belonging to sort i
-                ]
+        Extension:
+            open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
+            fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3);
+            close(wr1);
+
+            In this case, the final action close(wr1) would unite the container
+            and wrench sorts into one. Therefore the trace is composed of 2
+            sorts {c1, c2, c3, wr1, wr2}, {j1,j2}.
         """
 
         sorts = []
         for obs_trace in obs_tracelist:
             seq_sorts = []  # initialize list of sorts for this trace
-            seen_actions = {}
+            # track actions seen in the trace, and the sort each actions params belong to
+            seen_actions: Dict[str, List[int]] = {}
+            # track objects seen in the trace, and the sort each belongs to
+            seen_objs: Dict[str, int] = {}
+
             for obs in obs_trace:
                 action = obs.action
                 if action is not None:
-                    print("=" * 80)
-                    print(action.name)
-                    print(f"seen actions: {seen_actions}")
-                    if action.name in seen_actions:
-                        print("seen")
-                        for sort_idx, obj in zip(
-                            seen_actions[action.name], action.obj_params
-                        ):
-                            seq_sorts[sort_idx].add(obj)
-                    else:  # if we haven't seen this action yet
-                        idxs = []
-                        prev_end = len(seq_sorts) - 1
-                        for i, obj in enumerate(action.obj_params):
-                            # add a set to the list of sorts for each object
-                            seq_sorts.append({obj})
-                            # track what indexes correspond to this action
-                            idxs.append(prev_end + i + 1)
+
+                    if action.name not in seen_actions:  # new action
+                        idxs = []  # idxs[i] stores the sort of action param i
+                        # for each parameter of the action
+                        for obj in action.obj_params:
+
+                            if obj.name not in seen_objs:  # new object
+                                # append a sort (set) containing the object
+                                seq_sorts.append({obj})
+                                # record the object has been seen and the index of the sort it belongs to
+                                obj_sort_idx = len(seq_sorts) - 1
+                                seen_objs[obj.name] = obj_sort_idx
+                                idxs.append(obj_sort_idx)
+
+                            else:  # object already has a sort, don't append a new one
+                                # look up the sort of the object
+                                idxs.append(seen_objs[obj.name])
+
+                        # record the index of the sort of the action's parameters
                         seen_actions[action.name] = idxs
 
+                    else:  # action seen before
+
+                        for action_sort_idx, obj in zip(
+                            seen_actions[action.name], action.obj_params
+                        ):
+                            # action_sort_idx -> sort of current action parameter
+                            # obj -> object that is action parameter ap
+
+                            if obj.name not in seen_objs:  # new object
+                                # add the object to the sort of current action parameter
+                                seq_sorts[action_sort_idx].add(obj)
+
+                            else:  # object already has a sort
+                                # retrieve the sort the object belongs to
+                                obj_sort_idx = seen_objs[obj.name]
+
+                                # check if the object's sort matches the action paremeter's
+                                # if so, do nothing and move on to next step
+                                if obj_sort_idx != action_sort_idx:  # else
+                                    # unite the action parameter's sort and the object's sort
+                                    seq_sorts[action_sort_idx] = seq_sorts[
+                                        action_sort_idx
+                                    ].union(seq_sorts[obj_sort_idx])
+
+                                    # drop the not unionized sort
+                                    seq_sorts.pop(obj_sort_idx)
+
+                                    # update all outdated records of which sort the affected objects belong to
+
+                                    for action_name, idxs in seen_actions.items():
+                                        for i, idx in enumerate(idxs):
+                                            if idx == obj_sort_idx:
+                                                seen_actions[action_name][
+                                                    i
+                                                ] = action_sort_idx
+
+                                    for seen_obj, idx in seen_objs.items():
+                                        if idx == obj_sort_idx:
+                                            seen_objs[seen_obj] = action_sort_idx
+            # end
             sorts.append(seq_sorts)
 
         return sorts

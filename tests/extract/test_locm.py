@@ -75,6 +75,7 @@ def get_example_obs(print_trace=False):
         "fetchj2": Action("fetch_jack", [objects["j2"], objects["c2"]]),
         "fetchwr1": Action("fetch_wrench", [objects["wr1"], objects["c1"]]),
         "fetchwr2": Action("fetch_wrench", [objects["wr2"], objects["c2"]]),
+        "closewr": Action("close", [objects["wr1"]]),
     }
 
     # construct states, filling in false ones implicitly
@@ -94,6 +95,7 @@ def get_example_obs(print_trace=False):
         ["open2"],
         [],
         ["open3"],
+        [],
         [],
     ]
     states = [
@@ -116,13 +118,16 @@ def get_example_obs(print_trace=False):
                     Step(states[8], actions["open3"], 9),
                     Step(states[9], actions["close3"], 10),
                     Step(states[10], None, 11),
+                    # Step(states[10], actions["closewr"], 11),
+                    # Step(states[11], None, 12),
                 ]
             ),
         ]
     )
 
     if print_trace:
-        traces.print("color")
+        traces.print()
+        # traces.print("color")
 
     obs = traces.tokenize(ActionObservation)
     return obs
@@ -131,8 +136,10 @@ def get_example_obs(print_trace=False):
 def test_locm_get_sorts():
     from pprint import pprint
 
-    obs = get_example_obs(False)
+    obs = get_example_obs(True)
     sorts = LOCM._get_sorts(obs)
+    print()
+    print()
     pprint(sorts)
     print()
 
@@ -159,5 +166,5 @@ def test_locm_phase2():
 
 if __name__ == "__main__":
     test_locm_get_sorts()
-    test_locm_phase1()
-    test_locm_phase2()
+    # test_locm_phase1()
+    # test_locm_phase2()
