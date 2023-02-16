@@ -117,7 +117,7 @@ class LOCM:
                     ap = AP(action.name, pos=0)
                     os[ap] = APState(i, i + 1)
                     ts.append(ap)
-                
+
                     unique_actions.add(action.name)
 
         # for each pair of transitions consectutive for obj
@@ -128,8 +128,8 @@ class LOCM:
         if len(os) == 1:
             # For Muise:
             # Are we expecting an empty finite state here?
-            # ---> why is is not length one 
-            # ---> is the equate proper 
+            # ---> why is is not length one
+            # ---> is the equate proper
             return None, None
         return ts, os
 
