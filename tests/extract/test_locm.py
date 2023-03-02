@@ -140,6 +140,7 @@ def test_locm_get_sorts():
     sorts = LOCM._get_sorts(obs)
     print()
     print()
+    print("sorts:")
     pprint(sorts)
     print()
 
@@ -147,10 +148,13 @@ def test_locm_get_sorts():
 def test_locm_phase1():
     from pprint import pprint
 
-    obs = get_example_obs(True)
-    ts, os = LOCM._phase1(obs)
-    pprint(ts)
+    obs = get_example_obs(False)
+    sorts = LOCM._get_sorts(obs)
+    ts, os = LOCM._phase1(obs, sorts)
+    # print("ts:")
+    # pprint(ts)
     print()
+    print("os:")
     pprint(os)
 
 
@@ -166,5 +170,5 @@ def test_locm_phase2():
 
 if __name__ == "__main__":
     test_locm_get_sorts()
-    # test_locm_phase1()
+    test_locm_phase1()
     # test_locm_phase2()

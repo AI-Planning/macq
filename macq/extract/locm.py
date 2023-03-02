@@ -1,6 +1,7 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
 
+from pprint import pprint
 from typing import Dict, List
 from collections import defaultdict
 
@@ -61,7 +62,7 @@ class LOCM:
 
         sorts = LOCM._get_sorts(obs_tracelist)
         # TODO: use sorts in phase 1
-        transitions, obj_states = LOCM._phase1(obs_tracelist)
+        transitions, obj_states = LOCM._phase1(obs_tracelist, sorts)
 
         if viz:
             graph = LOCM.viz_state_machines(obj_states)
@@ -70,7 +71,7 @@ class LOCM:
         return Model(fluents, actions)
 
     @staticmethod
-    def _get_sorts(obs_tracelist: ObservedTraceList):
+    def _get_sorts(obs_tracelist: ObservedTraceList) -> List[Dict[str, int]]:
         """Given 2 distinct steps (i & j), if action i = action j
         their list of objects contain the same sorts in the same order
 
@@ -165,11 +166,20 @@ class LOCM:
             # end
             sorts.append(seq_sorts)
 
-        return sorts
+        obj_sorts_list = []
+        for seq_sorts in sorts:
+            obj_sorts = {}
+            for i, sort in enumerate(seq_sorts):
+                for obj in sort:
+                    obj_sorts[obj.name] = i
+            obj_sorts_list.append(obj_sorts)
+
+        return obj_sorts_list
 
     @staticmethod
-    def _phase1(obs_tracelist: ObservedTraceList):
+    def _phase1(obs_tracelist: ObservedTraceList, sorts_list: List[Dict[str, int]]):
         seq = obs_tracelist[0]
+        sorts = sorts_list[0]
 
         # initialize state set OS and transition set TS to empty
         ts = defaultdict(list)
@@ -177,21 +187,28 @@ class LOCM:
         # (transitions are 1-1 with respect to same action for a given object sort)
         os: Dict[AP, APState] = {}
 
+        obj_seen: Dict[int, int] = defaultdict(lambda: 1)
+
         # for actions occurring in seq
         for obs in seq:
             i = obs.index
+            print()
             action = obs.action
             if action is not None:
                 # for each combination of action name A and argument pos P
                 for j, obj in enumerate(action.obj_params):
+                    cur_seen = obj_seen[sorts[obj.name]]
                     # create transition A.P
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
                     # add state identifiers start(A.P) and end(A.P) to OS
-                    os[ap] = APState(i, i + 1)
+                    os[ap] = APState(cur_seen, cur_seen + 1)
                     # add A.P to the transition set TS
                     # + collect the set of objects in seq
-                    ts[obj].append(ap)
+                    ts[sorts[obj.name]].append(ap)
 
+                    obj_seen[sorts[obj.name]] += 2
+
+        return dict(ts), os
         # for each object
         for obj, trans in ts.items():
             # for each pair of transitions consectutive for obj
