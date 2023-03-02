@@ -189,17 +189,69 @@ class LOCM:
 
         obj_seen: Dict[int, int] = defaultdict(lambda: 1)
 
+        sort_filtered_traces = defaultdict(list)
+
         # for actions occurring in seq
         for obs in seq:
-            i = obs.index
-            print()
+            # i = obs.index
             action = obs.action
             if action is not None:
                 # for each combination of action name A and argument pos P
                 for j, obj in enumerate(action.obj_params):
-                    cur_seen = obj_seen[sorts[obj.name]]
+                    sort = sorts[obj.name]
                     # create transition A.P
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
+                    sort_filtered_traces[sort].append(ap)
+
+        def unify_trans(state, os, trans: List):
+            trans_copy = trans.copy()
+            # check if reused APState.start == prev.end
+            if state.start != trans[-1].end:
+                # set state = whatever state in os that start == prev.end
+                print(os)
+                print(f"looking for start={trans[-1].end}")
+                for ap, apstate in os.items():
+                    if apstate.start == trans[-1].end:
+                        new_state = os[ap]
+                        break
+
+                for i, apstate in enumerate(trans_copy):
+                    if apstate == state:
+                        trans[i] = new_state
+
+                # unify_trans(ap, os, trans)
+                # set a flag that a swap happend and os[ap] = state
+                # make that change in the transition list
+                # after making the change, loop over the transition list and
+                # check if any other apstate.start == state.end
+
+        # TODO: outer loop HERE
+        # only on containers
+        count = 1
+        os: Dict[AP, APState] = {}
+        trans: List[APState] = []
+        for i, ap in enumerate(sort_filtered_traces[0]):
+            print(f"step {i+1} ({ap})")
+            if ap not in os:
+                os[ap] = APState(count, count + 1)
+                count += 1  # maybe 2
+            else:
+                # reuse
+                state = os[ap]
+                unify_trans(state, os, trans)
+
+            trans.append(os[ap])
+
+        pprint(os)
+
+        """
+
+
+
+
+
+
+                    cur_seen = obj_seen[sorts[obj.name]]
                     # add state identifiers start(A.P) and end(A.P) to OS
                     os[ap] = APState(cur_seen, cur_seen + 1)
                     # add A.P to the transition set TS
@@ -217,6 +269,7 @@ class LOCM:
                 os[t2].end = os[t1].start
 
         return dict(ts), os
+    """
 
     @staticmethod
     def _phase2(obs_tracelist: ObservedTraceList):
