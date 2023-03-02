@@ -1,19 +1,18 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
 
-from pprint import pprint
-from typing import Dict, List
 from collections import defaultdict
-
 from dataclasses import dataclass
+from pprint import pprint
+from typing import Dict, List, Set
 
 from macq.trace.fluent import PlanningObject
 
+from ..observation import ActionObservation, ObservedTraceList
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
-from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import ActionObservation, ObservedTraceList
+from .model import Model
 
 
 @dataclass
@@ -181,16 +180,7 @@ class LOCM:
         seq = obs_tracelist[0]
         sorts = sorts_list[0]
 
-        # initialize state set OS and transition set TS to empty
-        ts = defaultdict(list)
-        # making OS a dict with AP as key enforces assumption 5
-        # (transitions are 1-1 with respect to same action for a given object sort)
-        os: Dict[AP, APState] = {}
-
-        obj_seen: Dict[int, int] = defaultdict(lambda: 1)
-
-        sort_filtered_traces = defaultdict(list)
-
+        sort_traces = defaultdict(list)
         # for actions occurring in seq
         for obs in seq:
             # i = obs.index
@@ -201,75 +191,49 @@ class LOCM:
                     sort = sorts[obj.name]
                     # create transition A.P
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
-                    sort_filtered_traces[sort].append(ap)
-
-        def unify_trans(state, os, trans: List):
-            trans_copy = trans.copy()
-            # check if reused APState.start == prev.end
-            if state.start != trans[-1].end:
-                # set state = whatever state in os that start == prev.end
-                print(os)
-                print(f"looking for start={trans[-1].end}")
-                for ap, apstate in os.items():
-                    if apstate.start == trans[-1].end:
-                        new_state = os[ap]
-                        break
-
-                for i, apstate in enumerate(trans_copy):
-                    if apstate == state:
-                        trans[i] = new_state
-
-                # unify_trans(ap, os, trans)
-                # set a flag that a swap happend and os[ap] = state
-                # make that change in the transition list
-                # after making the change, loop over the transition list and
-                # check if any other apstate.start == state.end
+                    sort_traces[sort].append(ap)
 
         # TODO: outer loop HERE
         # only on containers
-        count = 1
-        os: Dict[AP, APState] = {}
-        trans: List[APState] = []
-        for i, ap in enumerate(sort_filtered_traces[0]):
-            print(f"step {i+1} ({ap})")
-            if ap not in os:
-                os[ap] = APState(count, count + 1)
-                count += 1  # maybe 2
-            else:
-                # reuse
-                state = os[ap]
-                unify_trans(state, os, trans)
+        state_n = 1
+        ap_state_pointers: Dict[AP, APState] = {}
+        os: List[Set[int]] = []
+        prev_states: APState = None  # type: ignore
+        for ap in sort_traces[0]:
+            if ap not in ap_state_pointers:
+                ap_state_pointers[ap] = APState(state_n, state_n + 1)
+                state_n += 2
 
-            trans.append(os[ap])
+                os.append({ap_state_pointers[ap].start})
+                os.append({ap_state_pointers[ap].end})
 
-        pprint(os)
+            if prev_states is not None:
+                states = ap_state_pointers[ap]
 
-        """
+                # get the indexes of the state sets containing the start state and prev end state
+                state_idx, prev_idx = None, None
+                for j, state_set in enumerate(os):
+                    if states.start in state_set:
+                        state_idx = j
+                    if prev_states.end in state_set:
+                        prev_idx = j
+                    if state_idx is not None and prev_idx is not None:
+                        break
 
+                # impossible, but the linter doesn't know that
+                assert (
+                    state_idx is not None and prev_idx is not None
+                ), f"Start state ({states.start}) or prev end state ({prev_states.end}) is not in ts"
 
+                # if not the same state set, merge the two
+                if state_idx != prev_idx:
+                    print(f"** merging {os[state_idx]} with {os[prev_idx]}")
+                    os[state_idx] = os[state_idx].union(os[prev_idx])
+                    os.pop(prev_idx)
 
+                print(os)
 
-
-
-                    cur_seen = obj_seen[sorts[obj.name]]
-                    # add state identifiers start(A.P) and end(A.P) to OS
-                    os[ap] = APState(cur_seen, cur_seen + 1)
-                    # add A.P to the transition set TS
-                    # + collect the set of objects in seq
-                    ts[sorts[obj.name]].append(ap)
-
-                    obj_seen[sorts[obj.name]] += 2
-
-        return dict(ts), os
-        # for each object
-        for obj, trans in ts.items():
-            # for each pair of transitions consectutive for obj
-            for t1, t2 in zip(trans, trans[1:]):
-                # unify states end(t1) and start(t2) in set OS
-                os[t2].end = os[t1].start
-
-        return dict(ts), os
-    """
+            prev_states = ap_state_pointers[ap]
 
     @staticmethod
     def _phase2(obs_tracelist: ObservedTraceList):

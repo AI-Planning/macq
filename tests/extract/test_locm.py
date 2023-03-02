@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import List
-from macq.extract.locm import LOCM
-from macq.trace import *
+
 from macq.extract import Extract, modes
-from macq.observation import ActionObservation
+from macq.extract.locm import LOCM
 from macq.generate.pddl import *
+from macq.observation import ActionObservation
+from macq.trace import *
 
 
 def get_fluent(name: str, objs: List[str]):
