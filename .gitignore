@@ -15,5 +15,5 @@ new_prob.pddl
 test_model.json
 results.txt
 html/
-
 *.DS_Store
+*.gv*

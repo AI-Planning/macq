@@ -3,12 +3,9 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from pprint import pprint
 from typing import Dict, List, Set, Tuple
 
-from macq.trace.fluent import PlanningObject
-
-from ..observation import ActionObservation, ObservedTraceList, Observation
+from ..observation import ActionObservation, Observation, ObservedTraceList
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .learned_fluent import LearnedFluent
@@ -27,24 +24,16 @@ class AP:
 
 
 @dataclass
-class APState:
-    """Object state identifiers"""
+class APStates:
+    """Pointers to the start and end states for an A.P"""
 
     start: int
     end: int
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, APState):
-            return self.start == other.start and self.end == other.end
-        return False
-
-    def __hash__(self) -> int:
-        return hash((self.start, self.end))
-
 
 Sorts = Dict[str, int]
-OSType = Dict[int, Dict[str, Set[APState]]]
-TSType = Dict[int, Dict[str, Set[AP]]]
+OSType = Dict[int, List[Set[int]]]
+TSType = Dict[int, Dict[AP, APStates]]
 
 
 class LOCM:
@@ -211,14 +200,13 @@ class LOCM:
         OS = {}
         TS = {}
         for sort, seq in sort_traces.items():
-            print(seq)
             state_n = 1
-            ap_state_pointers: Dict[AP, APState] = {}
+            ap_state_pointers: Dict[AP, APStates] = {}
             os: List[Set[int]] = []
-            prev_states: APState = None  # type: ignore
+            prev_states: APStates = None  # type: ignore
             for ap in seq:
                 if ap not in ap_state_pointers:
-                    ap_state_pointers[ap] = APState(state_n, state_n + 1)
+                    ap_state_pointers[ap] = APStates(state_n, state_n + 1)
                     state_n += 2
 
                     os.append({ap_state_pointers[ap].start})
@@ -262,7 +250,7 @@ class LOCM:
         ts = list()
         # making OS a dict with AP as key enforces assumption 5
         # (transitions are 1-1 with respect to same action for a given object sort)
-        os: Dict[AP, APState] = {}
+        os: Dict[AP, APStates] = {}
         # for actions occurring in seq
         unique_actions = set()
         for obs in seq:
@@ -271,7 +259,7 @@ class LOCM:
             if action is not None:
                 if action.name not in unique_actions:
                     ap = AP(action.name, pos=0)
-                    os[ap] = APState(i, i + 1)
+                    os[ap] = APStates(i, i + 1)
                     ts.append(ap)
 
                     unique_actions.add(action.name)
@@ -290,21 +278,32 @@ class LOCM:
         return ts, os
 
     @staticmethod
-    def viz_state_machines(TS: TSType, OS: OSType, sorts: Sorts):
+    def viz_state_machines(TS: TSType, OS: OSType):
         from graphviz import Digraph
 
-        sorts_inv = {v: k for k, v in sorts.items()}
+        print("TS:", TS, end="\n\n")
+        print("OS:", OS)
+
         state_machines = []
 
         for (sort, trans), states in zip(TS.items(), OS.values()):
-            obj_name = sorts_inv[sort]
-            print(obj_name)
-        #     graph = Digraph(f"LOCM-phase1-{sort}")
-        #     for i, ap in enumerate(trans):
-        #         graph.node(str(i), label=f"{obj.name}state{i}", shape="oval")
-        #         if i > 0:
-        #             graph.edge(str(i), str(i - 1))
+            graph = Digraph(f"LOCM-phase1-sort{sort}")
+            for i in range(len(states)):
+                graph.node(str(i), label=f"state{i}", shape="oval")
+            for ap, apstate in trans.items():
+                start_idx = None
+                end_idx = None
+                for i, state_set in enumerate(states):
+                    if apstate.start in state_set:
+                        start_idx = i
+                    if apstate.end in state_set:
+                        end_idx = i
+                    if start_idx is not None and end_idx is not None:
+                        break
+                graph.edge(
+                    str(start_idx), str(end_idx), label=f"{ap.action_name}.{ap.pos}"
+                )
 
-        #     state_machines.append(graph)
+            state_machines.append(graph)
 
-        # return state_machines
+        return state_machines

@@ -1,5 +1,8 @@
 from pathlib import Path
+from pprint import pprint
 from typing import List
+
+from graphviz import Digraph
 
 from macq.extract import Extract, modes
 from macq.extract.locm import LOCM
@@ -147,8 +150,6 @@ def test_locm_get_sorts():
 
 
 def test_locm_phase1(is_test=True):
-    from pprint import pprint
-
     obs = get_example_obs(False)
     sorts = LOCM._get_sorts(obs[0])
     ts, os = LOCM._phase1(obs[0], sorts)
@@ -160,20 +161,17 @@ def test_locm_phase1(is_test=True):
         print("os:")
         pprint(os)
     else:
-        return ts, os, sorts
+        return ts, os
 
 
-def test_viz():
-    from pprint import pprint
-
-    TS, OS, sorts = test_locm_phase1(False)  # type: ignore
-    viz = LOCM.viz_state_machines(TS, OS, sorts)
-    pprint(viz)
+def test_locm_viz():
+    TS, OS = test_locm_phase1(False)  # type: ignore
+    state_machines: List[Digraph] = LOCM.viz_state_machines(TS, OS)
+    for sm in state_machines:
+        sm.render(view=True)
 
 
 def test_locm_phase2():
-    from pprint import pprint
-
     obs = get_example_obs(True)
     ts, os = LOCM._phase2(obs)
     pprint(ts)
@@ -182,6 +180,7 @@ def test_locm_phase2():
 
 
 if __name__ == "__main__":
-    test_locm_get_sorts()
-    test_locm_phase1()
+    # test_locm_get_sorts()
+    # test_locm_phase1()
+    test_locm_viz()
     # test_locm_phase2()
