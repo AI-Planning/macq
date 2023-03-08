@@ -1,10 +1,10 @@
-""".. include:: ../../docs/templates/extract/observer.md"""
+""".. include:: ../../docs/templates/extract/locm.md"""
 
 
 from collections import defaultdict
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 from macq.trace.fluent import PlanningObject
 
@@ -57,14 +57,16 @@ class LOCM:
         if obs_tracelist.type is not ActionObservation:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
+        assert len(obs_tracelist) == 1, "LOCM only supports single traces"
+
         fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_tracelist)
         # TODO: use sorts in phase 1
-        transitions, obj_states = LOCM._phase1(obs_tracelist, sorts)
+        TS, OS = LOCM._phase1(obs_tracelist, sorts)
 
         if viz:
-            graph = LOCM.viz_state_machines(obj_states)
+            graph = LOCM.viz_state_machines(TS, OS, sorts)
             graph.render(view=True)  # type: ignore
 
         return Model(fluents, actions)
@@ -176,7 +178,24 @@ class LOCM:
         return obj_sorts_list
 
     @staticmethod
-    def _phase1(obs_tracelist: ObservedTraceList, sorts_list: List[Dict[str, int]]):
+    def _phase1(
+        obs_tracelist: ObservedTraceList, sorts_list: List[Dict[str, int]]
+    ) -> Tuple[Dict[int, Dict[AP, APState]], Dict[int, List[Set[int]]]]:
+        """Phase 1: Create a state machine for each object sort
+
+        Args:
+            obs_tracelist (ObservedTraceList):
+                List of observed traces
+            sorts_list (List[Dict[str, int]]):
+                List of object sorts for each trace.
+
+        Returns:
+            TS (Dict[int, Dict[AP, APState]]):
+                Set of transitions for each object sort.
+            OS (Dict[int, List[Set[int]]]):
+                Set of distinct states for each object sort.
+
+        """
         seq = obs_tracelist[0]
         sorts = sorts_list[0]
 
@@ -193,47 +212,51 @@ class LOCM:
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
                     sort_traces[sort].append(ap)
 
-        # TODO: outer loop HERE
-        # only on containers
-        state_n = 1
-        ap_state_pointers: Dict[AP, APState] = {}
-        os: List[Set[int]] = []
-        prev_states: APState = None  # type: ignore
-        for ap in sort_traces[0]:
-            if ap not in ap_state_pointers:
-                ap_state_pointers[ap] = APState(state_n, state_n + 1)
-                state_n += 2
+        OS = {}
+        TS = {}
+        for sort, seq in sort_traces.items():
+            print(seq)
+            state_n = 1
+            ap_state_pointers: Dict[AP, APState] = {}
+            os: List[Set[int]] = []
+            prev_states: APState = None  # type: ignore
+            for ap in seq:
+                if ap not in ap_state_pointers:
+                    ap_state_pointers[ap] = APState(state_n, state_n + 1)
+                    state_n += 2
 
-                os.append({ap_state_pointers[ap].start})
-                os.append({ap_state_pointers[ap].end})
+                    os.append({ap_state_pointers[ap].start})
+                    os.append({ap_state_pointers[ap].end})
 
-            if prev_states is not None:
-                states = ap_state_pointers[ap]
+                if prev_states is not None:
+                    states = ap_state_pointers[ap]
 
-                # get the indexes of the state sets containing the start state and prev end state
-                state_idx, prev_idx = None, None
-                for j, state_set in enumerate(os):
-                    if states.start in state_set:
-                        state_idx = j
-                    if prev_states.end in state_set:
-                        prev_idx = j
-                    if state_idx is not None and prev_idx is not None:
-                        break
+                    # get the indexes of the state sets containing the start state and prev end state
+                    state_idx, prev_idx = None, None
+                    for j, state_set in enumerate(os):
+                        if states.start in state_set:
+                            state_idx = j
+                        if prev_states.end in state_set:
+                            prev_idx = j
+                        if state_idx is not None and prev_idx is not None:
+                            break
 
-                # impossible, but the linter doesn't know that
-                assert (
-                    state_idx is not None and prev_idx is not None
-                ), f"Start state ({states.start}) or prev end state ({prev_states.end}) is not in ts"
+                    # impossible, but the linter doesn't know that
+                    assert (
+                        state_idx is not None and prev_idx is not None
+                    ), f"Start state ({states.start}) or prev end state ({prev_states.end}) is not in ts"
 
-                # if not the same state set, merge the two
-                if state_idx != prev_idx:
-                    print(f"** merging {os[state_idx]} with {os[prev_idx]}")
-                    os[state_idx] = os[state_idx].union(os[prev_idx])
-                    os.pop(prev_idx)
+                    # if not the same state set, merge the two
+                    if state_idx != prev_idx:
+                        os[state_idx] = os[state_idx].union(os[prev_idx])
+                        os.pop(prev_idx)
 
-                print(os)
+                prev_states = ap_state_pointers[ap]
 
-            prev_states = ap_state_pointers[ap]
+            TS[sort] = ap_state_pointers
+            OS[sort] = os
+
+        return TS, OS
 
     @staticmethod
     def _phase2(obs_tracelist: ObservedTraceList):
@@ -271,7 +294,7 @@ class LOCM:
         return ts, os
 
     @staticmethod
-    def viz_state_machines(ts: Dict[PlanningObject, List[AP]], os: Dict[AP, APState]):
+    def viz_state_machines(TS, OS, sorts):
         from graphviz import Digraph
 
         state_machines = []
