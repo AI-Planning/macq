@@ -8,7 +8,7 @@ from typing import Dict, List, Set, Tuple
 
 from macq.trace.fluent import PlanningObject
 
-from ..observation import ActionObservation, ObservedTraceList
+from ..observation import ActionObservation, ObservedTraceList, Observation
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .learned_fluent import LearnedFluent
@@ -42,6 +42,11 @@ class APState:
         return hash((self.start, self.end))
 
 
+Sorts = Dict[str, int]
+OSType = Dict[int, Dict[str, Set[APState]]]
+TSType = Dict[int, Dict[str, Set[AP]]]
+
+
 class LOCM:
     """LOCM"""
 
@@ -58,12 +63,13 @@ class LOCM:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
         assert len(obs_tracelist) == 1, "LOCM only supports single traces"
+        obs_trace = obs_tracelist[0]
 
         fluents, actions = None, None
 
-        sorts = LOCM._get_sorts(obs_tracelist)
+        sorts = LOCM._get_sorts(obs_trace)
         # TODO: use sorts in phase 1
-        TS, OS = LOCM._phase1(obs_tracelist, sorts)
+        TS, OS = LOCM._phase1(obs_trace, sorts)
 
         if viz:
             graph = LOCM.viz_state_machines(TS, OS, sorts)
@@ -72,7 +78,7 @@ class LOCM:
         return Model(fluents, actions)
 
     @staticmethod
-    def _get_sorts(obs_tracelist: ObservedTraceList) -> List[Dict[str, int]]:
+    def _get_sorts(obs_trace: List[Observation]) -> Sorts:
         """Given 2 distinct steps (i & j), if action i = action j
         their list of objects contain the same sorts in the same order
 
@@ -93,94 +99,85 @@ class LOCM:
             sorts {c1, c2, c3, wr1, wr2}, {j1,j2}.
         """
 
-        sorts = []
-        for obs_trace in obs_tracelist:
-            seq_sorts = []  # initialize list of sorts for this trace
-            # track actions seen in the trace, and the sort each actions params belong to
-            seen_actions: Dict[str, List[int]] = {}
-            # track objects seen in the trace, and the sort each belongs to
-            seen_objs: Dict[str, int] = {}
+        seq_sorts = []  # initialize list of sorts for this trace
+        # track actions seen in the trace, and the sort each actions params belong to
+        seen_actions: Dict[str, List[int]] = {}
+        # track objects seen in the trace, and the sort each belongs to
+        seen_objs: Dict[str, int] = {}
 
-            for obs in obs_trace:
-                action = obs.action
-                if action is not None:
+        for obs in obs_trace:
+            action = obs.action
+            if action is not None:
 
-                    if action.name not in seen_actions:  # new action
-                        idxs = []  # idxs[i] stores the sort of action param i
-                        # for each parameter of the action
-                        for obj in action.obj_params:
+                if action.name not in seen_actions:  # new action
+                    idxs = []  # idxs[i] stores the sort of action param i
+                    # for each parameter of the action
+                    for obj in action.obj_params:
 
-                            if obj.name not in seen_objs:  # new object
-                                # append a sort (set) containing the object
-                                seq_sorts.append({obj})
-                                # record the object has been seen and the index of the sort it belongs to
-                                obj_sort_idx = len(seq_sorts) - 1
-                                seen_objs[obj.name] = obj_sort_idx
-                                idxs.append(obj_sort_idx)
+                        if obj.name not in seen_objs:  # new object
+                            # append a sort (set) containing the object
+                            seq_sorts.append({obj})
+                            # record the object has been seen and the index of the sort it belongs to
+                            obj_sort_idx = len(seq_sorts) - 1
+                            seen_objs[obj.name] = obj_sort_idx
+                            idxs.append(obj_sort_idx)
 
-                            else:  # object already has a sort, don't append a new one
-                                # look up the sort of the object
-                                idxs.append(seen_objs[obj.name])
+                        else:  # object already has a sort, don't append a new one
+                            # look up the sort of the object
+                            idxs.append(seen_objs[obj.name])
 
-                        # record the index of the sort of the action's parameters
-                        seen_actions[action.name] = idxs
+                    # record the index of the sort of the action's parameters
+                    seen_actions[action.name] = idxs
 
-                    else:  # action seen before
+                else:  # action seen before
 
-                        for action_sort_idx, obj in zip(
-                            seen_actions[action.name], action.obj_params
-                        ):
-                            # action_sort_idx -> sort of current action parameter
-                            # obj -> object that is action parameter ap
+                    for action_sort_idx, obj in zip(
+                        seen_actions[action.name], action.obj_params
+                    ):
+                        # action_sort_idx -> sort of current action parameter
+                        # obj -> object that is action parameter ap
 
-                            if obj.name not in seen_objs:  # new object
-                                # add the object to the sort of current action parameter
-                                seq_sorts[action_sort_idx].add(obj)
+                        if obj.name not in seen_objs:  # new object
+                            # add the object to the sort of current action parameter
+                            seq_sorts[action_sort_idx].add(obj)
 
-                            else:  # object already has a sort
-                                # retrieve the sort the object belongs to
-                                obj_sort_idx = seen_objs[obj.name]
+                        else:  # object already has a sort
+                            # retrieve the sort the object belongs to
+                            obj_sort_idx = seen_objs[obj.name]
 
-                                # check if the object's sort matches the action paremeter's
-                                # if so, do nothing and move on to next step
-                                if obj_sort_idx != action_sort_idx:  # else
-                                    # unite the action parameter's sort and the object's sort
-                                    seq_sorts[action_sort_idx] = seq_sorts[
-                                        action_sort_idx
-                                    ].union(seq_sorts[obj_sort_idx])
+                            # check if the object's sort matches the action paremeter's
+                            # if so, do nothing and move on to next step
+                            if obj_sort_idx != action_sort_idx:  # else
+                                # unite the action parameter's sort and the object's sort
+                                seq_sorts[action_sort_idx] = seq_sorts[
+                                    action_sort_idx
+                                ].union(seq_sorts[obj_sort_idx])
 
-                                    # drop the not unionized sort
-                                    seq_sorts.pop(obj_sort_idx)
+                                # drop the not unionized sort
+                                seq_sorts.pop(obj_sort_idx)
 
-                                    # update all outdated records of which sort the affected objects belong to
+                                # update all outdated records of which sort the affected objects belong to
 
-                                    for action_name, idxs in seen_actions.items():
-                                        for i, idx in enumerate(idxs):
-                                            if idx == obj_sort_idx:
-                                                seen_actions[action_name][
-                                                    i
-                                                ] = action_sort_idx
-
-                                    for seen_obj, idx in seen_objs.items():
+                                for action_name, idxs in seen_actions.items():
+                                    for i, idx in enumerate(idxs):
                                         if idx == obj_sort_idx:
-                                            seen_objs[seen_obj] = action_sort_idx
+                                            seen_actions[action_name][
+                                                i
+                                            ] = action_sort_idx
+
+                                for seen_obj, idx in seen_objs.items():
+                                    if idx == obj_sort_idx:
+                                        seen_objs[seen_obj] = action_sort_idx
             # end
-            sorts.append(seq_sorts)
+        obj_sorts = {}
+        for i, sort in enumerate(seq_sorts):
+            for obj in sort:
+                obj_sorts[obj.name] = i
 
-        obj_sorts_list = []
-        for seq_sorts in sorts:
-            obj_sorts = {}
-            for i, sort in enumerate(seq_sorts):
-                for obj in sort:
-                    obj_sorts[obj.name] = i
-            obj_sorts_list.append(obj_sorts)
-
-        return obj_sorts_list
+        return obj_sorts
 
     @staticmethod
-    def _phase1(
-        obs_tracelist: ObservedTraceList, sorts_list: List[Dict[str, int]]
-    ) -> Tuple[Dict[int, Dict[AP, APState]], Dict[int, List[Set[int]]]]:
+    def _phase1(obs_trace: List[Observation], sorts: Sorts) -> Tuple[TSType, OSType]:
         """Phase 1: Create a state machine for each object sort
 
         Args:
@@ -196,8 +193,7 @@ class LOCM:
                 Set of distinct states for each object sort.
 
         """
-        seq = obs_tracelist[0]
-        sorts = sorts_list[0]
+        seq = obs_trace
 
         sort_traces = defaultdict(list)
         # for actions occurring in seq
@@ -294,18 +290,21 @@ class LOCM:
         return ts, os
 
     @staticmethod
-    def viz_state_machines(TS, OS, sorts):
+    def viz_state_machines(TS: TSType, OS: OSType, sorts: Sorts):
         from graphviz import Digraph
 
+        sorts_inv = {v: k for k, v in sorts.items()}
         state_machines = []
 
-        for obj, trans in ts.items():
-            graph = Digraph(f"LOCM-phase1-{obj.name}")
-            for i, ap in enumerate(trans):
-                graph.node(str(i), label=f"{obj.name}state{i}", shape="oval")
-                if i > 0:
-                    graph.edge(str(i), str(i - 1))
+        for (sort, trans), states in zip(TS.items(), OS.values()):
+            obj_name = sorts_inv[sort]
+            print(obj_name)
+        #     graph = Digraph(f"LOCM-phase1-{sort}")
+        #     for i, ap in enumerate(trans):
+        #         graph.node(str(i), label=f"{obj.name}state{i}", shape="oval")
+        #         if i > 0:
+        #             graph.edge(str(i), str(i - 1))
 
-            state_machines.append(graph)
+        #     state_machines.append(graph)
 
-        return state_machines
+        # return state_machines

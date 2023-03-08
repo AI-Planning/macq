@@ -138,7 +138,7 @@ def test_locm_get_sorts():
     from pprint import pprint
 
     obs = get_example_obs(True)
-    sorts = LOCM._get_sorts(obs)
+    sorts = LOCM._get_sorts(obs[0])
     print()
     print()
     print("sorts:")
@@ -146,17 +146,29 @@ def test_locm_get_sorts():
     print()
 
 
-def test_locm_phase1():
+def test_locm_phase1(is_test=True):
     from pprint import pprint
 
     obs = get_example_obs(False)
-    sorts = LOCM._get_sorts(obs)
-    ts, os = LOCM._phase1(obs, sorts)
-    print("ts:")
-    pprint(ts)
-    print()
-    print("os:")
-    pprint(os)
+    sorts = LOCM._get_sorts(obs[0])
+    ts, os = LOCM._phase1(obs[0], sorts)
+
+    if is_test:
+        print("ts:")
+        pprint(ts)
+        print()
+        print("os:")
+        pprint(os)
+    else:
+        return ts, os, sorts
+
+
+def test_viz():
+    from pprint import pprint
+
+    TS, OS, sorts = test_locm_phase1(False)  # type: ignore
+    viz = LOCM.viz_state_machines(TS, OS, sorts)
+    pprint(viz)
 
 
 def test_locm_phase2():
