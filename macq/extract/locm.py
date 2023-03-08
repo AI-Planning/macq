@@ -243,6 +243,37 @@ class LOCM:
         return TS, OS
 
     @staticmethod
+    def viz_state_machines(TS: TSType, OS: OSType):
+        from graphviz import Digraph
+
+        print("TS:", TS, end="\n\n")
+        print("OS:", OS)
+
+        state_machines = []
+
+        for (sort, trans), states in zip(TS.items(), OS.values()):
+            graph = Digraph(f"LOCM-phase1-sort{sort}")
+            for i in range(len(states)):
+                graph.node(str(i), label=f"state{i}", shape="oval")
+            for ap, apstate in trans.items():
+                start_idx = None
+                end_idx = None
+                for i, state_set in enumerate(states):
+                    if apstate.start in state_set:
+                        start_idx = i
+                    if apstate.end in state_set:
+                        end_idx = i
+                    if start_idx is not None and end_idx is not None:
+                        break
+                graph.edge(
+                    str(start_idx), str(end_idx), label=f"{ap.action_name}.{ap.pos}"
+                )
+
+            state_machines.append(graph)
+
+        return state_machines
+
+    @staticmethod
     def _phase2(obs_tracelist: ObservedTraceList):
         # add the zero argument to each action
         seq = obs_tracelist[0]
@@ -276,34 +307,3 @@ class LOCM:
             # ---> is the equate proper
             return None, None
         return ts, os
-
-    @staticmethod
-    def viz_state_machines(TS: TSType, OS: OSType):
-        from graphviz import Digraph
-
-        print("TS:", TS, end="\n\n")
-        print("OS:", OS)
-
-        state_machines = []
-
-        for (sort, trans), states in zip(TS.items(), OS.values()):
-            graph = Digraph(f"LOCM-phase1-sort{sort}")
-            for i in range(len(states)):
-                graph.node(str(i), label=f"state{i}", shape="oval")
-            for ap, apstate in trans.items():
-                start_idx = None
-                end_idx = None
-                for i, state_set in enumerate(states):
-                    if apstate.start in state_set:
-                        start_idx = i
-                    if apstate.end in state_set:
-                        end_idx = i
-                    if start_idx is not None and end_idx is not None:
-                        break
-                graph.edge(
-                    str(start_idx), str(end_idx), label=f"{ap.action_name}.{ap.pos}"
-                )
-
-            state_machines.append(graph)
-
-        return state_machines
