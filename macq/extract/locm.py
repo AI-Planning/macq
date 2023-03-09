@@ -237,8 +237,10 @@ class LOCM:
 
                 prev_states = ap_state_pointers[ap]
 
-            TS[sort] = ap_state_pointers
-            OS[sort] = os
+            # Don't add the zero-object if it only has one state
+            if not (sort == 0 and len(os) == 1):
+                TS[sort] = ap_state_pointers
+                OS[sort] = os
 
         return TS, OS
 
