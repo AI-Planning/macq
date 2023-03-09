@@ -180,14 +180,11 @@ class LOCM:
                 Set of transitions for each object sort.
             OS (Dict[int, List[Set[int]]]):
                 Set of distinct states for each object sort.
-
         """
-        seq = obs_trace
 
+        # collect traces for each sort (filtering out steps irrelevant to the sort)
         sort_traces = defaultdict(list)
-        # for actions occurring in seq
-        for obs in seq:
-            # i = obs.index
+        for obs in obs_trace:
             action = obs.action
             if action is not None:
                 # for each combination of action name A and argument pos P
@@ -197,6 +194,7 @@ class LOCM:
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
                     sort_traces[sort].append(ap)
 
+        # get unique states and transitions for each sort from the filtered traces
         OS = {}
         TS = {}
         for sort, seq in sort_traces.items():
