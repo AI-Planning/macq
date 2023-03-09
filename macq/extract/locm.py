@@ -51,7 +51,7 @@ class LOCM:
         if obs_tracelist.type is not ActionObservation:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
-        assert len(obs_tracelist) == 1, "LOCM only supports single traces"
+        assert len(obs_tracelist) == 1, "Temp only allowing 1 trace"
         obs_trace = obs_tracelist[0]
 
         fluents, actions = None, None
@@ -157,11 +157,12 @@ class LOCM:
                                 for seen_obj, idx in seen_objs.items():
                                     if idx == obj_sort_idx:
                                         seen_objs[seen_obj] = action_sort_idx
-            # end
+
         obj_sorts = {}
         for i, sort in enumerate(seq_sorts):
             for obj in sort:
-                obj_sorts[obj.name] = i
+                # 1-indexed so the zero-object can be sort 0
+                obj_sorts[obj.name] = i + 1
 
         return obj_sorts
 
@@ -188,6 +189,7 @@ class LOCM:
             action = obs.action
             if action is not None:
                 # for each combination of action name A and argument pos P
+                sort_traces[0].append(AP(action.name, pos=0))  # add the zero-object
                 for j, obj in enumerate(action.obj_params):
                     sort = sorts[obj.name]
                     # create transition A.P
@@ -305,3 +307,24 @@ class LOCM:
             # ---> is the equate proper
             return None, None
         return ts, os
+
+    @staticmethod
+    def _phase3():
+        """
+        consider wrench_state0 for wrench sort + actions:
+            putaway_wrench(wrench, container) -> wrench_state0
+            fetch_wrench(wrench, container) -> wrench_state1
+
+        the consectutive actions in any sequence have the same value for the container param
+        therefore, wrench_state0 has a state variable for container
+
+        this doesn't hold for wrench_state1, since there may
+
+
+        In general:
+            If there are two consectutive transitions for a given object sort
+            and there is a parameter that is the same for both actions,
+            and this is consistent across all sequences,
+            then the intermediate state is parameterized by this other sort.
+        """
+        pass
