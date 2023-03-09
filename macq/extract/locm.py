@@ -276,41 +276,6 @@ class LOCM:
         return state_machines
 
     @staticmethod
-    def _phase2(obs_tracelist: ObservedTraceList):
-        # add the zero argument to each action
-        seq = obs_tracelist[0]
-        # initialize state set OS and transition set TS to empty
-        ts = list()
-        # making OS a dict with AP as key enforces assumption 5
-        # (transitions are 1-1 with respect to same action for a given object sort)
-        os: Dict[AP, APStates] = {}
-        # for actions occurring in seq
-        unique_actions = set()
-        for obs in seq:
-            i = obs.index
-            action = obs.action
-            if action is not None:
-                if action.name not in unique_actions:
-                    ap = AP(action.name, pos=0)
-                    os[ap] = APStates(i, i + 1)
-                    ts.append(ap)
-
-                    unique_actions.add(action.name)
-
-        # for each pair of transitions consectutive for obj
-        for t1, t2 in zip(ts, ts[1:]):
-            # unify states end(t1) and start(t2) in set OS
-            os[t2].end = os[t1].start
-
-        if len(os) == 1:
-            # For Muise:
-            # Are we expecting an empty finite state here?
-            # ---> why is is not length one
-            # ---> is the equate proper
-            return None, None
-        return ts, os
-
-    @staticmethod
     def _phase3():
         """
         consider wrench_state0 for wrench sort + actions:

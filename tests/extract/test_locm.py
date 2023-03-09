@@ -45,11 +45,6 @@ def test_locm():
 
 
 def get_example_obs(print_trace=False):
-    """
-    open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
-    open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
-    open(c3); close(c3)
-    """
     objects = {
         "c1": PlanningObject("container", "c1"),
         "c2": PlanningObject("container", "c2"),
@@ -64,9 +59,9 @@ def get_example_obs(print_trace=False):
         "open2": Fluent("open", [objects["c2"]]),
         "open3": Fluent("open", [objects["c3"]]),
         "j1in": Fluent("in", [objects["j1"], objects["c1"]]),
-        "j2in": Fluent("in", [objects["j2"], objects["c1"]]),
+        "j2in": Fluent("in", [objects["j2"], objects["c2"]]),
         "wr1in": Fluent("in", [objects["wr1"], objects["c1"]]),
-        "wr2in": Fluent("in", [objects["wr2"], objects["c1"]]),
+        "wr2in": Fluent("in", [objects["wr2"], objects["c2"]]),
     }
     actions = {
         "open1": Action("open", [objects["c1"]]),
@@ -77,31 +72,49 @@ def get_example_obs(print_trace=False):
         "close3": Action("close", [objects["c3"]]),
         "fetchj1": Action("fetch_jack", [objects["j1"], objects["c1"]]),
         "fetchj2": Action("fetch_jack", [objects["j2"], objects["c2"]]),
+        "putj1": Action("putaway_jack", [objects["j1"], objects["c1"]]),
+        "putj2": Action("putaway_jack", [objects["j2"], objects["c2"]]),
         "fetchwr1": Action("fetch_wrench", [objects["wr1"], objects["c1"]]),
         "fetchwr2": Action("fetch_wrench", [objects["wr2"], objects["c2"]]),
+        "putwr1": Action("putaway_wrench", [objects["wr1"], objects["c1"]]),
+        "putwr2": Action("putaway_wrench", [objects["wr2"], objects["c2"]]),
         "closewr": Action("close", [objects["wr1"]]),
     }
 
-    # construct states, filling in false ones implicitly
-    """
-    open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
-    open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
-    open(c3); close(c3)
-    """
+    # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
+    # fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3)
+    # states_true = [
+    #     ["j1in", "j2in", "wr1in", "wr2in"],
+    #     ["open1", "j1in", "j2in", "wr1in", "wr2in"],
+    #     ["open1", "j2in", "wr1in", "wr2in"],
+    #     ["open1", "j2in", "wr2in"],
+    #     ["j2in", "wr2in"],
+    #     ["open2", "j2in", "wr2in"],
+    #     ["open2", "j2in"],
+    #     ["open2"],
+    #     [],
+    #     ["open3"],
+    #     [],
+    #     [],
+    # ]
+
+    # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway jack(j2,c2);
+    # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); fetch jack(j2,c2);
+    # close(c1);
     states_true = [
-        ["j1in", "j2in", "wr1in", "wr2in"],
-        ["open1", "j1in", "j2in", "wr1in", "wr2in"],
-        ["open1", "j2in", "wr1in", "wr2in"],
-        ["open1", "j2in", "wr2in"],
-        ["j2in", "wr2in"],
-        ["open2", "j2in", "wr2in"],
-        ["open2", "j2in"],
-        ["open2"],
-        [],
-        ["open3"],
-        [],
-        [],
+        ["wr1in", "wr2in"],
+        ["open1", "wr1in", "wr2in"],
+        ["open1", "wr1in", "wr2in", "j1in"],
+        ["wr1in", "wr2in", "j1in"],
+        ["open2", "wr1in", "wr2in", "j1in"],
+        ["open2", "wr1in", "wr2in", "j1in", "j2in"],
+        ["open1", "open2", "wr1in", "wr2in", "j1in", "j2in"],
+        ["open1", "open2", "wr1in", "wr2in", "j2in"],
+        ["open1", "open2", "wr2in", "j2in"],
+        ["open1", "open2", "wr2in"],
+        ["open2", "wr2in"],
     ]
+
     states = [
         State({fluent: name in state_true for name, fluent in fluents.items()})
         for state_true in states_true
@@ -109,21 +122,41 @@ def get_example_obs(print_trace=False):
 
     traces = TraceList(
         [
+            # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
+            # open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
+            # open(c3); close(c3)
+            # Trace(
+            #     [
+            #         Step(states[0], actions["open1"], 1),
+            #         Step(states[1], actions["fetchj1"], 2),
+            #         Step(states[2], actions["fetchwr1"], 3),
+            #         Step(states[3], actions["close1"], 4),
+            #         Step(states[4], actions["open2"], 5),
+            #         Step(states[5], actions["fetchwr2"], 6),
+            #         Step(states[6], actions["fetchj2"], 7),
+            #         Step(states[7], actions["close2"], 8),
+            #         Step(states[8], actions["open3"], 9),
+            #         Step(states[9], actions["close3"], 10),
+            #         Step(states[10], None, 11),
+            #         # Step(states[10], actions["closewr"], 11),
+            #         # Step(states[11], None, 12),
+            #     ]
+            # ),
+            # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway
+            # jack(j2,c2); open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1);
+            # fetch jack(j2,c2); close(c1);
             Trace(
                 [
                     Step(states[0], actions["open1"], 1),
-                    Step(states[1], actions["fetchj1"], 2),
-                    Step(states[2], actions["fetchwr1"], 3),
-                    Step(states[3], actions["close1"], 4),
-                    Step(states[4], actions["open2"], 5),
-                    Step(states[5], actions["fetchwr2"], 6),
-                    Step(states[6], actions["fetchj2"], 7),
-                    Step(states[7], actions["close2"], 8),
-                    Step(states[8], actions["open3"], 9),
-                    Step(states[9], actions["close3"], 10),
-                    Step(states[10], None, 11),
-                    # Step(states[10], actions["closewr"], 11),
-                    # Step(states[11], None, 12),
+                    Step(states[1], actions["putj1"], 2),
+                    Step(states[2], actions["close1"], 3),
+                    Step(states[3], actions["open2"], 4),
+                    Step(states[4], actions["putj2"], 5),
+                    Step(states[5], actions["open1"], 6),
+                    Step(states[6], actions["fetchj1"], 7),
+                    Step(states[7], actions["fetchwr1"], 8),
+                    Step(states[8], actions["fetchj2"], 9),
+                    Step(states[9], actions["close1"], 10),
                 ]
             ),
         ]
@@ -137,22 +170,25 @@ def get_example_obs(print_trace=False):
     return obs
 
 
-def test_locm_get_sorts():
+def test_locm_get_sorts(is_test=True):
     from pprint import pprint
 
-    obs = get_example_obs(True)
+    obs = get_example_obs(is_test)
     sorts = LOCM._get_sorts(obs[0])
-    print()
-    print()
-    print("sorts:")
-    pprint(sorts)
-    print()
+
+    if is_test:
+        print()
+        print("sorts:")
+        pprint(sorts)
+        print()
+    else:
+        return sorts
 
 
 def test_locm_phase1(is_test=True):
     obs = get_example_obs(False)
-    sorts = LOCM._get_sorts(obs[0])
-    ts, os = LOCM._phase1(obs[0], sorts)
+    sorts = test_locm_get_sorts(False)
+    ts, os = LOCM._phase1(obs[0], sorts)  # type: ignore
 
     if is_test:
         print("ts:")
@@ -180,7 +216,7 @@ def test_locm_phase2():
 
 
 if __name__ == "__main__":
-    # test_locm_get_sorts()
+    test_locm_get_sorts()
     test_locm_phase1()
     # test_locm_viz()
     # test_locm_phase2()
