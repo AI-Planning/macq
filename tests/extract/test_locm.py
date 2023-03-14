@@ -82,38 +82,37 @@ def get_example_obs(print_trace=False):
     }
 
     # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
-    # fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3)
-    # states_true = [
-    #     ["j1in", "j2in", "wr1in", "wr2in"],
-    #     ["open1", "j1in", "j2in", "wr1in", "wr2in"],
-    #     ["open1", "j2in", "wr1in", "wr2in"],
-    #     ["open1", "j2in", "wr2in"],
-    #     ["j2in", "wr2in"],
-    #     ["open2", "j2in", "wr2in"],
-    #     ["open2", "j2in"],
-    #     ["open2"],
-    #     [],
-    #     ["open3"],
-    #     [],
-    #     [],
-    # ]
+    # fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); close(c3); open(c3);
+    states_true = [
+        ["open3", "j1in", "j2in", "wr1in", "wr2in"],
+        ["open3", "open1", "j1in", "j2in", "wr1in", "wr2in"],
+        ["open3", "open1", "j2in", "wr1in", "wr2in"],
+        ["open3", "open1", "j2in", "wr2in"],
+        ["open3", "j2in", "wr2in"],
+        ["open3", "open2", "j2in", "wr2in"],
+        ["open3", "open2", "j2in"],
+        ["open3", "open2"],
+        ["open3"],
+        [],
+        ["open3"],
+    ]
 
     # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway jack(j2,c2);
     # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); fetch jack(j2,c2);
     # close(c1);
-    states_true = [
-        ["wr1in", "wr2in"],
-        ["open1", "wr1in", "wr2in"],
-        ["open1", "wr1in", "wr2in", "j1in"],
-        ["wr1in", "wr2in", "j1in"],
-        ["open2", "wr1in", "wr2in", "j1in"],
-        ["open2", "wr1in", "wr2in", "j1in", "j2in"],
-        ["open1", "open2", "wr1in", "wr2in", "j1in", "j2in"],
-        ["open1", "open2", "wr1in", "wr2in", "j2in"],
-        ["open1", "open2", "wr2in", "j2in"],
-        ["open1", "open2", "wr2in"],
-        ["open2", "wr2in"],
-    ]
+    # states_true = [
+    #     ["wr1in", "wr2in"],
+    #     ["open1", "wr1in", "wr2in"],
+    #     ["open1", "wr1in", "wr2in", "j1in"],
+    #     ["wr1in", "wr2in", "j1in"],
+    #     ["open2", "wr1in", "wr2in", "j1in"],
+    #     ["open2", "wr1in", "wr2in", "j1in", "j2in"],
+    #     ["open1", "open2", "wr1in", "wr2in", "j1in", "j2in"],
+    #     ["open1", "open2", "wr1in", "wr2in", "j2in"],
+    #     ["open1", "open2", "wr2in", "j2in"],
+    #     ["open1", "open2", "wr2in"],
+    #     ["open2", "wr2in"],
+    # ]
 
     states = [
         State({fluent: name in state_true for name, fluent in fluents.items()})
@@ -125,46 +124,46 @@ def get_example_obs(print_trace=False):
             # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
             # open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
             # open(c3); close(c3)
-            # Trace(
-            #     [
-            #         Step(states[0], actions["open1"], 1),
-            #         Step(states[1], actions["fetchj1"], 2),
-            #         Step(states[2], actions["fetchwr1"], 3),
-            #         Step(states[3], actions["close1"], 4),
-            #         Step(states[4], actions["open2"], 5),
-            #         Step(states[5], actions["fetchwr2"], 6),
-            #         Step(states[6], actions["fetchj2"], 7),
-            #         Step(states[7], actions["close2"], 8),
-            #         Step(states[8], actions["open3"], 9),
-            #         Step(states[9], actions["close3"], 10),
-            #         Step(states[10], None, 11),
-            #         # Step(states[10], actions["closewr"], 11),
-            #         # Step(states[11], None, 12),
-            #     ]
-            # ),
-            # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway
-            # jack(j2,c2); open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1);
-            # fetch jack(j2,c2); close(c1);
             Trace(
                 [
                     Step(states[0], actions["open1"], 1),
-                    Step(states[1], actions["putj1"], 2),
-                    Step(states[2], actions["close1"], 3),
-                    Step(states[3], actions["open2"], 4),
-                    Step(states[4], actions["putj2"], 5),
-                    Step(states[5], actions["open1"], 6),
-                    Step(states[6], actions["fetchj1"], 7),
-                    Step(states[7], actions["fetchwr1"], 8),
-                    Step(states[8], actions["fetchj2"], 9),
-                    Step(states[9], actions["close1"], 10),
+                    Step(states[1], actions["fetchj1"], 2),
+                    Step(states[2], actions["fetchwr1"], 3),
+                    Step(states[3], actions["close1"], 4),
+                    Step(states[4], actions["open2"], 5),
+                    Step(states[5], actions["fetchwr2"], 6),
+                    Step(states[6], actions["fetchj2"], 7),
+                    Step(states[7], actions["close2"], 8),
+                    Step(states[9], actions["close3"], 9),
+                    Step(states[8], actions["open3"], 10),
+                    Step(states[10], None, 11),
+                    # Step(states[10], actions["closewr"], 11),
+                    # Step(states[11], None, 12),
                 ]
             ),
+            # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway
+            # jack(j2,c2); open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1);
+            # fetch jack(j2,c2); close(c1);
+            # Trace(
+            #     [
+            #         Step(states[0], actions["open1"], 1),
+            #         Step(states[1], actions["putj1"], 2),
+            #         Step(states[2], actions["close1"], 3),
+            #         Step(states[3], actions["open2"], 4),
+            #         Step(states[4], actions["putj2"], 5),
+            #         Step(states[5], actions["open1"], 6),
+            #         Step(states[6], actions["fetchj1"], 7),
+            #         Step(states[7], actions["fetchwr1"], 8),
+            #         Step(states[8], actions["fetchj2"], 9),
+            #         Step(states[9], actions["close1"], 10),
+            #     ]
+            # ),
         ]
     )
 
     if print_trace:
-        traces.print()
-        # traces.print("color")
+        # traces.print()
+        traces.print("color")
 
     obs = traces.tokenize(ActionObservation)
     return obs
