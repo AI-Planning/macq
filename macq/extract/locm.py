@@ -1,10 +1,13 @@
 """.. include:: ../../docs/templates/extract/locm.md"""
 
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from collections.abc import Set as SetClass
 from dataclasses import dataclass
-from typing import Dict, List, Set, Tuple
+from pprint import pprint
+from typing import Dict, List, NamedTuple, Set, Tuple
 
+from macq.trace.action import Action
 from macq.trace.fluent import PlanningObject
 
 from ..observation import ActionObservation, Observation, ObservedTraceList
@@ -18,19 +21,46 @@ from .model import Model
 class AP:
     """Action + object (argument) position"""
 
-    action_name: str
+    action: Action
     pos: int
 
     def __hash__(self):
-        return hash(self.action_name + str(self.pos))
+        return hash(self.action.name + str(self.pos))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
 
-APStates = namedtuple("APStates", ["start", "end"])
+APStates = NamedTuple("APStates", [("start", int), ("end", int)])
+
+
+class FSMState(SetClass):
+    def __init__(self, iterable):
+        self._data: Set[int] = set(iterable)
+
+    def __contains__(self, value):
+        return value in self._data
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __repr__(self) -> str:
+        return self._data.__repr__()
+
+    def union(self, other):
+        assert isinstance(other, FSMState), "Can only union FSMState with FSMState"
+        return FSMState(self._data.union(other._data))
 
 
 Sorts = Dict[str, int]
-OSType = Dict[int, List[Set[int]]]
-TSType = Dict[int, Dict[AP, APStates]]
+APStatePointers = Dict[int, Dict[AP, APStates]]
+
+OSType = Dict[int, List[FSMState]]
+# TSType = Dict[int, Dict[AP, APStates]]
+TSType = Dict[int, Dict[PlanningObject, List[AP]]]
 
 
 class LOCM:
@@ -55,7 +85,7 @@ class LOCM:
 
         sorts = LOCM._get_sorts(obs_trace)
         # TODO: use sorts in phase 1
-        TS, OS = LOCM._phase1(obs_trace, sorts)
+        TS, ap_state_pointers, OS = LOCM._phase1(obs_trace, sorts)
 
         if viz:
             graph = LOCM.viz_state_machines(TS, OS, sorts)
@@ -161,7 +191,9 @@ class LOCM:
         return obj_sorts
 
     @staticmethod
-    def _phase1(obs_trace: List[Observation], sorts: Sorts) -> Tuple[TSType, OSType]:
+    def _phase1(
+        obs_trace: List[Observation], sorts: Sorts
+    ) -> Tuple[TSType, APStatePointers, OSType]:
         """Phase 1: Create a state machine for each object sort
 
         Args:
@@ -184,31 +216,33 @@ class LOCM:
             action = obs.action
             if action is not None:
                 # add the step for the zero-object
-                obj_traces[zero_obj].append(AP(action.name, pos=0))
+                obj_traces[zero_obj].append(AP(action, pos=0))
                 # for each combination of action name A and argument pos P
                 for j, obj in enumerate(action.obj_params):
                     # create transition A.P
-                    ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
+                    ap = AP(action, pos=j + 1)  # NOTE: 1-indexed object position
                     obj_traces[obj].append(ap)
 
         # get unique states and transitions for each sort from the filtered traces
         TS: TSType = defaultdict(dict)
+        ap_state_pointers = defaultdict(dict)
         OS: OSType = defaultdict(list)
         for obj, seq in obj_traces.items():
             state_n = 1
             sort = sorts[obj.name] if obj != zero_obj else 0
             prev_states: APStates = None  # type: ignore
+            TS[sort][obj] = seq
             for ap in seq:
-                if ap not in TS[sort]:
+                if ap not in ap_state_pointers[sort]:
                     # could be a list, APState could hold AP
-                    TS[sort][ap] = APStates(state_n, state_n + 1)
+                    ap_state_pointers[sort][ap] = APStates(state_n, state_n + 1)
 
-                    OS[sort].append({state_n})
-                    OS[sort].append({state_n + 1})
+                    OS[sort].append(FSMState({state_n}))
+                    OS[sort].append(FSMState({state_n + 1}))
 
                     state_n += 2
 
-                ap_states = TS[sort][ap]
+                ap_states = ap_state_pointers[sort][ap]
 
                 if prev_states is not None:
                     start = ap_states.start
@@ -239,10 +273,10 @@ class LOCM:
 
         # remove the zero-object sort if it only has one state
         if len(OS[0]) == 1:
-            TS[0] = {}
+            ap_state_pointers[0] = {}
             OS[0] = []
 
-        return TS, OS
+        return TS, ap_state_pointers, OS
 
     @staticmethod
     def viz_state_machines(TS: TSType, OS: OSType):
@@ -273,15 +307,86 @@ class LOCM:
         return state_machines
 
     @staticmethod
-    def _phase3():
-        # 1. form hypothesis
+    def _phase3(
+        TS: TSType,
+        ap_state_pointers: APStatePointers,
+        OS: OSType,
+        sorts: Sorts,
+    ):
+        # 1. form hypotheses
 
         """
         - need the ordered transitions filtered by object from previous step
         - loop over that, for each consecutive pair check if they have a
             [not current object] param that is of the same sort
         - add [end of prior/start of latter state, parameterized by other sort, and action pair]
+            - need a state obj -> ext set, store params
         """
 
-        # 2. filter hypothesis
-        pass
+        H_ind = NamedTuple(
+            "HypothesisIndex", [("B", AP), ("k", int), ("C", AP), ("l", int)]
+        )
+
+        @dataclass
+        class Hypothesis:
+            S: int
+            k_: int
+            l_: int
+            G: int
+            G_: int
+            supported: bool
+
+        HS = defaultdict(list)
+        for sort, objs in TS.items():
+            for obj, seq in objs.items():
+                for B, C in zip(seq, seq[1:]):
+                    # FIXME: maybe bad
+                    if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
+                        continue
+
+                    k = B.pos
+                    l = C.pos
+                    for i, Bk_ in enumerate(B.action.obj_params):
+                        k_ = i + 1
+                        if k_ == k:
+                            continue
+                        G_ = sorts[Bk_.name]
+                        for j, Cl_ in enumerate(C.action.obj_params):
+                            l_ = j + 1
+                            if l_ == l:
+                                continue
+
+                            if sorts[Cl_.name] == G_:
+                                S = ap_state_pointers[sort][B].end
+                                HS[H_ind(B, k, C, l)].append(
+                                    Hypothesis(S, k_, l_, sort, G_, supported=False)
+                                )
+
+        for sort, objs in TS.items():
+            for obj, seq in objs.items():
+                for B, C in zip(seq, seq[1:]):
+                    k = B.pos
+                    l = C.pos
+                    BkCl = H_ind(B, k, C, l)
+                    if BkCl in HS:
+                        for i, H in enumerate(HS[BkCl]):
+                            # (S, k_, l_, G, G_, _)
+                            if (
+                                B.action.obj_params[H.k_ - 1]
+                                == C.action.obj_params[H.l_ - 1]
+                            ):
+                                # support
+                                HS[BkCl][i].supported = True
+                            else:
+                                # remove
+                                del HS[BkCl][i]
+
+        HS: Dict[H_ind, List[Hypothesis]]
+        for h_ind, hs in HS.items():
+            for i, h in enumerate(hs):
+                if not h.supported:
+                    del HS[h_ind][i]
+
+        print()
+        print()
+        pprint(HS)
