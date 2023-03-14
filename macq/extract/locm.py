@@ -1,9 +1,11 @@
 """.. include:: ../../docs/templates/extract/locm.md"""
 
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
+
+from macq.trace.fluent import PlanningObject
 
 from ..observation import ActionObservation, Observation, ObservedTraceList
 from . import LearnedAction, Model
@@ -23,12 +25,7 @@ class AP:
         return hash(self.action_name + str(self.pos))
 
 
-@dataclass
-class APStates:
-    """Pointers to the start and end states for an A.P"""
-
-    start: int
-    end: int
+APStates = namedtuple("APStates", ["start", "end"])
 
 
 Sorts = Dict[str, int]
@@ -97,12 +94,10 @@ class LOCM:
         for obs in obs_trace:
             action = obs.action
             if action is not None:
-
                 if action.name not in seen_actions:  # new action
                     idxs = []  # idxs[i] stores the sort of action param i
                     # for each parameter of the action
                     for obj in action.obj_params:
-
                         if obj.name not in seen_objs:  # new object
                             # append a sort (set) containing the object
                             seq_sorts.append({obj})
@@ -119,7 +114,6 @@ class LOCM:
                     seen_actions[action.name] = idxs
 
                 else:  # action seen before
-
                     for action_sort_idx, obj in zip(
                         seen_actions[action.name], action.obj_params
                     ):
@@ -184,72 +178,75 @@ class LOCM:
         """
 
         # collect traces for each sort (filtering out steps irrelevant to the sort)
-        sort_traces = defaultdict(list)
+        obj_traces: Dict[PlanningObject, List[AP]] = defaultdict(list)
+        zero_obj = PlanningObject("zero", "zero")
         for obs in obs_trace:
             action = obs.action
             if action is not None:
+                # add the step for the zero-object
+                obj_traces[zero_obj].append(AP(action.name, pos=0))
                 # for each combination of action name A and argument pos P
-                sort_traces[0].append(AP(action.name, pos=0))  # add the zero-object
                 for j, obj in enumerate(action.obj_params):
-                    sort = sorts[obj.name]
                     # create transition A.P
                     ap = AP(action.name, pos=j + 1)  # NOTE: 1-indexed object position
-                    sort_traces[sort].append(ap)
+                    obj_traces[obj].append(ap)
 
         # get unique states and transitions for each sort from the filtered traces
-        OS = {}
-        TS = {}
-        for sort, seq in sort_traces.items():
+        TS: TSType = defaultdict(dict)
+        OS: OSType = defaultdict(list)
+        for obj, seq in obj_traces.items():
             state_n = 1
-            ap_state_pointers: Dict[AP, APStates] = {}
-            os: List[Set[int]] = []
+            sort = sorts[obj.name] if obj != zero_obj else 0
             prev_states: APStates = None  # type: ignore
             for ap in seq:
-                if ap not in ap_state_pointers:
-                    ap_state_pointers[ap] = APStates(state_n, state_n + 1)
+                if ap not in TS[sort]:
+                    # could be a list, APState could hold AP
+                    TS[sort][ap] = APStates(state_n, state_n + 1)
+
+                    OS[sort].append({state_n})
+                    OS[sort].append({state_n + 1})
+
                     state_n += 2
 
-                    os.append({ap_state_pointers[ap].start})
-                    os.append({ap_state_pointers[ap].end})
+                ap_states = TS[sort][ap]
 
                 if prev_states is not None:
-                    states = ap_state_pointers[ap]
+                    start = ap_states.start
 
                     # get the indexes of the state sets containing the start state and prev end state
-                    state_idx, prev_idx = None, None
-                    for j, state_set in enumerate(os):
-                        if states.start in state_set:
-                            state_idx = j
+                    start_sort, prev_end_sort = None, None
+                    for j, state_set in enumerate(OS[sort]):
+                        if start in state_set:
+                            start_sort = j
                         if prev_states.end in state_set:
-                            prev_idx = j
-                        if state_idx is not None and prev_idx is not None:
+                            prev_end_sort = j
+                        if start_sort is not None and prev_end_sort is not None:
                             break
 
-                    # impossible, but the linter doesn't know that
+                    # impossible since the current and prev A.P must have been added to OS if not already in
                     assert (
-                        state_idx is not None and prev_idx is not None
-                    ), f"Start state ({states.start}) or prev end state ({prev_states.end}) is not in ts"
+                        start_sort is not None and prev_end_sort is not None
+                    ), f"Start state ({start}) or prev end state ({prev_states.end}) is not in TS[{sort}]"
 
                     # if not the same state set, merge the two
-                    if state_idx != prev_idx:
-                        os[state_idx] = os[state_idx].union(os[prev_idx])
-                        os.pop(prev_idx)
+                    if start_sort != prev_end_sort:
+                        OS[sort][start_sort] = OS[sort][start_sort].union(
+                            OS[sort][prev_end_sort]
+                        )
+                        OS[sort].pop(prev_end_sort)
 
-                prev_states = ap_state_pointers[ap]
+                prev_states = ap_states
 
-            # Don't add the zero-object if it only has one state
-            if not (sort == 0 and len(os) == 1):
-                TS[sort] = ap_state_pointers
-                OS[sort] = os
+        # remove the zero-object sort if it only has one state
+        if len(OS[0]) == 1:
+            TS[0] = {}
+            OS[0] = []
 
         return TS, OS
 
     @staticmethod
     def viz_state_machines(TS: TSType, OS: OSType):
         from graphviz import Digraph
-
-        print("TS:", TS, end="\n\n")
-        print("OS:", OS)
 
         state_machines = []
 
@@ -277,21 +274,14 @@ class LOCM:
 
     @staticmethod
     def _phase3():
+        # 1. form hypothesis
+
         """
-        consider wrench_state0 for wrench sort + actions:
-            putaway_wrench(wrench, container) -> wrench_state0
-            fetch_wrench(wrench, container) -> wrench_state1
-
-        the consectutive actions in any sequence have the same value for the container param
-        therefore, wrench_state0 has a state variable for container
-
-        this doesn't hold for wrench_state1, since there may
-
-
-        In general:
-            If there are two consectutive transitions for a given object sort
-            and there is a parameter that is the same for both actions,
-            and this is consistent across all sequences,
-            then the intermediate state is parameterized by this other sort.
+        - need the ordered transitions filtered by object from previous step
+        - loop over that, for each consecutive pair check if they have a
+            [not current object] param that is of the same sort
+        - add [end of prior/start of latter state, parameterized by other sort, and action pair]
         """
+
+        # 2. filter hypothesis
         pass
