@@ -16,22 +16,27 @@ from .exceptions import IncompatibleObservationToken
 from .learned_fluent import LearnedFluent
 from .model import Model
 
+# Phase 1 types
+
 
 @dataclass
 class AP:
-    """Action + object (argument) position"""
+    """Action.Position (of object parameter)"""
 
     action: Action
     pos: int
 
     def __hash__(self):
         return hash(self.action.name + str(self.pos))
+        # return hash((self.action, self.pos))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
 
 
 APStates = NamedTuple("APStates", [("start", int), ("end", int)])
+Sorts = Dict[str, int]
+APStatePointers = Dict[int, Dict[AP, APStates]]
 
 
 class FSMState(SetClass):
@@ -55,12 +60,87 @@ class FSMState(SetClass):
         return FSMState(self._data.union(other._data))
 
 
-Sorts = Dict[str, int]
-APStatePointers = Dict[int, Dict[AP, APStates]]
-
 OSType = Dict[int, List[FSMState]]
-# TSType = Dict[int, Dict[AP, APStates]]
 TSType = Dict[int, Dict[PlanningObject, List[AP]]]
+
+# Phase 3 types
+
+
+@dataclass
+class HSIndex:
+    B: AP
+    k: int
+    C: AP
+    l: int
+
+    def __hash__(self) -> int:
+        # NOTE: AP is hashed by action name + pos
+        # i.e. the same actions but operating on different objects (in the same pos)
+        # will be hashed the same
+        # This prevents duplicate hypotheses for an A.P pair
+        # e.g. B1=AP(action=<action on G obj1>, pos=1), B2=AP(action=<action on G obj2>, pos=1)
+        # with the same k,l, and C (similarly for C) will be hashed the same
+        return hash(
+            (
+                self.B,
+                self.k,
+                self.C,
+                self.l,
+            )
+        )
+
+
+@dataclass
+class HSItem:
+    S: int
+    k_: int
+    l_: int
+    G: int
+    G_: int
+    supported: bool
+
+    def __hash__(self) -> int:
+        return hash((self.S, self.k_, self.l_, self.G, self.G_))
+
+
+@dataclass
+class Hypothesis:
+    S: int
+    B: AP
+    k: int
+    k_: int
+    C: AP
+    l: int
+    l_: int
+    G: int
+    G_: int
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.S,
+                self.B,
+                self.k,
+                self.k_,
+                self.C,
+                self.l,
+                self.l_,
+                self.G,
+                self.G_,
+            )
+        )
+
+    @staticmethod
+    def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
+        """Converts a dict of HSIndex -> HSItem to a set of Hypothesis"""
+        HS = set()
+        for hsind, hsitems in hs.items():
+            hsind = hsind.__dict__
+            for hsitem in hsitems:
+                hsitem_dict = hsitem.__dict__
+                hsitem_dict.pop("supported")
+                HS.add(Hypothesis(**{**hsind, **hsitem_dict}))
+        return HS
 
 
 class LOCM:
@@ -111,7 +191,7 @@ class LOCM:
             close(wr1);
 
             In this case, the final action close(wr1) would unite the container
-            and wrench sorts into one. Therefore the trace is composed of 2
+            and wrench sorts into one. Therefore this trace is composed of 2
             sorts {c1, c2, c3, wr1, wr2}, {j1,j2}.
         """
 
@@ -339,28 +419,6 @@ class LOCM:
         #     "HypothesisIndex", [("B", AP), ("k", int), ("C", AP), ("l", int)]
         # )
 
-        @dataclass
-        class HSIndex:
-            B: AP
-            k: int
-            C: AP
-            l: int
-
-            def __hash__(self) -> int:
-                return hash((self.B, self.k, self.C, self.l))
-
-        @dataclass
-        class HSItem:
-            S: int
-            k_: int
-            l_: int
-            G: int
-            G_: int
-            supported: bool
-
-            def __hash__(self) -> int:
-                return hash((self.S, self.k_, self.l_, self.G, self.G_))
-
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
         for G, objs in TS.items():
             for obj, seq in objs.items():
@@ -386,13 +444,8 @@ class LOCM:
 
                             if sorts[Cl_.name] == G_:
                                 # TODO: get state id from state pointer
-                                # TODO: same action, different pos getting hashed the same
                                 S = ap_state_pointers[G][B].end
                                 print()
-                                print(
-                                    f"<{S}, {B}, {k}, {k_}, {C}, {l}, {l_}, {G}, {G_}>"
-                                )
-                                print(not HSIndex(B, k, C, l) in HS)
                                 print(hash(HSIndex(B, k, C, l)))
                                 print(HSIndex(B, k, C, l))
                                 HS[HSIndex(B, k, C, l)].add(
@@ -412,10 +465,8 @@ class LOCM:
                                 B.action.obj_params[H.k_ - 1]
                                 == C.action.obj_params[H.l_ - 1]
                             ):
-                                # support
                                 H.supported = True
                             else:
-                                # remove
                                 HS[BkCl].remove(H)
 
         for hs in HS.values():
@@ -427,45 +478,4 @@ class LOCM:
             if len(hs) == 0:
                 del HS[hind]
 
-        @dataclass
-        class Hypothesis:
-            S: int
-            B: AP
-            k: int
-            k_: int
-            C: AP
-            l: int
-            l_: int
-            G: int
-            G_: int
-
-            def __hash__(self) -> int:
-                return hash(
-                    (
-                        self.S,
-                        self.B,
-                        self.k,
-                        self.k_,
-                        self.C,
-                        self.l,
-                        self.l_,
-                        self.G,
-                        self.G_,
-                    )
-                )
-
-            @staticmethod
-            def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
-                HS = set()
-                for hsind, hsitems in hs.items():
-                    hsind = asdict(hsind)
-                    for hsitem in hsitems:
-                        hsitem_dict = asdict(hsitem)
-                        hsitem_dict.pop("supported")
-                        # HS.add(Hypothesis(**{**hsind._asdict(), **hsitem_dict}))
-                        HS.add(Hypothesis(**{**hsind, **hsitem_dict}))
-                return HS
-
-        print()
-        print()
-        pprint(Hypothesis.from_dict(HS))
+        return Hypothesis.from_dict(HS)
