@@ -226,5 +226,5 @@ def test_locm_phase3(is_test=True):
 if __name__ == "__main__":
     test_locm_get_sorts()
     test_locm_phase1()
-    test_locm_viz()
+    # test_locm_viz()
     test_locm_phase3()

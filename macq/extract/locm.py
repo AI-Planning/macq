@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Set as SetClass
 from dataclasses import asdict, dataclass
 from pprint import pprint
-from typing import Dict, List, NamedTuple, Set, Tuple
+from typing import Dict, List, NamedTuple, Set, Tuple, Union
 
 from macq.trace.action import Action
 from macq.trace.fluent import PlanningObject
@@ -271,6 +271,21 @@ class LOCM:
         return obj_sorts
 
     @staticmethod
+    def _get_states(states, pointer, pointer2) -> Tuple[int, int]:
+        state1, state2 = None, None
+        for i, state_set in enumerate(states):
+            if pointer in state_set:
+                state1 = i
+            if pointer2 in state_set:
+                state2 = i
+            if state1 is not None and state2 is not None:
+                break
+
+        assert state1 is not None, f"Pointer ({pointer}) not in states: {states}"
+        assert state2 is not None, f"Pointer ({pointer2}) not in states: {states}"
+        return state1, state2
+
+    @staticmethod
     def _phase1(
         obs_trace: List[Observation], sorts: Sorts
     ) -> Tuple[TSType, APStatePointers, OSType]:
@@ -332,32 +347,28 @@ class LOCM:
                 ap_states = ap_state_pointers[sort][ap]
 
                 if prev_states is not None:
-                    start = ap_states.start
+                    # start = ap_states.start
 
                     # get the state ids (indecies) of the state sets containing
                     # start(A.P) and the end state of the previous transition
-                    start_sort, prev_end_sort = None, None
-                    for j, state_set in enumerate(OS[sort]):
-                        if start in state_set:
-                            start_sort = j
-                        if prev_states.end in state_set:
-                            prev_end_sort = j
-                        if start_sort is not None and prev_end_sort is not None:
-                            break
-
-                    assert (
-                        # impossible to fail since the current and prev A.P must
-                        # have been added to OS in the current / previous iteration
-                        start_sort is not None
-                        and prev_end_sort is not None
-                    ), f"Start state ({start}) or prev end state ({prev_states.end}) is not in TS[{sort}]"
+                    # start_state, prev_end_state = None, None
+                    # for j, state_set in enumerate(OS[sort]):
+                    #     if start in state_set:
+                    #         start_state = j
+                    #     if prev_states.end in state_set:
+                    #         prev_end_state = j
+                    #     if start_state is not None and prev_end_state is not None:
+                    #         break
+                    start_state, prev_end_state = LOCM._get_states(
+                        OS[sort], ap_states.start, prev_states.end
+                    )
 
                     # if not the same state set, merge the two
-                    if start_sort != prev_end_sort:
-                        OS[sort][start_sort] = OS[sort][start_sort].union(
-                            OS[sort][prev_end_sort]
+                    if start_state != prev_end_state:
+                        OS[sort][start_state] = OS[sort][start_state].union(
+                            OS[sort][prev_end_state]
                         )
-                        OS[sort].pop(prev_end_sort)
+                        OS[sort].pop(prev_end_state)
 
                 prev_states = ap_states
 
@@ -373,21 +384,12 @@ class LOCM:
         from graphviz import Digraph
 
         state_machines = []
-
         for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
             graph = Digraph(f"LOCM-phase1-sort{sort}")
             for i in range(len(states)):
                 graph.node(str(i), label=f"state{i}", shape="oval")
             for ap, apstate in trans.items():
-                start_idx = None
-                end_idx = None
-                for i, state_set in enumerate(states):
-                    if apstate.start in state_set:
-                        start_idx = i
-                    if apstate.end in state_set:
-                        end_idx = i
-                    if start_idx is not None and end_idx is not None:
-                        break
+                start_idx, end_idx = LOCM._get_state(states, apstate.start, apstate.end)  # type: ignore
                 graph.edge(
                     str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
                 )
@@ -443,15 +445,17 @@ class LOCM:
                                 continue
 
                             if sorts[Cl_.name] == G_:
-                                # TODO: get state id from state pointer
-                                S = ap_state_pointers[G][B].end
-                                print()
-                                print(hash(HSIndex(B, k, C, l)))
-                                print(HSIndex(B, k, C, l))
+                                S, S2 = LOCM._get_states(
+                                    OS[G],
+                                    ap_state_pointers[G][B].end,
+                                    ap_state_pointers[G][C].start,
+                                )
+                                assert (
+                                    S == S2
+                                ), f"end(B.P) != start(C.P)\nB.P: {B}\nC.P: {C}"
                                 HS[HSIndex(B, k, C, l)].add(
                                     HSItem(S, k_, l_, G, G_, supported=False)
                                 )
-                                print(len(HS))
 
         for G, objs in TS.items():
             for obj, seq in objs.items():
