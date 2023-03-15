@@ -125,7 +125,6 @@ class Hypothesis:
                 self.C,
                 self.l,
                 self.l_,
-                self.G,
                 self.G_,
             )
         )
@@ -133,13 +132,13 @@ class Hypothesis:
     @staticmethod
     def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
         """Converts a dict of HSIndex -> HSItem to a set of Hypothesis"""
-        HS = set()
+        HS = defaultdict(lambda: defaultdict(set))
         for hsind, hsitems in hs.items():
             hsind = hsind.__dict__
             for hsitem in hsitems:
                 hsitem_dict = hsitem.__dict__
                 hsitem_dict.pop("supported")
-                HS.add(Hypothesis(**{**hsind, **hsitem_dict}))
+                HS[hsitem.G][hsitem.S].add(Hypothesis(**{**hsind, **hsitem_dict}))
         return HS
 
 
@@ -485,6 +484,58 @@ class LOCM:
 
         return Hypothesis.from_dict(HS)
 
+    def get_param(v):
+        for i, set in enum(params):
+            if v in set:
+                return i
+
     @staticmethod
-    def _step4(HS):
-        pass
+    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]):
+
+        bindings = defaultdict(dict)
+        param_pointers = defaultdict(dict)
+        params = defaultdict(dict)
+
+        for G, hsG in HS.items():
+            for S, hsS in hsG.items():
+                state_bindings = {}
+                state_params = [{1, 2}, {3, 4}]  # params to give to S
+                state_param_pointers = {}
+                # add a unique v
+                # add a <h, v> pair for each h
+                hsS = list(hsS)
+                for v, h in enumerate(hsS):
+                    state_params.append({v})
+                    state_bindings[h] = v
+                    state_param_pointers[v] = v
+
+                for i, h1 in enumerate(hsS):
+                    for h2 in hsS[i + 1 :]:
+                        if (
+                            (h1.B == h2.B and h1.k == h2.k and h1.k_ == h2.k_)
+                            or
+                            (h1.C == h2.C and h1.l == h2.l and h1.l_ == h2.l_)  # fmt: skip
+                        ):
+                            v1 = state_bindings[h1]
+                            v2 = state_bindings[h2]
+
+                            vi1, vi2 = None, None
+                            for i, param_set in enumerate(state_params):
+                                if v1 in param_set:
+                                    vi1 = i
+                                if v2 in param_set:
+                                    vi2 = i
+                                if v1 is not None and v2 is not None:
+                                    break
+                            assert vi1 is not None and vi2 is not None
+
+                            state_params[vi1] = state_params[vi1].union(
+                                state_params[vi2]
+                            )
+                            state_params.pop(vi2)
+
+                bindings[G][S] = {v: h for h, v in state_bindings.items()}
+                param_pointers[G][S] = state_param_pointers
+                params[G][S] = state_params
+
+        return bindings, param_pointers, params
