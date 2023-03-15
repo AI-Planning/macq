@@ -499,10 +499,11 @@ class LOCM:
         for G, hsG in HS.items():
             for S, hsS in hsG.items():
                 state_bindings = {}
-                state_params = [{1, 2}, {3, 4}]  # params to give to S
+                state_params = []  # params to give to S
                 state_param_pointers = {}
+
                 # add a unique v
-                # add a <h, v> pair for each h
+                # add a <h, vpointer> pair for each h
                 hsS = list(hsS)
                 for v, h in enumerate(hsS):
                     state_params.append({v})
@@ -525,17 +526,51 @@ class LOCM:
                                     vi1 = i
                                 if v2 in param_set:
                                     vi2 = i
-                                if v1 is not None and v2 is not None:
+                                if vi1 is not None and vi2 is not None:
                                     break
+
                             assert vi1 is not None and vi2 is not None
 
-                            state_params[vi1] = state_params[vi1].union(
-                                state_params[vi2]
-                            )
-                            state_params.pop(vi2)
+                            if vi1 != vi2:
+                                state_params[vi1] = state_params[vi1].union(
+                                    state_params[vi2]
+                                )
+                                state_params.pop(vi2)
+                                state_param_pointers[v2] = vi1
 
-                bindings[G][S] = {v: h for h, v in state_bindings.items()}
+                bindings[G][S] = state_bindings
+                # {vpointer: h for h, vpointer in state_bindings.items()}
                 param_pointers[G][S] = state_param_pointers
                 params[G][S] = state_params
 
         return bindings, param_pointers, params
+
+    @staticmethod
+    def _step5(
+        HS: Dict[int, Dict[int, Set[Hypothesis]]],
+        bindings,
+        param_pointers,
+        params,
+    ):
+        print(list(bindings[2][1].items())[0][0])
+        print("vpointer", list(bindings[2][1].items())[0][1])
+        print()
+        print(list(bindings[2][1].items())[1][0])
+        print("vpointer", list(bindings[2][1].items())[1][1])
+        print()
+
+        for G, hsG in HS.copy().items():
+            for S, hsS in hsG.copy().items():
+                unique_Ps = set(param_pointers[G][S].values())
+                """
+                for each P (v (not pointer)) -> for index in params[G][S]
+                    if there is an h in hsS that doesn't have vpointer == P
+                        remove him
+                """
+                for P in unique_Ps:
+                    for h in hsS.copy():
+                        if param_pointers[G][S][bindings[G][S][h]] != P:
+                            # remove P from EVERYTHING KILL IT WITH FIRE
+                            pass
+
+        return HS

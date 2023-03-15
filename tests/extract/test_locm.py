@@ -5,7 +5,7 @@ from typing import List
 from graphviz import Digraph
 
 from macq.extract import Extract, modes
-from macq.extract.locm import LOCM
+from macq.extract.locm import AP, LOCM, Hypothesis
 from macq.generate.pddl import *
 from macq.observation import ActionObservation
 from macq.trace import *
@@ -223,8 +223,224 @@ def test_locm_step3(is_test=True):
         return HS
 
 
+def test_locm_step4(HS=None, is_test=True):
+    if HS is None:
+        HS = {
+            1: {
+                1: {
+                    Hypothesis(
+                        S=1,
+                        B=AP(
+                            Action(
+                                "do_up",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        k=1,
+                        k_=2,
+                        C=AP(
+                            Action(
+                                "tighten",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        l=1,
+                        l_=2,
+                        G=1,
+                        G_=2,
+                    ),
+                    Hypothesis(
+                        S=1,
+                        B=AP(
+                            Action(
+                                "do_up",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        k=1,
+                        k_=2,
+                        C=AP(
+                            Action(
+                                "undo",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        l=1,
+                        l_=2,
+                        G=1,
+                        G_=2,
+                    ),
+                    Hypothesis(
+                        S=1,
+                        B=AP(
+                            Action(
+                                "loosen",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        k=1,
+                        k_=2,
+                        C=AP(
+                            Action(
+                                "tighten",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        l=1,
+                        l_=2,
+                        G=1,
+                        G_=2,
+                    ),
+                    Hypothesis(
+                        S=1,
+                        B=AP(
+                            Action(
+                                "loosen",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        k=1,
+                        k_=2,
+                        C=AP(
+                            Action(
+                                "undo",
+                                [
+                                    PlanningObject("nut", "nut1"),
+                                    PlanningObject("hub", "hub1"),
+                                ],
+                            ),
+                            1,
+                        ),
+                        l=1,
+                        l_=2,
+                        G=1,
+                        G_=2,
+                    ),
+                }
+            }
+        }
+    bindings, param_pointers, params = LOCM._step4(HS)
+
+    if is_test:
+        print("bindings:")
+        pprint(bindings)
+        print("param_pointers:")
+        pprint(param_pointers)
+        print("params:")
+        pprint(params)
+    else:
+        return bindings, param_pointers, params
+
+
+def test_locm_step5(is_test=True):
+    HS = {
+        2: {
+            1: {
+                Hypothesis(
+                    S=1,
+                    B=AP(
+                        Action(
+                            "do_up",
+                            [
+                                PlanningObject("nut", "nut1"),
+                                PlanningObject("hub", "hub1"),
+                            ],
+                        ),
+                        2,
+                    ),
+                    k=2,
+                    k_=1,
+                    C=AP(
+                        Action(
+                            "undo",
+                            [
+                                PlanningObject("nut", "nut1"),
+                                PlanningObject("hub", "hub1"),
+                            ],
+                        ),
+                        2,
+                    ),
+                    l=2,
+                    l_=1,
+                    G=2,
+                    G_=1,
+                ),
+                Hypothesis(
+                    S=1,
+                    B=AP(
+                        Action(
+                            "jack_up",
+                            [
+                                PlanningObject("jack", "jack1"),
+                                PlanningObject("hub", "hub1"),
+                            ],
+                        ),
+                        2,
+                    ),
+                    k=2,
+                    k_=1,
+                    C=AP(
+                        Action(
+                            "jack_down",
+                            [
+                                PlanningObject("jack", "jack1"),
+                                PlanningObject("hub", "hub1"),
+                            ],
+                        ),
+                        2,
+                    ),
+                    l=2,
+                    l_=1,
+                    G=2,
+                    G_=3,
+                ),
+            }
+        }
+    }
+
+    bindings, param_pointers, params = test_locm_step4(HS, False)  # type: ignore
+
+    print("HS before:")
+    pprint(HS)
+
+    HS = LOCM._step5(HS, bindings, param_pointers, params)
+
+    print("HS after:")
+    pprint(HS)
+
+
 if __name__ == "__main__":
-    test_locm_get_sorts()
-    test_locm_step1()
+    # test_locm_get_sorts()
+    # test_locm_step1()
     # test_locm_viz()
-    test_locm_step3()
+    # test_locm_step3()
+    # test_locm_step4()
+    test_locm_step5()
