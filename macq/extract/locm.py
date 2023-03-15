@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 from collections.abc import Set as SetClass
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pprint import pprint
 from typing import Dict, List, NamedTuple, Set, Tuple
 
@@ -209,9 +209,12 @@ class LOCM:
                 Set of distinct states for each object sort.
         """
 
-        # collect traces for each sort (filtering out steps irrelevant to the sort)
-        obj_traces: Dict[PlanningObject, List[AP]] = defaultdict(list)
+        # create the zero-object for zero analysis (phase 2)
         zero_obj = PlanningObject("zero", "zero")
+
+        # collect action sequences for each object
+        # used for step 5: looping over consecutive transitions for an object
+        obj_traces: Dict[PlanningObject, List[AP]] = defaultdict(list)
         for obs in obs_trace:
             action = obs.action
             if action is not None:
@@ -223,20 +226,24 @@ class LOCM:
                     ap = AP(action, pos=j + 1)  # NOTE: 1-indexed object position
                     obj_traces[obj].append(ap)
 
-        # get unique states and transitions for each sort from the filtered traces
-        TS: TSType = defaultdict(dict)
-        ap_state_pointers = defaultdict(dict)
+        # initialize the state set OS and transition set TS
         OS: OSType = defaultdict(list)
+        TS: TSType = defaultdict(dict)
+        # track pointers mapping A.P to its start and end states
+        ap_state_pointers = defaultdict(dict)
+        # iterate over each object and its action sequence
         for obj, seq in obj_traces.items():
-            state_n = 1
+            state_n = 1  # count current (new) state id
             sort = sorts[obj.name] if obj != zero_obj else 0
+            TS[sort][obj] = seq  # add the sequence to the transition set
             prev_states: APStates = None  # type: ignore
-            TS[sort][obj] = seq
+            # iterate over each transition A.P in the sequence
             for ap in seq:
+                # if the transition has not been seen before for the current sort
                 if ap not in ap_state_pointers[sort]:
-                    # could be a list, APState could hold AP
                     ap_state_pointers[sort][ap] = APStates(state_n, state_n + 1)
 
+                    # add the start and end states to the state set as unique states
                     OS[sort].append(FSMState({state_n}))
                     OS[sort].append(FSMState({state_n + 1}))
 
@@ -247,7 +254,8 @@ class LOCM:
                 if prev_states is not None:
                     start = ap_states.start
 
-                    # get the indexes of the state sets containing the start state and prev end state
+                    # get the state ids (indecies) of the state sets containing
+                    # start(A.P) and the end state of the previous transition
                     start_sort, prev_end_sort = None, None
                     for j, state_set in enumerate(OS[sort]):
                         if start in state_set:
@@ -257,9 +265,11 @@ class LOCM:
                         if start_sort is not None and prev_end_sort is not None:
                             break
 
-                    # impossible since the current and prev A.P must have been added to OS if not already in
                     assert (
-                        start_sort is not None and prev_end_sort is not None
+                        # impossible to fail since the current and prev A.P must
+                        # have been added to OS in the current / previous iteration
+                        start_sort is not None
+                        and prev_end_sort is not None
                     ), f"Start state ({start}) or prev end state ({prev_states.end}) is not in TS[{sort}]"
 
                     # if not the same state set, merge the two
@@ -279,12 +289,12 @@ class LOCM:
         return TS, ap_state_pointers, OS
 
     @staticmethod
-    def viz_state_machines(TS: TSType, OS: OSType):
+    def viz_state_machines(ap_state_pointers: APStatePointers, OS: OSType):
         from graphviz import Digraph
 
         state_machines = []
 
-        for (sort, trans), states in zip(TS.items(), OS.values()):
+        for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
             graph = Digraph(f"LOCM-phase1-sort{sort}")
             for i in range(len(states)):
                 graph.node(str(i), label=f"state{i}", shape="oval")
@@ -299,7 +309,7 @@ class LOCM:
                     if start_idx is not None and end_idx is not None:
                         break
                 graph.edge(
-                    str(start_idx), str(end_idx), label=f"{ap.action_name}.{ap.pos}"
+                    str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
                 )
 
             state_machines.append(graph)
@@ -323,12 +333,24 @@ class LOCM:
             - need a state obj -> ext set, store params
         """
 
-        H_ind = NamedTuple(
-            "HypothesisIndex", [("B", AP), ("k", int), ("C", AP), ("l", int)]
-        )
+        zero_obj = PlanningObject("zero", "zero")
+
+        # HSIndex = NamedTuple(
+        #     "HypothesisIndex", [("B", AP), ("k", int), ("C", AP), ("l", int)]
+        # )
 
         @dataclass
-        class Hypothesis:
+        class HSIndex:
+            B: AP
+            k: int
+            C: AP
+            l: int
+
+            def __hash__(self) -> int:
+                return hash((self.B, self.k, self.C, self.l))
+
+        @dataclass
+        class HSItem:
             S: int
             k_: int
             l_: int
@@ -336,9 +358,15 @@ class LOCM:
             G_: int
             supported: bool
 
-        HS = defaultdict(list)
-        for sort, objs in TS.items():
+            def __hash__(self) -> int:
+                return hash((self.S, self.k_, self.l_, self.G, self.G_))
+
+        HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
+        for G, objs in TS.items():
             for obj, seq in objs.items():
+                # looping over O ∈ O_u (i.e. not including the zero-object)
+                if obj == zero_obj:
+                    continue
                 for B, C in zip(seq, seq[1:]):
                     # FIXME: maybe bad
                     if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
@@ -357,36 +385,87 @@ class LOCM:
                                 continue
 
                             if sorts[Cl_.name] == G_:
-                                S = ap_state_pointers[sort][B].end
-                                HS[H_ind(B, k, C, l)].append(
-                                    Hypothesis(S, k_, l_, sort, G_, supported=False)
+                                # TODO: get state id from state pointer
+                                # TODO: same action, different pos getting hashed the same
+                                S = ap_state_pointers[G][B].end
+                                print()
+                                print(
+                                    f"<{S}, {B}, {k}, {k_}, {C}, {l}, {l_}, {G}, {G_}>"
                                 )
+                                print(not HSIndex(B, k, C, l) in HS)
+                                print(hash(HSIndex(B, k, C, l)))
+                                print(HSIndex(B, k, C, l))
+                                HS[HSIndex(B, k, C, l)].add(
+                                    HSItem(S, k_, l_, G, G_, supported=False)
+                                )
+                                print(len(HS))
 
-        for sort, objs in TS.items():
+        for G, objs in TS.items():
             for obj, seq in objs.items():
                 for B, C in zip(seq, seq[1:]):
                     k = B.pos
                     l = C.pos
-                    BkCl = H_ind(B, k, C, l)
+                    BkCl = HSIndex(B, k, C, l)
                     if BkCl in HS:
-                        for i, H in enumerate(HS[BkCl]):
-                            # (S, k_, l_, G, G_, _)
+                        for H in HS[BkCl].copy():
                             if (
                                 B.action.obj_params[H.k_ - 1]
                                 == C.action.obj_params[H.l_ - 1]
                             ):
                                 # support
-                                HS[BkCl][i].supported = True
+                                H.supported = True
                             else:
                                 # remove
-                                del HS[BkCl][i]
+                                HS[BkCl].remove(H)
 
-        HS: Dict[H_ind, List[Hypothesis]]
-        for h_ind, hs in HS.items():
-            for i, h in enumerate(hs):
+        for hs in HS.values():
+            for h in hs.copy():
                 if not h.supported:
-                    del HS[h_ind][i]
+                    hs.remove(h)
+
+        for hind, hs in HS.copy().items():
+            if len(hs) == 0:
+                del HS[hind]
+
+        @dataclass
+        class Hypothesis:
+            S: int
+            B: AP
+            k: int
+            k_: int
+            C: AP
+            l: int
+            l_: int
+            G: int
+            G_: int
+
+            def __hash__(self) -> int:
+                return hash(
+                    (
+                        self.S,
+                        self.B,
+                        self.k,
+                        self.k_,
+                        self.C,
+                        self.l,
+                        self.l_,
+                        self.G,
+                        self.G_,
+                    )
+                )
+
+            @staticmethod
+            def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
+                HS = set()
+                for hsind, hsitems in hs.items():
+                    hsind = asdict(hsind)
+                    for hsitem in hsitems:
+                        hsitem_dict = asdict(hsitem)
+                        hsitem_dict.pop("supported")
+                        # HS.add(Hypothesis(**{**hsind._asdict(), **hsitem_dict}))
+                        HS.add(Hypothesis(**{**hsind, **hsitem_dict}))
+                return HS
 
         print()
         print()
-        pprint(HS)
+        pprint(Hypothesis.from_dict(HS))

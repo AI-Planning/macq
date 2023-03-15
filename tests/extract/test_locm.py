@@ -141,8 +141,8 @@ def get_example_obs(print_trace=False):
             #         # Step(states[11], None, 12),
             #     ]
             # ),
-            # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway
-            # jack(j2,c2); open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1);
+            # open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway jack(j2,c2);
+            # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1);
             # fetch jack(j2,c2); close(c1);
             Trace(
                 [
@@ -218,4 +218,11 @@ if __name__ == "__main__":
     test_locm_get_sorts()
     test_locm_phase1()
     # test_locm_viz()
+    print()
+    print("=" * 80)
+    print()
+    print("open(c1); putaway jack(j1,c1); close(c1); open(c2); putaway jack(j2,c2);")
+    print(
+        "open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); fetch jack(j2,c2); close(c1);"
+    )
     test_locm_phase3()
