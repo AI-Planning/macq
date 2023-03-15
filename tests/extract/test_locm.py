@@ -188,10 +188,10 @@ def test_locm_get_sorts(is_test=True):
         return sorts
 
 
-def test_locm_phase1(is_test=True):
+def test_locm_step1(is_test=True):
     obs = get_example_obs(False)
     sorts = test_locm_get_sorts(False)
-    ts, ap_state_pointers, os = LOCM._phase1(obs[0], sorts)  # type: ignore
+    ts, ap_state_pointers, os = LOCM._step1(obs[0], sorts)  # type: ignore
 
     if is_test:
         print("state pointers:")
@@ -206,16 +206,16 @@ def test_locm_phase1(is_test=True):
 
 
 def test_locm_viz():
-    _, ap_state_pointers, OS = test_locm_phase1(False)  # type: ignore
+    _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
     state_machines: List[Digraph] = LOCM.viz_state_machines(ap_state_pointers, OS)
     for sm in state_machines:
         sm.render(view=True)
 
 
-def test_locm_phase3(is_test=True):
+def test_locm_step3(is_test=True):
     sorts = test_locm_get_sorts(False)
-    TS, ap_state_pointers, OS = test_locm_phase1(False)  # type: ignore
-    HS = LOCM._phase3(TS, ap_state_pointers, OS, sorts)  # type: ignore
+    TS, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)  # type: ignore
     if is_test:
         print("HS:")
         pprint(HS)
@@ -225,6 +225,6 @@ def test_locm_phase3(is_test=True):
 
 if __name__ == "__main__":
     test_locm_get_sorts()
-    test_locm_phase1()
+    test_locm_step1()
     # test_locm_viz()
-    test_locm_phase3()
+    test_locm_step3()

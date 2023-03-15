@@ -16,7 +16,7 @@ from .exceptions import IncompatibleObservationToken
 from .learned_fluent import LearnedFluent
 from .model import Model
 
-# Phase 1 types
+# step 1 types
 
 
 @dataclass
@@ -63,7 +63,7 @@ class FSMState(SetClass):
 OSType = Dict[int, List[FSMState]]
 TSType = Dict[int, Dict[PlanningObject, List[AP]]]
 
-# Phase 3 types
+# step 3 types
 
 
 @dataclass
@@ -164,8 +164,8 @@ class LOCM:
         fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_trace)
-        # TODO: use sorts in phase 1
-        TS, ap_state_pointers, OS = LOCM._phase1(obs_trace, sorts)
+        # TODO: use sorts in step 1
+        TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)
 
         if viz:
             graph = LOCM.viz_state_machines(TS, OS, sorts)
@@ -286,10 +286,11 @@ class LOCM:
         return state1, state2
 
     @staticmethod
-    def _phase1(
+    def _step1(
         obs_trace: List[Observation], sorts: Sorts
     ) -> Tuple[TSType, APStatePointers, OSType]:
-        """Phase 1: Create a state machine for each object sort
+        """step 1: Create a state machine for each object sort
+        Implicitly includes step 2 (zero analysis)
 
         Args:
             obs_tracelist (ObservedTraceList):
@@ -304,7 +305,7 @@ class LOCM:
                 Set of distinct states for each object sort.
         """
 
-        # create the zero-object for zero analysis (phase 2)
+        # create the zero-object for zero analysis (step 2)
         zero_obj = PlanningObject("zero", "zero")
 
         # collect action sequences for each object
@@ -385,7 +386,7 @@ class LOCM:
 
         state_machines = []
         for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
-            graph = Digraph(f"LOCM-phase1-sort{sort}")
+            graph = Digraph(f"LOCM-step1-sort{sort}")
             for i in range(len(states)):
                 graph.node(str(i), label=f"state{i}", shape="oval")
             for ap, apstate in trans.items():
@@ -399,7 +400,7 @@ class LOCM:
         return state_machines
 
     @staticmethod
-    def _phase3(
+    def _step3(
         TS: TSType,
         ap_state_pointers: APStatePointers,
         OS: OSType,
@@ -483,3 +484,7 @@ class LOCM:
                 del HS[hind]
 
         return Hypothesis.from_dict(HS)
+
+    @staticmethod
+    def _step4(HS):
+        pass
