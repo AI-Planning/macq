@@ -1,11 +1,12 @@
-from warnings import warn
-from typing import List, Callable, Type, Optional, Union
-from logging import warn
 from collections.abc import MutableSequence
+from logging import warn
+from typing import Callable, List, Optional, Type, Union
+from warnings import warn
+
 from rich.console import Console
 
-from . import Action, Trace
 from ..observation import Observation, ObservedTraceList
+from . import Action, Trace
 
 
 class TraceList(MutableSequence):
@@ -141,14 +142,15 @@ class TraceList(MutableSequence):
 
         Arguments:
             view ("details" | "color"):
-                Specifies the view format to print in. "details" provides a
-                detailed summary of each step in a trace. "color" provides a
+                Specifies the view format to print in. "details" prints a
+                detailed summary of each step in a trace. "color" prints a
                 color grid, mapping fluents in a step to either red or green
-                corresponding to the truth value.
+                corresponding to the truth value. "actions" prints the actions
+                in the traces.
         """
         console = Console()
 
-        views = ["details", "color"]
+        views = ["details", "color", "actions"]
         if view not in views:
             warn(f'Invalid view {view}. Defaulting to "details".')
             view = "details"
@@ -165,6 +167,8 @@ class TraceList(MutableSequence):
             traces = [
                 trace.colorgrid(filter_func=filter_func, wrap=wrap) for trace in self
             ]
+        elif view == "actions":
+            traces = [[step.action for step in trace] for trace in self]
 
         for trace in traces:
             console.print(trace)
