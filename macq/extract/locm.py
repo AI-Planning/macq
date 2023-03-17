@@ -145,6 +145,8 @@ class Hypothesis:
 class LOCM:
     """LOCM"""
 
+    zero_obj = PlanningObject("zero", "zero")
+
     def __new__(cls, obs_tracelist: ObservedTraceList, viz=False, debug=False):
         """Creates a new Model object.
         Args:
@@ -163,7 +165,6 @@ class LOCM:
         fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_trace, debug=debug)
-        # TODO: use sorts in step 1
         TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)
 
         if viz:
@@ -278,18 +279,6 @@ class LOCM:
                                 )
                                 print(f"seq_sorts: {sorts}")
 
-                            # if obj_sort > len(sorts) - 1 or obj not in sorts[obj_sort]:
-                            #     prev_obj_sort_idx = obj_sort
-                            #     # find the sort the object belongs to
-                            #     for i, sort in enumerate(sorts):
-                            #         if obj in sort:
-                            #             obj_sort = i
-                            #             break
-
-                            #     assert (
-                            #         obj_sort != prev_obj_sort_idx
-                            #     ), "Something went wrong"
-
                             # unite the action parameter's sort and the object's sort
                             sorts[obj_sort] = sorts[obj_sort].union(sorts[ap_sort])
 
@@ -305,10 +294,7 @@ class LOCM:
                                     f"united seq_sorts[{ap_sort}] and seq_sorts[{obj_sort}]"
                                 )
                                 print(f"seq_sorts: {sorts}")
-
                                 print(f"ap_sort_pointers: {ap_sort_pointers}")
-                                print(f"obj_sort_pointers: {obj_sort_pointers}")
-
                                 print("updating pointers...")
 
                             min_idx = min(ap_sort, obj_sort)
@@ -327,7 +313,7 @@ class LOCM:
         obj_sorts = {}
         for i, sort in enumerate(sorts):
             for obj in sort:
-                # 1-indexed so the zero-object can be sort 0
+                # NOTE: object sorts are 1-indexed so the zero-object can be sort 0
                 obj_sorts[obj.name] = i + 1
 
         return obj_sorts
@@ -368,7 +354,7 @@ class LOCM:
         """
 
         # create the zero-object for zero analysis (step 2)
-        zero_obj = PlanningObject("zero", "zero")
+        zero_obj = LOCM.zero_obj
 
         # collect action sequences for each object
         # used for step 5: looping over consecutive transitions for an object
@@ -410,18 +396,8 @@ class LOCM:
                 ap_states = ap_state_pointers[sort][ap]
 
                 if prev_states is not None:
-                    # start = ap_states.start
-
                     # get the state ids (indecies) of the state sets containing
                     # start(A.P) and the end state of the previous transition
-                    # start_state, prev_end_state = None, None
-                    # for j, state_set in enumerate(OS[sort]):
-                    #     if start in state_set:
-                    #         start_state = j
-                    #     if prev_states.end in state_set:
-                    #         prev_end_state = j
-                    #     if start_state is not None and prev_end_state is not None:
-                    #         break
                     start_state, prev_end_state = LOCM._get_states(
                         OS[sort], ap_states.start, prev_states.end
                     )
@@ -468,22 +444,8 @@ class LOCM:
         OS: OSType,
         sorts: Sorts,
     ):
-        # 1. form hypotheses
 
-        """
-        - need the ordered transitions filtered by object from previous step
-        - loop over that, for each consecutive pair check if they have a
-            [not current object] param that is of the same sort
-        - add [end of prior/start of latter state, parameterized by other sort, and action pair]
-            - need a state obj -> ext set, store params
-        """
-
-        zero_obj = PlanningObject("zero", "zero")
-
-        # HSIndex = NamedTuple(
-        #     "HypothesisIndex", [("B", AP), ("k", int), ("C", AP), ("l", int)]
-        # )
-
+        zero_obj = LOCM.zero_obj
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
         for G, objs in TS.items():
             for obj, seq in objs.items():
@@ -491,7 +453,7 @@ class LOCM:
                 if obj == zero_obj:
                     continue
                 for B, C in zip(seq, seq[1:]):
-                    # FIXME: maybe bad
+                    # skip if B or C only have one parameter, since there is no k' / l' to match on
                     if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
                         continue
 
