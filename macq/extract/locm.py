@@ -35,8 +35,8 @@ class AP:
 
 
 APStates = NamedTuple("APStates", [("start", int), ("end", int)])
-Sorts = Dict[str, int]
-APStatePointers = Dict[int, Dict[AP, APStates]]
+Sorts = Dict[str, int]  # {obj_name: sort}
+APStatePointers = Dict[int, Dict[AP, APStates]]  # {sort: {AP: APStates}}
 
 
 class FSMState(SetClass):
@@ -136,9 +136,13 @@ class Hypothesis:
         return out.strip() + "\n>"
 
     @staticmethod
-    def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
-        """Converts a dict of HSIndex -> HSItem to a set of Hypothesis"""
-        HS = defaultdict(lambda: defaultdict(set))
+    def from_dict(
+        hs: Dict[HSIndex, Set[HSItem]]
+    ) -> Dict[int, Dict[int, Set["Hypothesis"]]]:
+        """Converts a dict of HSIndex -> HSItem to a dict of G -> S -> Hypothesis"""
+        HS: Dict[int, Dict[int, Set["Hypothesis"]]] = defaultdict(
+            lambda: defaultdict(set)
+        )
         for hsind, hsitems in hs.items():
             hsind = hsind.__dict__
             for hsitem in hsitems:
@@ -322,6 +326,7 @@ class LOCM:
 
     @staticmethod
     def _get_states(states, pointer, pointer2) -> Tuple[int, int]:
+        # TODO: change name (used in step4)
         state1, state2 = None, None
         for i, state_set in enumerate(states):
             if pointer in state_set:
@@ -339,20 +344,8 @@ class LOCM:
     def _step1(
         obs_trace: List[Observation], sorts: Sorts
     ) -> Tuple[TSType, APStatePointers, OSType]:
-        """step 1: Create a state machine for each object sort
-        Implicitly includes step 2 (zero analysis)
-
-        Args:
-            obs_tracelist (ObservedTraceList):
-                List of observed traces
-            sorts_list (List[Dict[str, int]]):
-                List of object sorts for each trace.
-
-        Returns:
-            TS (Dict[int, Dict[AP, APState]]):
-                Set of transitions for each object sort.
-            OS (Dict[int, List[Set[int]]]):
-                Set of distinct states for each object sort.
+        """Step 1: Create a state machine for each object sort
+        Implicitly includes Step 2 (zero analysis) by including the zero-object throughout
         """
 
         # create the zero-object for zero analysis (step 2)
@@ -445,7 +438,9 @@ class LOCM:
         ap_state_pointers: APStatePointers,
         OS: OSType,
         sorts: Sorts,
-    ):
+    ) -> Dict[int, Dict[int, Set[Hypothesis]]]:
+        """Step 3: Induction of parameterised FSMs"""
+
         zero_obj = LOCM.zero_obj
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
         for G, objs in TS.items():
@@ -512,26 +507,35 @@ class LOCM:
 
     @staticmethod
     def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]):
+        """Step 4: Creation and merging of state parameters"""
         bindings = defaultdict(dict)
         param_pointers = defaultdict(dict)
         params = defaultdict(dict)
 
-        for G, hsG in HS.items():
-            for S, hsS in hsG.items():
-                state_bindings = {}
-                state_params = []  # params to give to S
-                state_param_pointers = {}
+        for sort, hs_sort in HS.items():
+            for state, hs_sort_state in hs_sort.items():
+                # state_bindings = {h: v}
+                state_bindings: Dict[Hypothesis, int] = {}
 
-                # add a unique v
-                # add a <h, vpointer> pair for each h
-                hsS = list(hsS)
-                for v, h in enumerate(hsS):
+                # state_params = [set(v)], each set represents a unique parameter
+                # i.e. state_params[i] = P_i
+                state_params: List[Set[int]] = []
+
+                # state_param_pointers = {v: P}
+                state_param_pointers: Dict[int, int] = {}
+
+                # for each hypothesis h,
+                # add a param v as a unique state parameter
+                # and add the <h, v> binding pair
+                hs_sort_state = list(hs_sort_state)
+                for v, h in enumerate(hs_sort_state):
                     state_params.append({v})
                     state_bindings[h] = v
                     state_param_pointers[v] = v
 
-                for i, h1 in enumerate(hsS):
-                    for h2 in hsS[i + 1 :]:
+                # for each (unordered) pair of hypotheses h1, h2
+                for i, h1 in enumerate(hs_sort_state):
+                    for h2 in hs_sort_state[i + 1 :]:
                         if (
                             (h1.B == h2.B and h1.k == h2.k and h1.k_ == h2.k_)
                             or
@@ -540,28 +544,30 @@ class LOCM:
                             v1 = state_bindings[h1]
                             v2 = state_bindings[h2]
 
-                            vi1, vi2 = None, None
-                            for i, param_set in enumerate(state_params):
-                                if v1 in param_set:
-                                    vi1 = i
-                                if v2 in param_set:
-                                    vi2 = i
-                                if vi1 is not None and vi2 is not None:
-                                    break
+                            # get the parameter sets P1, P2 that v1, v2 belong to
+                            P1, P2 = LOCM._get_states(state_params, v1, v2)
 
-                            assert vi1 is not None and vi2 is not None
+                            assert P1 is not None and P2 is not None
 
-                            if vi1 != vi2:
-                                state_params[vi1] = state_params[vi1].union(
-                                    state_params[vi2]
+                            if P1 != P2:
+                                # merge P1 and P2
+                                state_params[P1] = state_params[P1].union(
+                                    state_params[P2]
                                 )
-                                state_params.pop(vi2)
-                                state_param_pointers[v2] = vi1
+                                state_params.pop(P2)
+                                state_param_pointers[v2] = P1
 
-                bindings[G][S] = state_bindings
-                # {vpointer: h for h, vpointer in state_bindings.items()}
-                param_pointers[G][S] = state_param_pointers
-                params[G][S] = state_params
+                # need to be able to check if there is a B (of an h) in bindings[G][S] that **never** sets P
+                bindings[sort][state] = state_bindings
+                param_pointers[sort][state] = state_param_pointers
+                params[sort][state] = state_params
+
+        """
+        param_pointers:
+        defaultdict(<class 'dict'>, {1: {1: {0: 0, 1: 0, 2: 0, 3: 0}}})
+        params:
+        defaultdict(<class 'dict'>, {1: {1: [{0, 1, 2, 3}]}})
+        """
 
         return bindings, param_pointers, params
 
