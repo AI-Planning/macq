@@ -19,31 +19,38 @@ def get_fluent(name: str, objs: List[str]):
 
 
 def test_locm():
-    base = Path(__file__).parent.parent
-    dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
-    prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
+    # base = Path(__file__).parent.parent
+    # dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
+    # prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
-    traces = TraceList()
+    # driverlog
+    fail = False
+    for _ in range(10):
+        generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
+        traces = generator.traces
+        observations = traces.tokenize(ActionObservation)
+        try:
+            model = Extract(observations, modes.LOCM, debug=False)
+        except:
+            fail = True
+            traces.print()
+            print("----- begin debug log -----")
+            model = Extract(observations, modes.LOCM, debug=True)
+            break
 
-    generator = FDRandomWalkSampling(dom=dom, prob=prob)
-
-    print(generator.traces.print())
-
-    observations = traces.tokenize(ActionObservation)
-
-    model = Extract(observations, modes.LOCM, debug=False)
+    assert not fail
 
     assert model
 
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    # model_blocks_dom = str(
+    #     (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
+    # )
+    # model_blocks_prob = str(
+    #     (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
+    # )
+    # model.to_pddl(
+    #     "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
+    # )
 
 
 def get_example_obs(print_trace=False):
@@ -177,13 +184,34 @@ def test_locm_get_sorts(is_test=True):
     from pprint import pprint
 
     obs = get_example_obs(is_test)
+
     sorts = LOCM._get_sorts(obs[0])
 
     if is_test:
+        print("testing on real traces...")
+        failed = False
+        for _ in range(10):  # must pass for 10 random walk traces
+            generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
+            traces = generator.traces
+            observations = traces.tokenize(ActionObservation)
+            try:
+                LOCM._get_sorts(observations[0], debug=False)
+            except:
+                failed = True
+                traces.print()
+                print("----- begin debug log -----")
+                LOCM._get_sorts(observations[0], debug=True)
+                break
+
+        assert not failed, "Error getting sorts for one or more driverlog traces"
+
         print()
         print("sorts:")
         pprint(sorts)
         print()
+
+        assert len(set(sorts.values())) == 3, "Got incorrect sorts for example trace"
+
     else:
         return sorts
 
@@ -438,9 +466,10 @@ def test_locm_step5(is_test=True):
 
 
 if __name__ == "__main__":
-    # test_locm_get_sorts()
+    # test_locm()
+    test_locm_get_sorts()
     # test_locm_step1()
     # test_locm_viz()
     # test_locm_step3()
     # test_locm_step4()
-    test_locm_step5()
+    # test_locm_step5()

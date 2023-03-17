@@ -2,14 +2,15 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from ..trace import Action, State
+
 from ..observation import ObservedTraceList
-from .model import Model
-from .observer import Observer
-from .slaf import SLAF
+from ..trace import Action, State
 from .amdn import AMDN
 from .arms import ARMS
 from .locm import LOCM
+from .model import Model
+from .observer import Observer
+from .slaf import SLAF
 
 
 @dataclass
@@ -74,4 +75,4 @@ class Extract:
             if len(obs_tracelist) != 1:
                 raise Exception("The SLAF extraction technique only takes one trace.")
 
-        return techniques[mode](obs_tracelist, debug, **kwargs)
+        return techniques[mode](obs_tracelist, debug=debug, **kwargs)

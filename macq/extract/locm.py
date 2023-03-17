@@ -145,7 +145,7 @@ class Hypothesis:
 class LOCM:
     """LOCM"""
 
-    def __new__(cls, obs_tracelist: ObservedTraceList, viz=False):
+    def __new__(cls, obs_tracelist: ObservedTraceList, viz=False, debug=False):
         """Creates a new Model object.
         Args:
             observations (ObservationList):
@@ -162,7 +162,7 @@ class LOCM:
 
         fluents, actions = None, None
 
-        sorts = LOCM._get_sorts(obs_trace)
+        sorts = LOCM._get_sorts(obs_trace, debug=debug)
         # TODO: use sorts in step 1
         TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)
 
@@ -173,96 +173,159 @@ class LOCM:
         return Model(fluents, actions)
 
     @staticmethod
-    def _get_sorts(obs_trace: List[Observation]) -> Sorts:
-        """Given 2 distinct steps (i & j), if action i = action j
-        their list of objects contain the same sorts in the same order
+    def _get_sorts(obs_trace: List[Observation], debug=False) -> Sorts:
 
-
-        Example 1:
-            open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
-            fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3)
-
-            This trace is composed of 3 sorts {c1, c2, c3}, {wr1, wr2}, {j1,j2}.
-
-        Extension:
-            open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1); open(c2);
-            fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2); open(c3); close(c3);
-            close(wr1);
-
-            In this case, the final action close(wr1) would unite the container
-            and wrench sorts into one. Therefore this trace is composed of 2
-            sorts {c1, c2, c3, wr1, wr2}, {j1,j2}.
-        """
-
-        seq_sorts = []  # initialize list of sorts for this trace
+        sorts = []  # initialize list of sorts for this trace
         # track actions seen in the trace, and the sort each actions params belong to
-        seen_actions: Dict[str, List[int]] = {}
+        ap_sort_pointers: Dict[str, List[int]] = {}
         # track objects seen in the trace, and the sort each belongs to
-        seen_objs: Dict[str, int] = {}
+        # obj_sort_pointers: Dict[str, int] = {}
+        sorted_objs = []
+
+        def get_obj_sort(obj: PlanningObject) -> int:
+            """Returns the sort index of the object"""
+            for i, sort in enumerate(sorts):
+                if obj in sort:
+                    return i
+            raise ValueError(f"Object {obj} not in any sort")
 
         for obs in obs_trace:
             action = obs.action
-            if action is not None:
-                if action.name not in seen_actions:  # new action
-                    idxs = []  # idxs[i] stores the sort of action param i
-                    # for each parameter of the action
-                    for obj in action.obj_params:
-                        if obj.name not in seen_objs:  # new object
-                            # append a sort (set) containing the object
-                            seq_sorts.append({obj})
-                            # record the object has been seen and the index of the sort it belongs to
-                            obj_sort_idx = len(seq_sorts) - 1
-                            seen_objs[obj.name] = obj_sort_idx
-                            idxs.append(obj_sort_idx)
+            if action is None:
+                continue
 
-                        else:  # object already has a sort, don't append a new one
-                            # look up the sort of the object
-                            idxs.append(seen_objs[obj.name])
+            if debug:
+                print("\n\naction:", action.name, action.obj_params)
 
-                    # record the index of the sort of the action's parameters
-                    seen_actions[action.name] = idxs
+            if action.name not in ap_sort_pointers:  # new action
+                if debug:
+                    print("new action")
 
-                else:  # action seen before
-                    for action_sort_idx, obj in zip(
-                        seen_actions[action.name], action.obj_params
-                    ):
-                        # action_sort_idx -> sort of current action parameter
-                        # obj -> object that is action parameter ap
+                ap_sort_pointers[action.name] = []
 
-                        if obj.name not in seen_objs:  # new object
-                            # add the object to the sort of current action parameter
-                            seq_sorts[action_sort_idx].add(obj)
+                # for each parameter of the action
+                for obj in action.obj_params:
 
-                        else:  # object already has a sort
-                            # retrieve the sort the object belongs to
-                            obj_sort_idx = seen_objs[obj.name]
+                    if obj.name not in sorted_objs:  # unsorted object
 
-                            # check if the object's sort matches the action paremeter's
-                            # if so, do nothing and move on to next step
-                            if obj_sort_idx != action_sort_idx:  # else
-                                # unite the action parameter's sort and the object's sort
-                                seq_sorts[action_sort_idx] = seq_sorts[
-                                    action_sort_idx
-                                ].union(seq_sorts[obj_sort_idx])
+                        # append a sort (set) containing the object
+                        sorts.append({obj})
 
-                                # drop the not unionized sort
-                                seq_sorts.pop(obj_sort_idx)
+                        # record the object has been sorted and the index of the sort it belongs to
+                        obj_sort = len(sorts) - 1
+                        # obj_sort_pointers[obj.name] = obj_sort
+                        sorted_objs.append(obj.name)
+                        ap_sort_pointers[action.name].append(obj_sort)
 
-                                # update all outdated records of which sort the affected objects belong to
+                        if debug:
+                            print("new object", obj.name)
+                            print("sorts:", sorts)
 
-                                for action_name, idxs in seen_actions.items():
-                                    for i, idx in enumerate(idxs):
-                                        if idx == obj_sort_idx:
-                                            seen_actions[action_name][
-                                                i
-                                            ] = action_sort_idx
+                    else:  # object already sorted
 
-                                for seen_obj, idx in seen_objs.items():
-                                    if idx == obj_sort_idx:
-                                        seen_objs[seen_obj] = action_sort_idx
+                        # look up the sort of the object
+                        obj_sort = get_obj_sort(obj)
+                        ap_sort_pointers[action.name].append(obj_sort)
+
+                        if debug:
+                            print("sorted object", obj.name)
+                            print("sorts:", sorts)
+
+                if debug:
+                    print("ap sorts:", ap_sort_pointers)
+
+            else:  # action seen before
+                if debug:
+                    print("seen action")
+
+                for ap_sort, obj in zip(
+                    ap_sort_pointers[action.name], action.obj_params
+                ):
+                    if debug:
+                        print("checking obj", obj.name)
+                        print("ap sort:", ap_sort)
+
+                    if obj.name not in sorted_objs:  # unsorted object
+                        if debug:
+                            print("unsorted object", obj.name)
+                            print("sorts:", sorts)
+
+                        # add the object to the sort of current action parameter
+                        sorts[ap_sort].add(obj)
+                        # obj_sort_pointers[obj.name] = ap_sort
+                        sorted_objs.append(obj.name)
+
+                    else:  # object already has a sort
+                        # retrieve the sort the object belongs to
+                        # obj_sort = obj_sort_pointers[obj.name]
+                        obj_sort = get_obj_sort(obj)
+
+                        if debug:
+                            print(f"retrieving sorted obj {obj.name}")
+                            print(f"obj_sort_idx: {obj_sort}")
+                            print(f"seq_sorts: {sorts}")
+
+                        # check if the object's sort matches the action paremeter's
+                        # if so, do nothing and move on to next step
+                        # otherwise, unite the two sorts
+                        if obj_sort == ap_sort:
+                            if debug:
+                                print("obj sort matches action")
+                        else:
+                            if debug:
+                                print(
+                                    f"obj sort {obj_sort} doesn't match action {ap_sort}"
+                                )
+                                print(f"seq_sorts: {sorts}")
+
+                            # if obj_sort > len(sorts) - 1 or obj not in sorts[obj_sort]:
+                            #     prev_obj_sort_idx = obj_sort
+                            #     # find the sort the object belongs to
+                            #     for i, sort in enumerate(sorts):
+                            #         if obj in sort:
+                            #             obj_sort = i
+                            #             break
+
+                            #     assert (
+                            #         obj_sort != prev_obj_sort_idx
+                            #     ), "Something went wrong"
+
+                            # unite the action parameter's sort and the object's sort
+                            sorts[obj_sort] = sorts[obj_sort].union(sorts[ap_sort])
+
+                            # drop the not unionized sort
+                            sorts.pop(ap_sort)
+
+                            old_obj_sort = obj_sort
+
+                            obj_sort = get_obj_sort(obj)
+
+                            if debug:
+                                print(
+                                    f"united seq_sorts[{ap_sort}] and seq_sorts[{obj_sort}]"
+                                )
+                                print(f"seq_sorts: {sorts}")
+
+                                print(f"ap_sort_pointers: {ap_sort_pointers}")
+                                print(f"obj_sort_pointers: {obj_sort_pointers}")
+
+                                print("updating pointers...")
+
+                            min_idx = min(ap_sort, obj_sort)
+
+                            # update all outdated records of which sort the affected objects belong to
+                            for action_name, ap_sorts in ap_sort_pointers.items():
+                                for p, sort in enumerate(ap_sorts):
+                                    if sort == ap_sort or sort == old_obj_sort:
+                                        ap_sort_pointers[action_name][p] = obj_sort
+                                    elif sort > min_idx:
+                                        ap_sort_pointers[action_name][p] -= 1
+
+                            if debug:
+                                print(f"ap_sort_pointers: {ap_sort_pointers}")
 
         obj_sorts = {}
-        for i, sort in enumerate(seq_sorts):
+        for i, sort in enumerate(sorts):
             for obj in sort:
                 # 1-indexed so the zero-object can be sort 0
                 obj_sorts[obj.name] = i + 1
