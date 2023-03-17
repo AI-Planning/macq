@@ -129,6 +129,12 @@ class Hypothesis:
             )
         )
 
+    def __repr__(self) -> str:
+        out = "<\n"
+        for k, v in asdict(self).items():
+            out += f"  {k}={v}\n"
+        return out.strip() + "\n>"
+
     @staticmethod
     def from_dict(hs: Dict[HSIndex, Set[HSItem]]):
         """Converts a dict of HSIndex -> HSItem to a set of Hypothesis"""
@@ -175,7 +181,6 @@ class LOCM:
 
     @staticmethod
     def _get_sorts(obs_trace: List[Observation], debug=False) -> Sorts:
-
         sorts = []  # initialize list of sorts for this trace
         # track actions seen in the trace, and the sort each actions params belong to
         ap_sort_pointers: Dict[str, List[int]] = {}
@@ -206,9 +211,7 @@ class LOCM:
 
                 # for each parameter of the action
                 for obj in action.obj_params:
-
                     if obj.name not in sorted_objs:  # unsorted object
-
                         # append a sort (set) containing the object
                         sorts.append({obj})
 
@@ -223,7 +226,6 @@ class LOCM:
                             print("sorts:", sorts)
 
                     else:  # object already sorted
-
                         # look up the sort of the object
                         obj_sort = get_obj_sort(obj)
                         ap_sort_pointers[action.name].append(obj_sort)
@@ -444,7 +446,6 @@ class LOCM:
         OS: OSType,
         sorts: Sorts,
     ):
-
         zero_obj = LOCM.zero_obj
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
         for G, objs in TS.items():
@@ -509,14 +510,8 @@ class LOCM:
 
         return Hypothesis.from_dict(HS)
 
-    def get_param(v):
-        for i, set in enum(params):
-            if v in set:
-                return i
-
     @staticmethod
     def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]):
-
         bindings = defaultdict(dict)
         param_pointers = defaultdict(dict)
         params = defaultdict(dict)

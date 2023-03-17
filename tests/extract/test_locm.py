@@ -379,7 +379,13 @@ def test_locm_step4(HS=None, is_test=True):
 
     if is_test:
         print("bindings:")
-        pprint(bindings)
+        for G, bG in bindings.items():
+            for S, bGS in bG.items():
+                print(f"\nG={G}, S={S}")
+                for h, v in bGS.items():
+                    print(f"{h}: {v}")
+
+        print()
         print("param_pointers:")
         pprint(param_pointers)
         print("params:")
@@ -467,9 +473,9 @@ def test_locm_step5(is_test=True):
 
 if __name__ == "__main__":
     # test_locm()
-    test_locm_get_sorts()
+    # test_locm_get_sorts()
     # test_locm_step1()
     # test_locm_viz()
     # test_locm_step3()
-    # test_locm_step4()
+    test_locm_step4()
     # test_locm_step5()
