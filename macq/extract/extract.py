@@ -64,6 +64,10 @@ class Extract:
             A Model object. The model's characteristics are determined by the
             extraction technique used.
         """
+
+        if len(obs_tracelist) == 0:
+            raise ValueError("ObservationList is empty. Nothing to extract from.")
+
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: SLAF,
@@ -71,5 +75,4 @@ class Extract:
             modes.ARMS: ARMS,
             modes.LOCM: LOCM,
         }
-
         return techniques[mode](obs_tracelist, debug=debug, **kwargs)
