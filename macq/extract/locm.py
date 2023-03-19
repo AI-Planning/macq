@@ -441,19 +441,26 @@ class LOCM:
         """Step 3: Induction of parameterised FSMs"""
 
         zero_obj = LOCM.zero_obj
+
+        # indexed by B.k and C.l for 3.2 matching hypotheses against transitions
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
+
+        # 3.1: Form hypotheses from state machines
         for G, objs in TS.items():
+            # for each O ∈ O_u (not including the zero-object)
             for obj, seq in objs.items():
-                # looping over O ∈ O_u (i.e. not including the zero-object)
                 if obj == zero_obj:
                     continue
+                # for each pair of transitions B.k and C.l consecutive for O
                 for B, C in zip(seq, seq[1:]):
-                    # skip if B or C only have one parameter, since there is no k' / l' to match on
+                    # skip if B or C only have one parameter, since there is no k' or l' to match on
                     if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
                         continue
 
                     k = B.pos
                     l = C.pos
+
+                    # check each pair B.k' and C.l'
                     for i, Bk_ in enumerate(B.action.obj_params):
                         k_ = i + 1
                         if k_ == k:
@@ -464,7 +471,10 @@ class LOCM:
                             if l_ == l:
                                 continue
 
+                            # check that B.k' and C.l' are of the same sort
                             if sorts[Cl_.name] == G_:
+                                # check that end(B.P) = start(C.P)
+                                # NOTE: just a sanity check, should never fail
                                 S, S2 = LOCM._pointer_to_set(
                                     OS[G],
                                     ap_state_pointers[G][B].end,
@@ -473,68 +483,80 @@ class LOCM:
                                 assert (
                                     S == S2
                                 ), f"end(B.P) != start(C.P)\nB.P: {B}\nC.P: {C}"
+
+                                # save the hypothesis in the hypothesis set
                                 HS[HSIndex(B, k, C, l)].add(
                                     HSItem(S, k_, l_, G, G_, supported=False)
                                 )
 
+        # 3.2: Test hypotheses against sequence
         for G, objs in TS.items():
+            # for each O ∈ O_u (not including the zero-object)
             for obj, seq in objs.items():
-                for B, C in zip(seq, seq[1:]):
-                    k = B.pos
-                    l = C.pos
-                    BkCl = HSIndex(B, k, C, l)
+                if obj == zero_obj:
+                    continue
+                # for each pair of transitions Ap.m and Aq.n consecutive for O
+                for Ap, Aq in zip(seq, seq[1:]):
+                    m = Ap.pos
+                    n = Aq.pos
+                    # Check if we have a hypothesis matching Ap=B, m=k, Aq=C, n=l
+                    BkCl = HSIndex(Ap, m, Aq, n)
                     if BkCl in HS:
+                        # check each matching hypothesis
                         for H in HS[BkCl].copy():
+                            # if Op,k' = Oq,l' then mark the hypothesis as supported
                             if (
-                                B.action.obj_params[H.k_ - 1]
-                                == C.action.obj_params[H.l_ - 1]
+                                Ap.action.obj_params[H.k_ - 1]
+                                == Aq.action.obj_params[H.l_ - 1]
                             ):
                                 H.supported = True
-                            else:
+                            else:  # otherwise remove the hypothesis
                                 HS[BkCl].remove(H)
 
-        for hs in HS.values():
-            for h in hs.copy():
+        # Remove any unsupported hypotheses (but yet undisputed)
+        for hind, hs in HS.copy().items():
+            for h in hs:
                 if not h.supported:
                     hs.remove(h)
-
-        for hind, hs in HS.copy().items():
             if len(hs) == 0:
                 del HS[hind]
 
+        # Converts HS {HSIndex: HSItem} to a mapping of hypothesis for states of a sort {sort: {state: Hypothesis}}
         return Hypothesis.from_dict(HS)
 
     @staticmethod
-    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]):
+    def _step4(
+        HS: Dict[int, Dict[int, Set[Hypothesis]]]
+    ) -> Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]]:
         """Step 4: Creation and merging of state parameters"""
-        bindings = defaultdict(dict)
-        param_pointers = defaultdict(dict)
-        params = defaultdict(dict)
 
+        # bindings = {sort: {state: [(hypothesis, state param)]}}
+        bindings: Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]] = defaultdict(dict)
         for sort, hs_sort in HS.items():
             for state, hs_sort_state in hs_sort.items():
-                # state_bindings = {h: v}
+                # state_bindings = {hypothesis (h): state param (v)}
                 state_bindings: Dict[Hypothesis, int] = {}
 
-                # state_params = [set(v)], each set represents a unique parameter
-                # i.e. state_params[i] = P_i
+                # state_params = [set(v)]; params in the same set are the same
                 state_params: List[Set[int]] = []
 
-                # state_param_pointers = {v: P}
+                # state_param_pointers = {v: P}; maps state param to the state_params set index
+                # i.e. map hypothesis state param v -> actual state param P
                 state_param_pointers: Dict[int, int] = {}
 
                 # for each hypothesis h,
-                # add a param v as a unique state parameter
-                # and add the <h, v> binding pair
                 hs_sort_state = list(hs_sort_state)
                 for v, h in enumerate(hs_sort_state):
-                    state_params.append({v})
+                    # add the <h, v> binding pair
                     state_bindings[h] = v
+                    # add a param v as a unique state parameter
+                    state_params.append({v})
                     state_param_pointers[v] = v
 
                 # for each (unordered) pair of hypotheses h1, h2
                 for i, h1 in enumerate(hs_sort_state):
                     for h2 in hs_sort_state[i + 1 :]:
+                        # check if hypothesis parameters (v1 & v2) need to be unified
                         if (
                             (h1.B == h2.B and h1.k == h2.k and h1.k_ == h2.k_)
                             or
@@ -546,8 +568,6 @@ class LOCM:
                             # get the parameter sets P1, P2 that v1, v2 belong to
                             P1, P2 = LOCM._pointer_to_set(state_params, v1, v2)
 
-                            assert P1 is not None and P2 is not None
-
                             if P1 != P2:
                                 # merge P1 and P2
                                 state_params[P1] = state_params[P1].union(
@@ -556,38 +576,42 @@ class LOCM:
                                 state_params.pop(P2)
                                 state_param_pointers[v2] = P1
 
+                # add state bindings for the sort to the output bindings
+                # replacing hypothesis params with actual state params
                 bindings[sort][state] = [
                     (h, LOCM._pointer_to_set(state_params, v)[0])
                     for h, v in state_bindings.items()
                 ]
-                param_pointers[sort][state] = state_param_pointers
-                params[sort][state] = state_params
 
-        return bindings, param_pointers, params
+        return bindings
 
     @staticmethod
     def _step5(
         HS: Dict[int, Dict[int, Set[Hypothesis]]],
-        bindings,
-        param_pointers,
-        params,
-    ):
-        # check each binding[G][S] (h, P)
-        # for each unique P, check if there is an h.B that never occurs in a binding with P
-        # if so, remove all bindings with P
+        bindings: Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]],
+    ) -> Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]]:
+        """Step 5: Removing parameter flaws"""
 
+        # check each bindings[G][S] -> (h, P)
         for sort, hs_sort in HS.items():
-            for state, hs_sort_state in hs_sort.items():
-                P_support = defaultdict(set)
+            for state in hs_sort:
+                # track all the h.Bs that occur in bindings[G][S]
                 all_hB = set()
+                # track the set of h.B that set parameter P
+                sets_P = defaultdict(set)
                 for h, P in bindings[sort][state]:
-                    P_support[P].add(h.B)
+                    sets_P[P].add(h.B)
                     all_hB.add(h.B)
-                for P, support in P_support.items():
-                    if not support == all_hB:
-                        # TODO: is this right?
+
+                # for each P, check if there is a transition h.B that never sets parameter P
+                # i.e. if sets_P[P] != all_hB
+                for P, setby in sets_P.items():
+                    if not setby == all_hB:  # P is a flawed parameter
+                        # remove all bindings referencing P
                         for h, P_ in bindings[sort][state].copy():
                             if P_ == P:
                                 bindings[sort][state].remove((h, P_))
+                        if len(bindings[sort][state]) == 0:
+                            del bindings[sort][state]
 
         return bindings

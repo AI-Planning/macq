@@ -375,7 +375,7 @@ def test_locm_step4(HS=None, is_test=True):
                 }
             }
         }
-    bindings, param_pointers, params = LOCM._step4(HS)
+    bindings = LOCM._step4(HS)
 
     if is_test:
         print("bindings:")
@@ -385,13 +385,8 @@ def test_locm_step4(HS=None, is_test=True):
                 for h, v in bGS:
                     print(f"{h} -> {v}\n")
 
-        print()
-        print("param_pointers:")
-        pprint(param_pointers)
-        print("params:")
-        pprint(params)
     else:
-        return bindings, param_pointers, params
+        return bindings
 
 
 def test_locm_step5(is_test=True):
@@ -460,15 +455,24 @@ def test_locm_step5(is_test=True):
         }
     }
 
-    bindings, param_pointers, params = test_locm_step4(HS, False)  # type: ignore
+    bindings: Dict[] = test_locm_step4(HS, False)  # type: ignore
 
-    print("HS before:")
-    pprint(HS)
+    print("bindings:")
+    for G, bG in bindings.items():
+        for S, bGS in bG.items():
+            print(f"\nG={G}, S={S}")
+            for h, v in bGS:
+                print(f"{h} -> {v}\n")
 
-    HS = LOCM._step5(HS, bindings, param_pointers, params)
+    bindings = LOCM._step5(HS, bindings)
 
-    print("HS after:")
-    pprint(HS)
+    print("\nbindings after:")
+    for G, bG in bindings.items():
+        for S, bGS in bG.items():
+            print(f"\nG={G}, S={S}")
+            for h, v in bGS:
+                print(f"{h} -> {v}\n")
+    # pprint(bindings)
 
 
 if __name__ == "__main__":
@@ -476,6 +480,6 @@ if __name__ == "__main__":
     # test_locm_get_sorts()
     # test_locm_step1()
     # test_locm_viz()
-    # test_locm_step3()
+    test_locm_step3()
     # test_locm_step4()
     test_locm_step5()
