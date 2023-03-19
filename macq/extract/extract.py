@@ -71,8 +71,5 @@ class Extract:
             modes.ARMS: ARMS,
             modes.LOCM: LOCM,
         }
-        if mode == modes.SLAF:
-            if len(obs_tracelist) != 1:
-                raise Exception("The SLAF extraction technique only takes one trace.")
 
         return techniques[mode](obs_tracelist, debug=debug, **kwargs)

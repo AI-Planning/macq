@@ -1,13 +1,16 @@
 """.. include:: ../../docs/templates/extract/slaf.md"""
 
-import macq.extract as extract
 from typing import Set, Union
-from nnf import Var, Or, And, true, false, config
+
 from bauhaus import Encoding
-from .exceptions import IncompatibleObservationToken
-from .model import Model
-from .learned_fluent import LearnedFluent
+from nnf import And, Or, Var, config, false, true
+
+import macq.extract as extract
+
 from ..observation import AtomicPartialObservation, ObservedTraceList
+from .exceptions import IncompatibleObservationToken
+from .learned_fluent import LearnedFluent
+from .model import Model
 
 # only used for pretty printing in debug mode
 e = Encoding()
@@ -55,6 +58,10 @@ class SLAF:
         """
         if o_list.type is not AtomicPartialObservation:
             raise IncompatibleObservationToken(o_list.type, SLAF)
+
+        if len(o_list) != 1:
+            raise Exception("The SLAF extraction technique only takes one trace.")
+
         SLAF.debug_mode = debug_mode
         entailed = SLAF.__as_strips_slaf(o_list)
         # return the Model
@@ -280,7 +287,8 @@ class SLAF:
                         """Step 1 (d): If this fluent is observed, update the formula accordingly.
                         Since we know the fluent is now true, the prior possible explanation for the fluent being true
                         (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations
-                        has to be true in order for the prior action to have no effect on the fluent currently being true."""
+                        has to be true in order for the prior action to have no effect on the fluent currently being true.
+                        """
                         phi["neutral"].update([p.simplify() for p in phi["pos expl"]])
                         phi["pos expl"] = {top}
                         phi["neg expl"] = {bottom}
