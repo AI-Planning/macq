@@ -325,13 +325,12 @@ class LOCM:
         return obj_sorts
 
     @staticmethod
-    def _get_states(states, pointer, pointer2) -> Tuple[int, int]:
-        # TODO: change name (used in step4)
+    def _pointer_to_set(states, pointer, pointer2=None) -> Tuple[int, int]:
         state1, state2 = None, None
         for i, state_set in enumerate(states):
             if pointer in state_set:
                 state1 = i
-            if pointer2 in state_set:
+            if pointer2 is None or pointer2 in state_set:
                 state2 = i
             if state1 is not None and state2 is not None:
                 break
@@ -393,7 +392,7 @@ class LOCM:
                 if prev_states is not None:
                     # get the state ids (indecies) of the state sets containing
                     # start(A.P) and the end state of the previous transition
-                    start_state, prev_end_state = LOCM._get_states(
+                    start_state, prev_end_state = LOCM._pointer_to_set(
                         OS[sort], ap_states.start, prev_states.end
                     )
 
@@ -466,7 +465,7 @@ class LOCM:
                                 continue
 
                             if sorts[Cl_.name] == G_:
-                                S, S2 = LOCM._get_states(
+                                S, S2 = LOCM._pointer_to_set(
                                     OS[G],
                                     ap_state_pointers[G][B].end,
                                     ap_state_pointers[G][C].start,
@@ -545,7 +544,7 @@ class LOCM:
                             v2 = state_bindings[h2]
 
                             # get the parameter sets P1, P2 that v1, v2 belong to
-                            P1, P2 = LOCM._get_states(state_params, v1, v2)
+                            P1, P2 = LOCM._pointer_to_set(state_params, v1, v2)
 
                             assert P1 is not None and P2 is not None
 
@@ -557,17 +556,12 @@ class LOCM:
                                 state_params.pop(P2)
                                 state_param_pointers[v2] = P1
 
-                # need to be able to check if there is a B (of an h) in bindings[G][S] that **never** sets P
-                bindings[sort][state] = state_bindings
+                bindings[sort][state] = [
+                    (h, LOCM._pointer_to_set(state_params, v)[0])
+                    for h, v in state_bindings.items()
+                ]
                 param_pointers[sort][state] = state_param_pointers
                 params[sort][state] = state_params
-
-        """
-        param_pointers:
-        defaultdict(<class 'dict'>, {1: {1: {0: 0, 1: 0, 2: 0, 3: 0}}})
-        params:
-        defaultdict(<class 'dict'>, {1: {1: [{0, 1, 2, 3}]}})
-        """
 
         return bindings, param_pointers, params
 
@@ -578,25 +572,22 @@ class LOCM:
         param_pointers,
         params,
     ):
-        print(list(bindings[2][1].items())[0][0])
-        print("vpointer", list(bindings[2][1].items())[0][1])
-        print()
-        print(list(bindings[2][1].items())[1][0])
-        print("vpointer", list(bindings[2][1].items())[1][1])
-        print()
+        # check each binding[G][S] (h, P)
+        # for each unique P, check if there is an h.B that never occurs in a binding with P
+        # if so, remove all bindings with P
 
-        for G, hsG in HS.copy().items():
-            for S, hsS in hsG.copy().items():
-                unique_Ps = set(param_pointers[G][S].values())
-                """
-                for each P (v (not pointer)) -> for index in params[G][S]
-                    if there is an h in hsS that doesn't have vpointer == P
-                        remove him
-                """
-                for P in unique_Ps:
-                    for h in hsS.copy():
-                        if param_pointers[G][S][bindings[G][S][h]] != P:
-                            # remove P from EVERYTHING KILL IT WITH FIRE
-                            pass
+        for sort, hs_sort in HS.items():
+            for state, hs_sort_state in hs_sort.items():
+                P_support = defaultdict(set)
+                all_hB = set()
+                for h, P in bindings[sort][state]:
+                    P_support[P].add(h.B)
+                    all_hB.add(h.B)
+                for P, support in P_support.items():
+                    if not support == all_hB:
+                        # TODO: is this right?
+                        for h, P_ in bindings[sort][state].copy():
+                            if P_ == P:
+                                bindings[sort][state].remove((h, P_))
 
-        return HS
+        return bindings
