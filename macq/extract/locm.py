@@ -1,6 +1,7 @@
 """.. include:: ../../docs/templates/extract/locm.md"""
 
 
+import itertools
 from collections import defaultdict
 from collections.abc import Set as SetClass
 from dataclasses import asdict, dataclass
@@ -168,8 +169,9 @@ class LOCM:
         # Step 7: Formation of PDDL action schema
 
         if viz:
-            graph = LOCM.viz_state_machines(TS, OS, sorts)
-            graph.render(view=True)  # type: ignore
+            state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)
+            for sm in state_machines:
+                sm.render(view=True)  # type: ignore
 
         return Model(fluents, actions)
 
@@ -417,9 +419,9 @@ class LOCM:
         HS: Dict[HSIndex, Set[HSItem]] = defaultdict(set)
 
         # 3.1: Form hypotheses from state machines
-        for G, objs in TS.items():
+        for G, sort_ts in TS.items():
             # for each O ∈ O_u (not including the zero-object)
-            for obj, seq in objs.items():
+            for obj, seq in sort_ts.items():
                 if obj == zero_obj:
                     continue
                 # for each pair of transitions B.k and C.l consecutive for O
@@ -461,9 +463,9 @@ class LOCM:
                                 )
 
         # 3.2: Test hypotheses against sequence
-        for G, objs in TS.items():
+        for G, sort_ts in TS.items():
             # for each O ∈ O_u (not including the zero-object)
-            for obj, seq in objs.items():
+            for obj, seq in sort_ts.items():
                 if obj == zero_obj:
                     continue
                 # for each pair of transitions Ap.m and Aq.n consecutive for O
@@ -579,7 +581,7 @@ class LOCM:
                         # remove all bindings referencing P
                         for h, P_ in bindings[sort][state].copy():
                             if P_ == P:
-                                bindings[sort][state].remove((h, P_))
+                                bindings[sort][state].remove(Binding(h, P_))
                         if len(bindings[sort][state]) == 0:
                             del bindings[sort][state]
 
@@ -613,13 +615,32 @@ class LOCM:
         for obj_name, sort in sorts.items():
             objs[sort].append(PlanningObject(f"sort{sort}", obj_name))
 
+        print(objs)
+
         for sort, states in OS.items():
-            for state in states:
-                pass
-                # fluents.append(LearnedFluent(f"s{sort}{state}", [f"?o{sort}"]))
-                # state_params = set()
-                # for binding in bindings[sort][state]:
-                # state_params.add(binding.param)
+            for state in range(len(states)):
+                for obj in objs[sort]:
+                    fluent_params = [[obj]]
+                    if sort in bindings and state in bindings[sort]:
+                        got_params = set()
+                        additional_params = []
+                        for binding in bindings[sort][state]:
+                            if binding.param not in got_params:
+                                got_params.add(binding.param)
+                                additional_params.append(binding.hypothesis.G_)
+                        for param_sort in additional_params:
+                            fluent_params.append(objs[param_sort])
+
+                    # append a fluent with every combination of fluent_params
+                    for params in itertools.product(*fluent_params):
+                        fluents.append(
+                            LearnedFluent(f"s{sort}_state{state}", list(params))
+                        )
+
+        print(fluents)
+        # state_params = set()
+        # for binding in bindings[sort][state]:
+        # state_params.add(binding.param)
 
     @staticmethod
     def get_state_machines(
@@ -634,7 +655,12 @@ class LOCM:
             graph = Digraph(f"LOCM-step1-sort{sort}")
             for state in range(len(states)):
                 label = f"state{state}"
-                if bindings is not None:
+                if (
+                    bindings is not None
+                    and sort in bindings
+                    and state in bindings[sort]
+                ):
+                    print(bindings)
                     label += f"\n["
                     params = []
                     for binding in bindings[sort][state]:

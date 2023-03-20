@@ -18,6 +18,9 @@ class LearnedFluent:
     def __str__(self):
         return self.details()
 
+    def __repr__(self):
+        return self.details()
+
     def details(self):
         # objects can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the fluent
         if len(self.objects) > 0:

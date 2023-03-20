@@ -455,9 +455,40 @@ def test_locm_step5(is_test=True):
                 print(f"{h} -> {v}\n")
 
 
-def test_locm_viz():
-    _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
-    state_machines: List[Digraph] = LOCM.get_state_machines(ap_state_pointers, OS)
+def test_locm_step7():
+    sorts = test_locm_get_sorts(False)
+    TS, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)  # type: ignore
+    bindings = LOCM._step4(HS)  # type: ignore
+    bindings = LOCM._step5(HS, bindings)  # type: ignore
+
+    print()
+    print("bindings:")
+    print(bindings)
+    print()
+
+    LOCM._step7(OS, sorts, bindings)  # type: ignore
+
+
+def locm_viz():
+    # _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    # state_machines: List[Digraph] = LOCM.get_state_machines(ap_state_pointers, OS)
+
+    # generator = FDRandomWalkSampling(problem_id=2688, init_h=3010, num_traces=1)
+    # traces = generator.traces
+    # observations = traces.tokenize(ActionObservation)
+    # Extract(observations, modes.LOCM, debug=False, viz=True)
+
+    sorts = test_locm_get_sorts(False)
+    TS, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)  # type: ignore
+    print(HS)
+    bindings = LOCM._step4(HS)  # type: ignore
+    print(bindings)
+    bindings = LOCM._step5(HS, bindings)  # type: ignore
+    print(bindings)
+    state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)  # type: ignore
+
     for sm in state_machines:
         sm.render(view=True)
 
@@ -466,7 +497,8 @@ if __name__ == "__main__":
     # test_locm()
     # test_locm_get_sorts()
     # test_locm_step1()
-    # test_locm_viz()
     # test_locm_step3()
-    test_locm_step4()
+    # test_locm_step4()
     # test_locm_step5()
+    test_locm_step7()
+    # locm_viz()
