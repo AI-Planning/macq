@@ -1,14 +1,15 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
-from typing import List, Set
 from collections import defaultdict
+from typing import List, Set
 
 from attr import dataclass
+
+from ..observation import IdentityObservation, ObservedTraceList
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
-from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import IdentityObservation, ObservedTraceList
+from .model import Model
 
 
 @dataclass
@@ -32,7 +33,7 @@ class Observer:
     fluents that went from True to False.
     """
 
-    def __new__(cls, obs_tracelist: ObservedTraceList):
+    def __new__(cls, obs_tracelist: ObservedTraceList, **kwargs):
         """Creates a new Model object.
 
         Args:

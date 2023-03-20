@@ -1,8 +1,10 @@
 from typing import List
 
+from macq.trace.fluent import PlanningObject
+
 
 class LearnedFluent:
-    def __init__(self, name: str, objects: List):
+    def __init__(self, name: str, objects: List[PlanningObject]):
         self.name = name
         self.objects = objects
 

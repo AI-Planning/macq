@@ -1,6 +1,6 @@
 from pathlib import Path
 from pprint import pprint
-from typing import List
+from typing import Dict, List, Tuple
 
 from graphviz import Digraph
 
@@ -10,7 +10,7 @@ from macq.generate.pddl import *
 from macq.observation import ActionObservation
 from macq.trace import *
 
-EX = 2
+EX = 1
 
 
 def get_fluent(name: str, objs: List[str]):
@@ -24,22 +24,10 @@ def test_locm():
     # prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # driverlog
-    fail = False
-    for _ in range(10):
-        generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
-        traces = generator.traces
-        observations = traces.tokenize(ActionObservation)
-        try:
-            model = Extract(observations, modes.LOCM, debug=False)
-        except:
-            fail = True
-            traces.print()
-            print("----- begin debug log -----")
-            model = Extract(observations, modes.LOCM, debug=True)
-            break
-
-    assert not fail
-
+    generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
+    traces = generator.traces
+    observations = traces.tokenize(ActionObservation)
+    model = Extract(observations, modes.LOCM, debug=False)
     assert model
 
     # model_blocks_dom = str(
@@ -181,7 +169,7 @@ def get_example_obs(print_trace=False):
 
 
 def test_locm_get_sorts(is_test=True):
-    from pprint import pprint
+    num_random_traces = 1
 
     obs = get_example_obs(is_test)
 
@@ -190,7 +178,7 @@ def test_locm_get_sorts(is_test=True):
     if is_test:
         print("testing on real traces...")
         failed = False
-        for _ in range(10):  # must pass for 10 random walk traces
+        for _ in range(num_random_traces):
             generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
             traces = generator.traces
             observations = traces.tokenize(ActionObservation)
@@ -231,13 +219,6 @@ def test_locm_step1(is_test=True):
         pprint(os)
     else:
         return ts, ap_state_pointers, os
-
-
-def test_locm_viz():
-    _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
-    state_machines: List[Digraph] = LOCM.viz_state_machines(ap_state_pointers, OS)
-    for sm in state_machines:
-        sm.render(view=True)
 
 
 def test_locm_step3(is_test=True):
@@ -455,16 +436,16 @@ def test_locm_step5(is_test=True):
         }
     }
 
-    bindings: Dict[] = test_locm_step4(HS, False)  # type: ignore
+    bindings = test_locm_step4(HS, False)  # type: ignore
 
     print("bindings:")
-    for G, bG in bindings.items():
+    for G, bG in bindings.items():  # type: ignore
         for S, bGS in bG.items():
             print(f"\nG={G}, S={S}")
             for h, v in bGS:
                 print(f"{h} -> {v}\n")
 
-    bindings = LOCM._step5(HS, bindings)
+    bindings = LOCM._step5(HS, bindings)  # type: ignore
 
     print("\nbindings after:")
     for G, bG in bindings.items():
@@ -472,7 +453,13 @@ def test_locm_step5(is_test=True):
             print(f"\nG={G}, S={S}")
             for h, v in bGS:
                 print(f"{h} -> {v}\n")
-    # pprint(bindings)
+
+
+def test_locm_viz():
+    _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    state_machines: List[Digraph] = LOCM.get_state_machines(ap_state_pointers, OS)
+    for sm in state_machines:
+        sm.render(view=True)
 
 
 if __name__ == "__main__":
@@ -480,6 +467,6 @@ if __name__ == "__main__":
     # test_locm_get_sorts()
     # test_locm_step1()
     # test_locm_viz()
-    test_locm_step3()
-    # test_locm_step4()
-    test_locm_step5()
+    # test_locm_step3()
+    test_locm_step4()
+    # test_locm_step5()

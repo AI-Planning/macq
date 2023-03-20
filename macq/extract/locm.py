@@ -5,7 +5,8 @@ from collections import defaultdict
 from collections.abc import Set as SetClass
 from dataclasses import asdict, dataclass
 from pprint import pprint
-from typing import Dict, List, NamedTuple, Set, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from warnings import warn
 
 from macq.trace.action import Action
 from macq.trace.fluent import PlanningObject
@@ -15,8 +16,6 @@ from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .learned_fluent import LearnedFluent
 from .model import Model
-
-# step 1 types
 
 
 @dataclass
@@ -28,7 +27,6 @@ class AP:
 
     def __hash__(self):
         return hash(self.action.name + str(self.pos))
-        # return hash((self.action, self.pos))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -39,31 +37,8 @@ Sorts = Dict[str, int]  # {obj_name: sort}
 APStatePointers = Dict[int, Dict[AP, APStates]]  # {sort: {AP: APStates}}
 
 
-class FSMState(SetClass):
-    def __init__(self, iterable):
-        self._data: Set[int] = set(iterable)
-
-    def __contains__(self, value):
-        return value in self._data
-
-    def __len__(self):
-        return len(self._data)
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __repr__(self) -> str:
-        return self._data.__repr__()
-
-    def union(self, other):
-        assert isinstance(other, FSMState), "Can only union FSMState with FSMState"
-        return FSMState(self._data.union(other._data))
-
-
-OSType = Dict[int, List[FSMState]]
-TSType = Dict[int, Dict[PlanningObject, List[AP]]]
-
-# step 3 types
+OSType = Dict[int, List[Set[int]]]  # {sort: [{states}]}
+TSType = Dict[int, Dict[PlanningObject, List[AP]]]  # {sort: {obj: [AP]}}
 
 
 @dataclass
@@ -152,12 +127,21 @@ class Hypothesis:
         return HS
 
 
+Hypotheses = Dict[int, Dict[int, Set[Hypothesis]]]  # {sort: {state: [Hypothesis]}}
+
+
+Binding = NamedTuple("Binding", [("hypothesis", Hypothesis), ("param", int)])
+Bindings = Dict[int, Dict[int, List[Binding]]]  # {sort: {state: [Binding]}}
+
+
 class LOCM:
     """LOCM"""
 
     zero_obj = PlanningObject("zero", "zero")
 
-    def __new__(cls, obs_tracelist: ObservedTraceList, viz=False, debug=False):
+    def __new__(
+        cls, obs_tracelist: ObservedTraceList, statics=None, viz=False, debug=False
+    ):
         """Creates a new Model object.
         Args:
             observations (ObservationList):
@@ -169,13 +153,19 @@ class LOCM:
         if obs_tracelist.type is not ActionObservation:
             raise IncompatibleObservationToken(obs_tracelist.type, LOCM)
 
-        assert len(obs_tracelist) == 1, "Temp only allowing 1 trace"
-        obs_trace = obs_tracelist[0]
+        if len(obs_tracelist) != 1:
+            warn("LOCM only supports a single trace, using first trace only")
 
+        obs_trace = obs_tracelist[0]
         fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_trace, debug=debug)
-        TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)
+        TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)  # includes step 2
+        HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)
+        bindings = LOCM._step4(HS)
+        bindings = LOCM._step5(HS, bindings)
+        # Step 6: Extraction of static preconditions
+        # Step 7: Formation of PDDL action schema
 
         if viz:
             graph = LOCM.viz_state_machines(TS, OS, sorts)
@@ -382,8 +372,8 @@ class LOCM:
                     ap_state_pointers[sort][ap] = APStates(state_n, state_n + 1)
 
                     # add the start and end states to the state set as unique states
-                    OS[sort].append(FSMState({state_n}))
-                    OS[sort].append(FSMState({state_n + 1}))
+                    OS[sort].append({state_n})
+                    OS[sort].append({state_n + 1})
 
                     state_n += 2
 
@@ -413,31 +403,12 @@ class LOCM:
         return TS, ap_state_pointers, OS
 
     @staticmethod
-    def viz_state_machines(ap_state_pointers: APStatePointers, OS: OSType):
-        from graphviz import Digraph
-
-        state_machines = []
-        for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
-            graph = Digraph(f"LOCM-step1-sort{sort}")
-            for i in range(len(states)):
-                graph.node(str(i), label=f"state{i}", shape="oval")
-            for ap, apstate in trans.items():
-                start_idx, end_idx = LOCM._get_state(states, apstate.start, apstate.end)  # type: ignore
-                graph.edge(
-                    str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
-                )
-
-            state_machines.append(graph)
-
-        return state_machines
-
-    @staticmethod
     def _step3(
         TS: TSType,
         ap_state_pointers: APStatePointers,
         OS: OSType,
         sorts: Sorts,
-    ) -> Dict[int, Dict[int, Set[Hypothesis]]]:
+    ) -> Hypotheses:
         """Step 3: Induction of parameterised FSMs"""
 
         zero_obj = LOCM.zero_obj
@@ -525,13 +496,11 @@ class LOCM:
         return Hypothesis.from_dict(HS)
 
     @staticmethod
-    def _step4(
-        HS: Dict[int, Dict[int, Set[Hypothesis]]]
-    ) -> Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]]:
+    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]) -> Bindings:
         """Step 4: Creation and merging of state parameters"""
 
         # bindings = {sort: {state: [(hypothesis, state param)]}}
-        bindings: Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]] = defaultdict(dict)
+        bindings: Bindings = defaultdict(dict)
         for sort, hs_sort in HS.items():
             for state, hs_sort_state in hs_sort.items():
                 # state_bindings = {hypothesis (h): state param (v)}
@@ -579,7 +548,7 @@ class LOCM:
                 # add state bindings for the sort to the output bindings
                 # replacing hypothesis params with actual state params
                 bindings[sort][state] = [
-                    (h, LOCM._pointer_to_set(state_params, v)[0])
+                    Binding(h, LOCM._pointer_to_set(state_params, v)[0])
                     for h, v in state_bindings.items()
                 ]
 
@@ -588,8 +557,8 @@ class LOCM:
     @staticmethod
     def _step5(
         HS: Dict[int, Dict[int, Set[Hypothesis]]],
-        bindings: Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]],
-    ) -> Dict[int, Dict[int, List[Tuple[Hypothesis, int]]]]:
+        bindings: Bindings,
+    ) -> Bindings:
         """Step 5: Removing parameter flaws"""
 
         # check each bindings[G][S] -> (h, P)
@@ -615,3 +584,66 @@ class LOCM:
                             del bindings[sort][state]
 
         return bindings
+
+    @staticmethod
+    def _step7(OS, bindings):
+        """Step 7: Formation of PDDL action schema"""
+        # for each sort
+        # construct a predicate for each state
+        # bindings provide correlations between action params and state params
+        # which occur in the start/end states of transitions
+
+        # (:types sort1 sort2 ... sortN)
+        types = []
+
+        """
+        (:predicates 
+            (s{sort}{state} ?o{sort})
+            (prop{sort}{state}{prop} ?o{sort} ?p{prop})
+            ...
+        )
+        """
+        fluents = []
+
+        # bindings = {sort: {state: [(hypothesis, state param)]}}
+
+        for sort, states in OS.items():
+            types.append(f"sort{sort}")
+            for state in states:
+                fluents.append(LearnedFluent(f"s{sort}{state}", [f"?o{sort}"]))
+                state_params = set()
+                for binding in bindings[sort][state]:
+                    state_params.add(binding.param)
+
+    @staticmethod
+    def get_state_machines(
+        ap_state_pointers: APStatePointers,
+        OS: OSType,
+        bindings: Optional[Bindings] = None,
+    ):
+        from graphviz import Digraph
+
+        state_machines = []
+        for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
+            graph = Digraph(f"LOCM-step1-sort{sort}")
+            for state in range(len(states)):
+                label = f"state{state}"
+                if bindings is not None:
+                    label += f"\n["
+                    params = []
+                    for binding in bindings[sort][state]:
+                        params.append(f"V{binding.param}")
+                    label += f",".join(params)
+                    label += f"]"
+                graph.node(str(state), label=label, shape="oval")
+            for ap, apstate in trans.items():
+                start_idx, end_idx = LOCM._pointer_to_set(
+                    states, apstate.start, apstate.end
+                )
+                graph.edge(
+                    str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
+                )
+
+            state_machines.append(graph)
+
+        return state_machines

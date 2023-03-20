@@ -43,7 +43,7 @@ class SLAF:
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservedTraceList, debug_mode: bool = False):
+    def __new__(cls, o_list: ObservedTraceList, debug: bool = False):
         """Creates a new Model object.
 
         Args:
@@ -62,7 +62,7 @@ class SLAF:
         if len(o_list) != 1:
             raise Exception("The SLAF extraction technique only takes one trace.")
 
-        SLAF.debug_mode = debug_mode
+        SLAF.debug_mode = debug
         entailed = SLAF.__as_strips_slaf(o_list)
         # return the Model
         return SLAF.__sort_results(o_list, entailed)
