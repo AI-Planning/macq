@@ -586,7 +586,7 @@ class LOCM:
         return bindings
 
     @staticmethod
-    def _step7(OS, bindings):
+    def _step7(OS: OSType, sorts: Sorts, bindings: Bindings):
         """Step 7: Formation of PDDL action schema"""
         # for each sort
         # construct a predicate for each state
@@ -594,7 +594,10 @@ class LOCM:
         # which occur in the start/end states of transitions
 
         # (:types sort1 sort2 ... sortN)
-        types = []
+        # types = []
+
+        # objs = {sort: [obj1, obj2, ...]}
+        objs = defaultdict(list)
 
         """
         (:predicates 
@@ -607,13 +610,16 @@ class LOCM:
 
         # bindings = {sort: {state: [(hypothesis, state param)]}}
 
+        for obj_name, sort in sorts.items():
+            objs[sort].append(PlanningObject(f"sort{sort}", obj_name))
+
         for sort, states in OS.items():
-            types.append(f"sort{sort}")
             for state in states:
-                fluents.append(LearnedFluent(f"s{sort}{state}", [f"?o{sort}"]))
-                state_params = set()
-                for binding in bindings[sort][state]:
-                    state_params.add(binding.param)
+                pass
+                # fluents.append(LearnedFluent(f"s{sort}{state}", [f"?o{sort}"]))
+                # state_params = set()
+                # for binding in bindings[sort][state]:
+                # state_params.add(binding.param)
 
     @staticmethod
     def get_state_machines(
