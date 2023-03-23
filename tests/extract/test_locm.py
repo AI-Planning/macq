@@ -12,6 +12,8 @@ from macq.trace import *
 
 EX = 1
 
+# pid 4154
+
 
 def get_fluent(name: str, objs: List[str]):
     objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
@@ -24,10 +26,11 @@ def test_locm():
     # prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
     # driverlog
-    generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
+    generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
     observations = traces.tokenize(ActionObservation)
     model = Extract(observations, modes.LOCM, debug=False)
+
     assert model
 
     # model_blocks_dom = str(
@@ -496,9 +499,9 @@ def locm_viz():
 if __name__ == "__main__":
     # test_locm()
     # test_locm_get_sorts()
-    # test_locm_step1()
-    # test_locm_step3()
+    test_locm_step1()
+    test_locm_step3()
     # test_locm_step4()
     # test_locm_step5()
-    test_locm_step7()
+    # test_locm_step7()
     # locm_viz()
