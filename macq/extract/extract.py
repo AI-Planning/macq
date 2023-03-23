@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Dict, Union
 
 from ..observation import ObservedTraceList
 from ..trace import Action, State
@@ -44,7 +45,7 @@ class Extract:
         cls,
         obs_tracelist: ObservedTraceList,
         mode: modes,
-        debug: bool = False,
+        debug: Union[bool, Dict] = False,
         **kwargs
     ) -> Model:
         """Extracts a Model object.

@@ -157,16 +157,27 @@ class LOCM:
         if len(obs_tracelist) != 1:
             warn("LOCM only supports a single trace, using first trace only")
 
+        if isinstance(debug, bool) and debug:
+            debug = defaultdict(lambda: True)
+        elif isinstance(debug, dict):
+            debug = defaultdict(lambda: False, debug)
+        else:
+            debug = defaultdict(lambda: False)
+
         obs_trace = obs_tracelist[0]
         fluents, actions = None, None
 
-        sorts = LOCM._get_sorts(obs_trace, debug=debug)
-        TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts)  # includes step 2
-        HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)
-        bindings = LOCM._step4(HS)
-        bindings = LOCM._step5(HS, bindings)
+        sorts = LOCM._get_sorts(obs_trace, debug=debug["sorts"])
+        TS, ap_state_pointers, OS = LOCM._step1(
+            obs_trace, sorts, debug["step1"]
+        )  # includes step 2
+        HS = LOCM._step3(TS, ap_state_pointers, OS, sorts, debug["step3"])
+        bindings = LOCM._step4(HS, debug["step4"])
+        bindings = LOCM._step5(HS, bindings, debug["step5"])
         # Step 6: Extraction of static preconditions
-        # Step 7: Formation of PDDL action schema
+        fluents, actions = LOCM._step7(
+            OS, ap_state_pointers, sorts, bindings, debug["step7"]
+        )
 
         if viz:
             state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)
@@ -333,7 +344,7 @@ class LOCM:
 
     @staticmethod
     def _step1(
-        obs_trace: List[Observation], sorts: Sorts
+        obs_trace: List[Observation], sorts: Sorts, debug: bool
     ) -> Tuple[TSType, APStatePointers, OSType]:
         """Step 1: Create a state machine for each object sort
         Implicitly includes Step 2 (zero analysis) by including the zero-object throughout
@@ -410,6 +421,7 @@ class LOCM:
         ap_state_pointers: APStatePointers,
         OS: OSType,
         sorts: Sorts,
+        debug: bool,
     ) -> Hypotheses:
         """Step 3: Induction of parameterised FSMs"""
 
@@ -498,7 +510,7 @@ class LOCM:
         return Hypothesis.from_dict(HS)
 
     @staticmethod
-    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]]) -> Bindings:
+    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]], debug: bool) -> Bindings:
         """Step 4: Creation and merging of state parameters"""
 
         # bindings = {sort: {state: [(hypothesis, state param)]}}
@@ -560,6 +572,7 @@ class LOCM:
     def _step5(
         HS: Dict[int, Dict[int, Set[Hypothesis]]],
         bindings: Bindings,
+        debug: bool,
     ) -> Bindings:
         """Step 5: Removing parameter flaws"""
 
@@ -588,7 +601,13 @@ class LOCM:
         return bindings
 
     @staticmethod
-    def _step7(OS: OSType, sorts: Sorts, bindings: Bindings):
+    def _step7(
+        OS: OSType,
+        ap_state_pointers: APStatePointers,
+        sorts: Sorts,
+        bindings: Bindings,
+        debug: bool,
+    ):
         """Step 7: Formation of PDDL action schema"""
         # for each sort
         # construct a predicate for each state
