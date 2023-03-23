@@ -470,7 +470,7 @@ def test_locm_step7():
     print(bindings)
     print()
 
-    LOCM._step7(OS, sorts, bindings)  # type: ignore
+    LOCM._step7(OS, ap_state_pointers, sorts, bindings)  # type: ignore
 
 
 def locm_viz():
