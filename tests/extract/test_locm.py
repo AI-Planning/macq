@@ -25,11 +25,11 @@ def test_locm():
     # dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     # prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
 
-    # driverlog
+    # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
     observations = traces.tokenize(ActionObservation)
-    model = Extract(observations, modes.LOCM, debug=False)
+    model = Extract(observations, modes.LOCM, debug={"sorts": True}, viz=False)
 
     assert model
 
@@ -497,10 +497,10 @@ def locm_viz():
 
 
 if __name__ == "__main__":
-    # test_locm()
+    test_locm()
     # test_locm_get_sorts()
-    test_locm_step1()
-    test_locm_step3()
+    # test_locm_step1()
+    # test_locm_step3()
     # test_locm_step4()
     # test_locm_step5()
     # test_locm_step7()

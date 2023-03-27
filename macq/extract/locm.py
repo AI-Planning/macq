@@ -167,7 +167,11 @@ class LOCM:
         obs_trace = obs_tracelist[0]
         fluents, actions = None, None
 
-        sorts = LOCM._get_sorts(obs_trace, debug=debug["sorts"])
+        sorts = LOCM._get_sorts(obs_trace, debug=debug["get_sorts"])
+
+        if debug["sorts"]:
+            print(sorts)
+
         TS, ap_state_pointers, OS = LOCM._step1(
             obs_trace, sorts, debug["step1"]
         )  # includes step 2
@@ -175,9 +179,9 @@ class LOCM:
         bindings = LOCM._step4(HS, debug["step4"])
         bindings = LOCM._step5(HS, bindings, debug["step5"])
         # Step 6: Extraction of static preconditions
-        fluents, actions = LOCM._step7(
-            OS, ap_state_pointers, sorts, bindings, debug["step7"]
-        )
+        # fluents, actions = LOCM._step7(
+        #     OS, ap_state_pointers, sorts, bindings, debug["step7"]
+        # )
 
         if viz:
             state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)
@@ -344,7 +348,7 @@ class LOCM:
 
     @staticmethod
     def _step1(
-        obs_trace: List[Observation], sorts: Sorts, debug: bool
+        obs_trace: List[Observation], sorts: Sorts, debug: bool = False
     ) -> Tuple[TSType, APStatePointers, OSType]:
         """Step 1: Create a state machine for each object sort
         Implicitly includes Step 2 (zero analysis) by including the zero-object throughout
@@ -421,7 +425,7 @@ class LOCM:
         ap_state_pointers: APStatePointers,
         OS: OSType,
         sorts: Sorts,
-        debug: bool,
+        debug: bool = False,
     ) -> Hypotheses:
         """Step 3: Induction of parameterised FSMs"""
 
@@ -572,7 +576,7 @@ class LOCM:
     def _step5(
         HS: Dict[int, Dict[int, Set[Hypothesis]]],
         bindings: Bindings,
-        debug: bool,
+        debug: bool = False,
     ) -> Bindings:
         """Step 5: Removing parameter flaws"""
 
@@ -606,7 +610,7 @@ class LOCM:
         ap_state_pointers: APStatePointers,
         sorts: Sorts,
         bindings: Bindings,
-        debug: bool,
+        debug: bool = False,
     ):
         """Step 7: Formation of PDDL action schema"""
         # for each sort
