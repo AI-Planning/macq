@@ -28,8 +28,14 @@ def test_locm():
     # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
+
+    traces.print("actions")
+
     observations = traces.tokenize(ActionObservation)
-    model = Extract(observations, modes.LOCM, debug={"sorts": True}, viz=False)
+
+    model = Extract(
+        observations, modes.LOCM, statics={}, debug=["sorts", "step7"], viz=False
+    )
 
     assert model
 

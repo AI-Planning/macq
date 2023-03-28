@@ -1,4 +1,4 @@
-""".. include:: ../../docs/templates/extract/locm.md"""
+""".. 'include':: ../../docs/templates/extract/locm.md"""
 
 
 import itertools
@@ -26,6 +26,9 @@ class AP:
     action: Action
     pos: int
 
+    def __repr__(self) -> str:
+        return f"{self.action.name}.{self.pos}"
+
     def __hash__(self):
         return hash(self.action.name + str(self.pos))
 
@@ -33,9 +36,16 @@ class AP:
         return hash(self) == hash(other)
 
 
-APStates = NamedTuple("APStates", [("start", int), ("end", int)])
+class StatePointers(NamedTuple):
+    start: int
+    end: int
+
+    def __repr__(self) -> str:
+        return f"({self.start} -> {self.end})"
+
+
 Sorts = Dict[str, int]  # {obj_name: sort}
-APStatePointers = Dict[int, Dict[AP, APStates]]  # {sort: {AP: APStates}}
+APStatePointers = Dict[int, Dict[AP, StatePointers]]  # {sort: {AP: APStates}}
 
 
 OSType = Dict[int, List[Set[int]]]  # {sort: [{states}]}
@@ -141,12 +151,24 @@ class LOCM:
     zero_obj = PlanningObject("zero", "zero")
 
     def __new__(
-        cls, obs_tracelist: ObservedTraceList, statics=None, viz=False, debug=False
+        cls,
+        obs_tracelist: ObservedTraceList,
+        statics: Dict[str, List[str]] = None,
+        viz: bool = False,
+        debug: Union[bool, Dict[str, bool], List[str]] = False,
     ):
         """Creates a new Model object.
         Args:
             observations (ObservationList):
                 The state observations to extract the model from.
+            statics (Dict[str, List[str]]):
+                A dictionary mapping an action name and its arguments to the
+                list of static preconditions of the action. A precondition should
+                be a tuple, where the first element is the predicate name and the
+                rest correspond to the arguments of the action (1-indexed).
+                E.g. static( next(C1, C2), put_on_card_in_homecell(C2, C1, _) )
+                should is provided as: {"put_on_card_in_homecell": [("next", 2, 1)]}
+
         Raises:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
@@ -161,6 +183,8 @@ class LOCM:
             debug = defaultdict(lambda: True)
         elif isinstance(debug, dict):
             debug = defaultdict(lambda: False, debug)
+        elif isinstance(debug, list):
+            debug = defaultdict(lambda: False, {k: True for k in debug})
         else:
             debug = defaultdict(lambda: False)
 
@@ -170,23 +194,21 @@ class LOCM:
         sorts = LOCM._get_sorts(obs_trace, debug=debug["get_sorts"])
 
         if debug["sorts"]:
-            print(sorts)
+            print(f"Sorts:\n{sorts}", end="\n\n")
 
-        TS, ap_state_pointers, OS = LOCM._step1(
-            obs_trace, sorts, debug["step1"]
-        )  # includes step 2
+        TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts, debug["step1"])
         HS = LOCM._step3(TS, ap_state_pointers, OS, sorts, debug["step3"])
         bindings = LOCM._step4(HS, debug["step4"])
         bindings = LOCM._step5(HS, bindings, debug["step5"])
-        # Step 6: Extraction of static preconditions
-        # fluents, actions = LOCM._step7(
-        #     OS, ap_state_pointers, sorts, bindings, debug["step7"]
-        # )
+        statics = LOCM._step6(statics, debug["step6"])
+        fluents, actions = LOCM._step7(
+            OS, ap_state_pointers, sorts, bindings, debug["step7"]
+        )
 
         if viz:
             state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)
             for sm in state_machines:
-                sm.render(view=True)  # type: ignore
+                sm.render(view=True)
 
         return Model(fluents, actions)
 
@@ -381,12 +403,12 @@ class LOCM:
             state_n = 1  # count current (new) state id
             sort = sorts[obj.name] if obj != zero_obj else 0
             TS[sort][obj] = seq  # add the sequence to the transition set
-            prev_states: APStates = None  # type: ignore
+            prev_states: StatePointers = None  # type: ignore
             # iterate over each transition A.P in the sequence
             for ap in seq:
                 # if the transition has not been seen before for the current sort
                 if ap not in ap_state_pointers[sort]:
-                    ap_state_pointers[sort][ap] = APStates(state_n, state_n + 1)
+                    ap_state_pointers[sort][ap] = StatePointers(state_n, state_n + 1)
 
                     # add the start and end states to the state set as unique states
                     OS[sort].append({state_n})
@@ -417,7 +439,7 @@ class LOCM:
             ap_state_pointers[0] = {}
             OS[0] = []
 
-        return TS, ap_state_pointers, OS
+        return dict(TS), dict(ap_state_pointers), dict(OS)
 
     @staticmethod
     def _step3(
@@ -570,7 +592,7 @@ class LOCM:
                     for h, v in state_bindings.items()
                 ]
 
-        return bindings
+        return dict(bindings)
 
     @staticmethod
     def _step5(
@@ -603,67 +625,6 @@ class LOCM:
                             del bindings[sort][state]
 
         return bindings
-
-    @staticmethod
-    def _step7(
-        OS: OSType,
-        ap_state_pointers: APStatePointers,
-        sorts: Sorts,
-        bindings: Bindings,
-        debug: bool = False,
-    ):
-        """Step 7: Formation of PDDL action schema"""
-        # for each sort
-        # construct a predicate for each state
-        # bindings provide correlations between action params and state params
-        # which occur in the start/end states of transitions
-
-        # (:types sort1 sort2 ... sortN)
-        # types = []
-
-        # objs = {sort: [obj1, obj2, ...]}
-        objs = defaultdict(list)
-
-        """
-        (:predicates 
-            (s{sort}{state} ?o{sort})
-            (prop{sort}{state}{prop} ?o{sort} ?p{prop})
-            ...
-        )
-        """
-        fluents = []
-
-        # bindings = {sort: {state: [(hypothesis, state param)]}}
-
-        for obj_name, sort in sorts.items():
-            objs[sort].append(PlanningObject(f"sort{sort}", obj_name))
-
-        print(objs)
-
-        for sort, states in OS.items():
-            for state in range(len(states)):
-                for obj in objs[sort]:
-                    fluent_params = [[obj]]
-                    if sort in bindings and state in bindings[sort]:
-                        got_params = set()
-                        additional_params = []
-                        for binding in bindings[sort][state]:
-                            if binding.param not in got_params:
-                                got_params.add(binding.param)
-                                additional_params.append(binding.hypothesis.G_)
-                        for param_sort in additional_params:
-                            fluent_params.append(objs[param_sort])
-
-                    # append a fluent with every combination of fluent_params
-                    for params in itertools.product(*fluent_params):
-                        fluents.append(
-                            LearnedFluent(f"s{sort}_state{state}", list(params))
-                        )
-
-        print(fluents)
-        # state_params = set()
-        # for binding in bindings[sort][state]:
-        # state_params.add(binding.param)
 
     @staticmethod
     def get_state_machines(
@@ -702,3 +663,126 @@ class LOCM:
             state_machines.append(graph)
 
         return state_machines
+
+    @staticmethod
+    def _step6(statics, debug: bool = False):
+        pass
+
+    @staticmethod
+    def _step7(
+        OS: OSType,
+        ap_state_pointers: APStatePointers,
+        sorts: Sorts,
+        bindings: Bindings,
+        debug: bool = False,
+    ) -> Tuple[Set[LearnedFluent], Set[LearnedAction]]:
+        """Step 7: Formation of PDDL action schema"""
+        # for each sort
+        # construct a predicate for each state
+        # bindings provide correlations between action params and state params
+        # which occur in the start/end states of transitions
+
+        # (:types sort1 sort2 ... sortN)
+        # types = []
+
+        # objs = {sort: [obj1, obj2, ...]}
+        objs = defaultdict(list)
+
+        """
+        (:predicates 
+            (s{sort}{state} ?o{sort})
+            (prop{sort}{state}{prop} ?o{sort} ?p{prop})
+            ...
+        )
+        """
+        fluents, actions = set(), set()
+
+        # bindings = {sort: {state: [(hypothesis, state param)]}}
+        if OS[0]:
+            objs[0] = [LOCM.zero_obj]
+        else:
+            del OS[0]
+
+        for obj_name, sort in sorts.items():
+            objs[sort].append(PlanningObject(f"sort{sort}", obj_name))
+        objs = dict(objs)
+
+        if debug:
+            print("ap state pointers")
+            pprint(ap_state_pointers)
+            print()
+
+            print("OS:")
+            pprint(OS)
+            print()
+
+            print("bindings:")
+            pprint(bindings)
+            print()
+
+            print("objs:")
+            pprint(objs)
+            print()
+
+        for sort, states in OS.items():
+            if debug:
+                print(f"\nsort {sort} {[obj.name for obj in objs[sort]]}")
+
+            for state in range(len(states)):
+                if debug:
+                    print(f"  state: {state}")
+
+                bind_params = set()
+
+                if sort in bindings and state in bindings[sort]:
+                    for binding in bindings[sort][state]:
+                        param_sort = binding.hypothesis.G_
+                        if param_sort not in bind_params:
+                            bind_params.add(binding.hypothesis.G_)
+                            if debug:
+                                print(
+                                    f"      ** binding sort {binding.hypothesis.G_} **"
+                                )
+
+                for obj in objs[sort]:
+                    if debug:
+                        print(f"    obj: {obj}")
+
+                    fluent_params = [[obj]] + [
+                        objs[param_sort] for param_sort in bind_params
+                    ]
+
+                    # append a fluent for the state + object
+                    # state_obj_fluent = LearnedFluent(f"sort{sort}_state{state}", [obj])
+                    # fluents.add(state_obj_fluent)
+                    # if debug:
+                    #     print(f"      adding fluent: {state_obj_fluent}")
+
+                    # append a prop fluent with every combination of fluent_params
+                    for params in itertools.product(*fluent_params):
+                        param_state_fluent = LearnedFluent(
+                            f"sort{sort}_state{state}", list(params)
+                        )
+                        fluents.add(param_state_fluent)
+                        if debug:
+                            print(f"      adding fluent: {param_state_fluent}")
+
+        # print(fluents)
+
+        # actions = {"action name": [LearnedAction]}
+        actions = {}
+
+        print()
+        for sort, ap_pointers in ap_state_pointers.items():
+            for ap, pointers in ap_pointers.items():
+                if debug:
+                    print(f"{ap} {pointers}")
+
+                actions[ap.action.name]
+
+                #
+
+        # state_params = set()
+        # for binding in bindings[sort][state]:
+        # state_params.add(binding.param)
+        return fluents, actions
