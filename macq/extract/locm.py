@@ -354,7 +354,7 @@ class LOCM:
         return obj_sorts
 
     @staticmethod
-    def _pointer_to_set(states, pointer, pointer2=None) -> Tuple[int, int]:
+    def _pointer_to_set(states: List[Set], pointer, pointer2=None) -> Tuple[int, int]:
         state1, state2 = None, None
         for i, state_set in enumerate(states):
             if pointer in state_set:
@@ -695,13 +695,13 @@ class LOCM:
             ...
         )
         """
-        fluents, actions = set(), set()
 
         # bindings = {sort: {state: [(hypothesis, state param)]}}
         if OS[0]:
             objs[0] = [LOCM.zero_obj]
         else:
             del OS[0]
+            del ap_state_pointers[0]
 
         for obj_name, sort in sorts.items():
             objs[sort].append(PlanningObject(f"sort{sort}", obj_name))
@@ -717,12 +717,14 @@ class LOCM:
             print()
 
             print("bindings:")
-            pprint(bindings)
+            pprint(bindings[1])
             print()
 
             print("objs:")
             pprint(objs)
             print()
+
+        fluents = defaultdict(lambda: defaultdict(set))
 
         for sort, states in OS.items():
             if debug:
@@ -763,24 +765,134 @@ class LOCM:
                         param_state_fluent = LearnedFluent(
                             f"sort{sort}_state{state}", list(params)
                         )
-                        fluents.add(param_state_fluent)
+                        fluents[sort][state].add(param_state_fluent)
                         if debug:
                             print(f"      adding fluent: {param_state_fluent}")
 
-        # print(fluents)
+        if debug:
+            print("\n\nFluents:")
+            pprint(fluents)
+            print("\n\n")
+        """
+        when action.name appears in a FSM
+        add to each (grounded) learned action:
+            params += objs of current (FSM) sort
+        preconditions += fluent for (parameterized) origin state
+        del effects += fluent for (parameterized) origin state
+        add effects += fluent for (parameterized) destination state
 
-        # actions = {"action name": [LearnedAction]}
+        parameterized state -> need an instance for every objn combo
+        """
+
         actions = {}
 
-        print()
-        for sort, ap_pointers in ap_state_pointers.items():
-            for ap, pointers in ap_pointers.items():
+        for (sort, aps), states in zip(ap_state_pointers.items(), OS.values()):
+            if debug:
+                print(f"\nworking on state machine for sort {sort}")
+
+            sort_has_bindings = sort in bindings
+
+            for ap, pointers in aps.items():
+                print(f"    action: {ap.action.name}")
+                start_state, end_state = LOCM._pointer_to_set(
+                    states, pointers.start, pointers.end
+                )
+                print(f"      {pointers} == {start_state} -> {end_state}")
+
+                if ap.action.name not in actions:
+                    actions[ap.action.name] = set()
+                    for obj in objs[sort]:
+                        actions[ap.action.name].add(
+                            LearnedAction(ap.action.name, [obj])
+                        )
+
+                # add params to action as needed
+                # preconditions += fluent for (parameterized) origin state
+                # add effects += fluent for (parameterized) destination state
+                # del effects += fluent for (parameterized) origin state
+
+                """
+                # start state fluents
+                start_state_param_sorts = []
+                if sort_has_bindings and start_state in bindings[sort]:
+                    start_state_param_sorts += [
+                        binding.hypothesis.G_ for binding in bindings[sort][start_state]
+                    ]
+
+                # end state fluents
+                end_state_param_sorts = []
+                if sort_has_bindings and end_state in bindings[sort]:
+                    end_state_param_sorts += [
+                        binding.hypothesis.G_ for binding in bindings[sort][end_state]
+                    ]
+
+                print(f"      start state param sorts: {start_state_param_sorts}")
+                print(f"      end state param sorts: {end_state_param_sorts}")
+
+                for obj in objs[sort]:
+                    start_fluent_params = [[obj]] + [
+                        objs[param_sort] for param_sort in start_state_param_sorts
+                    ]
+                    end_fluent_params = [[obj]] + [
+                        objs[param_sort] for param_sort in end_state_param_sorts
+                    ]
+
+                    for params in itertools.product(*start_fluent_params):
+                        param_state_fluent = LearnedFluent(
+                            f"sort{sort}_state{start_state}", list(params)
+                        )
+                        # fluents.add(param_state_fluent)
+                        if debug:
+                            print(f"      adding fluent: {param_state_fluent}")
+
+                # print(f"        so, {ap.action.name} has precond ")
+                """
+
+            """
+            for state in range(len(states)):
                 if debug:
-                    print(f"{ap} {pointers}")
+                    print(f"  state: {state}")
 
-                actions[ap.action.name]
+                param_sorts = [sort]
 
-                #
+                if (
+                    bindings is not None
+                    and sort in bindings
+                    and state in bindings[sort]
+                ):
+                    if debug:
+                        print(f"    state has {len(bindings[sort][state])} binding")
+            """
+
+        """
+        for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
+            graph = Digraph(f"LOCM-step1-sort{sort}")
+            for state in range(len(states)):
+                label = f"state{state}"
+                if (
+                    bindings is not None
+                    and sort in bindings
+                    and state in bindings[sort]
+                ):
+                    print(bindings)
+                    label += f"\n["
+                    params = []
+                    for binding in bindings[sort][state]:
+                        params.append(f"V{binding.param}")
+                    label += f",".join(params)
+                    label += f"]"
+                graph.node(str(state), label=label, shape="oval")
+            for ap, apstate in trans.items():
+                start_idx, end_idx = LOCM._pointer_to_set(
+                    states, apstate.start, apstate.end
+                )
+                graph.edge(
+                    str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
+                )
+
+            state_machines.append(graph)
+
+        """
 
         # state_params = set()
         # for binding in bindings[sort][state]:
