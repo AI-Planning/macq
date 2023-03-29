@@ -724,7 +724,8 @@ class LOCM:
             pprint(objs)
             print()
 
-        fluents = defaultdict(lambda: defaultdict(set))
+        fluents = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+        bound_param_sorts = defaultdict(dict)
 
         for sort, states in OS.items():
             if debug:
@@ -734,17 +735,14 @@ class LOCM:
                 if debug:
                     print(f"  state: {state}")
 
-                bind_params = set()
-
+                bind_params = []
                 if sort in bindings and state in bindings[sort]:
                     for binding in bindings[sort][state]:
-                        param_sort = binding.hypothesis.G_
-                        if param_sort not in bind_params:
-                            bind_params.add(binding.hypothesis.G_)
-                            if debug:
-                                print(
-                                    f"      ** binding sort {binding.hypothesis.G_} **"
-                                )
+                        bind_params.append(binding.hypothesis.G_)
+                        if debug:
+                            print(f"      ** binding sort {binding.hypothesis.G_} **")
+
+                bound_param_sorts[sort][state] = bind_params
 
                 for obj in objs[sort]:
                     if debug:
@@ -754,24 +752,21 @@ class LOCM:
                         objs[param_sort] for param_sort in bind_params
                     ]
 
-                    # append a fluent for the state + object
-                    # state_obj_fluent = LearnedFluent(f"sort{sort}_state{state}", [obj])
-                    # fluents.add(state_obj_fluent)
-                    # if debug:
-                    #     print(f"      adding fluent: {state_obj_fluent}")
-
                     # append a prop fluent with every combination of fluent_params
                     for params in itertools.product(*fluent_params):
                         param_state_fluent = LearnedFluent(
                             f"sort{sort}_state{state}", list(params)
                         )
-                        fluents[sort][state].add(param_state_fluent)
+                        fluents[sort][state][obj].add(param_state_fluent)
                         if debug:
                             print(f"      adding fluent: {param_state_fluent}")
 
         if debug:
             print("\n\nFluents:")
             pprint(fluents)
+            print("\n\n")
+            print("bound param sorts:")
+            pprint(bound_param_sorts)
             print("\n\n")
         """
         when action.name appears in a FSM
@@ -781,8 +776,18 @@ class LOCM:
         del effects += fluent for (parameterized) origin state
         add effects += fluent for (parameterized) destination state
 
+        ↳ if start==end no add or del effect
+
         parameterized state -> need an instance for every objn combo
         """
+
+        @dataclass
+        class TemplateAction:
+            name: str
+            params: List[int]  # sorts
+            preconds: List[str]  # predicate names
+            add_effects: List[str]  # predicate names
+            del_effects: List[str]  # predicate names
 
         actions = {}
 
@@ -800,11 +805,21 @@ class LOCM:
                 print(f"      {pointers} == {start_state} -> {end_state}")
 
                 if ap.action.name not in actions:
-                    actions[ap.action.name] = set()
+                    actions[ap.action.name] = {}
                     for obj in objs[sort]:
-                        actions[ap.action.name].add(
-                            LearnedAction(ap.action.name, [obj])
-                        )
+                        actions[ap.action.name][obj] = LearnedAction(ap.action.name, [obj])  # fmt: skip
+
+                # n_start_params = len(next(iter(start_fluents)).objects)
+                # n_end_params = len(next(iter(end_fluents)).objects)
+                start_param_sorts = bound_param_sorts[sort][start_state]
+                end_param_sorts = bound_param_sorts[sort][end_state]
+
+                if debug:
+                    print(f"      start state param sorts: {start_param_sorts}")
+
+                for obj in objs[sort]:
+                    start_fluents_obj = fluents[sort][start_state][obj]
+                    end_fluents_obj = fluents[sort][end_state][obj]
 
                 # add params to action as needed
                 # preconditions += fluent for (parameterized) origin state
