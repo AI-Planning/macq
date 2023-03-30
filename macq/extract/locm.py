@@ -699,6 +699,10 @@ class LOCM:
             pprint(OS)
             print()
 
+            print("bindings:")
+            pprint(bindings[sorts["rooma"]])
+            print()
+
         bound_param_sorts = {
             sort: {
                 state: [
@@ -723,9 +727,17 @@ class LOCM:
                 action, [f"sort{ap.sort}" for ap in aps]
             )
 
+        @dataclass
+        class TemplateFluent:
+            name: str
+            param_sorts: List[str]
+
+            def __hash__(self) -> int:
+                return hash(self.name + "".join(self.param_sorts))
+
         for sort, state_bindings in bound_param_sorts.items():
             for state, bound_sorts in state_bindings.items():
-                fluents[sort][state] = LearnedLiftedFluent(
+                fluents[sort][state] = TemplateFluent(
                     f"sort{sort}_state{state}",
                     [f"sort{sort}"] + [f"sort{s}" for s in bound_sorts],
                 )
@@ -737,13 +749,51 @@ class LOCM:
                 )
 
                 # preconditions += fluent for origin state
-                actions[ap.action.name].update_precond(fluents[sort][start_state])
+                start_fluent_temp = fluents[sort][start_state]
+
+                bound_param_inds = []
+
+                # for each bindings on the start state (if there are any)
+                # then add each binding.hypothesis.l_
+                if sort in bindings and start_state in bindings[sort]:
+                    bound_param_inds = [
+                        b.hypothesis.l_ - 1 for b in bindings[sort][start_state]
+                    ]
+
+                start_fluent = LearnedLiftedFluent(
+                    start_fluent_temp.name,
+                    start_fluent_temp.param_sorts,
+                    [ap.pos - 1] + bound_param_inds,
+                )
+                fluents[sort][start_state] = start_fluent
+                actions[ap.action.name].update_precond(start_fluent)
 
                 if start_state != end_state:
                     # del += fluent for origin state
-                    actions[ap.action.name].update_delete(fluents[sort][start_state])
+                    actions[ap.action.name].update_delete(start_fluent)
+
                     # add += fluent for destination state
-                    actions[ap.action.name].update_add(fluents[sort][end_state])
+                    end_fluent_temp = fluents[sort][end_state]
+                    bound_param_inds = []
+                    if sort in bindings and end_state in bindings[sort]:
+                        bound_param_inds = [
+                            b.hypothesis.l_ - 1 for b in bindings[sort][end_state]
+                        ]
+                    end_fluent = LearnedLiftedFluent(
+                        end_fluent_temp.name,
+                        end_fluent_temp.param_sorts,
+                        [ap.pos - 1] + bound_param_inds,
+                    )
+                    fluents[sort][end_state] = end_fluent
+                    actions[ap.action.name].update_add(end_fluent)
+
+        print()
+        print("here")
+        print(actions["move"].precond)
+        print([p.param_act_inds for p in actions["move"].precond])
+        print(actions["move"].add)
+        print(actions["move"].delete)
+        print()
 
         fluents = set(fluent for sort in fluents.values() for fluent in sort.values())
         actions = set(actions.values())
