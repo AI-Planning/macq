@@ -37,9 +37,10 @@ class LearnedFluent:
 
 
 class LearnedLiftedFluent:
-    def __init__(self, name: str, param_sorts: List[str]):
+    def __init__(self, name: str, param_sorts: List[str], param_act_inds: List[int]):
         self.name = name
         self.param_sorts = param_sorts
+        self.param_act_inds = param_act_inds
 
     def __eq__(self, other):
         return isinstance(other, LearnedLiftedFluent) and hash(self) == hash(other)
