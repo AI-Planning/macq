@@ -133,7 +133,27 @@ class Model:
                 Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
             )
 
-    def to_pddl(
+    def to_pddl(self, *args, **kwargs):
+        # if fluents and actions are of type LearnedFluent and LearnedAction, then the model is grounded
+        if (
+            isinstance(list(self.fluents)[0], LearnedFluent) and 
+            isinstance(list(self.actions)[0], LearnedAction)  # fmt: skip
+        ):
+            self.to_pddl_grounded(*args, **kwargs)
+        elif (
+            isinstance(list(self.fluents)[0], LearnedLiftedFluent) and 
+            isinstance(list(self.actions)[0], LearnedLiftedAction)  # fmt: skip
+        ):
+            self.to_pddl_lifted(*args, **kwargs)
+        else:
+            raise ValueError(
+                f"The model is neither grounded nor lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
+            )
+
+    def to_pddl_lifted(self):
+        pass
+
+    def to_pddl_grounded(
         self,
         domain_name: str,
         problem_name: str,
