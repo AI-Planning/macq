@@ -1,15 +1,17 @@
-from typing import Set
-from json import loads, dumps
+from json import dumps, loads
+from typing import Set, Union
+
 import tarski
-from tarski.syntax.formulas import CompoundFormula, Connective, top
+import tarski.fstrips as fs
 from tarski.fol import FirstOrderLanguage
 from tarski.io import fstrips as iofs
 from tarski.syntax import land
-import tarski.fstrips as fs
-from .learned_action import LearnedAction
-from .learned_fluent import LearnedFluent
-from ..utils import ComplexEncoder
+from tarski.syntax.formulas import CompoundFormula, Connective, top
+
 from ..trace import Fluent
+from ..utils import ComplexEncoder
+from .learned_action import LearnedAction, LearnedLiftedAction
+from .learned_fluent import LearnedFluent, LearnedLiftedFluent
 
 
 class Model:
@@ -27,7 +29,11 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]):
+    def __init__(
+        self,
+        fluents: Union[Set[LearnedFluent], Set[LearnedLiftedFluent]],
+        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction]],
+    ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -168,7 +174,10 @@ class Model:
                 effects.extend([fs.DelEffect(e) for e in dels])
                 # set up action
                 problem.action(
-                    name=a.details().replace("(", "").replace(")", "").replace(" ","_"),
+                    name=a.details()
+                    .replace("(", "")
+                    .replace(")", "")
+                    .replace(" ", "_"),
                     parameters=[],
                     precondition=preconds,
                     effects=effects,
