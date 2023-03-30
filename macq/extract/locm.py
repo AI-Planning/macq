@@ -1,10 +1,7 @@
 """.. 'include':: ../../docs/templates/extract/locm.md"""
 
-
-import itertools
 from collections import defaultdict
-from collections.abc import Set as SetClass
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pprint import pprint
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from warnings import warn
@@ -787,21 +784,11 @@ class LOCM:
                     fluents[sort][end_state] = end_fluent
                     actions[ap.action.name].update_add(end_fluent)
 
-        print()
-        print("here")
-        print(actions["move"].precond)
-        print([p.param_act_inds for p in actions["move"].precond])
-        print(actions["move"].add)
-        print(actions["move"].delete)
-        print()
-
         fluents = set(fluent for sort in fluents.values() for fluent in sort.values())
         actions = set(actions.values())
 
         if debug:
             pprint(fluents)
-            print(type(next(iter(fluents))))
             pprint(actions)
-            print(type(next(iter(actions))))
 
         return fluents, actions
