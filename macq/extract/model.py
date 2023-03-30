@@ -181,38 +181,55 @@ class Model:
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
         sorts = set()
+
+        print("\n\nin to_pddl")
+
         if self.fluents:
             for f in self.fluents:
                 for sort in f.param_sorts:
                     if sort not in sorts:
                         lang.sort(sort)
                         sorts.add(sort)
+
                 lang.predicate(f.name, *f.param_sorts)
-        vars = {s: lang.variable(s, s) for s in sorts}
+
         if self.actions:
             for a in self.actions:
-                # elif len(attribute) == 1:
-                #     return lang.get(list(attribute)[0].replace(" ", "_"))()
-                # # creates CompoundFormula
-                # else:
-                #     return CompoundFormula(
-                #         Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
-                #     )
-
-                # TODO: HERE
-                print()
-                print(a)
-                print(a.precond)
-                print(type(list(a.precond)[0]))
-                exit()
+                # vars = {s: lang.variable(s, s) for s in sorts}
+                vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
+                print(vars)
 
                 if len(a.precond) == 1:
-                    precond = lang.get(list(a.precond)[0].replace(" ", "_"))(*[vars[s] for s in list()])  # type: ignore
+                    precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in a.precond[0].param_act_inds])  # type: ignore
+                else:
+                    print(a.name)
+                    print(a.precond)
+                    print([f.param_act_inds for f in a.precond])
+                    precond = CompoundFormula(
+                        Connective.And,
+                        [
+                            lang.get(f.name)(*[vars[i] for i in f.param_act_inds])  # type: ignore
+                            for f in a.precond
+                        ],
+                    )
+
+                adds = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.add]  # type: ignore
+                dels = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.delete]  # type: ignore
+                effects = [fs.AddEffect(e) for e in adds] + [fs.DelEffect(e) for e in dels]  # fmt: skip
 
                 problem.action(
                     a.name,
-                    parameters=[vars[s] for s in a.param_sorts],
+                    parameters=vars,
+                    precondition=precond,
+                    effects=effects,
                 )
+
+        # create empty init and goal
+        problem.init = tarski.model.create(lang)
+        problem.goal = land()
+        # write to files
+        writer = iofs.FstripsWriter(problem)
+        writer.write(domain_filename, problem_filename)
 
     def to_pddl_grounded(
         self,
