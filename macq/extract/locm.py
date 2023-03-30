@@ -145,6 +145,8 @@ Hypotheses = Dict[int, Dict[int, Set[Hypothesis]]]  # {sort: {state: [Hypothesis
 Binding = NamedTuple("Binding", [("hypothesis", Hypothesis), ("param", int)])
 Bindings = Dict[int, Dict[int, List[Binding]]]  # {sort: {state: [Binding]}}
 
+Statics = Dict[str, List[str]]  # {action: [static preconditions]}
+
 
 class LOCM:
     """LOCM"""
@@ -154,7 +156,7 @@ class LOCM:
     def __new__(
         cls,
         obs_tracelist: ObservedTraceList,
-        statics: Dict[str, List[str]] = None,
+        statics: Optional[Statics] = None,
         viz: bool = False,
         view: bool = False,
         debug: Union[bool, Dict[str, bool], List[str]] = False,
@@ -202,9 +204,13 @@ class LOCM:
         HS = LOCM._step3(TS, ap_state_pointers, OS, sorts, debug["step3"])
         bindings = LOCM._step4(HS, debug["step4"])
         bindings = LOCM._step5(HS, bindings, debug["step5"])
-        statics = LOCM._step6(statics, debug["step6"])
         fluents, actions = LOCM._step7(
-            OS, ap_state_pointers, sorts, bindings, debug["step7"]
+            OS,
+            ap_state_pointers,
+            sorts,
+            bindings,
+            statics if statics is not None else {},
+            debug["step7"],
         )
 
         if viz:
@@ -666,22 +672,18 @@ class LOCM:
         return state_machines
 
     @staticmethod
-    def _step6(statics, debug: bool = False):
-        pass
-
-    @staticmethod
     def _step7(
         OS: OSType,
         ap_state_pointers: APStatePointers,
         sorts: Sorts,
         bindings: Bindings,
+        statics: Statics,
         debug: bool = False,
     ) -> Tuple[Set[LearnedLiftedFluent], Set[LearnedLiftedAction]]:
-        """Step 7: Formation of PDDL action schema"""
-        # for each sort
-        # construct a predicate for each state
-        # bindings provide correlations between action params and state params
-        # which occur in the start/end states of transitions
+        """Step 7: Formation of PDDL action schema
+        Implicitly includes Step 6 (statics) by including statics as an argument
+        and adding to the relevant actions while being constructed.
+        """
 
         # delete zero-object if it's state machine was discarded
         if not OS[0]:
@@ -744,10 +746,12 @@ class LOCM:
                     actions[ap.action.name].update_add(fluents[sort][end_state])
 
         fluents = set(fluent for sort in fluents.values() for fluent in sort.values())
-        pprint(fluents)
-
         actions = set(actions.values())
 
-        pprint(actions)
+        if debug:
+            pprint(fluents)
+            print(type(next(iter(fluents))))
+            pprint(actions)
+            print(type(next(iter(actions))))
 
         return fluents, actions

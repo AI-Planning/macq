@@ -126,32 +126,93 @@ class Model:
             return top
         # creates Atom
         elif len(attribute) == 1:
-            return lang.get(list(attribute)[0].replace(" ", "_"))()
+            return lang.get(list(attribute)[0].replace(" ", "_"))()  # type: ignore
         # creates CompoundFormula
         else:
             return CompoundFormula(
-                Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
+                Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]  # type: ignore
             )
 
-    def to_pddl(self, *args, **kwargs):
-        # if fluents and actions are of type LearnedFluent and LearnedAction, then the model is grounded
+    def to_pddl(
+        self,
+        domain_name: str,
+        problem_name: str = "",
+        domain_filename: str = "",
+        problem_filename: str = "",
+    ):
+        if not problem_name:
+            problem_name = domain_name + "_problem"
+        if not domain_filename:
+            domain_filename = domain_name + ".pddl"
+        if not problem_filename:
+            problem_filename = problem_name + ".pddl"
+
         if (
             isinstance(list(self.fluents)[0], LearnedFluent) and 
             isinstance(list(self.actions)[0], LearnedAction)  # fmt: skip
         ):
-            self.to_pddl_grounded(*args, **kwargs)
+            self.to_pddl_grounded(
+                domain_name, problem_name, domain_filename, problem_filename
+            )
         elif (
             isinstance(list(self.fluents)[0], LearnedLiftedFluent) and 
             isinstance(list(self.actions)[0], LearnedLiftedAction)  # fmt: skip
         ):
-            self.to_pddl_lifted(*args, **kwargs)
+            self.to_pddl_lifted(
+                domain_name, problem_name, domain_filename, problem_filename
+            )
         else:
             raise ValueError(
                 f"The model is neither grounded nor lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
             )
 
-    def to_pddl_lifted(self):
-        pass
+    def to_pddl_lifted(
+        self,
+        domain_name: str,
+        problem_name: str,
+        domain_filename: str,
+        problem_filename: str,
+    ):
+        self.fluents: Set[LearnedLiftedFluent]
+        self.actions: Set[LearnedLiftedAction]
+
+        lang = tarski.language(domain_name)
+        problem = tarski.fstrips.create_fstrips_problem(
+            domain_name=domain_name, problem_name=problem_name, language=lang
+        )
+        sorts = set()
+        if self.fluents:
+            for f in self.fluents:
+                for sort in f.param_sorts:
+                    if sort not in sorts:
+                        lang.sort(sort)
+                        sorts.add(sort)
+                lang.predicate(f.name, *f.param_sorts)
+        vars = {s: lang.variable(s, s) for s in sorts}
+        if self.actions:
+            for a in self.actions:
+                # elif len(attribute) == 1:
+                #     return lang.get(list(attribute)[0].replace(" ", "_"))()
+                # # creates CompoundFormula
+                # else:
+                #     return CompoundFormula(
+                #         Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
+                #     )
+
+                # TODO: HERE
+                print()
+                print(a)
+                print(a.precond)
+                print(type(list(a.precond)[0]))
+                exit()
+
+                if len(a.precond) == 1:
+                    precond = lang.get(list(a.precond)[0].replace(" ", "_"))(*[vars[s] for s in list()])  # type: ignore
+
+                problem.action(
+                    a.name,
+                    parameters=[vars[s] for s in a.param_sorts],
+                )
 
     def to_pddl_grounded(
         self,

@@ -44,15 +44,7 @@ def test_locm():
 
     assert model
 
-    # model_blocks_dom = str(
-    #     (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    # )
-    # model_blocks_prob = str(
-    #     (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    # )
-    # model.to_pddl(
-    #     "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    # )
+    model.to_pddl("locm")
 
 
 def get_example_obs(print_trace=False):
