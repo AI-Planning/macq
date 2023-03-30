@@ -34,7 +34,12 @@ def test_locm():
     observations = traces.tokenize(ActionObservation)
 
     model = Extract(
-        observations, modes.LOCM, statics={}, debug=["sorts", "step7"], viz=False
+        observations,
+        modes.LOCM,
+        statics={},
+        debug=["sorts", "step7"],
+        viz=True,
+        view=False,
     )
 
     assert model
