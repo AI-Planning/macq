@@ -34,3 +34,28 @@ class LearnedFluent:
 
     def _serialize(self):
         return str(self)
+
+
+class LearnedLiftedFluent:
+    def __init__(self, name: str, param_sorts: List[str]):
+        self.name = name
+        self.param_sorts = param_sorts
+
+    def __eq__(self, other):
+        return isinstance(other, LearnedLiftedFluent) and hash(self) == hash(other)
+
+    def __hash__(self):
+        # Order of objects is important!
+        return hash(self.details())
+
+    def __str__(self):
+        return self.details()
+
+    def __repr__(self):
+        return self.details()
+
+    def details(self):
+        return f"({self.name} {' '.join(self.param_sorts)})"
+
+    def _serialize(self):
+        return str(self)
