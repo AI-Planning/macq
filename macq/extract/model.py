@@ -173,6 +173,18 @@ class Model:
         domain_filename: str,
         problem_filename: str,
     ):
+        """Dumps a Model with typed lifted actions & fluents to PDDL files.
+
+        Args:
+            domain_name (str):
+                The name of the domain to be generated.
+            problem_name (str):
+                The name of the problem to be generated.
+            domain_filename (str):
+                The name of the domain file to be generated.
+            problem_filename (str):
+                The name of the problem file to be generated.
+        """
         self.fluents: Set[LearnedLiftedFluent]
         self.actions: Set[LearnedLiftedAction]
 
@@ -181,8 +193,6 @@ class Model:
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
         sorts = set()
-
-        print("\n\nin to_pddl")
 
         if self.fluents:
             for f in self.fluents:
@@ -195,16 +205,11 @@ class Model:
 
         if self.actions:
             for a in self.actions:
-                # vars = {s: lang.variable(s, s) for s in sorts}
                 vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
-                print(vars)
 
                 if len(a.precond) == 1:
                     precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in a.precond[0].param_act_inds])  # type: ignore
                 else:
-                    print(a.name)
-                    print(a.precond)
-                    print([f.param_act_inds for f in a.precond])
                     precond = CompoundFormula(
                         Connective.And,
                         [
@@ -224,10 +229,8 @@ class Model:
                     effects=effects,
                 )
 
-        # create empty init and goal
-        problem.init = tarski.model.create(lang)
-        problem.goal = land()
-        # write to files
+        problem.init = tarski.model.create(lang)  # type: ignore
+        problem.goal = land()  # type: ignore
         writer = iofs.FstripsWriter(problem)
         writer.write(domain_filename, problem_filename)
 
