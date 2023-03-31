@@ -1,12 +1,11 @@
-from warnings import warn
-from typing import Set
-from ..trace import Step, Fluent
-from . import Observation, InvalidQueryParameter
+from ..trace import Step
+from . import InvalidQueryParameter, Observation
 
 
 class ActionObservation(Observation):
-    """The Action Observability Token.
-    Does not store stateful information for use in LOCM suite algorithms
+    """The Action Sequence Observability Token.
+    Only stores the ordered action sequence, dropping all stateful information.
+    For use in LOCM suite algorithms.
     """
 
     def __init__(
@@ -14,7 +13,7 @@ class ActionObservation(Observation):
         step: Step,
     ):
         """
-        Creates a PartialObservation object, storing the step.
+        Creates an ActionObservation object, storing the step.
         Args:
             step (Step):
                 The step associated with this observation.
@@ -24,7 +23,6 @@ class ActionObservation(Observation):
                 The set of fluents to explicitly hide in the observation.
         """
 
-        # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
         Observation.__init__(self, index=step.index)
 
         # If percent_missing == 1 -> self.state = None (below).
