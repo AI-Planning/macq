@@ -255,7 +255,6 @@ class LOCM:
 
                         # record the object has been sorted and the index of the sort it belongs to
                         obj_sort = len(sorts) - 1
-                        # obj_sort_pointers[obj.name] = obj_sort
                         sorted_objs.append(obj.name)
                         ap_sort_pointers[action.name].append(obj_sort)
 
@@ -786,6 +785,11 @@ class LOCM:
 
         fluents = set(fluent for sort in fluents.values() for fluent in sort.values())
         actions = set(actions.values())
+
+        # Step 6: Extraction of static preconditions
+        for action in actions:
+            for static in statics[action.name]:
+                action.update_precond(static)
 
         if debug:
             pprint(fluents)
