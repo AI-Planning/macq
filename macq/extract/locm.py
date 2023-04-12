@@ -292,12 +292,10 @@ class LOCM:
 
                         # add the object to the sort of current action parameter
                         sorts[ap_sort].add(obj)
-                        # obj_sort_pointers[obj.name] = ap_sort
                         sorted_objs.append(obj.name)
 
                     else:  # object already has a sort
                         # retrieve the sort the object belongs to
-                        # obj_sort = obj_sort_pointers[obj.name]
                         obj_sort = get_obj_sort(obj)
 
                         if debug:
