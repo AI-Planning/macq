@@ -1,9 +1,8 @@
 """.. include:: ../../docs/templates/extract/observer.md"""
 
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import List, Set
-
-from attr import dataclass
 
 from ..observation import IdentityObservation, ObservedTraceList
 from . import LearnedAction, Model
