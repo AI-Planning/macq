@@ -463,21 +463,6 @@ def test_locm_step5(is_test=True):
                 print(f"{h} -> {v}\n")
 
 
-def test_locm_step7():
-    sorts = test_locm_get_sorts(False)
-    TS, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
-    HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)  # type: ignore
-    bindings = LOCM._step4(HS)  # type: ignore
-    bindings = LOCM._step5(HS, bindings)  # type: ignore
-
-    print()
-    print("bindings:")
-    print(bindings)
-    print()
-
-    LOCM._step7(OS, ap_state_pointers, sorts, bindings)  # type: ignore
-
-
 def locm_viz():
     # _, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
     # state_machines: List[Digraph] = LOCM.get_state_machines(ap_state_pointers, OS)
@@ -508,5 +493,4 @@ if __name__ == "__main__":
     test_locm_step3()
     test_locm_step4()
     test_locm_step5()
-    # test_locm_step7()
     # locm_viz()

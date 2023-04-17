@@ -148,22 +148,19 @@ class Model:
             problem_filename = problem_name + ".pddl"
 
         if (
-            isinstance(list(self.fluents)[0], LearnedFluent) and 
-            isinstance(list(self.actions)[0], LearnedAction)  # fmt: skip
-        ):
-            self.to_pddl_grounded(
-                domain_name, problem_name, domain_filename, problem_filename
-            )
-        elif (
             isinstance(list(self.fluents)[0], LearnedLiftedFluent) and 
             isinstance(list(self.actions)[0], LearnedLiftedAction)  # fmt: skip
         ):
             self.to_pddl_lifted(
                 domain_name, problem_name, domain_filename, problem_filename
             )
+        elif isinstance(list(self.actions)[0], LearnedAction):
+            self.to_pddl_grounded(
+                domain_name, problem_name, domain_filename, problem_filename
+            )
         else:
             raise ValueError(
-                f"The model is neither grounded nor lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
+                f"Could not determine whether the model is grounded or lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
             )
 
     def to_pddl_lifted(
