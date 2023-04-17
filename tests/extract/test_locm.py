@@ -10,7 +10,7 @@ from macq.generate.pddl import *
 from macq.observation import ActionObservation
 from macq.trace import *
 
-EX = 1
+EX = 2
 
 # pid 4154
 
@@ -254,6 +254,7 @@ def test_locm_step4(HS=None, is_test=True):
                                 ],
                             ),
                             1,
+                            1,
                         ),
                         k=1,
                         k_=2,
@@ -265,6 +266,7 @@ def test_locm_step4(HS=None, is_test=True):
                                     PlanningObject("hub", "hub1"),
                                 ],
                             ),
+                            1,
                             1,
                         ),
                         l=1,
@@ -283,6 +285,7 @@ def test_locm_step4(HS=None, is_test=True):
                                 ],
                             ),
                             1,
+                            1,
                         ),
                         k=1,
                         k_=2,
@@ -294,6 +297,7 @@ def test_locm_step4(HS=None, is_test=True):
                                     PlanningObject("hub", "hub1"),
                                 ],
                             ),
+                            1,
                             1,
                         ),
                         l=1,
@@ -311,6 +315,7 @@ def test_locm_step4(HS=None, is_test=True):
                                     PlanningObject("hub", "hub1"),
                                 ],
                             ),
+                            1,
                             1,
                         ),
                         k=1,
@@ -324,6 +329,7 @@ def test_locm_step4(HS=None, is_test=True):
                                 ],
                             ),
                             1,
+                            1,
                         ),
                         l=1,
                         l_=2,
@@ -341,6 +347,7 @@ def test_locm_step4(HS=None, is_test=True):
                                 ],
                             ),
                             1,
+                            1,
                         ),
                         k=1,
                         k_=2,
@@ -352,6 +359,7 @@ def test_locm_step4(HS=None, is_test=True):
                                     PlanningObject("hub", "hub1"),
                                 ],
                             ),
+                            1,
                             1,
                         ),
                         l=1,
@@ -391,6 +399,7 @@ def test_locm_step5(is_test=True):
                             ],
                         ),
                         2,
+                        2,
                     ),
                     k=2,
                     k_=1,
@@ -402,6 +411,7 @@ def test_locm_step5(is_test=True):
                                 PlanningObject("hub", "hub1"),
                             ],
                         ),
+                        2,
                         2,
                     ),
                     l=2,
@@ -420,6 +430,7 @@ def test_locm_step5(is_test=True):
                             ],
                         ),
                         2,
+                        2,
                     ),
                     k=2,
                     k_=1,
@@ -431,6 +442,7 @@ def test_locm_step5(is_test=True):
                                 PlanningObject("hub", "hub1"),
                             ],
                         ),
+                        2,
                         2,
                     ),
                     l=2,
