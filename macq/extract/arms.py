@@ -1,18 +1,18 @@
 """.. include:: ../../docs/templates/extract/arms.md"""
 
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
+from typing import Dict, Hashable, List, Set, Tuple
 from warnings import warn
-from typing import Set, List, Dict, Tuple, Hashable
-from nnf import Var, And, Or, false as nnffalse
-from . import LearnedAction, Model, LearnedFluent
-from .exceptions import (
-    IncompatibleObservationToken,
-    InvalidMaxSATModel,
-)
-from ..observation import PartialObservation, ObservedTraceList
-from ..trace import Fluent, Action
-from ..utils.pysat import to_wcnf, RC2, WCNF
+
+from nnf import And, Or, Var
+from nnf import false as nnffalse
+
+from ..observation import Observation, ObservedTraceList, PartialObservation
+from ..trace import Action, Fluent
+from ..utils.pysat import RC2, WCNF, to_wcnf
+from . import LearnedAction, LearnedFluent, Model
+from .exceptions import IncompatibleObservationToken, InvalidMaxSATModel
 
 
 @dataclass
@@ -684,7 +684,6 @@ class ARMS:
             # relation_constraints: List[Or[And[Var]]] = []
             relation_constraints: List[Var] = []
             for relation in relevant_relations:
-
                 relation_constraints.append(
                     Var(
                         f"{relation.var()} (BREAK) relevant (BREAK) {ai.details()} (BREAK) {aj.details()}"
