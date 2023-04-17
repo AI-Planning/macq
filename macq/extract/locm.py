@@ -382,7 +382,6 @@ class LOCM:
         zero_obj = LOCM.zero_obj
 
         # collect action sequences for each object
-        # used for step 5: looping over consecutive transitions for an object
         obj_traces: Dict[PlanningObject, List[AP]] = defaultdict(list)
         for obs in obs_trace:
             action = obs.action
@@ -538,7 +537,9 @@ class LOCM:
         return Hypothesis.from_dict(HS)
 
     @staticmethod
-    def _step4(HS: Dict[int, Dict[int, Set[Hypothesis]]], debug: bool) -> Bindings:
+    def _step4(
+        HS: Dict[int, Dict[int, Set[Hypothesis]]], debug: bool = False
+    ) -> Bindings:
         """Step 4: Creation and merging of state parameters"""
 
         # bindings = {sort: {state: [(hypothesis, state param)]}}
@@ -786,8 +787,9 @@ class LOCM:
 
         # Step 6: Extraction of static preconditions
         for action in actions:
-            for static in statics[action.name]:
-                action.update_precond(static)
+            if action.name in statics:
+                for static in statics[action.name]:
+                    action.update_precond(static)
 
         if debug:
             pprint(fluents)
