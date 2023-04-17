@@ -10,10 +10,6 @@ from macq.generate.pddl import *
 from macq.observation import ActionObservation
 from macq.trace import *
 
-EX = 2
-
-# pid 4154
-
 
 def get_fluent(name: str, objs: List[str]):
     objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
@@ -21,18 +17,10 @@ def get_fluent(name: str, objs: List[str]):
 
 
 def test_locm():
-    # base = Path(__file__).parent.parent
-    # dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
-    # prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
-
     # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
-
-    traces.print("actions")
-
     observations = traces.tokenize(ActionObservation)
-
     model = Extract(
         observations,
         modes.LOCM,
@@ -43,11 +31,10 @@ def test_locm():
     )
 
     assert model
-
     model.to_pddl("locm")
 
 
-def get_example_obs(print_trace=False):
+def get_example_obs(print_trace=False, ex=1):
     objects = {
         "c1": PlanningObject("container", "c1"),
         "c2": PlanningObject("container", "c2"),
@@ -84,7 +71,7 @@ def get_example_obs(print_trace=False):
         "closewr": Action("close", [objects["wr1"]]),
     }
 
-    if EX == 1:
+    if ex == 1:
         # open(c1); fetch jack(j1,c1); fetch wrench(wr1,c1); close(c1);
         # open(c2); fetch wrench(wr2,c2); fetch jack(j2,c2); close(c2);
         # open(c3); close(c3)
@@ -175,14 +162,13 @@ def get_example_obs(print_trace=False):
 
 
 def test_locm_get_sorts(is_test=True):
-    num_random_traces = 1
+    num_random_traces = 3
 
-    obs = get_example_obs(is_test)
+    obs = get_example_obs(is_test, 1)
 
     sorts = LOCM._get_sorts(obs[0])
 
     if is_test:
-        print("testing on real traces...")
         failed = False
         for _ in range(num_random_traces):
             generator = FDRandomWalkSampling(problem_id=2688, init_h=350, num_traces=1)
@@ -198,24 +184,24 @@ def test_locm_get_sorts(is_test=True):
                 break
 
         assert not failed, "Error getting sorts for one or more driverlog traces"
-
-        print()
-        print("sorts:")
-        pprint(sorts)
-        print()
-
         assert len(set(sorts.values())) == 3, "Got incorrect sorts for example trace"
 
     else:
         return sorts
 
 
-def test_locm_step1(is_test=True):
-    obs = get_example_obs(False)
+def test_locm_step1(is_test=True, ex=1):
+    obs = get_example_obs(False, ex)
     sorts = test_locm_get_sorts(False)
     ts, ap_state_pointers, os = LOCM._step1(obs[0], sorts)  # type: ignore
-
     if is_test:
+        expct = {
+            0: [],
+            1: [{8, 1}, {2, 3, 4, 5, 6, 7}],
+            2: [{1}, {2}],
+            3: [{1}, {2}],
+        }
+        assert os == expct, f"os: {os}, expected: {expct}"
         print("state pointers:")
         pprint(ap_state_pointers)
         print("ts:")
@@ -229,11 +215,13 @@ def test_locm_step1(is_test=True):
 
 def test_locm_step3(is_test=True):
     sorts = test_locm_get_sorts(False)
-    TS, ap_state_pointers, OS = test_locm_step1(False)  # type: ignore
+    TS, ap_state_pointers, OS = test_locm_step1(False, 2)  # type: ignore
     HS = LOCM._step3(TS, ap_state_pointers, OS, sorts)  # type: ignore
     if is_test:
+        assert len(HS) == 2
         print("HS:")
         pprint(HS)
+
     else:
         return HS
 
@@ -379,6 +367,7 @@ def test_locm_step4(HS=None, is_test=True):
                 print(f"\nG={G}, S={S}")
                 for h, v in bGS:
                     print(f"{h} -> {v}\n")
+                    assert v == 0
 
     else:
         return bindings
@@ -464,6 +453,7 @@ def test_locm_step5(is_test=True):
                 print(f"{h} -> {v}\n")
 
     bindings = LOCM._step5(HS, bindings)  # type: ignore
+    assert len(bindings) == 0
 
     print("\nbindings after:")
     for G, bG in bindings.items():
@@ -512,11 +502,11 @@ def locm_viz():
 
 
 if __name__ == "__main__":
-    test_locm()
+    # test_locm()
     # test_locm_get_sorts()
-    # test_locm_step1()
-    # test_locm_step3()
-    # test_locm_step4()
-    # test_locm_step5()
+    test_locm_step1()
+    test_locm_step3()
+    test_locm_step4()
+    test_locm_step5()
     # test_locm_step7()
     # locm_viz()

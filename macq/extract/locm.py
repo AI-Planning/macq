@@ -627,6 +627,10 @@ class LOCM:
                         if len(bindings[sort][state]) == 0:
                             del bindings[sort][state]
 
+        for k, v in bindings.copy().items():
+            if not v:
+                del bindings[k]
+
         return bindings
 
     @staticmethod
