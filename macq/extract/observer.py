@@ -3,7 +3,7 @@
 from typing import List, Set
 from collections import defaultdict
 
-from attr import dataclass
+from dataclasses import dataclass
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
 from .model import Model
