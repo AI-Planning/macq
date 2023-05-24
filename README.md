@@ -19,8 +19,8 @@ traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_trac
 
 traces.generate_more(10)
 
-action1 = traces[0][0].action
-traces.get_usage(action1)
+action = traces[0][0].action
+traces.get_usage(action)
 [0.05, 0.05, ..., 0.05]
 
 trace = traces[0]
