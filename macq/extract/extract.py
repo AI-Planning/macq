@@ -9,6 +9,7 @@ from .observer import Observer
 from .slaf import SLAF
 from .amdn import AMDN
 from .arms import ARMS
+from .bglearner import BGLearner
 
 
 @dataclass
@@ -28,6 +29,7 @@ class modes(Enum):
     SLAF = auto()
     AMDN = auto()
     ARMS = auto()
+    BGLearner=auto()
 
 
 class Extract:
@@ -62,6 +64,8 @@ class Extract:
             modes.SLAF: SLAF,
             modes.AMDN: AMDN,
             modes.ARMS: ARMS,
+            modes.BGLearner: BGLearner
+
         }
         if mode == modes.SLAF:
             if len(obs_lists) != 1:
