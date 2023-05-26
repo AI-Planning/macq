@@ -1,9 +1,6 @@
 from collections.abc import MutableSequence
-from logging import warn
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, List, Type, Union
 from warnings import warn
-
-from rich.console import Console
 
 from ..observation import Observation, ObservedTraceList
 from . import Action, Trace
@@ -148,28 +145,10 @@ class TraceList(MutableSequence):
                 corresponding to the truth value. "actions" prints the actions
                 in the traces.
         """
-        console = Console()
-
         views = ["details", "color", "actions"]
         if view not in views:
             warn(f'Invalid view {view}. Defaulting to "details".')
             view = "details"
 
-        traces = []
-        if view == "details":
-            if wrap is None:
-                wrap = False
-            traces = [trace.details(wrap=wrap) for trace in self]
-
-        elif view == "color":
-            if wrap is None:
-                wrap = True
-            traces = [
-                trace.colorgrid(filter_func=filter_func, wrap=wrap) for trace in self
-            ]
-        elif view == "actions":
-            traces = [[step.action for step in trace] for trace in self]
-
-        for trace in traces:
-            console.print(trace)
-            print()
+        for trace in self:
+            trace.print(view, filter_func, wrap)
