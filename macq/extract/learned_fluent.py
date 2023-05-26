@@ -1,8 +1,10 @@
 from typing import List
 
+from macq.trace.fluent import PlanningObject
+
 
 class LearnedFluent:
-    def __init__(self, name: str, objects: List):
+    def __init__(self, name: str, objects: List[PlanningObject]):
         self.name = name
         self.objects = objects
 
@@ -16,6 +18,9 @@ class LearnedFluent:
     def __str__(self):
         return self.details()
 
+    def __repr__(self):
+        return self.details()
+
     def details(self):
         # objects can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the fluent
         if len(self.objects) > 0:
@@ -26,6 +31,32 @@ class LearnedFluent:
         else:
             string = self.name
         return f"({string})"
+
+    def _serialize(self):
+        return str(self)
+
+
+class LearnedLiftedFluent:
+    def __init__(self, name: str, param_sorts: List[str], param_act_inds: List[int]):
+        self.name = name
+        self.param_sorts = param_sorts
+        self.param_act_inds = param_act_inds
+
+    def __eq__(self, other):
+        return isinstance(other, LearnedLiftedFluent) and hash(self) == hash(other)
+
+    def __hash__(self):
+        # Order of objects is important!
+        return hash(self.details())
+
+    def __str__(self):
+        return self.details()
+
+    def __repr__(self):
+        return self.details()
+
+    def details(self):
+        return f"({self.name} {' '.join(self.param_sorts)})"
 
     def _serialize(self):
         return str(self)

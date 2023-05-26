@@ -2,13 +2,16 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Dict, List, Union
+
+from ..observation import ObservedTraceList
 from ..trace import Action, State
-from ..observation import ObservationLists
+from .amdn import AMDN
+from .arms import ARMS
+from .locm import LOCM
 from .model import Model
 from .observer import Observer
 from .slaf import SLAF
-from .amdn import AMDN
-from .arms import ARMS
 
 
 @dataclass
@@ -28,6 +31,7 @@ class modes(Enum):
     SLAF = auto()
     AMDN = auto()
     ARMS = auto()
+    LOCM = auto()
 
 
 class Extract:
@@ -38,7 +42,11 @@ class Extract:
     """
 
     def __new__(
-        cls, obs_lists: ObservationLists, mode: modes, debug: bool = False, **kwargs
+        cls,
+        obs_tracelist: ObservedTraceList,
+        mode: modes,
+        debug: Union[bool, Dict[str, bool], List[str]] = False,
+        **kwargs
     ) -> Model:
         """Extracts a Model object.
 
@@ -46,10 +54,12 @@ class Extract:
         technique.
 
         Args:
-            obs_lists (ObservationList):
+            obs_tracelist (ObservationList):
                 The state observations to extract the model from.
             mode (Enum):
                 The extraction technique to use.
+            debug (bool, dict, list):
+                Model specific debugging options. Either a boolean, or a list/dict indicating the functions to debug.
             **kwargs: (keyword arguments)
                 Any extra arguments to supply to the extraction technique.
 
@@ -57,14 +67,15 @@ class Extract:
             A Model object. The model's characteristics are determined by the
             extraction technique used.
         """
+
+        if len(obs_tracelist) == 0:
+            raise ValueError("ObservationList is empty. Nothing to extract from.")
+
         techniques = {
             modes.OBSERVER: Observer,
             modes.SLAF: SLAF,
             modes.AMDN: AMDN,
             modes.ARMS: ARMS,
+            modes.LOCM: LOCM,
         }
-        if mode == modes.SLAF:
-            if len(obs_lists) != 1:
-                raise Exception("The SLAF extraction technique only takes one trace.")
-
-        return techniques[mode](obs_lists, debug, **kwargs)
+        return techniques[mode](obs_tracelist, debug=debug, **kwargs)

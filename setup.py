@@ -15,6 +15,7 @@ DEPENDENCIES = [
     "bauhaus",
     "numpy",
     "clingo",
+    "graphviz",
 ]
 
 DEV_DEPENDENCIES = [
