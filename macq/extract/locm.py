@@ -169,6 +169,10 @@ class LOCM:
                 rest correspond to the arguments of the action (1-indexed).
                 E.g. static( next(C1, C2), put_on_card_in_homecell(C2, C1, _) )
                 should is provided as: {"put_on_card_in_homecell": [("next", 2, 1)]}
+            viz (bool):
+                Whether to visualize the FSM.
+            view (bool):
+                Whether to view the FSM visualization.
 
         Raises:
             IncompatibleObservationToken:

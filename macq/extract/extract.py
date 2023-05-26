@@ -58,6 +58,8 @@ class Extract:
                 The state observations to extract the model from.
             mode (Enum):
                 The extraction technique to use.
+            debug (bool, dict, list):
+                Model specific debugging options. Either a boolean, or a list/dict indicating the functions to debug.
             **kwargs: (keyword arguments)
                 Any extra arguments to supply to the extraction technique.
 
