@@ -89,6 +89,23 @@ class HSItem:
 
 @dataclass
 class Hypothesis:
+    """Relational hypothesis data structure from the paper.
+    S = state shared between the two transitions
+    B = action name of the prior transition
+    k = shared transition argument position of the prior transition
+    k_ = hypothesised shared parameter argument position of the prior transition
+    C = action name of the latter transition
+    l = shared transition argument position of the latter transition
+    l_ = hypothesised shared parameter argument position of the latter transition
+    G = sort of the shared parameter
+    G_ = sort of the hypothesised shared parameter
+
+    "In general, there is a state S between two consecutive transitions B.k and
+    C.l within the FSM associated with sort G, that is where B moves an object O
+    of sort G into S, and C moves O out of S. When both actions B and C contain
+    another argument of the same sort G′ in position k′ and l′ respectively, we
+    hypothesise that there may be a relation between sorts G and G′."
+    """
     S: int
     B: AP
     k: int
