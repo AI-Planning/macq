@@ -98,8 +98,8 @@ class Generator:
             reader.parse_domain(dom)
             self.problem = reader.parse_instance(prob)
         else:
-            dom = requests.get(get_problem(problem_id)["domain_url"]).text
-            prob = requests.get(get_problem(problem_id)["problem_url"]).text
+            dom = requests.get(get_problem(problem_id, formalism='classical')["domain_url"]).text
+            prob = requests.get(get_problem(problem_id, formalism='classical')["problem_url"]).text
             reader.parse_domain_string(dom)
             self.problem = reader.parse_instance_string(prob)
         self.lang = self.problem.language
@@ -393,7 +393,7 @@ class Generator:
             # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
             # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
             if self.problem_id and not self.pddl_dom and not self.pddl_prob:
-                plan = get_plan(self.problem_id)
+                plan = get_plan(self.problem_id, formalism='classical')
             # if you are not just using the unaltered files, use the local files instead
             else:
                 data = {

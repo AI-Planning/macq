@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Set
 
+from dataclasses import dataclass
 from ..observation import IdentityObservation, ObservedTraceList
 from . import LearnedAction, Model
 from .exceptions import IncompatibleObservationToken
