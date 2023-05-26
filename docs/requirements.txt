@@ -1,0 +1,9 @@
+tarski
+requests
+rich
+nnf
+python-sat
+bauhaus
+numpy
+clingo
+graphviz
