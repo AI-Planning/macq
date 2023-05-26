@@ -2,8 +2,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Type, Iterable, Callable, Set
 from inspect import cleandoc
+from warnings import warn
 from rich.table import Table
 from rich.text import Text
+from rich.console import Console
 from . import Action, Step, State
 from ..observation import Observation, NoisyPartialDisorderedParallelObservation
 from ..utils import TokenizationError
@@ -197,6 +199,42 @@ class Trace:
             colorgrid.add_row(str(fluent), step_str)
 
         return colorgrid
+
+    def get_printable(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Returns a printable representation of the trace in the specified view."""
+        views = ["details", "color", "actions"]
+        if view not in views:
+            warn(f'Invalid view {view}. Defaulting to "details".')
+            view = "details"
+
+        if view == "details":
+            if wrap is None: wrap = False
+            return self.details(wrap=wrap)
+        elif view == "color":
+            if wrap is None: wrap = True
+            return self.colorgrid(filter_func=filter_func, wrap=wrap)
+        elif view == "actions":
+            return [step.action for step in self]
+
+
+    def print(self, view="details", filter_func=lambda _: True, wrap=None):
+        """Pretty prints the trace in the specified view.
+
+        Arguments:
+            view ("details" | "color" | "actions"):
+                Specifies the view format to print in. "details" prints a
+                detailed summary of each step in a trace. "color" prints a
+                color grid, mapping fluents in a step to either red or green
+                corresponding to the truth value. "actions" prints the actions
+                in the trace.
+            filter_func (Callable):
+                A function used to filter the fluents to be printed.
+            wrap (bool):
+                Specifies whether or not to wrap the text in the printed output.
+        """
+        console = Console()
+        console.print(self.get_printable(view=view, filter_func=filter_func, wrap=wrap))
+        print()
 
     def get_static_fluents(self):
         fstates = defaultdict(list)
