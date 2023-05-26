@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
           sudo apt install gringo
+          sudo apt-get install graphviz
       - if: ${{ matrix.python-version == '3.9' }}
         name: Get branch name
         run: |

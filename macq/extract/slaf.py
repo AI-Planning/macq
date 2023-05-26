@@ -1,13 +1,16 @@
 """.. include:: ../../docs/templates/extract/slaf.md"""
 
-import macq.extract as extract
 from typing import Set, Union
-from nnf import Var, Or, And, true, false, config
+
 from bauhaus import Encoding
+from nnf import And, Or, Var, config, false, true
+
+import macq.extract as extract
+
+from ..observation import AtomicPartialObservation, ObservedTraceList
 from .exceptions import IncompatibleObservationToken
-from .model import Model
 from .learned_fluent import LearnedFluent
-from ..observation import AtomicPartialObservation, ObservationLists
+from .model import Model
 
 # only used for pretty printing in debug mode
 e = Encoding()
@@ -40,7 +43,7 @@ class SLAF:
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservationLists, debug_mode: bool = False):
+    def __new__(cls, o_list: ObservedTraceList, debug: bool = False):
         """Creates a new Model object.
 
         Args:
@@ -55,13 +58,17 @@ class SLAF:
         """
         if o_list.type is not AtomicPartialObservation:
             raise IncompatibleObservationToken(o_list.type, SLAF)
-        SLAF.debug_mode = debug_mode
+
+        if len(o_list) != 1:
+            raise Exception("The SLAF extraction technique only takes one trace.")
+
+        SLAF.debug_mode = debug
         entailed = SLAF.__as_strips_slaf(o_list)
         # return the Model
         return SLAF.__sort_results(o_list, entailed)
 
     @staticmethod
-    def __get_initial_fluent_factored(o_list: ObservationLists):
+    def __get_initial_fluent_factored(o_list: ObservedTraceList):
         """Gets the initial fluent-factored formula of an observation/trace.
 
         Args:
@@ -151,7 +158,7 @@ class SLAF:
         return Or([maybe_lit]) if isinstance(maybe_lit, Var) else maybe_lit
 
     @staticmethod
-    def __sort_results(observations: ObservationLists, entailed: Set):
+    def __sort_results(observations: ObservedTraceList, entailed: Set):
         """Generates a `Model` given the set of entailed propositions.
 
         Args:
@@ -165,7 +172,7 @@ class SLAF:
         """
         learned_actions = {}
         model_fluents = observations.get_fluents()
-        
+
         # iterate through each step
         for o in observations:
             for token in o:
@@ -209,7 +216,7 @@ class SLAF:
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
-    def __as_strips_slaf(o_list: ObservationLists):
+    def __as_strips_slaf(o_list: ObservedTraceList):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -280,7 +287,8 @@ class SLAF:
                         """Step 1 (d): If this fluent is observed, update the formula accordingly.
                         Since we know the fluent is now true, the prior possible explanation for the fluent being true
                         (involving past actions, etc) are now set to the neutral explanation; that is, one of those explanations
-                        has to be true in order for the prior action to have no effect on the fluent currently being true."""
+                        has to be true in order for the prior action to have no effect on the fluent currently being true.
+                        """
                         phi["neutral"].update([p.simplify() for p in phi["pos expl"]])
                         phi["pos expl"] = {top}
                         phi["neg expl"] = {bottom}

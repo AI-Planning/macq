@@ -1,15 +1,17 @@
-from typing import Set
-from json import loads, dumps
+from json import dumps, loads
+from typing import Set, Union
+
 import tarski
-from tarski.syntax.formulas import CompoundFormula, Connective, top
+import tarski.fstrips as fs
 from tarski.fol import FirstOrderLanguage
 from tarski.io import fstrips as iofs
 from tarski.syntax import land
-import tarski.fstrips as fs
-from .learned_action import LearnedAction
-from .learned_fluent import LearnedFluent
-from ..utils import ComplexEncoder
+from tarski.syntax.formulas import CompoundFormula, Connective, top
+
 from ..trace import Fluent
+from ..utils import ComplexEncoder
+from .learned_action import LearnedAction, LearnedLiftedAction
+from .learned_fluent import LearnedFluent, LearnedLiftedFluent
 
 
 class Model:
@@ -27,7 +29,11 @@ class Model:
             action attributes characterize the model.
     """
 
-    def __init__(self, fluents: Set[LearnedFluent], actions: Set[LearnedAction]):
+    def __init__(
+        self,
+        fluents: Union[Set[LearnedFluent], Set[LearnedLiftedFluent]],
+        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction]],
+    ):
         """Initializes a Model with a set of fluents and a set of actions.
 
         Args:
@@ -120,14 +126,112 @@ class Model:
             return top
         # creates Atom
         elif len(attribute) == 1:
-            return lang.get(list(attribute)[0].replace(" ", "_"))()
+            return lang.get(list(attribute)[0].replace(" ", "_"))()  # type: ignore
         # creates CompoundFormula
         else:
             return CompoundFormula(
-                Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]
+                Connective.And, [lang.get(a.replace(" ", "_"))() for a in attribute]  # type: ignore
             )
 
     def to_pddl(
+        self,
+        domain_name: str,
+        problem_name: str = "",
+        domain_filename: str = "",
+        problem_filename: str = "",
+    ):
+        if not problem_name:
+            problem_name = domain_name + "_problem"
+        if not domain_filename:
+            domain_filename = domain_name + ".pddl"
+        if not problem_filename:
+            problem_filename = problem_name + ".pddl"
+
+        if (
+            isinstance(list(self.fluents)[0], LearnedLiftedFluent) and 
+            isinstance(list(self.actions)[0], LearnedLiftedAction)  # fmt: skip
+        ):
+            self.to_pddl_lifted(
+                domain_name, problem_name, domain_filename, problem_filename
+            )
+        elif isinstance(list(self.actions)[0], LearnedAction):
+            self.to_pddl_grounded(
+                domain_name, problem_name, domain_filename, problem_filename
+            )
+        else:
+            raise ValueError(
+                f"Could not determine whether the model is grounded or lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
+            )
+
+    def to_pddl_lifted(
+        self,
+        domain_name: str,
+        problem_name: str,
+        domain_filename: str,
+        problem_filename: str,
+    ):
+        """Dumps a Model with typed lifted actions & fluents to PDDL files.
+
+        Args:
+            domain_name (str):
+                The name of the domain to be generated.
+            problem_name (str):
+                The name of the problem to be generated.
+            domain_filename (str):
+                The name of the domain file to be generated.
+            problem_filename (str):
+                The name of the problem file to be generated.
+        """
+        self.fluents: Set[LearnedLiftedFluent]
+        self.actions: Set[LearnedLiftedAction]
+
+        lang = tarski.language(domain_name)
+        problem = tarski.fstrips.create_fstrips_problem(
+            domain_name=domain_name, problem_name=problem_name, language=lang
+        )
+        sorts = set()
+
+        if self.fluents:
+            for f in self.fluents:
+                for sort in f.param_sorts:
+                    if sort not in sorts:
+                        lang.sort(sort)
+                        sorts.add(sort)
+
+                lang.predicate(f.name, *f.param_sorts)
+
+        if self.actions:
+            for a in self.actions:
+                vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
+
+                if len(a.precond) == 1:
+                    precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in a.precond[0].param_act_inds])  # type: ignore
+                else:
+                    precond = CompoundFormula(
+                        Connective.And,
+                        [
+                            lang.get(f.name)(*[vars[i] for i in f.param_act_inds])  # type: ignore
+                            for f in a.precond
+                        ],
+                    )
+
+                adds = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.add]  # type: ignore
+                dels = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.delete]  # type: ignore
+                effects = [fs.AddEffect(e) for e in adds] + [fs.DelEffect(e) for e in dels]  # fmt: skip
+
+                problem.action(
+                    a.name,
+                    parameters=vars,
+                    precondition=precond,
+                    effects=effects,
+                )
+
+        problem.init = tarski.model.create(lang)  # type: ignore
+        problem.goal = land()  # type: ignore
+        writer = iofs.FstripsWriter(problem)
+        writer.write(domain_filename, problem_filename)
+
+    def to_pddl_grounded(
         self,
         domain_name: str,
         problem_name: str,
@@ -168,7 +272,10 @@ class Model:
                 effects.extend([fs.DelEffect(e) for e in dels])
                 # set up action
                 problem.action(
-                    name=a.details().replace("(", "").replace(")", "").replace(" ","_"),
+                    name=a.details()
+                    .replace("(", "")
+                    .replace(")", "")
+                    .replace(" ", "_"),
                     parameters=[],
                     precondition=preconds,
                     effects=effects,

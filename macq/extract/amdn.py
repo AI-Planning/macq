@@ -13,7 +13,7 @@ from .exceptions import (
 )
 from .model import Model
 from ..trace import ActionPair
-from ..observation import NoisyPartialDisorderedParallelObservation, ObservationLists
+from ..observation import NoisyPartialDisorderedParallelObservation, ObservedTraceList
 from ..utils.pysat import to_wcnf, extract_raw_model
 
 e = Encoding
@@ -66,12 +66,15 @@ WMAX = 1
 
 class AMDN:
     def __new__(
-        cls, obs_lists: ObservationLists, debug: bool = False, occ_threshold: int = 1
+        cls,
+        obs_tracelist: ObservedTraceList,
+        debug: bool = False,
+        occ_threshold: int = 1,
     ):
         """Creates a new Model object.
 
         Args:
-            obs_lists (ObservationList):
+            obs_tracelist (ObservationList):
                 The state observations to extract the model from.
             debug (bool):
                 Optional debugging mode.
@@ -82,20 +85,20 @@ class AMDN:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
         """
-        if obs_lists.type is not NoisyPartialDisorderedParallelObservation:
-            raise IncompatibleObservationToken(obs_lists.type, AMDN)
+        if obs_tracelist.type is not NoisyPartialDisorderedParallelObservation:
+            raise IncompatibleObservationToken(obs_tracelist.type, AMDN)
 
-        return AMDN._amdn(obs_lists, debug, occ_threshold)
+        return AMDN._amdn(obs_tracelist, debug, occ_threshold)
 
     @staticmethod
-    def _amdn(obs_lists: ObservationLists, debug: bool, occ_threshold: int):
+    def _amdn(obs_tracelist: ObservedTraceList, debug: bool, occ_threshold: int):
         """Main driver for the entire AMDN algorithm.
         The first line contains steps 1-4.
         The second line contains step 5.
         Finally, the final line corresponds to step 6 (return the model).
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be fed into the algorithm.
             debug (bool):
                 Optional debugging mode.
@@ -105,9 +108,9 @@ class AMDN:
         Returns:
             The extracted `Model`.
         """
-        wcnf, decode = AMDN._solve_constraints(obs_lists, occ_threshold, debug)
+        wcnf, decode = AMDN._solve_constraints(obs_tracelist, occ_threshold, debug)
         raw_model = extract_raw_model(wcnf, decode)
-        return AMDN._extract_model(obs_lists, raw_model)
+        return AMDN._extract_model(obs_tracelist, raw_model)
 
     @staticmethod
     def _or_refactor(maybe_lit: Union[Or, Var]):
@@ -148,18 +151,18 @@ class AMDN:
             constraints[clause] = "HARD"
 
     @staticmethod
-    def _get_observe(obs_lists: ObservationLists):
+    def _get_observe(obs_tracelist: ObservedTraceList):
         """Gets from the user which fluents they want to observe (for debug mode).
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that contain the fluents.
 
         Returns:
             A list of of which fluents the user wants to observe.
         """
         print("Select a proposition to observe:")
-        sorted_f = [str(f) for f in obs_lists.propositions]
+        sorted_f = [str(f) for f in obs_tracelist.propositions]
         sorted_f.sort()
         for f in sorted_f:
             print(f)
@@ -259,11 +262,11 @@ class AMDN:
             print()
 
     @staticmethod
-    def _build_disorder_constraints(obs_lists: ObservationLists):
+    def _build_disorder_constraints(obs_tracelist: ObservedTraceList):
         """Builds disorder constraints. Corresponds to step 1 of the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be analyzed.
 
         Returns:
@@ -272,9 +275,9 @@ class AMDN:
         disorder_constraints = {}
 
         # iterate through all traces
-        for i in range(len(obs_lists.all_par_act_sets)):
+        for i in range(len(obs_tracelist.all_par_act_sets)):
             # get the parallel action sets for this trace
-            par_act_sets = obs_lists.all_par_act_sets[i]
+            par_act_sets = obs_tracelist.all_par_act_sets[i]
             # iterate through all pairs of parallel action sets for this trace
             # use -1 since we will be referencing the current parallel action set and the following one
             for j in range(len(par_act_sets) - 1):
@@ -287,11 +290,11 @@ class AMDN:
                     for act_x in par_act_sets[j]:
                         if act_x != act_y:
                             # calculate the probability of the actions being disordered (p)
-                            p = obs_lists.probabilities[ActionPair({act_x, act_y})]
+                            p = obs_tracelist.probabilities[ActionPair({act_x, act_y})]
                             # each constraint only needs to hold for one proposition to be true
                             constraint_1 = []
                             constraint_2 = []
-                            for r in obs_lists.propositions:
+                            for r in obs_tracelist.propositions:
                                 constraint_1.append(
                                     Or(
                                         [
@@ -335,11 +338,11 @@ class AMDN:
         return disorder_constraints
 
     @staticmethod
-    def _build_hard_parallel_constraints(obs_lists: ObservationLists):
+    def _build_hard_parallel_constraints(obs_tracelist: ObservedTraceList):
         """Builds hard parallel constraints.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be analyzed.
 
         Returns:
@@ -347,19 +350,19 @@ class AMDN:
         """
         hard_constraints = {}
         # create a list of all <a, r> tuples
-        for act in obs_lists.actions:
-            for r in obs_lists.propositions:
+        for act in obs_tracelist.actions:
+            for r in obs_tracelist.propositions:
                 # for each action x proposition pair, enforce the two hard constraints with weight wmax
                 hard_constraints[implies(add(r, act), ~pre(r, act))] = WMAX
                 hard_constraints[implies(delete(r, act), pre(r, act))] = WMAX
         return hard_constraints
 
     @staticmethod
-    def _build_soft_parallel_constraints(obs_lists: ObservationLists):
+    def _build_soft_parallel_constraints(obs_tracelist: ObservedTraceList):
         """Builds soft parallel constraints.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be analyzed.
 
         Returns:
@@ -372,32 +375,36 @@ class AMDN:
         # in the parallel action set).
 
         # iterate through all traces
-        for i in range(len(obs_lists.all_par_act_sets)):
-            par_act_sets = obs_lists.all_par_act_sets[i]
+        for i in range(len(obs_tracelist.all_par_act_sets)):
+            par_act_sets = obs_tracelist.all_par_act_sets[i]
             # iterate through all parallel action sets for this trace
             for j in range(len(par_act_sets)):
                 # within each parallel action set, iterate through the same action set again to compare
                 # each action to every other action in the set; setting constraints assuming actions are not disordered
                 for act_x in par_act_sets[j]:
                     for act_x_prime in par_act_sets[j] - {act_x}:
-                        p = obs_lists.probabilities[ActionPair({act_x, act_x_prime})]
+                        p = obs_tracelist.probabilities[
+                            ActionPair({act_x, act_x_prime})
+                        ]
                         # iterate through all propositions
-                        for r in obs_lists.propositions:
+                        for r in obs_tracelist.propositions:
                             soft_constraints[
                                 implies(add(r, act_x), ~delete(r, act_x_prime))
                             ] = (1 - p) * WMAX
 
         # iterate through all traces
-        for i in range(len(obs_lists.all_par_act_sets)):
-            par_act_sets = obs_lists.all_par_act_sets[i]
+        for i in range(len(obs_tracelist.all_par_act_sets)):
+            par_act_sets = obs_tracelist.all_par_act_sets[i]
             # then, iterate through all pairs of parallel action sets for each trace
             for j in range(len(par_act_sets) - 1):
                 # for each pair, compare every action in act_y to every action in act_x_prime; setting constraints assuming actions are disordered
                 for act_y in par_act_sets[j + 1]:
                     for act_x_prime in par_act_sets[j] - {act_y}:
-                        p = obs_lists.probabilities[ActionPair({act_y, act_x_prime})]
+                        p = obs_tracelist.probabilities[
+                            ActionPair({act_y, act_x_prime})
+                        ]
                         # iterate through all propositions and similarly set the constraint
-                        for r in obs_lists.propositions:
+                        for r in obs_tracelist.propositions:
                             soft_constraints[
                                 implies(add(r, act_y), ~delete(r, act_x_prime))
                             ] = (p * WMAX)
@@ -406,12 +413,12 @@ class AMDN:
 
     @staticmethod
     def _build_parallel_constraints(
-        obs_lists: ObservationLists, debug: bool, to_obs: Optional[List[str]]
+        obs_tracelist: ObservedTraceList, debug: bool, to_obs: Optional[List[str]]
     ):
         """Main driver for building parallel constraints. Corresponds to step 2 of the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             debug (bool):
                 Optional debugging mode.
@@ -421,8 +428,8 @@ class AMDN:
         Returns:
             The parallel constraints.
         """
-        hard_constraints = AMDN._build_hard_parallel_constraints(obs_lists)
-        soft_constraints = AMDN._build_soft_parallel_constraints(obs_lists)
+        hard_constraints = AMDN._build_hard_parallel_constraints(obs_tracelist)
+        soft_constraints = AMDN._build_soft_parallel_constraints(obs_tracelist)
         if debug:
             print("\nHard parallel constraints:")
             AMDN._debug_simple_pprint(hard_constraints, to_obs)
@@ -431,11 +438,11 @@ class AMDN:
         return {**hard_constraints, **soft_constraints}
 
     @staticmethod
-    def _calculate_all_r_occ(obs_lists: ObservationLists):
+    def _calculate_all_r_occ(obs_tracelist: ObservedTraceList):
         """Calculates the total number of (true) propositions in the provided traces/tokens.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be analyzed.
 
         Returns:
@@ -443,19 +450,19 @@ class AMDN:
         """
         # tracks occurrences of all propositions
         all_occ = 0
-        for trace in obs_lists:
+        for trace in obs_tracelist:
             for step in trace:
                 all_occ += len([f for f in step.state if step.state[f]])
         return all_occ
 
     @staticmethod
-    def _set_up_occurrences_dict(obs_lists: ObservationLists):
+    def _set_up_occurrences_dict(obs_tracelist: ObservedTraceList):
         """Helper function used when constructing noise constraints.
         Sets up an "occurrence" dictionary used to track the occurrences of propositions
         before or after actions.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens to be analyzed.
 
         Returns:
@@ -463,20 +470,20 @@ class AMDN:
         """
         # set up dict
         occurrences = {}
-        for a in obs_lists.actions:
+        for a in obs_tracelist.actions:
             occurrences[a] = {}
-            for r in obs_lists.propositions:
+            for r in obs_tracelist.propositions:
                 occurrences[a][r] = 0
         return occurrences
 
     @staticmethod
     def _noise_constraints_6(
-        obs_lists: ObservationLists, all_occ: int, occ_threshold: int
+        obs_tracelist: ObservedTraceList, all_occ: int, occ_threshold: int
     ):
         """Noise constraints (6) in the AMDN paper.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             all_occ (int):
                 The number of occurrences of all (true) propositions in the given observation list.
@@ -487,18 +494,20 @@ class AMDN:
             The noise constraints.
         """
         noise_constraints_6 = {}
-        occurrences = AMDN._set_up_occurrences_dict(obs_lists)
+        occurrences = AMDN._set_up_occurrences_dict(obs_tracelist)
 
         # iterate over ALL the plan traces, adding occurrences accordingly
-        for i in range(len(obs_lists)):
+        for i in range(len(obs_tracelist)):
             # iterate through each step in each trace, omitting the last step because the last action is None/we access the state in the next step
-            for j in range(len(obs_lists[i]) - 1):
+            for j in range(len(obs_tracelist[i]) - 1):
                 true_prop = [
-                    f for f in obs_lists[i][j + 1].state if obs_lists[i][j + 1].state[f]
+                    f
+                    for f in obs_tracelist[i][j + 1].state
+                    if obs_tracelist[i][j + 1].state[f]
                 ]
                 for r in true_prop:
                     # count the number of occurrences of each action and its following proposition
-                    occurrences[obs_lists[i][j].action][r] += 1
+                    occurrences[obs_tracelist[i][j].action][r] += 1
 
         # iterate through actions
         for a in occurrences:
@@ -514,11 +523,11 @@ class AMDN:
         return noise_constraints_6
 
     @staticmethod
-    def _noise_constraints_7(obs_lists: ObservationLists, all_occ: int):
+    def _noise_constraints_7(obs_tracelist: ObservedTraceList, all_occ: int):
         """Noise constraints (7) in the AMDN paper.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             all_occ (int):
                 The number of occurrences of all (true) propositions in the given observation list.
@@ -529,20 +538,20 @@ class AMDN:
         noise_constraints_7 = {}
         # set up dict
         occurrences = {}
-        for r in obs_lists.propositions:
+        for r in obs_tracelist.propositions:
             occurrences[r] = 0
 
-        for trace in obs_lists.all_states:
+        for trace in obs_tracelist.all_states:
             for state in trace:
                 true_prop = [r for r in state if state[r]]
                 for r in true_prop:
                     occurrences[r] += 1
 
         # iterate through all traces
-        for i in range(len(obs_lists.all_par_act_sets)):
+        for i in range(len(obs_tracelist.all_par_act_sets)):
             # get the next trace/states
-            par_act_sets = obs_lists.all_par_act_sets[i]
-            states = obs_lists.all_states[i]
+            par_act_sets = obs_tracelist.all_par_act_sets[i]
+            states = obs_tracelist.all_states[i]
             # iterate through all parallel action sets within the trace
             for j in range(len(par_act_sets)):
                 # examine the states before and after each parallel action set; set constraints accordinglly
@@ -555,11 +564,11 @@ class AMDN:
         return noise_constraints_7
 
     @staticmethod
-    def _noise_constraints_8(obs_lists, all_occ: int, occ_threshold: int):
+    def _noise_constraints_8(obs_tracelist, all_occ: int, occ_threshold: int):
         """Noise constraints (8) in the AMDN paper.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             all_occ (int):
                 The number of occurrences of all (true) propositions in the given observation list.
@@ -570,20 +579,22 @@ class AMDN:
             The noise constraints.
         """
         noise_constraints_8 = {}
-        occurrences = AMDN._set_up_occurrences_dict(obs_lists)
+        occurrences = AMDN._set_up_occurrences_dict(obs_tracelist)
 
         # iterate over ALL the plan traces, adding occurrences accordingly
-        for i in range(len(obs_lists)):
+        for i in range(len(obs_tracelist)):
             # iterate through each step in each trace
-            for j in range(len(obs_lists[i])):
+            for j in range(len(obs_tracelist[i])):
                 # if the action is not None
-                if obs_lists[i][j].action:
+                if obs_tracelist[i][j].action:
                     true_prop = [
-                        f for f in obs_lists[i][j].state if obs_lists[i][j].state[f]
+                        f
+                        for f in obs_tracelist[i][j].state
+                        if obs_tracelist[i][j].state[f]
                     ]
                     for r in true_prop:
                         # count the number of occurrences of each action and its previous proposition
-                        occurrences[obs_lists[i][j].action][r] += 1
+                        occurrences[obs_tracelist[i][j].action][r] += 1
 
         # iterate through actions
         for a in occurrences:
@@ -600,7 +611,7 @@ class AMDN:
 
     @staticmethod
     def _build_noise_constraints(
-        obs_lists: ObservationLists,
+        obs_tracelist: ObservedTraceList,
         occ_threshold: int,
         debug: bool,
         to_obs: Optional[List[str]],
@@ -608,7 +619,7 @@ class AMDN:
         """Driver for building all noise constraints. Corresponds to step 3 of the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             occ_threshold (int):
                 Threshold to be used for noise constraints.
@@ -618,10 +629,10 @@ class AMDN:
                 If in the optional debugging mode, the list of fluents to observe.
         """
         # calculate all occurrences for use in weights
-        all_occ = AMDN._calculate_all_r_occ(obs_lists)
-        nc_6 = AMDN._noise_constraints_6(obs_lists, all_occ, occ_threshold)
-        nc_7 = AMDN._noise_constraints_7(obs_lists, all_occ)
-        nc_8 = AMDN._noise_constraints_8(obs_lists, all_occ, occ_threshold)
+        all_occ = AMDN._calculate_all_r_occ(obs_tracelist)
+        nc_6 = AMDN._noise_constraints_6(obs_tracelist, all_occ, occ_threshold)
+        nc_7 = AMDN._noise_constraints_7(obs_tracelist, all_occ)
+        nc_8 = AMDN._noise_constraints_8(obs_tracelist, all_occ, occ_threshold)
         if debug:
             print("\nNoise constraints 6:")
             AMDN._debug_simple_pprint(nc_6, to_obs)
@@ -633,12 +644,12 @@ class AMDN:
 
     @staticmethod
     def _set_all_constraints(
-        obs_lists: ObservationLists, occ_threshold: int, debug: bool
+        obs_tracelist: ObservedTraceList, occ_threshold: int, debug: bool
     ):
         """Main driver for generating all constraints in the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             occ_threshold (int):
                 Threshold to be used for noise constraints.
@@ -650,28 +661,28 @@ class AMDN:
         """
         to_obs = None
         if debug:
-            to_obs = AMDN._get_observe(obs_lists)
-        disorder_constraints = AMDN._build_disorder_constraints(obs_lists)
+            to_obs = AMDN._get_observe(obs_tracelist)
+        disorder_constraints = AMDN._build_disorder_constraints(obs_tracelist)
         if debug:
             print("\nDisorder constraints:")
             AMDN._debug_aux_pprint(disorder_constraints, to_obs)
         parallel_constraints = AMDN._build_parallel_constraints(
-            obs_lists, debug, to_obs
+            obs_tracelist, debug, to_obs
         )
         noise_constraints = AMDN._build_noise_constraints(
-            obs_lists, occ_threshold, debug, to_obs
+            obs_tracelist, occ_threshold, debug, to_obs
         )
         return {**disorder_constraints, **parallel_constraints, **noise_constraints}
 
     @staticmethod
     def _solve_constraints(
-        obs_lists: ObservationLists, occ_threshold: int, debug: bool
+        obs_tracelist: ObservedTraceList, occ_threshold: int, debug: bool
     ):
         """Returns the WCNF and the decoder according to the constraints generated.
         Corresponds to step 4 of the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             occ_threshold (int):
                 Threshold to be used for noise constraints.
@@ -681,7 +692,7 @@ class AMDN:
         Returns:
             The WCNF and corresponding decode dictionary.
         """
-        constraints = AMDN._set_all_constraints(obs_lists, occ_threshold, debug)
+        constraints = AMDN._set_all_constraints(obs_tracelist, occ_threshold, debug)
         # extract hard constraints
         hard_constraints = []
         for c, weight in constraints.items():
@@ -723,12 +734,12 @@ class AMDN:
             learned_actions[act].update_delete({f})
 
     @staticmethod
-    def _extract_model(obs_lists: ObservationLists, model: Dict[Hashable, bool]):
+    def _extract_model(obs_tracelist: ObservedTraceList, model: Dict[Hashable, bool]):
         """Converts a raw model generated from the pysat module into a macq `Model`.
         Corresponds to step 5 of the AMDN algorithm.
 
         Args:
-            obs_lists (ObservationLists):
+            obs_tracelist (ObservationLists):
                 The tokens that were analyzed.
             model (Dict[Hashable, bool]):
                 The raw model to parse and analyze.
@@ -737,10 +748,10 @@ class AMDN:
             The macq action `Model`.
         """
         # convert the result to a Model
-        fluents = obs_lists.propositions
+        fluents = obs_tracelist.propositions
         # set up LearnedActions
         learned_actions = {}
-        for a in obs_lists.actions:
+        for a in obs_tracelist.actions:
             # set up a base LearnedAction with the known information
             learned_actions[a.details()] = extract.LearnedAction(
                 a.name, a.obj_params, cost=a.cost

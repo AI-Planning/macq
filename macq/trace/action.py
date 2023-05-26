@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Optional, Set
 from .fluent import PlanningObject, Fluent
 
 
@@ -29,9 +29,9 @@ class Action:
         name: str,
         obj_params: List[PlanningObject],
         cost: int = 0,
-        precond: Set[Fluent] = None,
-        add: Set[Fluent] = None,
-        delete: Set[Fluent] = None,
+        precond: Optional[Set[Fluent]] = None,
+        add: Optional[Set[Fluent]] = None,
+        delete: Optional[Set[Fluent]] = None,
     ):
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
