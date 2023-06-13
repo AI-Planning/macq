@@ -6,13 +6,13 @@ from typing import Dict, List, Union
 
 from ..observation import ObservedTraceList
 from ..trace import Action, State
+from .model import Model
+
 from .amdn import AMDN
 from .arms import ARMS
 from .locm import LOCM
-from .model import Model
-from .observer import Observer
 from .slaf import SLAF
-
+from .observer import Observer
 
 @dataclass
 class SAS:

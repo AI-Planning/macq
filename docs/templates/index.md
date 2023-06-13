@@ -17,5 +17,6 @@
 - [SLAF](macq/extract.html#slaf)
 - [ARMS](macq/extract.html#arms)
 - [AMDN](macq/extract.html#amdn)
+- [LOCM](macq/extract.html#locm)
 
 # API Documentation

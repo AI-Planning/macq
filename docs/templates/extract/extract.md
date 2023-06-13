@@ -17,6 +17,7 @@ _Note: debugging output and interfaces are unique to each method._
 - [SLAF](#slaf)
 - [ARMS](#arms)
 - [AMDN](#amdn)
+- [LOCM](#locm)
 
 .. include:: ../../../docs/templates/extract/observer.md
 
@@ -31,6 +32,10 @@ _Note: debugging output and interfaces are unique to each method._
 ---
 
 .. include:: ../../../docs/templates/extract/amdn.md
+
+---
+
+.. include:: ../../../docs/templates/extract/locm.md
 
 ---
 
