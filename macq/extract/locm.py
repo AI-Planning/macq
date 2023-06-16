@@ -720,7 +720,7 @@ class LOCM:
             print()
 
             print("bindings:")
-            pprint(bindings[sorts["rooma"]])
+            pprint(bindings)
             print()
 
         bound_param_sorts = {
