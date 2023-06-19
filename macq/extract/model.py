@@ -147,10 +147,7 @@ class Model:
         if not problem_filename:
             problem_filename = problem_name + ".pddl"
 
-        if (
-            isinstance(list(self.fluents)[0], LearnedLiftedFluent) and 
-            isinstance(list(self.actions)[0], LearnedLiftedAction)  # fmt: skip
-        ):
+        if isinstance(list(self.actions)[0], LearnedLiftedAction):
             self.to_pddl_lifted(
                 domain_name, problem_name, domain_filename, problem_filename
             )
