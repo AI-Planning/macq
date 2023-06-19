@@ -216,7 +216,12 @@ class LOCM:
         sorts = LOCM._get_sorts(obs_trace, debug=debug["get_sorts"])
 
         if debug["sorts"]:
-            print(f"Sorts:\n{sorts}", end="\n\n")
+            sortid2objs = {v: [] for v in set(sorts.values())}
+            for k,v in sorts.items():
+                sortid2objs[v].append(k)
+            print("\nSorts:\n")
+            pprint(sortid2objs)
+            print("\n")
 
         TS, ap_state_pointers, OS = LOCM._step1(obs_trace, sorts, debug["step1"])
         HS = LOCM._step3(TS, ap_state_pointers, OS, sorts, debug["step3"])
@@ -422,9 +427,10 @@ class LOCM:
         ap_state_pointers = defaultdict(dict)
         # iterate over each object and its action sequence
         for obj, seq in obj_traces.items():
-            state_n = 1  # count current (new) state id
             sort = sorts[obj.name] if obj != zero_obj else 0
             TS[sort][obj] = seq  # add the sequence to the transition set
+            # max of the states already in OS[sort], plus 1
+            state_n = max([max(s) for s in OS[sort]] + [0]) + 1 # count current (new) state id
             prev_states: StatePointers = None  # type: ignore
             # iterate over each transition A.P in the sequence
             for ap in seq:
@@ -453,6 +459,7 @@ class LOCM:
                             OS[sort][prev_end_state]
                         )
                         OS[sort].pop(prev_end_state)
+                    assert len(set.union(*OS[sort])) == sum([len(s) for s in OS[sort]])
 
                 prev_states = ap_states
 
@@ -711,6 +718,26 @@ class LOCM:
             del ap_state_pointers[0]
 
         if debug:
+            import networkx as nx
+            import os
+
+            for sort in OS:
+                # multigraph
+                G = nx.DiGraph()
+                N = len(OS[sort])
+                for ap, apstate in ap_state_pointers[sort].items():
+                    start_idx, end_idx = LOCM._pointer_to_set(OS[sort], apstate.start, apstate.end)
+                    # check if edge is already in graph
+                    if G.has_edge(start_idx, end_idx):
+                        # append to the edge label
+                        G.edges[start_idx, end_idx]["label"] += f"\n{ap.action.name}.{ap.pos}"
+                    else:
+                        G.add_edge(start_idx, end_idx, label=f"{ap.action.name}.{ap.pos}")
+                # write to dot file
+                nx.drawing.nx_pydot.write_dot(G, f"LOCM-step7-sort{sort}.dot")
+                os.system(f"dot -Tpng LOCM-step7-sort{sort}.dot -o LOCM-step7-sort{sort}.png")
+                os.system(f"rm LOCM-step7-sort{sort}.dot")
+
             print("ap state pointers")
             pprint(ap_state_pointers)
             print()
@@ -719,9 +746,9 @@ class LOCM:
             pprint(OS)
             print()
 
-            print("bindings:")
-            pprint(bindings)
-            print()
+            # print("bindings:")
+            # pprint(bindings)
+            # print()
 
         bound_param_sorts = {
             sort: {
