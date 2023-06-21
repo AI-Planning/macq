@@ -930,3 +930,69 @@ class LOCM:
                 print()
 
         return fluents, actions
+
+    @staticmethod
+    def _step7_wip(
+        OS: OSType,
+        ap_state_pointers: APStatePointers,
+        sorts: Sorts,
+        bindings: Bindings,
+        statics: Statics,
+        debug: bool = False,
+    ) -> Tuple[Set[LearnedLiftedFluent], Set[LearnedLiftedAction]]:
+        """Step 7: Formation of PDDL action schema
+        Implicitly includes Step 6 (statics) by including statics as an argument
+        and adding to the relevant actions while being constructed.
+        """
+
+        # delete zero-object if it's state machine was discarded
+        if not OS[0]:
+            del OS[0]
+            del ap_state_pointers[0]
+
+        # all_aps = {action_name: [AP]}
+        all_aps: Dict[str, List[AP]] = defaultdict(list)
+        for aps in ap_state_pointers.values():
+            for ap in aps:
+                all_aps[ap.action.name].append(ap)
+
+        # for action, aps in all_aps.items():
+        #     assert len(aps) == max(aps.keys())
+        #     actions[action] = LearnedLiftedAction(
+        #         action, [f"sort{aps[i+1].sort}" for i in range(len(aps))]
+        #     )
+
+        actions = {}
+        for sort in ap_state_pointers:
+            sort_str = f"sort{sort}"
+            for ap in ap_state_pointers[sort]:
+                if ap.action.name not in actions:
+                    actions[ap.action.name] = LearnedLiftedAction(
+                        ap.action.name,
+                        [None for _ in range(len(all_aps[ap.action.name]))],  # type: ignore
+                    )
+                a = actions[ap.action.name]
+                a.param_sorts[ap.pos - 1] = sort_str
+
+                start_pointer, end_pointer = ap_state_pointers[sort][ap]
+                start_state, end_state = LOCM._pointer_to_set(
+                    OS[sort], start_pointer, end_pointer
+                )
+
+                """
+                fluents[sort][state] = {
+                    "temp": TemplateFluent(
+                        f"sort{sort}_state{state}",
+                        [f"sort{sort}"] + [f"sort{s}" for s in bound_sorts],
+                    ),
+                    "learned": [],
+                """
+
+                start_fluent = LearnedLiftedFluent(
+                    f"sort{sort}_state{start_state}",
+                    [sort_str],
+                    [ap.pos - 1],
+                )
+                for binding in bindings[sort][start_state]:
+                    if binding.hypothesis.C == ap:
+                pass
