@@ -719,6 +719,43 @@ class LOCM:
         return state_machines
 
     @staticmethod
+    def _debug_state_machines(OS, ap_state_pointers, bindings):
+        import os
+
+        import networkx as nx
+
+        for sort in OS:
+            G = nx.DiGraph()
+            for n in range(len(OS[sort])):
+                lbl = f"state{n}"
+                if bindings is not None and sort in bindings and n in bindings[sort]:
+                    lbl += f"\n["
+                    params = []
+                    for binding in bindings[sort][n]:
+                        params.append(f"{binding.hypothesis.G_}")
+                    lbl += f",".join(params)
+                    lbl += f"]"
+                G.add_node(n, label=lbl, shape="oval")
+            for ap, apstate in ap_state_pointers[sort].items():
+                start_idx, end_idx = LOCM._pointer_to_set(
+                    OS[sort], apstate.start, apstate.end
+                )
+                # check if edge is already in graph
+                if G.has_edge(start_idx, end_idx):
+                    # append to the edge label
+                    G.edges[start_idx, end_idx][
+                        "label"
+                    ] += f"\n{ap.action.name}.{ap.pos}"
+                else:
+                    G.add_edge(start_idx, end_idx, label=f"{ap.action.name}.{ap.pos}")
+            # write to dot file
+            nx.drawing.nx_pydot.write_dot(G, f"LOCM-step7-sort{sort}.dot")
+            os.system(
+                f"dot -Tpng LOCM-step7-sort{sort}.dot -o LOCM-step7-sort{sort}.png"
+            )
+            os.system(f"rm LOCM-step7-sort{sort}.dot")
+
+    @staticmethod
     def _step7_old(
         OS: OSType,
         ap_state_pointers: APStatePointers,
@@ -731,53 +768,13 @@ class LOCM:
         Implicitly includes Step 6 (statics) by including statics as an argument
         and adding to the relevant actions while being constructed.
         """
+        if debug:
+            LOCM._debug_state_machines(OS, ap_state_pointers, bindings)
 
         # delete zero-object if it's state machine was discarded
         if not OS[0]:
             del OS[0]
             del ap_state_pointers[0]
-
-        if debug:
-            import os
-
-            import networkx as nx
-
-            for sort in OS:
-                G = nx.DiGraph()
-                for n in range(len(OS[sort])):
-                    lbl = f"state{n}"
-                    if (
-                        bindings is not None
-                        and sort in bindings
-                        and n in bindings[sort]
-                    ):
-                        lbl += f"\n["
-                        params = []
-                        for binding in bindings[sort][n]:
-                            params.append(f"{binding.hypothesis.G_}")
-                        lbl += f",".join(params)
-                        lbl += f"]"
-                    G.add_node(n, label=lbl, shape="oval")
-                for ap, apstate in ap_state_pointers[sort].items():
-                    start_idx, end_idx = LOCM._pointer_to_set(
-                        OS[sort], apstate.start, apstate.end
-                    )
-                    # check if edge is already in graph
-                    if G.has_edge(start_idx, end_idx):
-                        # append to the edge label
-                        G.edges[start_idx, end_idx][
-                            "label"
-                        ] += f"\n{ap.action.name}.{ap.pos}"
-                    else:
-                        G.add_edge(
-                            start_idx, end_idx, label=f"{ap.action.name}.{ap.pos}"
-                        )
-                # write to dot file
-                nx.drawing.nx_pydot.write_dot(G, f"LOCM-step7-sort{sort}.dot")
-                os.system(
-                    f"dot -Tpng LOCM-step7-sort{sort}.dot -o LOCM-step7-sort{sort}.png"
-                )
-                os.system(f"rm LOCM-step7-sort{sort}.dot")
 
             print("ap state pointers")
             pprint(ap_state_pointers)
