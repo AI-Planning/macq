@@ -719,7 +719,7 @@ class LOCM:
         return state_machines
 
     @staticmethod
-    def _step7(
+    def _step7_old(
         OS: OSType,
         ap_state_pointers: APStatePointers,
         sorts: Sorts,
@@ -932,7 +932,7 @@ class LOCM:
         return fluents, actions
 
     @staticmethod
-    def _step7_wip(
+    def _step7(
         OS: OSType,
         ap_state_pointers: APStatePointers,
         sorts: Sorts,
@@ -962,6 +962,7 @@ class LOCM:
         #         action, [f"sort{aps[i+1].sort}" for i in range(len(aps))]
         #     )
 
+        fluents = defaultdict(dict)
         actions = {}
         for sort in ap_state_pointers:
             sort_str = f"sort{sort}"
@@ -979,20 +980,60 @@ class LOCM:
                     OS[sort], start_pointer, end_pointer
                 )
 
-                """
-                fluents[sort][state] = {
-                    "temp": TemplateFluent(
-                        f"sort{sort}_state{state}",
-                        [f"sort{sort}"] + [f"sort{s}" for s in bound_sorts],
-                    ),
-                    "learned": [],
-                """
+                start_fluent_name = f"sort{sort}_state{start_state}_{ap.action.name}"
+                if start_fluent_name not in fluents[ap.action.name]:
+                    start_fluent = LearnedLiftedFluent(
+                        start_fluent_name,
+                        param_sorts=[sort_str],
+                        param_act_inds=[ap.pos - 1],
+                    )
+                    fluents[ap.action.name][start_fluent_name] = start_fluent
 
-                start_fluent = LearnedLiftedFluent(
-                    f"sort{sort}_state{start_state}",
-                    [sort_str],
-                    [ap.pos - 1],
-                )
-                for binding in bindings[sort][start_state]:
-                    if binding.hypothesis.C == ap:
-                        pass
+                start_fluent = fluents[ap.action.name][start_fluent_name]
+                if sort in bindings and start_state in bindings[sort]:
+                    for binding in bindings[sort][start_state]:
+                        if binding.hypothesis.C == ap:
+                            start_fluent.param_sorts.append(
+                                f"sort{binding.hypothesis.G_}"
+                            )
+                            start_fluent.param_act_inds.append(
+                                binding.hypothesis.l_ - 1
+                            )
+
+                a.update_precond(start_fluent)
+
+                if end_state != start_state:
+                    end_fluent_name = f"sort{sort}_state{end_state}_{ap.action.name}"
+                    if end_fluent_name not in fluents[ap.action.name]:
+                        end_fluent = LearnedLiftedFluent(
+                            end_fluent_name,
+                            param_sorts=[sort_str],
+                            param_act_inds=[ap.pos - 1],
+                        )
+                        fluents[ap.action.name][end_fluent_name] = end_fluent
+
+                    end_fluent = fluents[ap.action.name][end_fluent_name]
+                    if sort in bindings and end_state in bindings[sort]:
+                        for binding in bindings[sort][end_state]:
+                            if binding.hypothesis.B == ap:
+                                end_fluent.param_sorts.append(
+                                    f"sort{binding.hypothesis.G_}"
+                                )
+                                end_fluent.param_act_inds.append(
+                                    binding.hypothesis.k_ - 1
+                                )
+
+                    a.update_delete(start_fluent)
+                    a.update_add(end_fluent)
+
+        # Step 6: Extraction of static preconditions
+        for action in actions.values():
+            if action.name in statics:
+                for static in statics[action.name]:
+                    action.update_precond(static)
+
+        return set(
+            fluent
+            for action_fluents in fluents.values()
+            for fluent in action_fluents.values()
+        ), set(actions.values())
