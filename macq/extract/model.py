@@ -189,8 +189,6 @@ class Model:
         sorts = set()
 
         if self.fluents:
-            print("self.fluents")
-            print(self.fluents)
             for f in self.fluents:
                 for sort in f.param_sorts:
                     if sort not in sorts:

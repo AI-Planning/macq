@@ -251,12 +251,8 @@ class LOCM:
             bindings,
             statics if statics is not None else {},
             debug["step7"],
+            viz,
         )
-
-        if viz:
-            state_machines = LOCM.get_state_machines(ap_state_pointers, OS, bindings)
-            for sm in state_machines:
-                sm.render(view=view)
 
         return Model(fluents, actions)
 
@@ -615,7 +611,7 @@ class LOCM:
                         # check if hypothesis parameters (v1 & v2) need to be unified
                         if (
                             (h1.B == h2.B and h1.k == h2.k and h1.k_ == h2.k_)
-                            or
+                                    and   # See https://github.com/AI-Planning/macq/discussions/200
                             (h1.C == h2.C and h1.l == h2.l and h1.l_ == h2.l_)  # fmt: skip
                         ):
                             v1 = state_bindings[h1]
@@ -675,6 +671,22 @@ class LOCM:
                         if len(bindings[sort][state_id]) == 0:
                             del bindings[sort][state_id]
 
+                # do the same for checking h.C reading parameter P
+                # See https://github.com/AI-Planning/macq/discussions/200
+                all_hC = set()
+                reads_P = defaultdict(set)
+                if state_id in bindings[sort]:
+                    for h, P in bindings[sort][state_id]:
+                        reads_P[P].add(h.C)
+                        all_hC.add(h.C)
+                    for P, readby in reads_P.items():
+                        if not readby == all_hC:
+                            for h, P_ in bindings[sort][state_id].copy():
+                                if P_ == P:
+                                    bindings[sort][state_id].remove(Binding(h, P_))
+                            if len(bindings[sort][state_id]) == 0:
+                                del bindings[sort][state_id]
+
         for k, v in bindings.copy().items():
             if not v:
                 del bindings[k]
@@ -682,44 +694,7 @@ class LOCM:
         return bindings
 
     @staticmethod
-    def get_state_machines(
-        ap_state_pointers: APStatePointers,
-        OS: OSType,
-        bindings: Optional[Bindings] = None,
-    ):
-        from graphviz import Digraph
-
-        state_machines = []
-        for (sort, trans), states in zip(ap_state_pointers.items(), OS.values()):
-            graph = Digraph(f"LOCM-sort{sort}")
-            for state in range(len(states)):
-                label = f"state{state}"
-                if (
-                    bindings is not None
-                    and sort in bindings
-                    and state in bindings[sort]
-                ):
-                    label += f"\n["
-                    params = []
-                    for binding in bindings[sort][state]:
-                        params.append(f"{binding.hypothesis.G_}")
-                    label += f",".join(params)
-                    label += f"]"
-                graph.node(str(state), label=label, shape="oval")
-            for ap, apstate in trans.items():
-                start_idx, end_idx = LOCM._pointer_to_set(
-                    states, apstate.start, apstate.end
-                )
-                graph.edge(
-                    str(start_idx), str(end_idx), label=f"{ap.action.name}.{ap.pos}"
-                )
-
-            state_machines.append(graph)
-
-        return state_machines
-
-    @staticmethod
-    def _debug_state_machines(OS, ap_state_pointers, bindings):
+    def _debug_state_machines(OS, ap_state_pointers, state_params):
         import os
 
         import networkx as nx
@@ -728,13 +703,17 @@ class LOCM:
             G = nx.DiGraph()
             for n in range(len(OS[sort])):
                 lbl = f"state{n}"
-                if bindings is not None and sort in bindings and n in bindings[sort]:
-                    lbl += f"\n["
-                    params = []
-                    for binding in bindings[sort][n]:
-                        params.append(f"{binding.hypothesis.G_}")
-                    lbl += f",".join(params)
-                    lbl += f"]"
+                if (
+                    state_params is not None
+                    and sort in state_params
+                    and n in state_params[sort]
+                ):
+                    lbl += str(
+                        [
+                            state_params[sort][n][v]
+                            for v in sorted(state_params[sort][n].keys())
+                        ]
+                    )
                 G.add_node(n, label=lbl, shape="oval")
             for ap, apstate in ap_state_pointers[sort].items():
                 start_idx, end_idx = LOCM._pointer_to_set(
@@ -763,13 +742,12 @@ class LOCM:
         bindings: Bindings,
         statics: Statics,
         debug: bool = False,
+        viz: bool = False,
     ) -> Tuple[Set[LearnedLiftedFluent], Set[LearnedLiftedAction]]:
         """Step 7: Formation of PDDL action schema
         Implicitly includes Step 6 (statics) by including statics as an argument
         and adding to the relevant actions while being constructed.
         """
-        if debug:
-            LOCM._debug_state_machines(OS, ap_state_pointers, bindings)
 
         # delete zero-object if it's state machine was discarded
         if not OS[0]:
@@ -782,16 +760,25 @@ class LOCM:
             for ap in aps:
                 all_aps[ap.action.name].append(ap)
 
-        # Binding = NamedTuple("Binding", [("hypothesis", Hypothesis), ("param", int)])
-        # Bindings = {sort: {state: [Binding]}}
-        # param_hyps = {sort: {state: {param: [Hypothesis]}}}
-        """
-        Might want to...
-        Invert it so it's a map of v -> Set(H)
-        Assert that the G_  is the same for every H with a given v (this would be the sort of v, right?)
-        Ditto to check the l_ is always the same
-        Move forward with adding the parameter just once, and not several times
-        """
+        state_params = defaultdict(dict)
+        state_params_to_hyps = defaultdict(dict)
+        for sort in bindings:
+            state_params[sort] = defaultdict(dict)
+            state_params_to_hyps[sort] = defaultdict(dict)
+            for state in bindings[sort]:
+                keys = {b.param for b in bindings[sort][state]}
+                typ = None
+                for key in keys:
+                    hyps = [
+                        b.hypothesis for b in bindings[sort][state] if b.param == key
+                    ]
+                    # assert that all are the same G_
+                    assert len(set([h.G_ for h in hyps])) == 1
+                    state_params[sort][state][key] = hyps[0].G_
+                    state_params_to_hyps[sort][state][key] = hyps
+
+        if debug or viz:
+            LOCM._debug_state_machines(OS, ap_state_pointers, state_params)
 
         fluents = defaultdict(dict)
         actions = {}
@@ -811,7 +798,7 @@ class LOCM:
                     OS[sort], start_pointer, end_pointer
                 )
 
-                start_fluent_name = f"sort{sort}_state{start_state}_{ap.action.name}"
+                start_fluent_name = f"sort{sort}_state{start_state}"
                 if start_fluent_name not in fluents[ap.action.name]:
                     start_fluent = LearnedLiftedFluent(
                         start_fluent_name,
@@ -821,20 +808,29 @@ class LOCM:
                     fluents[ap.action.name][start_fluent_name] = start_fluent
 
                 start_fluent = fluents[ap.action.name][start_fluent_name]
-                if sort in bindings and start_state in bindings[sort]:
-                    for binding in bindings[sort][start_state]:
-                        if binding.hypothesis.C == ap:
-                            start_fluent.param_sorts.append(
-                                f"sort{binding.hypothesis.G_}"
-                            )
-                            start_fluent.param_act_inds.append(
-                                binding.hypothesis.l_ - 1
-                            )
+
+                if (
+                    sort in state_params_to_hyps
+                    and start_state in state_params_to_hyps[sort]
+                ):
+                    for param in state_params_to_hyps[sort][start_state]:
+                        psort = None
+                        pind = None
+                        for hyp in state_params_to_hyps[sort][start_state][param]:
+                            if hyp.C == ap:
+                                assert psort is None or psort == hyp.G_
+                                assert pind is None or pind == hyp.l_
+                                psort = hyp.G_
+                                pind = hyp.l_
+                        assert psort is not None
+                        assert pind is not None
+                        start_fluent.param_sorts.append(f"sort{psort}")
+                        start_fluent.param_act_inds.append(pind - 1)
 
                 a.update_precond(start_fluent)
 
                 if end_state != start_state:
-                    end_fluent_name = f"sort{sort}_state{end_state}_{ap.action.name}"
+                    end_fluent_name = f"sort{sort}_state{end_state}"
                     if end_fluent_name not in fluents[ap.action.name]:
                         end_fluent = LearnedLiftedFluent(
                             end_fluent_name,
@@ -844,15 +840,24 @@ class LOCM:
                         fluents[ap.action.name][end_fluent_name] = end_fluent
 
                     end_fluent = fluents[ap.action.name][end_fluent_name]
-                    if sort in bindings and end_state in bindings[sort]:
-                        for binding in bindings[sort][end_state]:
-                            if binding.hypothesis.B == ap:
-                                end_fluent.param_sorts.append(
-                                    f"sort{binding.hypothesis.G_}"
-                                )
-                                end_fluent.param_act_inds.append(
-                                    binding.hypothesis.k_ - 1
-                                )
+
+                    if (
+                        sort in state_params_to_hyps
+                        and end_state in state_params_to_hyps[sort]
+                    ):
+                        for param in state_params_to_hyps[sort][end_state]:
+                            psort = None
+                            pind = None
+                            for hyp in state_params_to_hyps[sort][end_state][param]:
+                                if hyp.B == ap:
+                                    assert psort is None or psort == hyp.G_
+                                    assert pind is None or pind == hyp.k_
+                                    psort = hyp.G_
+                                    pind = hyp.k_
+                            assert psort is not None
+                            assert pind is not None
+                            end_fluent.param_sorts.append(f"sort{psort}")
+                            end_fluent.param_act_inds.append(pind - 1)
 
                     a.update_delete(start_fluent)
                     a.update_add(end_fluent)
