@@ -995,4 +995,4 @@ class LOCM:
                 )
                 for binding in bindings[sort][start_state]:
                     if binding.hypothesis.C == ap:
-                pass
+                        pass
