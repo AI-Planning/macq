@@ -189,6 +189,8 @@ class Model:
         sorts = set()
 
         if self.fluents:
+            print("self.fluents")
+            print(self.fluents)
             for f in self.fluents:
                 for sort in f.param_sorts:
                     if sort not in sorts:
@@ -198,19 +200,40 @@ class Model:
                 lang.predicate(f.name, *f.param_sorts)
 
         if self.actions:
+            # for each action
             for a in self.actions:
+                print("a")
+                print(a)
+                print("a.param_sorts")
+                print(a.param_sorts)
+                print("a.precond")
+                print(a.precond)
                 vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
+                print("vars")
+                print(vars)
 
                 if len(a.precond) == 1:
                     precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in a.precond[0].param_act_inds])  # type: ignore
                 else:
-                    precond = CompoundFormula(
-                        Connective.And,
-                        [
-                            lang.get(f.name)(*[vars[i] for i in f.param_act_inds])  # type: ignore
-                            for f in a.precond
-                        ],
-                    )
+                    # precond = CompoundFormula(
+                    #     Connective.And,
+                    #     [
+                    #         lang.get(f.name)(*[vars[i] for i in f.param_act_inds])  # type: ignore
+                    #         for f in a.precond
+                    #     ],
+                    # )
+                    print()
+
+                    precond = []
+                    for f in a.precond:
+                        print("f")
+                        print(f)
+                        print("f.name")
+                        print(f.name)
+                        print("f.param_act_inds")
+                        print(f.param_act_inds)
+                        precond.append(lang.get(f.name)(*[vars[i] for i in f.param_act_inds]))  # type: ignore
+                    precond = CompoundFormula(Connective.And, precond)
 
                 adds = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.add]  # type: ignore
                 dels = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.delete]  # type: ignore

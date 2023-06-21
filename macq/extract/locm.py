@@ -106,6 +106,7 @@ class Hypothesis:
     another argument of the same sort G′ in position k′ and l′ respectively, we
     hypothesise that there may be a relation between sorts G and G′."
     """
+
     S: int
     B: AP
     k: int
@@ -131,9 +132,25 @@ class Hypothesis:
         )
 
     def __repr__(self) -> str:
-        out  = f"\n [->B->S->C->] = ({str(self.B)}) -> {str(self.S)} -> ({str(self.C)})"
+        out = f"\n [->B->S->C->] = ({str(self.B)}) -> {str(self.S)} -> ({str(self.C)})"
         out += "\n\tG\tG'\tS\tk\tk'\tl\tl'"
-        out += "\n\t" + str(self.G) + "\t" + str(self.G_) + "\t" + str(self.S) + "\t" + str(self.k) + "\t" + str(self.k_) + "\t" + str(self.l) + "\t" + str(self.l_) + "\n"
+        out += (
+            "\n\t"
+            + str(self.G)
+            + "\t"
+            + str(self.G_)
+            + "\t"
+            + str(self.S)
+            + "\t"
+            + str(self.k)
+            + "\t"
+            + str(self.k_)
+            + "\t"
+            + str(self.l)
+            + "\t"
+            + str(self.l_)
+            + "\n"
+        )
         return out
 
     @staticmethod
@@ -217,7 +234,7 @@ class LOCM:
 
         if debug["sorts"]:
             sortid2objs = {v: [] for v in set(sorts.values())}
-            for k,v in sorts.items():
+            for k, v in sorts.items():
                 sortid2objs[v].append(k)
             print("\nSorts:\n")
             pprint(sortid2objs)
@@ -430,7 +447,9 @@ class LOCM:
             sort = sorts[obj.name] if obj != zero_obj else 0
             TS[sort][obj] = seq  # add the sequence to the transition set
             # max of the states already in OS[sort], plus 1
-            state_n = max([max(s) for s in OS[sort]] + [0]) + 1 # count current (new) state id
+            state_n = (
+                max([max(s) for s in OS[sort]] + [0]) + 1
+            )  # count current (new) state id
             prev_states: StatePointers = None  # type: ignore
             # iterate over each transition A.P in the sequence
             for ap in seq:
@@ -565,9 +584,7 @@ class LOCM:
         return Hypothesis.from_dict(HS)
 
     @staticmethod
-    def _step4(
-        HS: Dict[int, Dict[int, Set[Hypothesis]]], debug: bool = False
-    ) -> Bindings:
+    def _step4(HS: Hypotheses, debug: bool = False) -> Bindings:
         """Step 4: Creation and merging of state parameters"""
         # bindings = {sort: {state: [(hypothesis, state param)]}}
         bindings: Bindings = defaultdict(dict)
@@ -615,6 +632,10 @@ class LOCM:
                                 state_params.pop(P2)
                                 state_param_pointers[v2] = P1
 
+                                # fix state_param_pointers after v2
+                                for ind in range(v2 + 1, len(state_param_pointers)):
+                                    state_param_pointers[ind] -= 1
+
                 # add state bindings for the sort to the output bindings
                 # replacing hypothesis params with actual state params
                 bindings[sort][state] = [
@@ -626,7 +647,7 @@ class LOCM:
 
     @staticmethod
     def _step5(
-        HS: Dict[int, Dict[int, Set[Hypothesis]]],
+        HS: Hypotheses,
         bindings: Bindings,
         debug: bool = False,
     ) -> Bindings:
@@ -634,12 +655,12 @@ class LOCM:
 
         # check each bindings[G][S] -> (h, P)
         for sort, hs_sort in HS.items():
-            for state in hs_sort:
+            for state_id in hs_sort:
                 # track all the h.Bs that occur in bindings[G][S]
                 all_hB = set()
                 # track the set of h.B that set parameter P
                 sets_P = defaultdict(set)
-                for h, P in bindings[sort][state]:
+                for h, P in bindings[sort][state_id]:
                     sets_P[P].add(h.B)
                     all_hB.add(h.B)
 
@@ -648,11 +669,11 @@ class LOCM:
                 for P, setby in sets_P.items():
                     if not setby == all_hB:  # P is a flawed parameter
                         # remove all bindings referencing P
-                        for h, P_ in bindings[sort][state].copy():
+                        for h, P_ in bindings[sort][state_id].copy():
                             if P_ == P:
-                                bindings[sort][state].remove(Binding(h, P_))
-                        if len(bindings[sort][state]) == 0:
-                            del bindings[sort][state]
+                                bindings[sort][state_id].remove(Binding(h, P_))
+                        if len(bindings[sort][state_id]) == 0:
+                            del bindings[sort][state_id]
 
         for k, v in bindings.copy().items():
             if not v:
@@ -717,8 +738,9 @@ class LOCM:
             del ap_state_pointers[0]
 
         if debug:
-            import networkx as nx
             import os
+
+            import networkx as nx
 
             for sort in OS:
                 G = nx.DiGraph()
@@ -737,16 +759,24 @@ class LOCM:
                         lbl += f"]"
                     G.add_node(n, label=lbl, shape="oval")
                 for ap, apstate in ap_state_pointers[sort].items():
-                    start_idx, end_idx = LOCM._pointer_to_set(OS[sort], apstate.start, apstate.end)
+                    start_idx, end_idx = LOCM._pointer_to_set(
+                        OS[sort], apstate.start, apstate.end
+                    )
                     # check if edge is already in graph
                     if G.has_edge(start_idx, end_idx):
                         # append to the edge label
-                        G.edges[start_idx, end_idx]["label"] += f"\n{ap.action.name}.{ap.pos}"
+                        G.edges[start_idx, end_idx][
+                            "label"
+                        ] += f"\n{ap.action.name}.{ap.pos}"
                     else:
-                        G.add_edge(start_idx, end_idx, label=f"{ap.action.name}.{ap.pos}")
+                        G.add_edge(
+                            start_idx, end_idx, label=f"{ap.action.name}.{ap.pos}"
+                        )
                 # write to dot file
                 nx.drawing.nx_pydot.write_dot(G, f"LOCM-step7-sort{sort}.dot")
-                os.system(f"dot -Tpng LOCM-step7-sort{sort}.dot -o LOCM-step7-sort{sort}.png")
+                os.system(
+                    f"dot -Tpng LOCM-step7-sort{sort}.dot -o LOCM-step7-sort{sort}.png"
+                )
                 os.system(f"rm LOCM-step7-sort{sort}.dot")
 
             print("ap state pointers")
@@ -757,9 +787,8 @@ class LOCM:
             pprint(OS)
             print()
 
-            # print("bindings:")
-            # pprint(bindings)
-            
+            print("bindings:")
+            pprint(bindings)
 
         bound_param_sorts = {
             sort: {
@@ -785,7 +814,7 @@ class LOCM:
             actions[action] = LearnedLiftedAction(
                 action, [f"sort{aps[i+1].sort}" for i in range(len(aps))]
             )
-        
+
         for sort in bindings:
             for state in bindings[sort]:
                 for binding in bindings[sort][state]:
@@ -798,8 +827,14 @@ class LOCM:
                     assert hyp.l_ > 0
                     assert hyp.k > 0
                     assert hyp.l > 0
-                    assert actions[hyp.B.action.name].param_sorts[hyp.B.pos-1] == f"sort{hyp.B.sort}", f"Action:\n{actions[hyp.B.action.name]}\nHypothesis:\n{hyp}"
-                    assert actions[hyp.C.action.name].param_sorts[hyp.C.pos-1] == f"sort{hyp.C.sort}", f"Action:\n{actions[hyp.C.action.name]}\nHypothesis:\n{hyp}"
+                    assert (
+                        actions[hyp.B.action.name].param_sorts[hyp.B.pos - 1]
+                        == f"sort{hyp.B.sort}"
+                    ), f"Action:\n{actions[hyp.B.action.name]}\nHypothesis:\n{hyp}"
+                    assert (
+                        actions[hyp.C.action.name].param_sorts[hyp.C.pos - 1]
+                        == f"sort{hyp.C.sort}"
+                    ), f"Action:\n{actions[hyp.C.action.name]}\nHypothesis:\n{hyp}"
 
         @dataclass
         class TemplateFluent:
@@ -808,13 +843,16 @@ class LOCM:
 
             def __hash__(self) -> int:
                 return hash(self.name + "".join(self.param_sorts))
-            
+
         for sort, state_bindings in bound_param_sorts.items():
             for state, bound_sorts in state_bindings.items():
-                fluents[sort][state] = TemplateFluent(
-                    f"sort{sort}_state{state}",
-                    [f"sort{sort}"] + [f"sort{s}" for s in bound_sorts],
-                )
+                fluents[sort][state] = {
+                    "temp": TemplateFluent(
+                        f"sort{sort}_state{state}",
+                        [f"sort{sort}"] + [f"sort{s}" for s in bound_sorts],
+                    ),
+                    "learned": [],
+                }
                 assert sort not in bound_sorts
 
         assert len(ap_state_pointers) == len(OS)
@@ -825,12 +863,15 @@ class LOCM:
                 )
 
                 # preconditions += fluent for origin state
-                start_fluent_temp = fluents[sort][start_state]
+                start_fluent_temp = fluents[sort][start_state]["temp"]
 
                 bound_param_inds = []
 
                 # for each bindings on the start state (if there are any)
                 # then add each binding.hypothesis.l_
+
+                # no check h.C == AP.a // l == AP.pos
+                # so could be adding l' binds from other actions coming into same state
                 if sort in bindings and start_state in bindings[sort]:
                     bound_param_inds = [
                         b.hypothesis.l_ - 1 for b in bindings[sort][start_state]
@@ -841,7 +882,7 @@ class LOCM:
                     start_fluent_temp.param_sorts,
                     [ap.pos - 1] + bound_param_inds,
                 )
-                fluents[sort][start_state] = start_fluent
+                fluents[sort][start_state]["learned"].append(start_fluent)
                 actions[ap.action.name].update_precond(start_fluent)
 
                 if start_state != end_state:
@@ -849,7 +890,7 @@ class LOCM:
                     actions[ap.action.name].update_delete(start_fluent)
 
                     # add += fluent for destination state
-                    end_fluent_temp = fluents[sort][end_state]
+                    end_fluent_temp = fluents[sort][end_state]["temp"]
                     bound_param_inds = []
                     if sort in bindings and end_state in bindings[sort]:
                         bound_param_inds = [
@@ -860,10 +901,15 @@ class LOCM:
                         end_fluent_temp.param_sorts,
                         [ap.pos - 1] + bound_param_inds,
                     )
-                    fluents[sort][end_state] = end_fluent
+                    fluents[sort][end_state]["learned"].append(end_fluent)
                     actions[ap.action.name].update_add(end_fluent)
 
-        fluents = set(fluent for sort in fluents.values() for fluent in sort.values())
+        fluents = set(
+            fluent
+            for sort in fluents.values()
+            for fluents in sort.values()
+            for fluent in fluents["learned"]
+        )
         actions = set(actions.values())
 
         # Step 6: Extraction of static preconditions
@@ -874,13 +920,13 @@ class LOCM:
 
         if debug:
             pprint(fluents)
-            
+            assert all([type(f) == LearnedLiftedFluent for f in fluents])
+
             for a in actions:
                 print(a)
                 print(a.precond)
                 print(a.delete)
                 print(a.add)
                 print()
-
 
         return fluents, actions
