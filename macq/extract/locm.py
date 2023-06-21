@@ -782,11 +782,16 @@ class LOCM:
             for ap in aps:
                 all_aps[ap.action.name].append(ap)
 
-        # for action, aps in all_aps.items():
-        #     assert len(aps) == max(aps.keys())
-        #     actions[action] = LearnedLiftedAction(
-        #         action, [f"sort{aps[i+1].sort}" for i in range(len(aps))]
-        #     )
+        # Binding = NamedTuple("Binding", [("hypothesis", Hypothesis), ("param", int)])
+        # Bindings = {sort: {state: [Binding]}}
+        # param_hyps = {sort: {state: {param: [Hypothesis]}}}
+        """
+        Might want to...
+        Invert it so it's a map of v -> Set(H)
+        Assert that the G_  is the same for every H with a given v (this would be the sort of v, right?)
+        Ditto to check the l_ is always the same
+        Move forward with adding the parameter just once, and not several times
+        """
 
         fluents = defaultdict(dict)
         actions = {}
