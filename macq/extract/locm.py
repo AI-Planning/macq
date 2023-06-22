@@ -777,7 +777,7 @@ class LOCM:
                     state_params[sort][state][key] = hyps[0].G_
                     state_params_to_hyps[sort][state][key] = hyps
 
-        if debug or viz:
+        if viz:
             LOCM._debug_state_machines(OS, ap_state_pointers, state_params)
 
         fluents = defaultdict(dict)
