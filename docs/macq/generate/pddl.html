@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 13.1.1"/>
+    <meta name="generator" content="pdoc 14.0.0"/>
     <title>macq.generate.pddl API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -59,6 +59,30 @@
                                 <a class="function" href="#Generator.__init__">Generator</a>
                         </li>
                         <li>
+                                <a class="variable" href="#Generator.pddl_dom">pddl_dom</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.pddl_prob">pddl_prob</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.problem_id">problem_id</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.observe_pres_effs">observe_pres_effs</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.lang">lang</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.instance">instance</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.grounded_fluents">grounded_fluents</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Generator.op_dict">op_dict</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#Generator.extract_action_typing">extract_action_typing</a>
                         </li>
                         <li>
@@ -92,6 +116,15 @@
                                 <a class="function" href="#VanillaSampling.__init__">VanillaSampling</a>
                         </li>
                         <li>
+                                <a class="variable" href="#VanillaSampling.max_time">max_time</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#VanillaSampling.plan_len">plan_len</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#VanillaSampling.num_traces">num_traces</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#VanillaSampling.generate_traces">generate_traces</a>
                         </li>
                         <li>
@@ -107,6 +140,9 @@
                                 <a class="function" href="#TraceFromGoal.__init__">TraceFromGoal</a>
                         </li>
                         <li>
+                                <a class="variable" href="#TraceFromGoal.trace">trace</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#TraceFromGoal.generate_trace">generate_trace</a>
                         </li>
                 </ul>
@@ -117,6 +153,18 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#RandomGoalSampling.__init__">RandomGoalSampling</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RandomGoalSampling.steps_deep">steps_deep</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RandomGoalSampling.enforced_hill_climbing_sampling">enforced_hill_climbing_sampling</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RandomGoalSampling.subset_size_perc">subset_size_perc</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RandomGoalSampling.goals_inits_plans">goals_inits_plans</a>
                         </li>
                         <li>
                                 <a class="function" href="#RandomGoalSampling.goal_sampling">goal_sampling</a>
@@ -135,6 +183,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#FDRandomWalkSampling.__init__">FDRandomWalkSampling</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FDRandomWalkSampling.plan_len">plan_len</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FDRandomWalkSampling.traces">traces</a>
                         </li>
                 </ul>
 
@@ -694,6 +748,94 @@ of the domain and problem, or a problem ID.</p>
         Option to observe action preconditions and effects upon generation.</p>
 </div>
 
+
+                            </div>
+                            <div id="Generator.pddl_dom" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pddl_dom</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.pddl_dom"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.pddl_prob" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pddl_prob</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.pddl_prob"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.problem_id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">problem_id</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.problem_id"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.observe_pres_effs" class="classattr">
+                                <div class="attr variable">
+            <span class="name">observe_pres_effs</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.observe_pres_effs"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.lang" class="classattr">
+                                <div class="attr variable">
+            <span class="name">lang</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.lang"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.instance" class="classattr">
+                                <div class="attr variable">
+            <span class="name">instance</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.instance"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.grounded_fluents" class="classattr">
+                                <div class="attr variable">
+            <span class="name">grounded_fluents</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.grounded_fluents"></a>
+    
+    
+
+                            </div>
+                            <div id="Generator.op_dict" class="classattr">
+                                <div class="attr variable">
+            <span class="name">op_dict</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Generator.op_dict"></a>
+    
+    
 
                             </div>
                             <div id="Generator.extract_action_typing" class="classattr">
@@ -1435,6 +1577,39 @@ and the domain and problem.</p>
 
 
                             </div>
+                            <div id="VanillaSampling.max_time" class="classattr">
+                                <div class="attr variable">
+            <span class="name">max_time</span>
+
+        
+    </div>
+    <a class="headerlink" href="#VanillaSampling.max_time"></a>
+    
+    
+
+                            </div>
+                            <div id="VanillaSampling.plan_len" class="classattr">
+                                <div class="attr variable">
+            <span class="name">plan_len</span>
+
+        
+    </div>
+    <a class="headerlink" href="#VanillaSampling.plan_len"></a>
+    
+    
+
+                            </div>
+                            <div id="VanillaSampling.num_traces" class="classattr">
+                                <div class="attr variable">
+            <span class="name">num_traces</span>
+
+        
+    </div>
+    <a class="headerlink" href="#VanillaSampling.num_traces"></a>
+    
+    
+
+                            </div>
                             <div id="VanillaSampling.generate_traces" class="classattr">
                                         <input id="VanillaSampling.generate_traces-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1546,7 +1721,15 @@ of the given length.</p>
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Generator">Generator</a></dt>
-                                <dd id="VanillaSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
+                                <dd id="VanillaSampling.pddl_dom" class="variable"><a href="#Generator.pddl_dom">pddl_dom</a></dd>
+                <dd id="VanillaSampling.pddl_prob" class="variable"><a href="#Generator.pddl_prob">pddl_prob</a></dd>
+                <dd id="VanillaSampling.problem_id" class="variable"><a href="#Generator.problem_id">problem_id</a></dd>
+                <dd id="VanillaSampling.observe_pres_effs" class="variable"><a href="#Generator.observe_pres_effs">observe_pres_effs</a></dd>
+                <dd id="VanillaSampling.lang" class="variable"><a href="#Generator.lang">lang</a></dd>
+                <dd id="VanillaSampling.instance" class="variable"><a href="#Generator.instance">instance</a></dd>
+                <dd id="VanillaSampling.grounded_fluents" class="variable"><a href="#Generator.grounded_fluents">grounded_fluents</a></dd>
+                <dd id="VanillaSampling.op_dict" class="variable"><a href="#Generator.op_dict">op_dict</a></dd>
+                <dd id="VanillaSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
                 <dd id="VanillaSampling.extract_predicate_typing" class="function"><a href="#Generator.extract_predicate_typing">extract_predicate_typing</a></dd>
                 <dd id="VanillaSampling.tarski_state_to_macq" class="function"><a href="#Generator.tarski_state_to_macq">tarski_state_to_macq</a></dd>
                 <dd id="VanillaSampling.tarski_act_to_macq" class="function"><a href="#Generator.tarski_act_to_macq">tarski_act_to_macq</a></dd>
@@ -1690,6 +1873,17 @@ takes the goal of the problem into account and uses a generated plan to generate
 
 
                             </div>
+                            <div id="TraceFromGoal.trace" class="classattr">
+                                <div class="attr variable">
+            <span class="name">trace</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TraceFromGoal.trace"></a>
+    
+    
+
+                            </div>
                             <div id="TraceFromGoal.generate_trace" class="classattr">
                                         <input id="TraceFromGoal.generate_trace-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1714,7 +1908,15 @@ takes the goal of the problem into account and uses a generated plan to generate
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Generator">Generator</a></dt>
-                                <dd id="TraceFromGoal.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
+                                <dd id="TraceFromGoal.pddl_dom" class="variable"><a href="#Generator.pddl_dom">pddl_dom</a></dd>
+                <dd id="TraceFromGoal.pddl_prob" class="variable"><a href="#Generator.pddl_prob">pddl_prob</a></dd>
+                <dd id="TraceFromGoal.problem_id" class="variable"><a href="#Generator.problem_id">problem_id</a></dd>
+                <dd id="TraceFromGoal.observe_pres_effs" class="variable"><a href="#Generator.observe_pres_effs">observe_pres_effs</a></dd>
+                <dd id="TraceFromGoal.lang" class="variable"><a href="#Generator.lang">lang</a></dd>
+                <dd id="TraceFromGoal.instance" class="variable"><a href="#Generator.instance">instance</a></dd>
+                <dd id="TraceFromGoal.grounded_fluents" class="variable"><a href="#Generator.grounded_fluents">grounded_fluents</a></dd>
+                <dd id="TraceFromGoal.op_dict" class="variable"><a href="#Generator.op_dict">op_dict</a></dd>
+                <dd id="TraceFromGoal.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
                 <dd id="TraceFromGoal.extract_predicate_typing" class="function"><a href="#Generator.extract_predicate_typing">extract_predicate_typing</a></dd>
                 <dd id="TraceFromGoal.tarski_state_to_macq" class="function"><a href="#Generator.tarski_state_to_macq">tarski_state_to_macq</a></dd>
                 <dd id="TraceFromGoal.tarski_act_to_macq" class="function"><a href="#Generator.tarski_act_to_macq">tarski_act_to_macq</a></dd>
@@ -2040,6 +2242,50 @@ and the domain and problem.</p>
 
 
                             </div>
+                            <div id="RandomGoalSampling.steps_deep" class="classattr">
+                                <div class="attr variable">
+            <span class="name">steps_deep</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RandomGoalSampling.steps_deep"></a>
+    
+    
+
+                            </div>
+                            <div id="RandomGoalSampling.enforced_hill_climbing_sampling" class="classattr">
+                                <div class="attr variable">
+            <span class="name">enforced_hill_climbing_sampling</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RandomGoalSampling.enforced_hill_climbing_sampling"></a>
+    
+    
+
+                            </div>
+                            <div id="RandomGoalSampling.subset_size_perc" class="classattr">
+                                <div class="attr variable">
+            <span class="name">subset_size_perc</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RandomGoalSampling.subset_size_perc"></a>
+    
+    
+
+                            </div>
+                            <div id="RandomGoalSampling.goals_inits_plans" class="classattr">
+                                <div class="attr variable">
+            <span class="name">goals_inits_plans</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RandomGoalSampling.goals_inits_plans"></a>
+    
+    
+
+                            </div>
                             <div id="RandomGoalSampling.goal_sampling" class="classattr">
                                         <input id="RandomGoalSampling.goal_sampling-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -2072,7 +2318,7 @@ and the domain and problem.</p>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Samples goals by randomly generating candidate goal states k (<code>steps_deep</code>) steps deep, then running planners on those
+            <div class="docstring"><p>Samples goals by randomly generating candidate goal states k (<code><a href="#RandomGoalSampling.steps_deep">steps_deep</a></code>) steps deep, then running planners on those
 goal states to ensure the goals are complex enough (i.e. cannot be reached in too few steps). Candidate
 goal states are generated for a set amount of time indicated by MAX_GOAL_SEARCH_TIME, and the goals with the
 longest plans (the most complex goals) are selected.</p>
@@ -2216,11 +2462,22 @@ longest plans (the most complex goals) are selected.</p>
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#VanillaSampling">VanillaSampling</a></dt>
-                                <dd id="RandomGoalSampling.generate_single_trace_setup" class="function"><a href="#VanillaSampling.generate_single_trace_setup">generate_single_trace_setup</a></dd>
+                                <dd id="RandomGoalSampling.max_time" class="variable"><a href="#VanillaSampling.max_time">max_time</a></dd>
+                <dd id="RandomGoalSampling.plan_len" class="variable"><a href="#VanillaSampling.plan_len">plan_len</a></dd>
+                <dd id="RandomGoalSampling.num_traces" class="variable"><a href="#VanillaSampling.num_traces">num_traces</a></dd>
+                <dd id="RandomGoalSampling.generate_single_trace_setup" class="function"><a href="#VanillaSampling.generate_single_trace_setup">generate_single_trace_setup</a></dd>
 
             </div>
             <div><dt><a href="#Generator">Generator</a></dt>
-                                <dd id="RandomGoalSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
+                                <dd id="RandomGoalSampling.pddl_dom" class="variable"><a href="#Generator.pddl_dom">pddl_dom</a></dd>
+                <dd id="RandomGoalSampling.pddl_prob" class="variable"><a href="#Generator.pddl_prob">pddl_prob</a></dd>
+                <dd id="RandomGoalSampling.problem_id" class="variable"><a href="#Generator.problem_id">problem_id</a></dd>
+                <dd id="RandomGoalSampling.observe_pres_effs" class="variable"><a href="#Generator.observe_pres_effs">observe_pres_effs</a></dd>
+                <dd id="RandomGoalSampling.lang" class="variable"><a href="#Generator.lang">lang</a></dd>
+                <dd id="RandomGoalSampling.instance" class="variable"><a href="#Generator.instance">instance</a></dd>
+                <dd id="RandomGoalSampling.grounded_fluents" class="variable"><a href="#Generator.grounded_fluents">grounded_fluents</a></dd>
+                <dd id="RandomGoalSampling.op_dict" class="variable"><a href="#Generator.op_dict">op_dict</a></dd>
+                <dd id="RandomGoalSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
                 <dd id="RandomGoalSampling.extract_predicate_typing" class="function"><a href="#Generator.extract_predicate_typing">extract_predicate_typing</a></dd>
                 <dd id="RandomGoalSampling.tarski_state_to_macq" class="function"><a href="#Generator.tarski_state_to_macq">tarski_state_to_macq</a></dd>
                 <dd id="RandomGoalSampling.tarski_act_to_macq" class="function"><a href="#Generator.tarski_act_to_macq">tarski_act_to_macq</a></dd>
@@ -2481,16 +2738,48 @@ longest plans (the most complex goals) are selected.</p>
 
 
                             </div>
+                            <div id="FDRandomWalkSampling.plan_len" class="classattr">
+                                <div class="attr variable">
+            <span class="name">plan_len</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FDRandomWalkSampling.plan_len"></a>
+    
+    
+
+                            </div>
+                            <div id="FDRandomWalkSampling.traces" class="classattr">
+                                <div class="attr variable">
+            <span class="name">traces</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FDRandomWalkSampling.traces"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#VanillaSampling">VanillaSampling</a></dt>
-                                <dd id="FDRandomWalkSampling.generate_traces" class="function"><a href="#VanillaSampling.generate_traces">generate_traces</a></dd>
+                                <dd id="FDRandomWalkSampling.max_time" class="variable"><a href="#VanillaSampling.max_time">max_time</a></dd>
+                <dd id="FDRandomWalkSampling.num_traces" class="variable"><a href="#VanillaSampling.num_traces">num_traces</a></dd>
+                <dd id="FDRandomWalkSampling.generate_traces" class="function"><a href="#VanillaSampling.generate_traces">generate_traces</a></dd>
                 <dd id="FDRandomWalkSampling.generate_single_trace_setup" class="function"><a href="#VanillaSampling.generate_single_trace_setup">generate_single_trace_setup</a></dd>
 
             </div>
             <div><dt><a href="#Generator">Generator</a></dt>
-                                <dd id="FDRandomWalkSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
+                                <dd id="FDRandomWalkSampling.pddl_dom" class="variable"><a href="#Generator.pddl_dom">pddl_dom</a></dd>
+                <dd id="FDRandomWalkSampling.pddl_prob" class="variable"><a href="#Generator.pddl_prob">pddl_prob</a></dd>
+                <dd id="FDRandomWalkSampling.problem_id" class="variable"><a href="#Generator.problem_id">problem_id</a></dd>
+                <dd id="FDRandomWalkSampling.observe_pres_effs" class="variable"><a href="#Generator.observe_pres_effs">observe_pres_effs</a></dd>
+                <dd id="FDRandomWalkSampling.lang" class="variable"><a href="#Generator.lang">lang</a></dd>
+                <dd id="FDRandomWalkSampling.instance" class="variable"><a href="#Generator.instance">instance</a></dd>
+                <dd id="FDRandomWalkSampling.grounded_fluents" class="variable"><a href="#Generator.grounded_fluents">grounded_fluents</a></dd>
+                <dd id="FDRandomWalkSampling.op_dict" class="variable"><a href="#Generator.op_dict">op_dict</a></dd>
+                <dd id="FDRandomWalkSampling.extract_action_typing" class="function"><a href="#Generator.extract_action_typing">extract_action_typing</a></dd>
                 <dd id="FDRandomWalkSampling.extract_predicate_typing" class="function"><a href="#Generator.extract_predicate_typing">extract_predicate_typing</a></dd>
                 <dd id="FDRandomWalkSampling.tarski_state_to_macq" class="function"><a href="#Generator.tarski_state_to_macq">tarski_state_to_macq</a></dd>
                 <dd id="FDRandomWalkSampling.tarski_act_to_macq" class="function"><a href="#Generator.tarski_act_to_macq">tarski_act_to_macq</a></dd>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 13.1.1"/>
+    <meta name="generator" content="pdoc 14.0.0"/>
     <title>macq.trace API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -59,6 +59,24 @@
                                 <a class="function" href="#Action.__init__">Action</a>
                         </li>
                         <li>
+                                <a class="variable" href="#Action.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Action.obj_params">obj_params</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Action.cost">cost</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Action.precond">precond</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Action.add">add</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Action.delete">delete</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#Action.details">details</a>
                         </li>
                         <li>
@@ -74,6 +92,12 @@
                                 <a class="function" href="#PlanningObject.__init__">PlanningObject</a>
                         </li>
                         <li>
+                                <a class="variable" href="#PlanningObject.obj_type">obj_type</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PlanningObject.name">name</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#PlanningObject.details">details</a>
                         </li>
                 </ul>
@@ -85,6 +109,12 @@
                         <li>
                                 <a class="function" href="#Fluent.__init__">Fluent</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#Fluent.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Fluent.objects">objects</a>
+                        </li>
                 </ul>
 
             </li>
@@ -93,6 +123,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#State.__init__">State</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#State.fluents">fluents</a>
                         </li>
                         <li>
                                 <a class="function" href="#State.clear">clear</a>
@@ -133,6 +166,9 @@
                         <li>
                                 <a class="function" href="#PartialState.__init__">PartialState</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#PartialState.fluents">fluents</a>
+                        </li>
                 </ul>
 
             </li>
@@ -141,6 +177,15 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#Step.__init__">Step</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Step.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Step.action">action</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Step.index">index</a>
                         </li>
                 </ul>
 
@@ -159,6 +204,9 @@
                                     </li>
                             </ul>
 
+                        </li>
+                        <li>
+                                <a class="variable" href="#Trace.steps">steps</a>
                         </li>
                         <li>
                                 <a class="function" href="#Trace.append">append</a>
@@ -241,6 +289,15 @@
                         <li>
                                 <a class="function" href="#SAS.__init__">SAS</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#SAS.pre_state">pre_state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#SAS.action">action</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#SAS.post_state">post_state</a>
+                        </li>
                 </ul>
 
             </li>
@@ -256,8 +313,20 @@
                                     <li>
                                             <a class="function" href="#TraceList.MissingGenerator.__init__">MissingGenerator</a>
                                     </li>
+                                    <li>
+                                            <a class="variable" href="#TraceList.MissingGenerator.trace_list">trace_list</a>
+                                    </li>
+                                    <li>
+                                            <a class="variable" href="#TraceList.MissingGenerator.message">message</a>
+                                    </li>
                             </ul>
 
+                        </li>
+                        <li>
+                                <a class="variable" href="#TraceList.traces">traces</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#TraceList.generator">generator</a>
                         </li>
                         <li>
                                 <a class="function" href="#TraceList.copy">copy</a>
@@ -293,6 +362,39 @@
                                 <a class="function" href="#DisorderedParallelActionsObservationLists.__init__">DisorderedParallelActionsObservationLists</a>
                         </li>
                         <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.observations">observations</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.type">type</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.all_par_act_sets">all_par_act_sets</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.all_states">all_states</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.features">features</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.learned_theta">learned_theta</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.actions">actions</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.propositions">propositions</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.cross_actions">cross_actions</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.denominator">denominator</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DisorderedParallelActionsObservationLists.probabilities">probabilities</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#DisorderedParallelActionsObservationLists.tokenize">tokenize</a>
                         </li>
                 </ul>
@@ -303,6 +405,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#ActionPair.__init__">ActionPair</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ActionPair.actions">actions</a>
                         </li>
                         <li>
                                 <a class="function" href="#ActionPair.tup">tup</a>
@@ -462,7 +567,7 @@
             <div class="docstring"><p>Grounded action.</p>
 
 <p>An Action represents a grounded action in a Trace or a Model. The action's
-<code>precond</code>, <code>add</code>, and <code>delete</code> attributes characterize a Model, and are
+<code><a href="#Action.precond">precond</a></code>, <code><a href="#Action.add">add</a></code>, and <code><a href="#Action.delete">delete</a></code> attributes characterize a Model, and are
 found during model extraction.</p>
 
 <p>Attributes:
@@ -527,7 +632,7 @@ found during model extraction.</p>
 
 
             <div class="docstring"><p>Initializes an Action with the parameters provided.
-The <code>precond</code>, <code>add</code>, and <code>delete</code> args should only be provided in
+The <code><a href="#Action.precond">precond</a></code>, <code><a href="#Action.add">add</a></code>, and <code><a href="#Action.delete">delete</a></code> args should only be provided in
 Model deserialization.
 Args:
     name (str):
@@ -544,6 +649,72 @@ Args:
         Optional; The set of Fluents that make up the delete effects.</p>
 </div>
 
+
+                            </div>
+                            <div id="Action.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.name"></a>
+    
+    
+
+                            </div>
+                            <div id="Action.obj_params" class="classattr">
+                                <div class="attr variable">
+            <span class="name">obj_params</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.obj_params"></a>
+    
+    
+
+                            </div>
+                            <div id="Action.cost" class="classattr">
+                                <div class="attr variable">
+            <span class="name">cost</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.cost"></a>
+    
+    
+
+                            </div>
+                            <div id="Action.precond" class="classattr">
+                                <div class="attr variable">
+            <span class="name">precond</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.precond"></a>
+    
+    
+
+                            </div>
+                            <div id="Action.add" class="classattr">
+                                <div class="attr variable">
+            <span class="name">add</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.add"></a>
+    
+    
+
+                            </div>
+                            <div id="Action.delete" class="classattr">
+                                <div class="attr variable">
+            <span class="name">delete</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Action.delete"></a>
+    
+    
 
                             </div>
                             <div id="Action.details" class="classattr">
@@ -690,6 +861,28 @@ Args:
 
 
                             </div>
+                            <div id="PlanningObject.obj_type" class="classattr">
+                                <div class="attr variable">
+            <span class="name">obj_type</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PlanningObject.obj_type"></a>
+    
+    
+
+                            </div>
+                            <div id="PlanningObject.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PlanningObject.name"></a>
+    
+    
+
+                            </div>
                             <div id="PlanningObject.details" class="classattr">
                                         <input id="PlanningObject.details-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -818,6 +1011,28 @@ Args:
         The objects this fluent applies to.</p>
 </div>
 
+
+                            </div>
+                            <div id="Fluent.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Fluent.name"></a>
+    
+    
+
+                            </div>
+                            <div id="Fluent.objects" class="classattr">
+                                <div class="attr variable">
+            <span class="name">objects</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Fluent.objects"></a>
+    
+    
 
                             </div>
                 </section>
@@ -962,6 +1177,17 @@ the state for a <code><a href="#Step">Step</a></code> in a <code><a href="#Trace
         state. Defaults to an empty <code>dict</code>.</p>
 </div>
 
+
+                            </div>
+                            <div id="State.fluents" class="classattr">
+                                <div class="attr variable">
+            <span class="name">fluents</span>
+
+        
+    </div>
+    <a class="headerlink" href="#State.fluents"></a>
+    
+    
 
                             </div>
                             <div id="State.clear" class="classattr">
@@ -1222,6 +1448,17 @@ the state for a <code><a href="#Step">Step</a></code> in a <code><a href="#Trace
 
 
                             </div>
+                            <div id="PartialState.fluents" class="classattr">
+                                <div class="attr variable">
+            <span class="name">fluents</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PartialState.fluents"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
@@ -1340,6 +1577,39 @@ The final step in a trace will not have an action associated with it.</p>
         The index of this step in the trace.</p>
 </div>
 
+
+                            </div>
+                            <div id="Step.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Step.state"></a>
+    
+    
+
+                            </div>
+                            <div id="Step.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Step.action"></a>
+    
+    
+
+                            </div>
+                            <div id="Step.index" class="classattr">
+                                <div class="attr variable">
+            <span class="name">index</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Step.index"></a>
+    
+    
 
                             </div>
                 </section>
@@ -1790,6 +2060,17 @@ The final step in a trace will not have an action associated with it.</p>
         <code>list</code>.</p>
 </div>
 
+
+                            </div>
+                            <div id="Trace.steps" class="classattr">
+                                <div class="attr variable">
+            <span class="name">steps</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Trace.steps"></a>
+    
+    
 
                             </div>
                             <div id="Trace.append" class="classattr">
@@ -2633,6 +2914,7 @@ the post-state.</p>
                                 <dl>
                                     <div><dt>builtins.BaseException</dt>
                                 <dd id="Trace.InvalidCostRange.with_traceback" class="function">with_traceback</dd>
+                <dd id="Trace.InvalidCostRange.args" class="variable">args</dd>
 
             </div>
                                 </dl>
@@ -2673,6 +2955,39 @@ the post-state.</p>
         
     </div>
     <a class="headerlink" href="#SAS.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="SAS.pre_state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pre_state</span><span class="annotation">: <a href="#State">macq.trace.State</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#SAS.pre_state"></a>
+    
+    
+
+                            </div>
+                            <div id="SAS.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: <a href="#Action">macq.trace.Action</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#SAS.action"></a>
+    
+    
+
+                            </div>
+                            <div id="SAS.post_state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">post_state</span><span class="annotation">: <a href="#State">macq.trace.State</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#SAS.post_state"></a>
     
     
 
@@ -2888,6 +3203,28 @@ problem.</p>
         Optional; The function used to generate the traces.</p>
 </div>
 
+
+                            </div>
+                            <div id="TraceList.traces" class="classattr">
+                                <div class="attr variable">
+            <span class="name">traces</span><span class="annotation">: List[<a href="#Trace">macq.trace.Trace</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TraceList.traces"></a>
+    
+    
+
+                            </div>
+                            <div id="TraceList.generator" class="classattr">
+                                <div class="attr variable">
+            <span class="name">generator</span><span class="annotation">: Union[Callable, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TraceList.generator"></a>
+    
+    
 
                             </div>
                             <div id="TraceList.copy" class="classattr">
@@ -3226,11 +3563,34 @@ problem.</p>
     
 
                             </div>
+                            <div id="TraceList.MissingGenerator.trace_list" class="classattr">
+                                <div class="attr variable">
+            <span class="name">trace_list</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TraceList.MissingGenerator.trace_list"></a>
+    
+    
+
+                            </div>
+                            <div id="TraceList.MissingGenerator.message" class="classattr">
+                                <div class="attr variable">
+            <span class="name">message</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TraceList.MissingGenerator.message"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt>builtins.BaseException</dt>
                                 <dd id="TraceList.MissingGenerator.with_traceback" class="function">with_traceback</dd>
+                <dd id="TraceList.MissingGenerator.args" class="variable">args</dd>
 
             </div>
                                 </dl>
@@ -3625,6 +3985,127 @@ Inherits the base ObservationLists class.</p>
 
 
                             </div>
+                            <div id="DisorderedParallelActionsObservationLists.observations" class="classattr">
+                                <div class="attr variable">
+            <span class="name">observations</span><span class="annotation">: List[List[macq.observation.observation.Observation]]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.observations"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.type" class="classattr">
+                                <div class="attr variable">
+            <span class="name">type</span><span class="annotation">: Type[macq.observation.observation.Observation]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.type"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.all_par_act_sets" class="classattr">
+                                <div class="attr variable">
+            <span class="name">all_par_act_sets</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.all_par_act_sets"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.all_states" class="classattr">
+                                <div class="attr variable">
+            <span class="name">all_states</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.all_states"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.features" class="classattr">
+                                <div class="attr variable">
+            <span class="name">features</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.features"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.learned_theta" class="classattr">
+                                <div class="attr variable">
+            <span class="name">learned_theta</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.learned_theta"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.actions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">actions</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.actions"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.propositions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">propositions</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.propositions"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.cross_actions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">cross_actions</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.cross_actions"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.denominator" class="classattr">
+                                <div class="attr variable">
+            <span class="name">denominator</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.denominator"></a>
+    
+    
+
+                            </div>
+                            <div id="DisorderedParallelActionsObservationLists.probabilities" class="classattr">
+                                <div class="attr variable">
+            <span class="name">probabilities</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DisorderedParallelActionsObservationLists.probabilities"></a>
+    
+    
+
+                            </div>
                             <div id="DisorderedParallelActionsObservationLists.tokenize" class="classattr">
                                         <input id="DisorderedParallelActionsObservationLists.tokenize-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -3828,6 +4309,17 @@ Inherits the base ObservationLists class.</p>
         
     </div>
     <a class="headerlink" href="#ActionPair.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="ActionPair.actions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">actions</span><span class="annotation">: Set[<a href="#Action">macq.trace.Action</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ActionPair.actions"></a>
     
     
 

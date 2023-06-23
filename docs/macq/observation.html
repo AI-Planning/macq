@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 13.1.1"/>
+    <meta name="generator" content="pdoc 14.0.0"/>
     <title>macq.observation API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -59,6 +59,15 @@
                                 <a class="function" href="#Observation.__init__">Observation</a>
                         </li>
                         <li>
+                                <a class="variable" href="#Observation.index">index</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Observation.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Observation.action">action</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#Observation.get_details">get_details</a>
                         </li>
                         <li>
@@ -78,6 +87,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#ObservedTraceList.__init__">ObservedTraceList</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ObservedTraceList.observations">observations</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ObservedTraceList.type">type</a>
                         </li>
                         <li>
                                 <a class="function" href="#ObservedTraceList.insert">insert</a>
@@ -131,6 +146,9 @@
                                 <a class="function" href="#IdentityObservation.__init__">IdentityObservation</a>
                         </li>
                         <li>
+                                <a class="variable" href="#IdentityObservation.state">state</a>
+                        </li>
+                        <li>
                                 <a class="class" href="#IdentityObservation.IdentityState">IdentityObservation.IdentityState</a>
                                         <ul class="memberlist">
                             </ul>
@@ -142,8 +160,20 @@
                                     <li>
                                             <a class="function" href="#IdentityObservation.IdentityAction.__init__">IdentityAction</a>
                                     </li>
+                                    <li>
+                                            <a class="variable" href="#IdentityObservation.IdentityAction.name">name</a>
+                                    </li>
+                                    <li>
+                                            <a class="variable" href="#IdentityObservation.IdentityAction.obj_params">obj_params</a>
+                                    </li>
+                                    <li>
+                                            <a class="variable" href="#IdentityObservation.IdentityAction.cost">cost</a>
+                                    </li>
                             </ul>
 
+                        </li>
+                        <li>
+                                <a class="variable" href="#IdentityObservation.action">action</a>
                         </li>
                 </ul>
 
@@ -153,6 +183,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#PartialObservation.__init__">PartialObservation</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PartialObservation.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PartialObservation.action">action</a>
                         </li>
                         <li>
                                 <a class="function" href="#PartialObservation.hide_random_subset">hide_random_subset</a>
@@ -169,6 +205,12 @@
                         <li>
                                 <a class="function" href="#ActionObservation.__init__">ActionObservation</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#ActionObservation.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ActionObservation.action">action</a>
+                        </li>
                 </ul>
 
             </li>
@@ -177,6 +219,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#AtomicPartialObservation.__init__">AtomicPartialObservation</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AtomicPartialObservation.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AtomicPartialObservation.action">action</a>
                         </li>
                         <li>
                                 <a class="function" href="#AtomicPartialObservation.details">details</a>
@@ -189,6 +237,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#NoisyObservation.__init__">NoisyObservation</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#NoisyObservation.state">state</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#NoisyObservation.action">action</a>
                         </li>
                         <li>
                                 <a class="function" href="#NoisyObservation.random_noisy_subset">random_noisy_subset</a>
@@ -210,6 +264,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#NoisyPartialDisorderedParallelObservation.__init__">NoisyPartialDisorderedParallelObservation</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#NoisyPartialDisorderedParallelObservation.par_act_set_ID">par_act_set_ID</a>
                         </li>
                 </ul>
 
@@ -401,6 +458,39 @@ in the trace (which corresponds to that of the step).</p>
         The step associated with this observation.</p>
 </div>
 
+
+                            </div>
+                            <div id="Observation.index" class="classattr">
+                                <div class="attr variable">
+            <span class="name">index</span><span class="annotation">: int</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Observation.index"></a>
+    
+    
+
+                            </div>
+                            <div id="Observation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: Union[macq.trace.state.State, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Observation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="Observation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: Union[macq.trace.action.Action, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Observation.action"></a>
+    
+    
 
                             </div>
                             <div id="Observation.get_details" class="classattr">
@@ -859,6 +949,28 @@ in the trace (which corresponds to that of the step).</p>
     
 
                             </div>
+                            <div id="ObservedTraceList.observations" class="classattr">
+                                <div class="attr variable">
+            <span class="name">observations</span><span class="annotation">: List[List[<a href="#Observation">macq.observation.Observation</a>]]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ObservedTraceList.observations"></a>
+    
+    
+
+                            </div>
+                            <div id="ObservedTraceList.type" class="classattr">
+                                <div class="attr variable">
+            <span class="name">type</span><span class="annotation">: Type[<a href="#Observation">macq.observation.Observation</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ObservedTraceList.type"></a>
+    
+    
+
+                            </div>
                             <div id="ObservedTraceList.insert" class="classattr">
                                         <input id="ObservedTraceList.insert-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1250,6 +1362,7 @@ in the trace (which corresponds to that of the step).</p>
                                 <dl>
                                     <div><dt>builtins.BaseException</dt>
                                 <dd id="InvalidQueryParameter.with_traceback" class="function">with_traceback</dd>
+                <dd id="InvalidQueryParameter.args" class="variable">args</dd>
 
             </div>
                                 </dl>
@@ -1369,11 +1482,34 @@ class.</p>
 
 
                             </div>
+                            <div id="IdentityObservation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: macq.trace.state.State</span>
+
+        
+    </div>
+    <a class="headerlink" href="#IdentityObservation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="IdentityObservation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span>
+
+        
+    </div>
+    <a class="headerlink" href="#IdentityObservation.action"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="IdentityObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="IdentityObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="IdentityObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="IdentityObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="IdentityObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="IdentityObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -1455,6 +1591,39 @@ class.</p>
         
     </div>
     <a class="headerlink" href="#IdentityObservation.IdentityAction.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="IdentityObservation.IdentityAction.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#IdentityObservation.IdentityAction.name"></a>
+    
+    
+
+                            </div>
+                            <div id="IdentityObservation.IdentityAction.obj_params" class="classattr">
+                                <div class="attr variable">
+            <span class="name">obj_params</span><span class="annotation">: List[str]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#IdentityObservation.IdentityAction.obj_params"></a>
+    
+    
+
+                            </div>
+                            <div id="IdentityObservation.IdentityAction.cost" class="classattr">
+                                <div class="attr variable">
+            <span class="name">cost</span><span class="annotation">: Union[int, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#IdentityObservation.IdentityAction.cost"></a>
     
     
 
@@ -1629,6 +1798,28 @@ Args:
 
 
                             </div>
+                            <div id="PartialObservation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: Union[macq.trace.state.State, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PartialObservation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="PartialObservation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: Union[macq.trace.action.Action, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PartialObservation.action"></a>
+    
+    
+
+                            </div>
                             <div id="PartialObservation.hide_random_subset" class="classattr">
                                         <input id="PartialObservation.hide_random_subset-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1714,7 +1905,8 @@ Returns:
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="PartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="PartialObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="PartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="PartialObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="PartialObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="PartialObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -1821,11 +2013,34 @@ Args:
 
 
                             </div>
+                            <div id="ActionObservation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: Union[macq.trace.state.State, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ActionObservation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="ActionObservation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: Union[macq.trace.action.Action, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ActionObservation.action"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="ActionObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="ActionObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="ActionObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="ActionObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="ActionObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="ActionObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -1958,6 +2173,28 @@ stores everything in strings.</p>
 
 
                             </div>
+                            <div id="AtomicPartialObservation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: Union[macq.trace.state.State, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AtomicPartialObservation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="AtomicPartialObservation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: Union[macq.trace.action.Action, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AtomicPartialObservation.action"></a>
+    
+    
+
+                            </div>
                             <div id="AtomicPartialObservation.details" class="classattr">
                                         <input id="AtomicPartialObservation.details-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1986,7 +2223,8 @@ stores everything in strings.</p>
 
             </div>
             <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="AtomicPartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="AtomicPartialObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="AtomicPartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="AtomicPartialObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="AtomicPartialObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="AtomicPartialObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -2137,6 +2375,28 @@ the fluents in the step's state are incorrect (noisy).</p>
 
 
                             </div>
+                            <div id="NoisyObservation.state" class="classattr">
+                                <div class="attr variable">
+            <span class="name">state</span><span class="annotation">: Union[macq.trace.state.State, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#NoisyObservation.state"></a>
+    
+    
+
+                            </div>
+                            <div id="NoisyObservation.action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">action</span><span class="annotation">: Union[macq.trace.action.Action, NoneType]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#NoisyObservation.action"></a>
+    
+    
+
+                            </div>
                             <div id="NoisyObservation.random_noisy_subset" class="classattr">
                                         <input id="NoisyObservation.random_noisy_subset-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -2209,7 +2469,8 @@ and flips their value to create noise.</p>
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="NoisyObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="NoisyObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="NoisyObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="NoisyObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="NoisyObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="NoisyObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -2353,7 +2614,9 @@ both the PartialObservation token class and the NoisyObservation token class.</p
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#PartialObservation">PartialObservation</a></dt>
-                                <dd id="NoisyPartialObservation.hide_random_subset" class="function"><a href="#PartialObservation.hide_random_subset">hide_random_subset</a></dd>
+                                <dd id="NoisyPartialObservation.state" class="variable"><a href="#PartialObservation.state">state</a></dd>
+                <dd id="NoisyPartialObservation.action" class="variable"><a href="#PartialObservation.action">action</a></dd>
+                <dd id="NoisyPartialObservation.hide_random_subset" class="function"><a href="#PartialObservation.hide_random_subset">hide_random_subset</a></dd>
                 <dd id="NoisyPartialObservation.hide_subset" class="function"><a href="#PartialObservation.hide_subset">hide_subset</a></dd>
 
             </div>
@@ -2362,7 +2625,8 @@ both the PartialObservation token class and the NoisyObservation token class.</p
 
             </div>
             <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="NoisyPartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="NoisyPartialObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="NoisyPartialObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="NoisyPartialObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="NoisyPartialObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="NoisyPartialObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
@@ -2506,11 +2770,24 @@ which parallel action set the token is a part of. Inherits the NoisyPartialObser
 
 
                             </div>
+                            <div id="NoisyPartialDisorderedParallelObservation.par_act_set_ID" class="classattr">
+                                <div class="attr variable">
+            <span class="name">par_act_set_ID</span>
+
+        
+    </div>
+    <a class="headerlink" href="#NoisyPartialDisorderedParallelObservation.par_act_set_ID"></a>
+    
+    
+
+                            </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="#PartialObservation">PartialObservation</a></dt>
-                                <dd id="NoisyPartialDisorderedParallelObservation.hide_random_subset" class="function"><a href="#PartialObservation.hide_random_subset">hide_random_subset</a></dd>
+                                <dd id="NoisyPartialDisorderedParallelObservation.state" class="variable"><a href="#PartialObservation.state">state</a></dd>
+                <dd id="NoisyPartialDisorderedParallelObservation.action" class="variable"><a href="#PartialObservation.action">action</a></dd>
+                <dd id="NoisyPartialDisorderedParallelObservation.hide_random_subset" class="function"><a href="#PartialObservation.hide_random_subset">hide_random_subset</a></dd>
                 <dd id="NoisyPartialDisorderedParallelObservation.hide_subset" class="function"><a href="#PartialObservation.hide_subset">hide_subset</a></dd>
 
             </div>
@@ -2519,7 +2796,8 @@ which parallel action set the token is a part of. Inherits the NoisyPartialObser
 
             </div>
             <div><dt><a href="#Observation">Observation</a></dt>
-                                <dd id="NoisyPartialDisorderedParallelObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
+                                <dd id="NoisyPartialDisorderedParallelObservation.index" class="variable"><a href="#Observation.index">index</a></dd>
+                <dd id="NoisyPartialDisorderedParallelObservation.get_details" class="function"><a href="#Observation.get_details">get_details</a></dd>
                 <dd id="NoisyPartialDisorderedParallelObservation.extract_fluent_subset" class="function"><a href="#Observation.extract_fluent_subset">extract_fluent_subset</a></dd>
                 <dd id="NoisyPartialDisorderedParallelObservation.matches" class="function"><a href="#Observation.matches">matches</a></dd>
                 <dd id="NoisyPartialDisorderedParallelObservation.serialize" class="function"><a href="#Observation.serialize">serialize</a></dd>
