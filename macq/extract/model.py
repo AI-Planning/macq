@@ -202,7 +202,7 @@ class Model:
                 vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
 
                 if len(a.precond) == 1:
-                    precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in a.precond[0].param_act_inds])  # type: ignore
+                    precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in list(a.precond)[0].param_act_inds])  # type: ignore
                 else:
                     precond = CompoundFormula(
                         Connective.And,
