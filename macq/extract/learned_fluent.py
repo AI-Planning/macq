@@ -50,7 +50,7 @@ class LearnedLiftedFluent:
         return hash(self.details())
 
     def __str__(self):
-        return self.details()
+        return self.details() + f" {self.param_act_inds}"
 
     def __repr__(self):
         return self.details()

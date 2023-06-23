@@ -365,9 +365,7 @@ def test_locm_step4(HS=None, is_test=True):
         for G, bG in bindings.items():
             for S, bGS in bG.items():
                 print(f"\nG={G}, S={S}")
-                for h, v in bGS:
-                    print(f"{h} -> {v}\n")
-                    assert v == 0
+                assert 4 == len({v for _, v in bGS})
 
     else:
         return bindings

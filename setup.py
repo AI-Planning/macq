@@ -16,6 +16,8 @@ DEPENDENCIES = [
     "numpy",
     "clingo",
     "graphviz",
+    "networkx",
+    "pydot",
 ]
 
 DEV_DEPENDENCIES = [
