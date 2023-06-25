@@ -43,7 +43,7 @@ class SLAF:
     top = true
     bottom = false
 
-    def __new__(cls, o_list: ObservedTraceList, debug: bool = False):
+    def __new__(cls, o_list: ObservedTraceList, debug: bool = False, sample: bool = False):
         """Creates a new Model object.
 
         Args:
@@ -63,7 +63,7 @@ class SLAF:
             raise Exception("The SLAF extraction technique only takes one trace.")
 
         SLAF.debug_mode = debug
-        entailed = SLAF.__as_strips_slaf(o_list)
+        entailed = SLAF.__as_strips_slaf(o_list, sample)
         # return the Model
         return SLAF.__sort_results(o_list, entailed)
 
@@ -216,7 +216,7 @@ class SLAF:
         return Model(model_fluents, set(learned_actions.values()))
 
     @staticmethod
-    def __as_strips_slaf(o_list: ObservedTraceList):
+    def __as_strips_slaf(o_list: ObservedTraceList, sample: bool):
         """Implements the AS-STRIPS-SLAF algorithm from section 5.3 of the SLAF paper.
         Iterates through the action/observation pairs of each observation/trace, returning
         a fluent-factored transition belief formula that filters according to that action/observation.
@@ -227,6 +227,9 @@ class SLAF:
             o_list (ObservationList):
                 The list of observations/traces to apply the filtering algorithm to.
                 NOTE: with the current implementation, SLAF only works with a single trace.
+
+            sample (bool):
+                If true, an arbitrary solution will be produced rather than just the entailed literals.
 
         Returns:
             The set of fluents that are entailed.
@@ -467,14 +470,22 @@ class SLAF:
         cnf_formula = And(map(SLAF.__or_refactor, full_formula.children))
 
         entailed = set()
-        children = set(cnf_formula.children)
-        # iterate through all fluents, gathering those that are entailed
-        for f in all_var:
-            children.add(Or([~f]))
-            check_theory = And(children)
-            # if False, then f is entailed
+        if sample:
             with config(sat_backend="kissat"):
-                if not check_theory.solve():
-                    entailed.add(f)
-            children.discard(Or([~f]))
+                sol = cnf_formula.solve()
+                if sol:
+                    for f in all_var:
+                        if sol[str(f)]:
+                            entailed.add(f)
+        else:
+            children = set(cnf_formula.children)
+            # iterate through all fluents, gathering those that are entailed
+            for f in all_var:
+                children.add(Or([~f]))
+                check_theory = And(children)
+                # if False, then f is entailed
+                with config(sat_backend="kissat"):
+                    if not check_theory.solve():
+                        entailed.add(f)
+                children.discard(Or([~f]))
         return entailed
