@@ -52,6 +52,9 @@ class SLAF:
             debug_mode (bool):
                 An optional mode that helps the user track any fluents they desire by examining the evolution
                 of their fluent-factored formulas through the steps.
+            sample (bool):
+                An optional mode that allows the user to sample the possible models instead of returning
+                one that includes only guaranteed entailed fluents.
         Raises:
             IncompatibleObservationToken:
                 Raised if the observations are not identity observation.
