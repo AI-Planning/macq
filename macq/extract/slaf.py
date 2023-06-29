@@ -197,7 +197,9 @@ class SLAF:
                 precond = info_split[0]
                 action = info_split[1]
                 # update the precondition of this action with the appropriate fluent
-                learned_actions[action].update_precond({precond})
+                #  only if it's a positive precondition
+                if "~" not in precond:
+                    learned_actions[action].update_precond({precond})
             # if this proposition holds information about an effect
             elif effect in e:
                 # split to separate effect and action, get rid of extra brackets
