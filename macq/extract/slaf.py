@@ -320,6 +320,7 @@ class SLAF:
                     print("Update according to observations.")
                     for obj in to_obs:
                         f_str = raw_fluent_factored[obj]["fluent"].name
+                        phi = raw_fluent_factored[f_str]
                         print("\nfluent: " + f_str)
                         print("\npossible expl. for fluent being true:")
                         for f in phi["pos expl"]:
@@ -415,6 +416,7 @@ class SLAF:
                         print("\nAction taken: " + str(a) + "\n")
                         for obj in to_obs:
                             f_str = raw_fluent_factored[obj]["fluent"].name
+                            phi = raw_fluent_factored[f_str]
                             print("\nfluent: " + f_str)
                             print(
                                 "\npossible expl. for fluent being true after "
