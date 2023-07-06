@@ -611,7 +611,7 @@ class LOCM:
                         # check if hypothesis parameters (v1 & v2) need to be unified
                         if (
                             (h1.B == h2.B and h1.k == h2.k and h1.k_ == h2.k_)
-                                    and   # See https://github.com/AI-Planning/macq/discussions/200
+                                    or   # See https://github.com/AI-Planning/macq/discussions/200
                             (h1.C == h2.C and h1.l == h2.l and h1.l_ == h2.l_)  # fmt: skip
                         ):
                             v1 = state_bindings[h1]
@@ -818,14 +818,21 @@ class LOCM:
                         pind = None
                         for hyp in state_params_to_hyps[sort][start_state][param]:
                             if hyp.C == ap:
+                                if (psort is not None and psort != hyp.G_) or \
+                                   (pind is not None and pind != hyp.l_):
+                                    print(f"\n\tError: The following set of hypotheses for sort {sort} and state {start_state} are not consistent (ap = {ap}):")
+                                    for hyp in state_params_to_hyps[sort][start_state][param]:
+                                        if hyp.C == ap:
+                                            print(f"\t\t{hyp}")
+                                    print("\n\t This domain cannot be handled by LOCMv1. Please see https://github.com/AI-Planning/macq/discussions/200 for more info.\n\n")
+                                    exit(1)
                                 assert psort is None or psort == hyp.G_
                                 assert pind is None or pind == hyp.l_
                                 psort = hyp.G_
                                 pind = hyp.l_
-                        assert psort is not None
-                        assert pind is not None
-                        start_fluent.param_sorts.append(f"sort{psort}")
-                        start_fluent.param_act_inds.append(pind - 1)
+                        if psort is not None:
+                            start_fluent.param_sorts.append(f"sort{psort}")
+                            start_fluent.param_act_inds.append(pind - 1)
 
                 a.update_precond(start_fluent)
 
@@ -850,14 +857,21 @@ class LOCM:
                             pind = None
                             for hyp in state_params_to_hyps[sort][end_state][param]:
                                 if hyp.B == ap:
+                                    if (psort is not None and psort != hyp.G_) or \
+                                       (pind is not None and pind != hyp.k_):
+                                         print(f"\n\tError: The following set of hypotheses for sort {sort} and state {end_state} are not consistent (ap = {ap}):")
+                                         for hyp in state_params_to_hyps[sort][end_state][param]:
+                                              if hyp.B == ap:
+                                                    print(f"\t\t{hyp}")
+                                         print("\n\t This domain cannot be handled by LOCMv1. Please see https://github.com/AI-Planning/macq/discussions/200 for more info.\n\n")
+                                         exit(1)
                                     assert psort is None or psort == hyp.G_
                                     assert pind is None or pind == hyp.k_
                                     psort = hyp.G_
                                     pind = hyp.k_
-                            assert psort is not None
-                            assert pind is not None
-                            end_fluent.param_sorts.append(f"sort{psort}")
-                            end_fluent.param_act_inds.append(pind - 1)
+                            if psort is not None:
+                                end_fluent.param_sorts.append(f"sort{psort}")
+                                end_fluent.param_act_inds.append(pind - 1)
 
                     a.update_delete(start_fluent)
                     a.update_add(end_fluent)
