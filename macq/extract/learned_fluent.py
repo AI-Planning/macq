@@ -60,3 +60,36 @@ class LearnedLiftedFluent:
 
     def _serialize(self):
         return str(self)
+
+
+class FullyHashedLearnedLiftedFluent:
+    """
+    solves the problem for some extraction methods that requires differences between param_act_inds for sorting
+    """
+
+    def __init__(self, name: str, param_sorts: List[str], param_act_inds: List[int]):
+        self.name = name
+        self.param_sorts = param_sorts
+        self.param_act_inds = param_act_inds
+
+    def __eq__(self, other):
+        return isinstance(other, LearnedLiftedFluent) and hash(self) == hash(other)
+
+    def __hash__(self):
+        # Order of objects is important!
+        return hash(f"({self.name} {' '.join(self.param_sorts)} {' '.join(map(str, self.param_act_inds))})")
+
+    def __str__(self):
+        return self.details() + f" {self.param_act_inds}"
+
+    def __repr__(self):
+        return self.details()
+
+    def details(self):
+        return f"({self.name} {' '.join(self.param_sorts)} )"
+
+    def _serialize(self):
+        return str(self)
+
+    def to_LearnedLiftedFluent(self) -> LearnedLiftedFluent:
+        return LearnedLiftedFluent(self.name, self.param_sorts, self.param_act_inds)
