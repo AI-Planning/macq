@@ -1,8 +1,7 @@
 from __future__ import annotations
-
 from typing import List, Set, Union
-
 from . import LearnedLiftedFluent
+from macq.extract.learned_fluent import FullyHashedLearnedLiftedFluent
 
 
 class LearnedAction:
@@ -18,9 +17,9 @@ class LearnedAction:
 
     def __eq__(self, other):
         return (
-            isinstance(other, LearnedAction)
-            and self.name == other.name
-            and self.obj_params == other.obj_params
+                isinstance(other, LearnedAction)
+                and self.name == other.name
+                and self.obj_params == other.obj_params
         )
 
     def __hash__(self):
@@ -111,9 +110,9 @@ class LearnedLiftedAction:
 
     def __eq__(self, other):
         return (
-            isinstance(other, LearnedLiftedAction)
-            and self.name == other.name
-            and self.param_sorts == other.param_sorts
+                isinstance(other, LearnedLiftedAction)
+                and self.name == other.name
+                and self.param_sorts == other.param_sorts
         )
 
     def __hash__(self):
@@ -127,7 +126,8 @@ class LearnedLiftedAction:
         return f"({self.name} {' '.join(self.param_sorts)})"
 
     def update_precond(
-        self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]
+            self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], FullyHashedLearnedLiftedFluent, Set[
+                FullyHashedLearnedLiftedFluent]]
     ):
         """Adds preconditions to the action.
 
@@ -135,23 +135,25 @@ class LearnedLiftedAction:
             fluents (set):
                 The set of fluents to be added to the action's preconditions.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, FullyHashedLearnedLiftedFluent):
             fluents = {fluents}
         self.precond.update(fluents)
 
-    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]):
+    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], FullyHashedLearnedLiftedFluent, Set[
+                FullyHashedLearnedLiftedFluent]]):
         """Adds add effects to the action.
 
         Args:
             fluents (set):
                 The set of fluents to be added to the action's add effects.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, FullyHashedLearnedLiftedFluent):
             fluents = {fluents}
         self.add.update(fluents)
 
     def update_delete(
-        self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]
+            self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], FullyHashedLearnedLiftedFluent, Set[
+                FullyHashedLearnedLiftedFluent]]
     ):
         """Adds delete effects to the action.
 
@@ -159,6 +161,6 @@ class LearnedLiftedAction:
             fluents (set):
                 The set of fluents to be added to the action's delete effects.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, FullyHashedLearnedLiftedFluent):
             fluents = {fluents}
         self.delete.update(fluents)
