@@ -4,8 +4,6 @@ from unittest import TestCase
 from macq.trace import Fluent, PlanningObject, TraceList, Trace
 from macq.generate.pddl import TraceFromGoal
 from macq.extract import LearnedLiftedFluent, LearnedLiftedAction, Model, LOCM, sam
-from  macq.observation import ObservedTraceList, ActionObservation
-
 
 
 # !!!note to self: need to change goal fluents to the original goal(even if it set automatically)
@@ -118,13 +116,15 @@ def make_log_model():
 
     return Model(lift_flu, lift_acts)
 
-def make_locm_pre_dict() -> dict[str,list[str]]:
+
+def make_locm_pre_dict() -> dict[str, list[str]]:
     return {"load-truck": ['(package, 0)', '(truck, 1)', '(location, 2)'],
-                         "unload-truck": ['(package, 0)', '(truck, 1)', '(location, 2)'],
-                         "load-airplane": ['(package, 0)', '(airplane, 1)', '(location, 2)'],
-                         "unload-airplane": ['(package, 0)', '(airplane, 1)', '(location, 2)'],
-                         "drive-truck": ['(truck, 1)', '(location, 1)', '(location, 2)', '(city, 3)'],
-                         "fly-airplane": ['(airplane, 1)', '(airport, 1)', '(airport, 2)']}
+            "unload-truck": ['(package, 0)', '(truck, 1)', '(location, 2)'],
+            "load-airplane": ['(package, 0)', '(airplane, 1)', '(location, 2)'],
+            "unload-airplane": ['(package, 0)', '(airplane, 1)', '(location, 2)'],
+            "drive-truck": ['(truck, 1)', '(location, 1)', '(location, 2)', '(city, 3)'],
+            "fly-airplane": ['(airplane, 1)', '(airport, 1)', '(airport, 2)']}
+
 
 class TestSAMgenerator(TestCase):
     # all logistic domain info for tests
@@ -176,6 +176,7 @@ class TestSAMgenerator(TestCase):
             )
         }, model_dom, model_prob)
         traces = [generator.generate_trace()]
+
         # prob 2
         generator = TraceFromGoal(problem_id=1496)
         generator.change_goal({
@@ -253,14 +254,11 @@ class TestSAMgenerator(TestCase):
         model_prob = str(
             (base / "pddl_testing_files/sam_pddl_runtime_generated_pddls/new_prob_copy.pddl").resolve()
         )
-        sam_model.to_pddl('logistics', 'log00_x',model_dom, model_prob)
-
+        sam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
 
         # using locm for comparison
         # lc_model: Model = LOCM(ObservedTraceList(trace_list,ActionObservation), make_locm_pre_dict())
         # lc_model.to_pddl('logistics', 'log00_x', 'new_domain_copy.pddl', 'new_prob_copy.pddl')
-
-
 
     def test_model_extraction_2_logistics(self):
         base = Path(__file__).parent.parent
@@ -271,6 +269,7 @@ class TestSAMgenerator(TestCase):
             (base / "pddl_testing_files/sam_pddl_runtime_generated_pddls/new_prob.pddl").resolve()
         )
         generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True)
+        generator.generate_trace()
         generator.change_goal({
             get_fluent(
                 "at",
@@ -310,7 +309,7 @@ class TestSAMgenerator(TestCase):
                 "at",
                 ["package obj32", "location apt1"]
             )
-        },model_dom, model_prob)
+        }, model_dom, model_prob)
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
         sam_generator: sam.SAMgenerator = sam.SAMgenerator(trace_list=trace_list, action_2_sort=self.action_2_sort_log)
