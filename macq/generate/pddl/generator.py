@@ -1,5 +1,10 @@
+import re
+import time
 from time import sleep
+from pprint import pprint
 from typing import Set, List, Union
+
+from requests import Response
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -400,21 +405,47 @@ class Generator:
                     "domain": open(self.pddl_dom, "r").read(),
                     "problem": open(self.pddl_prob, "r").read(),
                 }
+                headers = {"persistent": "true"}
 
-                def get_api_response(delays: List[int]):
+                def get_api_response2(delays: List[int]):
                     if delays:
                         sleep(delays[0])
                         try:
+                            service_url = "https://solver.planning.domains:5001/package/lama-first/solve"
+                            solve_request = requests.post(service_url, json=data, headers=headers).json()
+                            celery_result = requests.get("https://solver.planning.domains:5001/" +
+                                                         solve_request['result'])
+                            print('Computing...')
+                            while celery_result.json().get("status", "") == 'PENDING':
+                                sleep(delays[0])
+                                celery_result = requests.get("https://solver.planning.domains:5001/" +
+                                                             solve_request['result'])
+                            sas_plan = celery_result.json()['result']['output']['sas_plan']
+                            actions_with_objects = re.findall(r'\((.*?)\)', sas_plan)
+
+                            plan_list = [f'({action})' for action in actions_with_objects]
+                            return plan_list
+
+                        except TypeError:
+                            return get_api_response2(delays[1:])
+
+
+
+                def get_api_response(delays: List[int]):
+                    if delays:
+                        time.sleep(delays[0])
+                        try:
                             resp = requests.post(
-                                "http://solver.planning.domains/solve",
+                                "https://solver.planning.domains:5001/package/dual-bfws-ffparser/solve",
                                 verify=False,
                                 json=data,
                             ).json()
+
                             return [act["name"] for act in resp["result"]["plan"]]
                         except TypeError:
-                            return get_api_response(delays[1:])
+                            return resp["result"]
 
-                plan = get_api_response([0, 1, 3, 5, 10])
+                plan = get_api_response2([0, 1, 3, 5, 10])
                 if plan is None:
                     raise PlanningDomainsAPIError(
                         "Could not get a valid response from the planning.domains solver after 5 attempts.",
