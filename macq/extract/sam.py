@@ -1,19 +1,6 @@
-from macq.trace import Action, Fluent, PlanningObject, State, SAS, TraceList, Trace
+from macq.trace import Action, Fluent, State, SAS, TraceList, Trace
 from macq.extract import model, LearnedLiftedAction
 from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
-from logging import Logger
-
-
-def check_injective_assumption(parameters: list[PlanningObject], action_name, logger: Logger):
-    """meant to check that all grounded actions parameters are bound to different objects"""
-
-    object_set: set[PlanningObject] = set()
-    for p in parameters:
-        if object_set.__contains__(p):
-            logger.warning("parameters of function must all be different due to the injective "
-                           "assumption\naction identifier: " + action_name + "\n" + "objects: " + parameters.__str__())
-        else:
-            object_set.add(p)
 
 
 class FluentInfo:
@@ -47,27 +34,21 @@ class SAMgenerator:
     #  add is 0 index in tuple and delete is 1
     preA: dict[str, set[FluentInfo]] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
     # LiftedPreA, LiftedEFF both of them are stets of learned lifted fluents
-    types: set[str] = set()
     action_triplets: set[SAS] = set()
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
     action_2_sort: dict[str, list[str]] = dict()  # TODO use when knowing how to sort action
 
     # =======================================Initialization of data structures======================================
-    def __init__(self, types: set[str] = None, trace_list: TraceList = None,
+    def __init__(self, trace_list: TraceList = None,
                  action_2_sort: dict[str, list[str]] = None):
         """Creates a new SAMgenerator instance.
                Args:
-                    types (set[str]):
-                        a dic mapping each type to its super type, for example: [mazda, car].
-                        means mazda type is type of car type
                     trace_list(TraceList):
                         an object holding a list of traces from the same domain.
                     action_2_sort(dict str -> list[str])
                 """
         self.trace_list = trace_list
-        if types is not None:
-            self.types = types
         if trace_list is not None:
             self.trace_list = trace_list
             self.fluents = self.trace_list.get_fluents()
@@ -294,6 +275,6 @@ class SAM:
         if sam_generator is not None:
             cls.__sam_generator = sam_generator
         else:
-            cls.__sam_generator: SAMgenerator = SAMgenerator(types, trace_list, action_2_sort)
+            cls.__sam_generator: SAMgenerator = SAMgenerator(trace_list=trace_list, action_2_sort=action_2_sort)
 
         return cls.__sam_generator.generate_model()
