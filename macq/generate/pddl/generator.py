@@ -1,10 +1,6 @@
 import re
-import time
 from time import sleep
-from pprint import pprint
 from typing import Set, List, Union
-
-from requests import Response
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -405,9 +401,10 @@ class Generator:
                     "domain": open(self.pddl_dom, "r").read(),
                     "problem": open(self.pddl_prob, "r").read(),
                 }
+
                 headers = {"persistent": "true"}
 
-                def get_api_response2(delays: List[int]):
+                def get_api_response(delays: List[int]):
                     if delays:
                         sleep(delays[0])
                         try:
@@ -427,25 +424,9 @@ class Generator:
                             return plan_list
 
                         except TypeError:
-                            return get_api_response2(delays[1:])
+                            return get_api_response(delays[1:])
 
-
-
-                def get_api_response(delays: List[int]):
-                    if delays:
-                        time.sleep(delays[0])
-                        try:
-                            resp = requests.post(
-                                "https://solver.planning.domains:5001/package/dual-bfws-ffparser/solve",
-                                verify=False,
-                                json=data,
-                            ).json()
-
-                            return [act["name"] for act in resp["result"]["plan"]]
-                        except TypeError:
-                            return resp["result"]
-
-                plan = get_api_response2([0, 1, 3, 5, 10])
+                plan = get_api_response([0, 1, 3, 5, 10])
                 if plan is None:
                     raise PlanningDomainsAPIError(
                         "Could not get a valid response from the planning.domains solver after 5 attempts.",
