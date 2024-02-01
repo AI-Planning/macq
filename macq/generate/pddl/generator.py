@@ -1,10 +1,6 @@
 import re
-import time
 from time import sleep
-from pprint import pprint
 from typing import Set, List, Union
-
-from requests import Response
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -406,6 +402,8 @@ class Generator:
                     "problem": open(self.pddl_prob, "r").read(),
                 }
 
+                headers = {"persistent": "true"}
+
                 def get_api_response(delays: List[int]):
                     if delays:
                         sleep(delays[0])
@@ -426,7 +424,7 @@ class Generator:
                             return plan_list
 
                         except TypeError:
-                            return get_api_response2(delays[1:])
+                            return get_api_response(delays[1:])
 
                 plan = get_api_response([0, 1, 3, 5, 10])
                 if plan is None:
