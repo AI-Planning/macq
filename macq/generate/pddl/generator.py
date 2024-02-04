@@ -412,7 +412,6 @@ class Generator:
                             solve_request = requests.post(service_url, json=data, headers=headers).json()
                             celery_result = requests.get("https://solver.planning.domains:5001/" +
                                                          solve_request['result'])
-                            print('Computing...')
                             while celery_result.json().get("status", "") == 'PENDING':
                                 sleep(delays[0])
                                 celery_result = requests.get("https://solver.planning.domains:5001/" +
