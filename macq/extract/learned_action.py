@@ -27,7 +27,8 @@ class LearnedAction:
         return hash(self.details())
 
     def details(self):
-        # obj_params can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the action
+        # obj_params can be either a list of strings or a list of PlanningObject
+        # depending on the token type and extraction method used to learn the action
         try:
             string = f"({self.name} {' '.join(self.obj_params)})"
         except TypeError:
@@ -139,8 +140,8 @@ class LearnedLiftedAction:
             fluents = {fluents}
         self.precond.update(fluents)
 
-    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], FullyHashedLearnedLiftedFluent, Set[
-                FullyHashedLearnedLiftedFluent]]):
+    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[
+            LearnedLiftedFluent], FullyHashedLearnedLiftedFluent, Set[FullyHashedLearnedLiftedFluent]]):
         """Adds add effects to the action.
 
         Args:

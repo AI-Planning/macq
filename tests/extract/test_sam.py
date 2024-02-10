@@ -1,6 +1,5 @@
 from pathlib import Path
 from unittest import TestCase
-
 from macq.trace import Fluent, PlanningObject, TraceList, Trace
 from macq.generate.pddl import TraceFromGoal
 from macq.extract import Model, sam
@@ -13,6 +12,27 @@ def get_fluent(name: str, objs: list[str]):
     objects = [PlanningObject(o.split()[0], o.split()[1])
                for o in objs]
     return Fluent(name, objects)
+
+
+# def fix_states_4TraceList(trace_list: TraceList): # TODO test this!!!!
+#     for trace in trace_list.traces:
+#         pre_cond_set: set[Fluent] = set({})
+#         action_pred_to_add: set[Fluent] = set({})
+#         for step in trace.steps:
+#             if step.action:
+#                 action_pred_to_add.update(f for f in step.action.precond)
+#                 step.state.fluents.update({p, True} for p in action_pred_to_add)
+#                 action_pred_to_add.difference({p for p in step.action.delete})
+#                 try:
+#                     if trace.steps.__getitem__(step.index + 1):
+#                         trace.steps.__getitem__(step.index+1).state.fluents.update(
+#                             {p, True} for p in action_pred_to_add)
+#                 finally:
+#                     continue
+#
+#         to_add: set[Fluent] = pre_cond_set.difference(trace.fluents)
+#         for step in trace:
+#             step.state.fluents.update({pre, True} for pre in to_add)
 
 
 class TestSAMgenerator(TestCase):
@@ -30,6 +50,7 @@ class TestSAMgenerator(TestCase):
 
     def test_model_extraction_1_logistics(self):
         generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True)
+        generator.observe_static_fluents = True
         base = Path(__file__).parent.parent
         model_dom = str(
             (base / "pddl_testing_files/sam_pddl_runtime_generated_pddls/new_domain.pddl").resolve()
@@ -66,7 +87,8 @@ class TestSAMgenerator(TestCase):
         traces = [generator.generate_trace()]
 
         # prob 2
-        generator = TraceFromGoal(problem_id=1496)
+        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True)
+        generator.observe_static_fluents = True
         generator.change_goal({
             get_fluent(
                 "at",
@@ -131,7 +153,9 @@ class TestSAMgenerator(TestCase):
         }, model_dom, model_prob)
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
-        sam_generator: sam.SAMgenerator = sam.SAMgenerator(trace_list=trace_list, action_2_sort=self.action_2_sort_log)
+        from macq.observation import IdentityObservation
+        sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
+            Token=IdentityObservation), action_2_sort=self.action_2_sort_log)
         sam_model: Model = sam_generator.generate_model()
 
         print(sam_model.details())
@@ -156,7 +180,7 @@ class TestSAMgenerator(TestCase):
         model_prob = str(
             (base / "pddl_testing_files/sam_pddl_runtime_generated_pddls/new_prob.pddl").resolve()
         )
-        generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True)
+        generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True, observe_static_fluents=True)
         generator.generate_trace()
         generator.change_goal({
             get_fluent(
@@ -170,8 +194,8 @@ class TestSAMgenerator(TestCase):
         }, model_dom, model_prob)
         traces: list[Trace] = [generator.generate_trace()]
         # prob 2
-        generator = TraceFromGoal(problem_id=1496)
-
+        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True, observe_static_fluents=True)
+        generator.observe_static_fluents = True
         generator.change_goal({
             get_fluent(
                 "at",
@@ -200,7 +224,9 @@ class TestSAMgenerator(TestCase):
         }, model_dom, model_prob)
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
-        sam_generator: sam.SAMgenerator = sam.SAMgenerator(trace_list=trace_list, action_2_sort=self.action_2_sort_log)
+        import macq
+        sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
+            Token=macq.observation.identity_observation.IdentityObservation), action_2_sort=self.action_2_sort_log)
         sam_model: Model = sam_generator.generate_model()
         print(f"MODEL 2 \n{sam_model.details()}")
         print("\n\n\n\n===================================")

@@ -1,6 +1,7 @@
 import re
 from time import sleep
 from typing import Set, List, Union
+from tarski.grounding.common import StateVariableLite
 from tarski.io import PDDLReader
 from tarski.search import GroundForwardSearchModel
 from tarski.search.operations import progress
@@ -18,6 +19,8 @@ from tarski.model import Model, create
 from tarski.io import fstrips as iofs
 
 import requests
+from tarski.util import SymbolIndex
+
 from .planning_domains_api import get_problem, get_plan
 from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
@@ -74,6 +77,7 @@ class Generator:
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        observe_static_fluents: bool = False
     ):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
         of the domain and problem, or a problem ID.
@@ -89,6 +93,7 @@ class Generator:
                 Option to observe action preconditions and effects upon generation.
         """
         # get attributes
+        self.observe_static_fluents = observe_static_fluents
         self.pddl_dom = dom
         self.pddl_prob = prob
         self.problem_id = problem_id
@@ -174,14 +179,16 @@ class Generator:
         Returns:
             A list of all the grounded fluents in the problem, in the form of macq Fluents.
         """
-        return [
-            self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
-            for grounded_fluent in LPGroundingStrategy(
-                self.problem, include_variable_inequalities=True
-            )
-            .ground_state_variables()
-            .objects
-        ]
+        l1: list = []
+        if not self.observe_static_fluents:
+            [self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())for grounded_fluent in LPGroundingStrategy(
+                self.problem, include_variable_inequalities=True).ground_state_variables().objects]
+        if self.observe_static_fluents:
+            l1 = [
+                self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
+                for grounded_fluent in ExtractStaticFluents(
+                    self.problem, include_variable_inequalities=True).ground_state_variables().objects]
+        return l1
 
     def __effect_split(self, act: PlainOperator):
         """Converts the effects of an action as defined by tarski to fluents as defined by macq.
@@ -412,7 +419,6 @@ class Generator:
                             solve_request = requests.post(service_url, json=data, headers=headers).json()
                             celery_result = requests.get("https://solver.planning.domains:5001/" +
                                                          solve_request['result'])
-                            print('Computing...')
                             while celery_result.json().get("status", "") == 'PENDING':
                                 sleep(delays[0])
                                 celery_result = requests.get("https://solver.planning.domains:5001/" +
@@ -466,3 +472,29 @@ class Generator:
             else:
                 trace.append(Step(macq_state, None, i + 1))
         return trace
+
+
+class ExtractStaticFluents(LPGroundingStrategy):
+    def __init__(self, problem, ground_actions=True, include_variable_inequalities=False):
+        super().__init__(problem=problem, ground_actions=ground_actions,
+                         include_variable_inequalities=include_variable_inequalities)
+
+    def ground_state_variables(self):
+        """ Create and index all state variables of the problem by exhaustively grounding all predicate and function
+        symbols that are considered to be fluent with respect to the problem constants. Thus, if the problem has one
+        fluent predicate "p" and one static predicate "q", and constants "a", "b", "c", the result of this operation
+        will be the state variables "p(a)", "p(b)" and "p(c)".
+        """
+        model = self._solve_lp()
+
+        variables = SymbolIndex()
+        for symbol in self.fluent_symbols.union(self.static_symbols):
+
+            lang = symbol.language
+            key = 'atom_' + symbol.name
+            if key in model:  # in case there is no reachable ground state variable from that fluent symbol
+                for binding in model[key]:
+                    binding_with_constants = tuple(lang.get(c) for c in binding)
+                    variables.add(StateVariableLite(symbol, binding_with_constants))
+
+        return variables
