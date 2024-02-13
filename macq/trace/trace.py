@@ -6,6 +6,8 @@ from warnings import warn
 from rich.table import Table
 from rich.text import Text
 from rich.console import Console
+
+import macq.trace
 from . import Action, Step, State
 from ..observation import Observation, NoisyPartialDisorderedParallelObservation
 from ..utils import TokenizationError
