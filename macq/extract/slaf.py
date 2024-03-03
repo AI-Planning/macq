@@ -3,9 +3,10 @@ from typing import Set, Union
 from bauhaus import Encoding
 from nnf import And, Or, Var, config, false, true
 import macq.extract as extract
-from macq.observation import AtomicPartialObservation, ObservedTraceList
-from macq.extract.exceptions import IncompatibleObservationToken
-from macq.extract.model import Model
+from ..observation import AtomicPartialObservation, ObservedTraceList
+from .exceptions import IncompatibleObservationToken
+from .learned_fluent import LearnedFluent
+from .model import Model
 
 # only used for pretty printing in debug mode
 e = Encoding()
