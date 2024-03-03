@@ -1,15 +1,12 @@
-import itertools
-
 from pysat.formula import CNF
 import macq
 from macq.observation import ObservedTraceList
 from macq.trace import Action, Fluent, State, PlanningObject
 from macq.extract import model, LearnedLiftedAction
 from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
-from itertools import product
-from pysat.solvers import Glucose3
-
-# TODO: 1) minimize cnf at extract clauses, 2) implement lines 4->13 in main alg
+from itertools import product, chain, combinations
+from pysat.solvers import Minisat22
+solver = Minisat22()
 
 
 class ESAMGenerator:
@@ -59,7 +56,7 @@ class ESAMGenerator:
         self.L_bLA = {name: set() for name in actions_in_traces.__getattribute__('name')}
         for f in self.obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
-                self.L_bLA[act.name] = self.make_FullyHashedFluent_set(act, f)
+                self.L_bLA[act.name].update(self.make_FullyHashedFluent_set(act, f))
 
     def make_FullyHashedFluent_set(self, action: Action, f: Fluent) -> set[FullyHashedLearnedLiftedFluent]:
         ret: set[FullyHashedLearnedLiftedFluent] = set()
@@ -76,13 +73,17 @@ class ESAMGenerator:
         # name
         surely_effA_delete: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
         # dict like preA that holds delete and add biding for each action name
-        surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
+        surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
         conj_pre: dict[str, CNF] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
-        conj_eff: dict[str, CNF] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
-
-        def minimize(cnf_formula: CNF):
-            cnf_formula.copy()
-            pass
+        cnf_eff: dict[str, CNF] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
+        proxy_act_ind: int = 1  # counts action number, each action has different number, each proxy has additional info
+        literal_2_index_in_eff: dict[int, list[list[int]]] = dict()  # lit num-> (clause index, index in clause)
+        for lit in self.literals2index.values():  # to make unit propagation more efficient
+            literal_2_index_in_eff[lit] = list()
+            literal_2_index_in_eff[-lit] = list()
+        lit_2_delete_from_clauses: dict[str, set[int]] = dict()  # will help us in the unit propagation
+        for name in self.L_bLA.keys():  # init set for each name
+            lit_2_delete_from_clauses[name] = set()
 
         def extract_clauses() -> (list[list[FullyHashedLearnedLiftedFluent]],
                                   list[list[FullyHashedLearnedLiftedFluent]]):
@@ -94,9 +95,9 @@ class ESAMGenerator:
 
             for action, transitions in self.obs_trace_list.get_all_transitions().items():
                 for trans in transitions:
-                    filter_conj_eff(trans[1].state, action)
-            for eff_cnf in conj_eff.values():
-                minimize(eff_cnf)
+                    add_not_iseff(trans[1].state, action)
+            for act_name in cnf_eff.keys():
+                minimize(act_name)
             # minimize con_eff and continue
 
         def remove_redundant_preconditions(action: Action, transitions: list[list[macq.observation.Observation]]):
@@ -122,35 +123,61 @@ class ESAMGenerator:
                 add_literal_binding_to_eff(post_state, pre_state, action)
 
         def add_literal_binding_to_eff(pre_state: State, post_state: State, action: Action):
-            c_eff: list[int] = list()
+
             negative_global_val = self.literals.__sizeof__()+1
-            c_eff.append(-negative_global_val)
             for k, v in pre_state.fluents.items():
                 if not (post_state.keys().__contains__(k) and post_state.__getitem__(k) == v):
+                    c_eff: list[int] = list()  # create clause for fluent
+                    c_eff.append(-negative_global_val)
+                    #  use the call below to get all know param act inds for fluents
                     fluents: set[FullyHashedLearnedLiftedFluent] = self.make_FullyHashedFluent_set(action, k)
+                    # now we iterate over all observed bindings
                     for f in fluents:
                         if v:
-                            c_eff.append(self.literals2index.get(f))
+                            c_eff.append(self.literals2index.get(f))  # its true therefore positive
                         else:
-                            c_eff.append(-self.literals2index.get(f))
-            conj_eff[action.name].append(clause=c_eff)
+                            c_eff.append(-self.literals2index.get(f))  # its false therefore negative
+                    cnf_eff[action.name].append(clause=c_eff)  # add clause to actions effects
 
-        def filter_conj_eff(post_state: State, action: Action):
+        def add_not_iseff(post_state: State, action: Action):
+            # TODO support to understand how add and delete effects
+            # TODO handle this situation, suppose ut was false and became true, then -l is not in post state
+            # TODO conclusion is to differ negative and positive fluents when handling this event!
             for f in self.literals:
                 fluent = Fluent(f.name, [action.obj_params[index] for index in f.param_act_inds])
                 if post_state.fluents.__contains__(fluent):
                     if not post_state.fluents[fluent]:
-                        conj_eff[action.name].append([-self.literals2index[f]])
+                        lit_2_delete_from_clauses[action.name].add(self.literals2index[f])
+                    else:
+                        lit_2_delete_from_clauses[action.name].add(-self.literals2index[f])
                 else:
-                    conj_eff[action.name].append([-self.literals2index[f]])
+                    lit_2_delete_from_clauses[action.name].add(-self.literals2index[f])
 
-        def get_unit_clauses_eff(cnf_eff: CNF)\
+        def remove_subsumed_clauses(action_name: str):
+            pass
+
+        def minimize(action_name: str):
+            # unit propagation to minimize -iseff(l)
+            for clause in cnf_eff[action_name].clauses:
+                if isinstance(clause, list):
+                    for index, literal in list(enumerate(reversed(clause))):
+                        if lit_2_delete_from_clauses[action_name].__contains__(literal):
+                            clause.pop(index)
+            remove_subsumed_clauses(action_name)
+
+        def delete_unit_clauses(cnf: CNF):
+            """ removes all clauses of size 1  meant to be used after assigning surely_pre/eff all size 1 literals"""
+            for index, clause in reversed(list(enumerate(cnf.clauses))):
+                if len(clause) == 1:
+                    cnf.clauses.pop(index)
+
+        def get_unit_clauses_eff(formula: CNF)\
                 -> (set[FullyHashedLearnedLiftedFluent], set[FullyHashedLearnedLiftedFluent]):
             """process all actions cnf effects, and returns tuple of unit clauses s.t <set[add_f],set[delete_f]>
             where add_f is fluents that has an add effect and delete_f is fluents that have del effect"""
             add_unit_clauses_in_fluent_rep: set[FullyHashedLearnedLiftedFluent] = set()
             delete_unit_clauses_in_fluent_rep: set[FullyHashedLearnedLiftedFluent] = set()
-            for clause in cnf_eff.clauses:
+            for clause in formula.clauses:
                 if clause.__sizeof__ == 1:
                     if clause[0] > 0:
                         add_unit_clauses_in_fluent_rep.add(self.literals[abs(clause[0])])
@@ -158,14 +185,30 @@ class ESAMGenerator:
                         delete_unit_clauses_in_fluent_rep.add(self.literals[abs(clause[0])])
             return add_unit_clauses_in_fluent_rep, delete_unit_clauses_in_fluent_rep
 
-        def create_proxy_actions(action: str):
+        def create_proxy_actions(action: str, act_num: int):
             # TODO understand the choosing of set S powerset to construct a proxy action
-            proxy_act_ind: int = 1
-            for S in itertools.product(*conj_eff[act].clauses):  # TODO product might not be the right function!!!
-                pass
-        pass
+            proxy_index = 1
+            delete_unit_clauses(cnf_eff[action])
+            all_S_comb: list[tuple] = list()
+            all_subsets: list = list()
+            for sublist in cnf_eff[action].clauses:
+                subsets = chain.from_iterable(combinations(sublist, r) for r in range(1, len(sublist) + 1))
+                all_subsets.append(list(subsets))
+            all_S_comb = list(product(*all_subsets))
+            for S in all_S_comb:
+                prox_act_name: str = str(action+f"{action}{act_num}.{proxy_index}")
+                # eff(AS) ←SurelyEff
+                ef_delete: set[FullyHashedLearnedLiftedFluent] = surely_effA_delete[act]  # eff(AS) ←SurelyEff
+                ef_add: set[FullyHashedLearnedLiftedFluent] = surely_effA_add[act]  # eff(AS) ←SurelyEff
+                pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[act]  # pre(AS) ←SurelyPre;
+                # we need to do set difference therefore we will convert S from list of tuples to a set of lists
+                S_as_clauses: set[list[int]] = {list(map(self.literals2index.get, sublist)) for sublist in S}
+                for cl in set(cnf_eff[act].clauses).difference(S_as_clauses):
+                    # pre.add() add all l in cl to pre
+                    pass
+                proxy_index += 1  # increase proxy action index
 
-        # start the algorithm!!!
+        # main algorithm!!!
 
         for act in self.L_bLA.keys():
             for lit in self.literals2index.values():
@@ -173,11 +216,13 @@ class ESAMGenerator:
         extract_clauses()
 
         for act in self.L_bLA.keys():  # add unit clauses to add and delete effects
-            surely_effA_add[act], surely_effA_delete[act] = get_unit_clauses_eff(conj_eff[act])
-            surely_preA[act] = set([self.literals[abs(index)+1] for index in conj_pre[act].clauses[0]])
+            surely_effA_add[act], surely_effA_delete[act] = get_unit_clauses_eff(cnf_eff[act])
+            surely_preA[act] = set([self.literals[abs(index) + 1] for clause in conj_pre[act].clauses for index in
+                                    clause])
             # add preconditions!
         # TODO create proxy actions!
-            create_proxy_actions(act)
+            create_proxy_actions(act, proxy_act_ind)
+            proxy_act_ind += 1
 
 
 def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (list[list[PlanningObject]]):
@@ -200,6 +245,3 @@ def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (l
             result.append([])
 
     return result
-
-
-
