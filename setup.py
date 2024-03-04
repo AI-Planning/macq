@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.3.8"
+VERSION = "0.3.9"
 
 NAME = "macq"
 
