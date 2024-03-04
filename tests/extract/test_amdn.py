@@ -19,7 +19,7 @@ def test_tokenization_error():
         trace.tokenize(Token=NoisyPartialDisorderedParallelObservation)
 
 
-def test_tracelist():
+def gen_tracelist():
     # define objects
     red_truck = PlanningObject("", "red_truck")
     blue_truck = PlanningObject("", "blue_truck")
@@ -230,7 +230,7 @@ def test_amdn():
     ).traces
 
     # use the simple truck domain for debugging
-    # traces = test_tracelist()
+    # traces = gen_tracelist()
 
     # use the simple door domain for debugging
     # dom = str((base / "pddl_testing_files/door_dom.pddl").resolve())
