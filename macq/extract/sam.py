@@ -1,8 +1,10 @@
 import macq.observation
-from macq.trace import Action, Fluent, State, SAS
-from macq.extract import model, LearnedLiftedAction
-from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
-from macq.observation import ObservedTraceList, ActionObservation
+from ..trace import Action, Fluent, State
+from ..trace.fluent import PlanningObject
+from ..extract import model, LearnedLiftedAction
+from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
+from ..observation import ObservedTraceList
+from .infer_sort_type import type_inference
 
 
 class FluentInfo:
@@ -54,6 +56,12 @@ class SAMgenerator:
             self.obs_trace_list = obs_trace_list
             self.fluents = self.obs_trace_list.get_fluents()
             self.action_2_sort = action_2_sort
+            # obj_sort: dict[PlanningObject, str] = type_inference(obs_trace_list)
+            # action_2_sort_new: dict[str, list[str]] = dict()
+            # for act in obs_trace_list.get_actions():
+            #     if act.name not in action_2_sort_new.keys():
+            #         action_2_sort_new[act.name] = [obj_sort[obj] for obj in act.obj_params]
+            # print(action_2_sort_new)
             self.update_L_bLA()
 
     def make_act_sorts(self):
@@ -101,7 +109,8 @@ class SAMgenerator:
             for flu_inf in to_remove:
                 self.preA[act.name].remove(flu_inf)
 
-    def add_surely_effects(self, act: Action, transitions: list[list[macq.observation.Observation]]):  # based on lines 9 to 11 in paper
+    # based on lines 9 to 11 in paper
+    def add_surely_effects(self, act: Action, transitions: list[list[macq.observation.Observation]]):
         """add all parameter-bound literals that are surely an effect"""
         for trans in transitions:
             pre_state: State = trans[0].state
