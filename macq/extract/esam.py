@@ -1,12 +1,17 @@
-from pysat.formula import CNF
-import macq
+from sympy.assumptions.cnf import CNF
+
 from macq.observation import ObservedTraceList
+from macq.observation.observation import Observation
 from macq.trace import Action, Fluent, State, PlanningObject
-from macq.extract import model, LearnedLiftedAction
+from macq.extract import LearnedLiftedAction
 from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from itertools import product, chain, combinations
-from pysat.solvers import Minisat22
-solver = Minisat22()
+from sympy.logic import simplify_logic, And, Or, Not
+from sympy import false
+
+add_prefix = 'is_add'
+del_prefix = 'is_del'
+pre_prefix = 'is_pre'
 
 
 class ESAMGenerator:
@@ -26,7 +31,7 @@ class ESAMGenerator:
     Surely_pre: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
-    action_2_sort: dict[str, list[str]] = dict()  # TODO use when knowing how to sort action
+    action_2_sort: dict[str, list[str]] = dict()
 
     def __init__(self, obs_trace_list: ObservedTraceList = None, action_2_sort: dict[str, list[str]] = None):
         """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
@@ -74,8 +79,10 @@ class ESAMGenerator:
         surely_effA_delete: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
         # dict like preA that holds delete and add biding for each action name
         surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
-        conj_pre: dict[str, CNF] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
-        cnf_eff: dict[str, CNF] = dict()  # represents  parameter bound literals mapped by action, of pre-cond
+        # represents parameter bound literals mapped by action, of pre-cond
+        conj_pre: dict[str, CNF] = dict()
+        # represents parameter bound literals mapped by action, of eff
+        cnf_eff: dict[str, CNF] = dict()
         proxy_act_ind: int = 1  # counts action number, each action has different number, each proxy has additional info
         literal_2_index_in_eff: dict[int, list[list[int]]] = dict()  # lit num-> (clause index, index in clause)
         for lit in self.literals2index.values():  # to make unit propagation more efficient
@@ -97,10 +104,10 @@ class ESAMGenerator:
                 for trans in transitions:
                     add_not_iseff(trans[1].state, action)
             for act_name in cnf_eff.keys():
-                minimize(act_name)
+                minimize(cnf_eff[act_name])
             # minimize con_eff and continue
 
-        def remove_redundant_preconditions(action: Action, transitions: list[list[macq.observation.Observation]]):
+        def remove_redundant_preconditions(action: Action, transitions: list[list[Observation]]):
             """removes all parameter-bound literals that there groundings are not pre-state"""
             for trans in transitions:
                 pre_state: State = trans[0].state
@@ -108,13 +115,14 @@ class ESAMGenerator:
                 for flu_inf in self.literals:
                     fluent = Fluent(flu_inf.name,
                                     [action.obj_params.__getitem__(ob_index) for ob_index in flu_inf.param_act_inds])
-                    if (pre_state.fluents.keys().__contains__(fluent)) and not pre_state.fluents[fluent]:  # remove if
+                    if (fluent in pre_state.fluents.keys()) and not pre_state.fluents[fluent]:  # remove if
                         # unbound or if not true, means, preA contains at the end only true value fluents
                         to_remove.add(flu_inf)
                 for flu_inf in to_remove:
-                    conj_pre[action.name].clauses.remove([self.literals2index[flu_inf]])
+                    sym = (str.join(pre_prefix, str(self.literals2index[flu_inf])))
+                    conj_pre[action.name].add_clauses(And(Not(sym)))
 
-        def make_cnf_eff(action: Action, transitions: list[list[macq.observation.Observation]]):
+        def make_cnf_eff(action: Action, transitions: list[list[Observation]]):
             """add all parameter-bound literals that are surely an effect"""
             for trans in transitions:
                 pre_state: State = trans[0].state
@@ -124,52 +132,47 @@ class ESAMGenerator:
 
         def add_literal_binding_to_eff(pre_state: State, post_state: State, action: Action):
 
-            negative_global_val = self.literals.__sizeof__()+1
             for k, v in pre_state.fluents.items():
                 if not (post_state.keys().__contains__(k) and post_state.__getitem__(k) == v):
-                    c_eff: list[int] = list()  # create clause for fluent
-                    c_eff.append(-negative_global_val)
+                    c_eff: Or = Or(false)  # create clause for fluent
                     #  use the call below to get all know param act inds for fluents
                     fluents: set[FullyHashedLearnedLiftedFluent] = self.make_FullyHashedFluent_set(action, k)
                     # now we iterate over all observed bindings
                     for f in fluents:
                         if v:
-                            c_eff.append(self.literals2index.get(f))  # its true therefore positive
+                            # its true therefore positive
+                            sym = str.join(add_prefix, str(self.literals2index.get(f)))
+                            Or(c_eff, sym)
                         else:
-                            c_eff.append(-self.literals2index.get(f))  # its false therefore negative
-                    cnf_eff[action.name].append(clause=c_eff)  # add clause to actions effects
+                            # its false therefore negative
+                            sym = str.join(del_prefix, str(self.literals2index.get(f)))
+                            Or(c_eff, sym)
+
+                    if cnf_eff[action.name] is None:
+                        cnf_eff[action.name] = CNF(clauses=c_eff)
+                    else:
+                        cnf_eff[action.name].add_clauses(c_eff)
 
         def add_not_iseff(post_state: State, action: Action):
-            # TODO support to understand how add and delete effects
-            # TODO handle this situation, suppose ut was false and became true, then -l is not in post state
-            # TODO conclusion is to differ negative and positive fluents when handling this event!
             for f in self.literals:
                 fluent = Fluent(f.name, [action.obj_params[index] for index in f.param_act_inds])
-                if post_state.fluents.__contains__(fluent):
+                if fluent in post_state.fluents:
                     if not post_state.fluents[fluent]:
-                        lit_2_delete_from_clauses[action.name].add(self.literals2index[f])
+                        sym = str.join(add_prefix, str(self.literals2index.get(f)))
+                        cnf_eff[act].add_clauses(Not(sym))
                     else:
-                        lit_2_delete_from_clauses[action.name].add(-self.literals2index[f])
+                        sym = str.join(del_prefix, str(self.literals2index.get(f)))
+                        cnf_eff[act].add_clauses(Not(sym))
                 else:
-                    lit_2_delete_from_clauses[action.name].add(-self.literals2index[f])
-
-        def remove_subsumed_clauses(action_name: str):
-            pass
-
-        def minimize(action_name: str):
-            # unit propagation to minimize -iseff(l)
-            for clause in cnf_eff[action_name].clauses:
-                if isinstance(clause, list):
-                    for index, literal in list(enumerate(reversed(clause))):
-                        if lit_2_delete_from_clauses[action_name].__contains__(literal):
-                            clause.pop(index)
-            remove_subsumed_clauses(action_name)
+                    sym = str.join(del_prefix, str(self.literals2index.get(f)))
+                    cnf_eff[act].add_clauses(Not(sym))
 
         def delete_unit_clauses(cnf: CNF):
             """ removes all clauses of size 1  meant to be used after assigning surely_pre/eff all size 1 literals"""
-            for index, clause in reversed(list(enumerate(cnf.clauses))):
-                if len(clause) == 1:
-                    cnf.clauses.pop(index)
+            pass  # TODO implement
+
+        def minimize(cnf: CNF):
+            pass  # TODO implement
 
         def get_unit_clauses_eff(formula: CNF)\
                 -> (set[FullyHashedLearnedLiftedFluent], set[FullyHashedLearnedLiftedFluent]):
@@ -186,12 +189,13 @@ class ESAMGenerator:
             return add_unit_clauses_in_fluent_rep, delete_unit_clauses_in_fluent_rep
 
         def create_proxy_actions(action: str, act_num: int):
+            # TODO FIX this to fit sympy
             # TODO understand the choosing of set S powerset to construct a proxy action
             proxy_index = 1
             delete_unit_clauses(cnf_eff[action])
             all_S_comb: list[tuple] = list()
             all_subsets: list = list()
-            for sublist in cnf_eff[action].clauses:
+            for sublist in cnf_eff[action].clauses:  # TODO fix the is eff !!!
                 subsets = chain.from_iterable(combinations(sublist, r) for r in range(1, len(sublist) + 1))
                 all_subsets.append(list(subsets))
             all_S_comb = list(product(*all_subsets))
@@ -203,7 +207,7 @@ class ESAMGenerator:
                 pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[act]  # pre(AS) ←SurelyPre;
                 # we need to do set difference therefore we will convert S from list of tuples to a set of lists
                 S_as_clauses: set[list[int]] = {list(map(self.literals2index.get, sublist)) for sublist in S}
-                for cl in set(cnf_eff[act].clauses).difference(S_as_clauses):
+                for cl in cnf_eff[act].clauses.difference(S_as_clauses):
                     # pre.add() add all l in cl to pre
                     pass
                 proxy_index += 1  # increase proxy action index
@@ -212,13 +216,15 @@ class ESAMGenerator:
 
         for act in self.L_bLA.keys():
             for lit in self.literals2index.values():
-                conj_pre[act].append(lit)
+                conj_pre[act] = CNF().__iand__(
+                    Or(str.join('is_pre', str(lit)), false)
+                    if conj_pre[act] is None else (conj_pre[act].__iand__(str.join(add_prefix, str(lit))), false))
         extract_clauses()
 
         for act in self.L_bLA.keys():  # add unit clauses to add and delete effects
             surely_effA_add[act], surely_effA_delete[act] = get_unit_clauses_eff(cnf_eff[act])
-            surely_preA[act] = set([self.literals[abs(index) + 1] for clause in conj_pre[act].clauses for index in
-                                    clause])
+            surely_preA[act] = set([self.literals[abs(index) - 1] for clause in conj_pre[act].clauses for index in
+                                    clause])  # TODO FIX this to fit sympy
             # add preconditions!
         # TODO create proxy actions!
             create_proxy_actions(act, proxy_act_ind)
@@ -245,3 +251,4 @@ def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (l
             result.append([])
 
     return result
+
