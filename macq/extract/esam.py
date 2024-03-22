@@ -65,8 +65,8 @@ class ESAMGenerator:
                     for flu_inf in literals:
                         fluent = Fluent(flu_inf.name,
                                         [a.obj_params.__getitem__(ob_index) for ob_index in flu_inf.param_act_inds])
-                        if (fluent in pre_state.fluents.keys()) and not pre_state.fluents[fluent]:  # remove if
-                            # unbound or if not true, means, preA contains at the end only true value fluents
+                        if (fluent not in pre_state.fluents.keys()) or not pre_state.fluents[fluent]:  # remove if
+                            'unbound or if not true, means, preA contains at the end only true value fluents'
                             conj_pre[a.name].remove(literals2index[flu_inf])
 
             def make_cnf_eff():
@@ -74,25 +74,21 @@ class ESAMGenerator:
                 for tr in transitions:
                     pre_state: State = tr[0].state
                     post_state: State = tr[1].state
-                    # add all add_effects of parameter bound literals
                     for k, v in pre_state.fluents.items():
                         if k not in post_state.keys() or post_state[k] != v:
-                            c_eff: set[int] = set()  # create clause for fluent
-                            #  use the call below to get all know param act inds for fluents
+                            c_eff: set[int] = set()
+                            'we use the call below to get all know param act inds for fluents'
                             fluents: set[FullyHashedLearnedLiftedFluent] = make_FullyHashedFluent_set(a, k)
-                            # now we iterate over all observed bindings
                             for flu in fluents:
                                 if v:
-                                    # its true therefore positive
                                     c_eff.add(literals2index.get(flu))
                                 else:
-                                    # its false therefore negative
                                     c_eff.add(literals2index.get(flu))
                             if v and len(c_eff) > 0:
-                                # was true in pre-state and in post state is false -> remove effect
+                                'was true in pre-state and in post state is false -> remove effect'
                                 cnf_eff_del[a.name].add(c_eff)
                             elif len(c_eff) > 0:
-                                # was true in pre-state and in post state is false -> remove effect
+                                'was false in pre-state and in post state is true -> add_effect'
                                 cnf_eff_add[a.name].add(c_eff)
             for a, transitions in obs_trace_list.get_all_transitions().items():  # sas is state-action-state
                 if isinstance(a, Action):
@@ -103,12 +99,14 @@ class ESAMGenerator:
             remove_from_del_eff: dict[str, set[int]] = dict()  # delete effects that needs to be removed(not eff)
 
             def add_not_iseff(post_state: State):
+                """delete literal from cnf_eff_del\add of function if it hadn't occurred in some post state of the
+                action """
                 for flu in literals:
                     fluent = Fluent(f.name, [a.obj_params[ind] for ind in flu.param_act_inds])
                     if fluent in post_state.fluents:
-                        if not post_state.fluents[fluent]:  # flu is not in post state so flu is not an add effect
+                        if not post_state.fluents[fluent]:
                             remove_from_add_eff[a.name].add(literals2index[flu])
-                        else:  # flu is in post state so remove flu is not a del effect
+                        else:
                             remove_from_del_eff[a.name].add(literals2index[flu])
                     else:
                         remove_from_del_eff[a.name].add(literals2index[flu])
@@ -116,7 +114,7 @@ class ESAMGenerator:
                 for trans in transitions:
                     add_not_iseff(trans[1].state)  # trans[1].state is the post state
 
-            # removing all not iseff that need to be removed
+            'removing all not iseff that need to be removed'
             for act_name in [a.name for a in actions_in_traces]:
                 for lit_to_remove in remove_from_add_eff[act_name]:
                     for clause in cnf_eff_add[act_name]:
@@ -189,11 +187,8 @@ class ESAMGenerator:
 
         extract_clauses()
 
-        surely_effA_add: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
-        # dict like preA that holds delete and add biding for each action
-        # name
-        surely_effA_delete: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
-        # dict like preA that holds delete and add biding for each action name
+        surely_effA_add: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely add_eff
+        surely_effA_delete: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely del_ef
         surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
         # start collect effects and preconditions for each action
         for action_name in L_bLA.keys():  # add unit clauses to add and delete effects
