@@ -4,6 +4,7 @@ from ..extract import model, LearnedLiftedAction
 from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from ..observation import ObservedTraceList
 
+
 class FluentInfo:
     name: str
     sorts: list[str]
