@@ -87,7 +87,7 @@ class TestSAMgenerator(TestCase):
         traces = [generator.generate_trace()]
 
         # prob 2
-        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True)
+        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True, observe_static_fluents=True)
         generator.observe_static_fluents = True
         generator.change_goal({
             get_fluent(

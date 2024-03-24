@@ -43,6 +43,7 @@ class VanillaSampling(Generator):
         num_traces: int = 0,
         seed: int = None,
         max_time: float = 30,
+        observe_static_fluents = False
     ):
         """
         Initializes a vanilla state trace sampler using the plan length, number of traces,
@@ -69,6 +70,7 @@ class VanillaSampling(Generator):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            observe_static_fluents=observe_static_fluents
         )
         if max_time <= 0:
             raise InvalidTime()
