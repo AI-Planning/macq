@@ -14,27 +14,6 @@ def get_fluent(name: str, objs: list[str]):
     return Fluent(name, objects)
 
 
-# def fix_states_4TraceList(trace_list: TraceList): # TODO test this!!!!
-#     for trace in trace_list.traces:
-#         pre_cond_set: set[Fluent] = set({})
-#         action_pred_to_add: set[Fluent] = set({})
-#         for step in trace.steps:
-#             if step.action:
-#                 action_pred_to_add.update(f for f in step.action.precond)
-#                 step.state.fluents.update({p, True} for p in action_pred_to_add)
-#                 action_pred_to_add.difference({p for p in step.action.delete})
-#                 try:
-#                     if trace.steps.__getitem__(step.index + 1):
-#                         trace.steps.__getitem__(step.index+1).state.fluents.update(
-#                             {p, True} for p in action_pred_to_add)
-#                 finally:
-#                     continue
-#
-#         to_add: set[Fluent] = pre_cond_set.difference(trace.fluents)
-#         for step in trace:
-#             step.state.fluents.update({pre, True} for pre in to_add)
-
-
 class TestSAMgenerator(TestCase):
     # all logistic domain info for tests
     log_model: Model

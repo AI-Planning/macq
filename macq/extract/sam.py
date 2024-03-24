@@ -40,7 +40,7 @@ class SAMgenerator:
     # LiftedPreA, LiftedEFF both of them are stets of learned lifted fluents
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
-    action_2_sort: dict[str, list[str]] = dict()  # TODO use when knowing how to sort action
+    action_2_sort: dict[str, list[str]] = dict()
 
     # =======================================Initialization of data structures======================================
     def __init__(self, obs_trace_list: ObservedTraceList = None,
@@ -64,11 +64,6 @@ class SAMgenerator:
             # print(action_2_sort_new)
             self.update_L_bLA()
 
-    def make_act_sorts(self):
-        """sorts all actions parameter types"""
-        # TODO change method when knowing how to type inference
-        pass
-
     # =======================================UPDATE FUNCTIONS========================================================
     def update_L_bLA(self):
         """collects all parameter bound literals and maps them based on action name
@@ -85,7 +80,6 @@ class SAMgenerator:
                     # bound to action parameters
                     i: int = 0
                     for obj in act.obj_params:  # for every object in the parameters
-                        # TODO change when knowing how to sort types
                         if f.objects.__contains__(obj):  # if the object is true in fluent then
                             param_indexes_in_literal.append(i)  # append obj index to
                             sorts.append(self.action_2_sort[act.name].__getitem__(i))  # append obj sort
@@ -142,7 +136,6 @@ class SAMgenerator:
                 sorts: list[str] = list()
                 i: int = 0
                 for obj in act.obj_params:  # for every object in parameters, if object is in fluent, add its index
-                    # TODO change when knowing how to sort types
                     if k.objects.__contains__(obj):
                         param_indexes_in_literal.append(i)
                         sorts.append(self.action_2_sort.get(act.name).__getitem__(i))
