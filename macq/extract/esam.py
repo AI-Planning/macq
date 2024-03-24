@@ -1,9 +1,10 @@
-from macq.observation import ObservedTraceList
-from macq.trace import Action, Fluent, State, PlanningObject
-from macq.extract import LearnedLiftedAction, Model
-from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
+from ..observation import ObservedTraceList
+from ..trace import Action, Fluent, State, PlanningObject
+from ..extract import LearnedLiftedAction, Model
+from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from itertools import product
 from nnf import And, Or, Var, false
+from .infer_sort_type import type_inference
 
 
 class ESAM:
