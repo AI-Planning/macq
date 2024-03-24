@@ -1,14 +1,14 @@
 from macq.observation import ObservedTraceList
-from macq.observation.observation import Observation
 from macq.trace import Action, Fluent, State, PlanningObject
-from macq.extract import LearnedLiftedAction
+from macq.extract import LearnedLiftedAction, Model
 from macq.extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
-from itertools import product, chain, combinations
+from itertools import product
+from nnf import And, Or, Var, false
 
 
-class ESAMGenerator:
+class ESAM:
 
-    def __new__(cls, obs_trace_list: ObservedTraceList = None, action_2_sort: dict[str, list[str]] = None):
+    def __new__(cls, obs_trace_list: ObservedTraceList = None, action_2_sort: dict[str, list[str]] = None, debug=False):
         """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
         instead of creating a new one
             Args:
@@ -22,185 +22,163 @@ class ESAMGenerator:
                                 """
         # step 0- initiate all class data structures.
         literals2index: dict[FullyHashedLearnedLiftedFluent, int] = dict()
-        literals = list[FullyHashedLearnedLiftedFluent] = list()
+        literals: list[FullyHashedLearnedLiftedFluent] = list()
+
+        # the sets below are the arguments the model constructor requires and are the endpoint of this algorithm
+        learned_actions: set[LearnedLiftedAction] = set()
+        learned_fluents: set[LearnedLiftedFluent] = set()
 
         def make_FullyHashedFluent_set(acton: Action, flu: Fluent) -> set[FullyHashedLearnedLiftedFluent]:
             ret: set[FullyHashedLearnedLiftedFluent] = set()
-            all_act_inds: list[list] = list(product(*find_indexes_in_l2(flu.objects, acton.obj_params)))
-            sorts: list[str] = [action_2_sort[acton.name].__getitem__(i) for i in all_act_inds[0]]
-            if all(act_inds.__len__() > 0 for act_inds in all_act_inds):
+            all_act_inds: list[list[int]] = list(map(list, product(*find_indexes_in_l2(flu.objects, acton.obj_params))))
+            sorts: list[str] = [action_2_sort[acton.name][i] for i in all_act_inds[0]]
+            if all(len(act_inds) > 0 for act_inds in all_act_inds):
                 for act_inds in all_act_inds:  # for each product add the matching fluent information to the dict
-                    ret.add(FullyHashedLearnedLiftedFluent(flu.name, sorts, act_inds))
+                    ret.add(FullyHashedLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
             return ret
 
         actions_in_traces: set[Action] = obs_trace_list.get_actions()
         # step 1, collect all literals binding of each action
-        L_bLA: dict[str, set[FullyHashedLearnedLiftedFluent]] = {
-            act.name: set() for act in actions_in_traces.__getattribute__('name')}
+        L_bLA: dict[str, set[FullyHashedLearnedLiftedFluent]] = {act.name: set() for act in actions_in_traces}
+
+        if debug:
+            print("initiating process of collecting all L_bla possible for actions")
         for f in obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
-                L_bLA[act.name].update(make_FullyHashedFluent_set(act, f))
+                if all(ob in act.obj_params for ob in f.objects):
+                    L_bLA[act.name].update(make_FullyHashedFluent_set(act, f))
 
         literals: list[FullyHashedLearnedLiftedFluent] = list(set().union(*L_bLA.values()))
         for index, l in enumerate(literals):
             literals2index[l] = index+1
 
         conj_pre: dict[str, set[int]] = dict()  # represents parameter bound literals mapped by action, of pre-cond
-        cnf_eff_add: dict[str, set[set[int]]] = dict()  # represents parameter bound literals mapped by action, of eff
-        cnf_eff_del: dict[str, set[set[int]]] = dict()  # represents parameter bound literals mapped by action, of eff
+        cnf_eff: dict[str, And[Or[Var]]] = dict()  # represents parameter bound literals mapped by action, of eff
         lit_2_delete_from_clauses: dict[str, set[int]] = dict()  # will help us in the unit propagation""
 
-        for name in [a.name for a in actions_in_traces]:  # init set for each name
-            conj_pre[name] = {literals2index[literal] for literal in literals}
+        if debug:
+            print("initializing conjunction of preconditions for each action")
+        for name in {a.name for a in actions_in_traces}:  # init set for each name
+            conj_pre[name] = {literals2index[lit] for lit in L_bLA[name]}
             lit_2_delete_from_clauses[name] = set()
-            cnf_eff_add[name] = set()
-            cnf_eff_del[name] = set()
+            cnf_eff[name] = And()
+
+        var_to_forget: dict[str, set[int]] = dict()    # well use it later on to "forget" not_iseff fluents
+        for name in {a.name for a in actions_in_traces}:
+            var_to_forget[name] = set()
 
         def extract_clauses() -> (list[list[FullyHashedLearnedLiftedFluent]],
                                   list[list[FullyHashedLearnedLiftedFluent]]):
             def remove_redundant_preconditions():
                 """removes all parameter-bound literals that there groundings are not pre-state"""
                 for tr in transitions:
+                    to_remove: set[int] = set()
                     pre_state: State = tr[0].state
-                    for flu_inf in literals:
-                        fluent = Fluent(flu_inf.name,
-                                        [a.obj_params.__getitem__(ob_index) for ob_index in flu_inf.param_act_inds])
-                        if (fluent not in pre_state.fluents.keys()) or not pre_state.fluents[fluent]:  # remove if
-                            'unbound or if not true, means, preA contains at the end only true value fluents'
-                            conj_pre[a.name].remove(literals2index[flu_inf])
+                    for i in conj_pre[a.name]:
+                        lif_flu = literals[i-1]
+                        if all(ind <= len(a.obj_params) for ind in lif_flu.param_act_inds):
+                            fluent = Fluent(lif_flu.name,
+                                            [a.obj_params[ob_index] for ob_index in lif_flu.param_act_inds])
+                            if (fluent not in pre_state.fluents.keys()) or not pre_state.fluents[fluent]:
+                                'unbound or if not true, means, preA contains at the end only true value fluents'
+                                to_remove.add(literals2index[lif_flu])
+                    conj_pre[a.name].difference_update(to_remove)
 
             def make_cnf_eff():
                 """add all parameter-bound literals that are surely an effect"""
                 for tr in transitions:
                     pre_state: State = tr[0].state
                     post_state: State = tr[1].state
-                    for k, v in pre_state.fluents.items():
-                        if k not in post_state.keys() or post_state[k] != v:
-                            c_eff: set[int] = set()
-                            'we use the call below to get all know param act inds for fluents'
-                            fluents: set[FullyHashedLearnedLiftedFluent] = make_FullyHashedFluent_set(a, k)
-                            for flu in fluents:
-                                if v:
-                                    c_eff.add(literals2index.get(flu))
-                                else:
-                                    c_eff.add(literals2index.get(flu))
-                            if v and len(c_eff) > 0:
-                                'was true in pre-state and in post state is false -> remove effect'
-                                cnf_eff_del[a.name].add(c_eff)
-                            elif len(c_eff) > 0:
-                                'was false in pre-state and in post state is true -> add_effect'
-                                cnf_eff_add[a.name].add(c_eff)
+                    for grounded_flu, v in pre_state.fluents.items():
+                        if all(ob in a.obj_params for ob in grounded_flu.objects):
+                            if grounded_flu not in post_state.keys() or post_state[grounded_flu] != v:
+                                c_eff: Or[Var] = Or(false)
+                                'we use the call below to get all know param act inds for fluents'
+                                fluents: set[FullyHashedLearnedLiftedFluent] = make_FullyHashedFluent_set(a,
+                                                                                                          grounded_flu)
+                                for flu in fluents:
+                                    if v:
+                                        c_eff = c_eff.__or__(Var(-literals2index[flu]))
+                                    else:
+                                        c_eff = c_eff.__or__(Var(literals2index[flu]))
+                                cnf_eff[a.name] = cnf_eff[a.name].__and__(c_eff)
+            if debug:
+                print("removing redundant preconditions based on transitions")
+                print(" adding effects based on transitions")
             for a, transitions in obs_trace_list.get_all_transitions().items():  # sas is state-action-state
                 if isinstance(a, Action):
                     remove_redundant_preconditions()
                     make_cnf_eff()
 
-            remove_from_add_eff: dict[str, set[int]] = dict()  # add effects that needs to be removed(not eff)
-            remove_from_del_eff: dict[str, set[int]] = dict()  # delete effects that needs to be removed(not eff)
-
             def add_not_iseff(post_state: State):
                 """delete literal from cnf_eff_del\add of function if it hadn't occurred in some post state of the
                 action """
                 for flu in literals:
-                    fluent = Fluent(f.name, [a.obj_params[ind] for ind in flu.param_act_inds])
-                    if fluent in post_state.fluents:
-                        if not post_state.fluents[fluent]:
-                            remove_from_add_eff[a.name].add(literals2index[flu])
-                        else:
-                            remove_from_del_eff[a.name].add(literals2index[flu])
-                    else:
-                        remove_from_del_eff[a.name].add(literals2index[flu])
+                    if max(flu.param_act_inds)+1 <= len(a.obj_params):
+                        """print(f"act ind for flu:{flu.name} {flu.param_act_inds}")
+                        print(f"length of action params is: {len(a.obj_params)}")"""
+                        fluent = Fluent(f.name, [a.obj_params[ind] for ind in sorted(flu.param_act_inds)])
+                        if fluent in post_state.fluents.keys():
+                            if not post_state.fluents[fluent]:
+                                cnf_eff[a.name] = cnf_eff[a.name].__and__(Var(literals2index[flu], False))
+                                var_to_forget[a.name].add(literals2index[flu])
+                            else:
+                                cnf_eff[a.name] = cnf_eff[a.name].__and__(Var(-literals2index[flu], False))
+                                var_to_forget[a.name].add(-literals2index[flu])
+
+            if debug:
+                print("adding not(is_eff(l)) clauses to cnf of is_eff")
             for a, transitions in obs_trace_list.get_all_transitions().items():
                 for trans in transitions:
                     add_not_iseff(trans[1].state)  # trans[1].state is the post state
 
-            'removing all not iseff that need to be removed'
-            for act_name in [a.name for a in actions_in_traces]:
-                for lit_to_remove in remove_from_add_eff[act_name]:
-                    for clause in cnf_eff_add[act_name]:
-                        clause.remove(lit_to_remove)
-                for lit_to_remove in remove_from_del_eff[act_name]:
-                    for clause in cnf_eff_del[act_name]:
-                        clause.remove(lit_to_remove)
+            if debug:
+                print("minimizing effects cnf of each action")
+            for a_name in L_bLA.keys():
+                cnf_eff[a_name] = cnf_eff[a_name].to_CNF()
+                cnf_eff[a_name] = cnf_eff[a_name].implicates()
+                cnf_eff[a_name] = cnf_eff[a_name].forget(var_to_forget[a_name])
 
-            def minimize(cnf: set[set[int]]):
-                pass  # TODO implement
-            for act_name in [a.name for a in actions_in_traces]:
-                minimize(cnf_eff_add[act_name])
-                minimize(cnf_eff_del[act_name])
-            # minimize con_eff and continue
-
-        def get_and_delete_unit_clauses_eff(act_name)\
-                -> (set[FullyHashedLearnedLiftedFluent], set[FullyHashedLearnedLiftedFluent]):
-            """process all actions cnf effects, and returns tuple of unit clauses s.t <set[add_f],set[delete_f]>
-            where add_f is fluents that has an add effect and delete_f is fluents that have del effect"""
-            add_unit_clauses_in_fluent_rep: set[FullyHashedLearnedLiftedFluent] = set()
-            delete_unit_clauses_in_fluent_rep: set[FullyHashedLearnedLiftedFluent] = set()
-            to_remove_del: set[set[int]] = set()
-            to_remove_add: set[set[int]] = set()
-            for clause in cnf_eff_add[act_name]:
-                if len(clause) == 1:
-                    add_unit_clauses_in_fluent_rep.add(literals[abs(clause.copy().pop())])
-                    to_remove_add.add(clause)
-            for clause in cnf_eff_del[act_name]:
-                if len(clause) == 1:
-                    add_unit_clauses_in_fluent_rep.add(literals[abs(clause.copy().pop())])
-                    to_remove_del.add(clause)
-            cnf_eff_add[act_name].difference_update(to_remove_add)
-            cnf_eff_del[act_name].difference_update(to_remove_del)
-
-            return add_unit_clauses_in_fluent_rep, delete_unit_clauses_in_fluent_rep
-
-        proxy_act_ind: int = 1  # counts action number, each action has different number, each proxy has extra info
-
-        def create_proxy_actions(act_name: str, act_num: int):
-            # TODO FIX this to fit sympy
-            # TODO understand the choosing of set S powerset to construct a proxy action
-            pass
-            '''
-            proxy_index = 1
-            delete_unit_clauses(act_name)
-            all_S_comb: list[tuple] = list()
-            all_subsets: list = list()
-            for sublist in cnf_eff[act_name].clauses:  # TODO fix the is eff !!!
-                subsets = chain.from_iterable(combinations(sublist, r) for r in range(1, len(sublist) + 1))
-                all_subsets.append(list(subsets))
-            all_S_comb = list(product(*all_subsets))
-            for S in all_S_comb:
-                prox_act_name: str = str(f"{act_name}{act_num}.{proxy_index}")
-                # eff(AS) ←SurelyEff
-                ef_delete: set[FullyHashedLearnedLiftedFluent] = surely_effA_delete[act.name]  # eff(AS) ←SurelyEff
-                ef_add: set[FullyHashedLearnedLiftedFluent] = surely_effA_add[act.name]  # eff(AS) ←SurelyEff
-                pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[act.name]  # pre(AS) ←SurelyPre;
-                # we need to do set difference therefore we will convert S from list of tuples to a set of lists
-                S_as_clauses: set[list[int]] = {list(map(literals2index.get, sublist)) for sublist in S}
-                for cl in cnf_eff[act.name].clauses.difference(S_as_clauses):
-                    # pre.add() add all l in cl to pre
-                    pass
-                proxy_index += 1  # increase proxy action index
-                '''
-
-        # main algorithm!!!
-
-        for action_name in L_bLA.keys():
-            conj_pre[action_name] = set(literals2index.values())
-
+        if debug:
+            print("starting 'extract clauses algorithm'")
         extract_clauses()
 
-        surely_effA_add: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely add_eff
-        surely_effA_delete: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely del_ef
         surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
-        # start collect effects and preconditions for each action
-        for action_name in L_bLA.keys():  # add unit clauses to add and delete effects
-            surely_effA_add[action_name], surely_effA_delete[action_name] = get_and_delete_unit_clauses_eff(action_name)
+        # start collect effects and preconditions for each action\
+        proxy_act_ind: int = 1  # counts action number, each action has different number, each proxy has extra info
+
+        if debug:
+            print("starting creation of proxy actions")
+        for action_name in L_bLA.keys():
+            if debug:
+                print(f"creating proxy actions for action: {action_name}")
             surely_preA[action_name] = {literals[abs(ind) - 1] for ind in conj_pre[action_name]}
-            # add preconditions!
-        # TODO create proxy actions!
-            create_proxy_actions(action_name, proxy_act_ind)
-            proxy_act_ind += 1
+            'create proxy actions!'
+            proxy_index = 0
+            mod = list(cnf_eff[action_name].models())
+            for model in cnf_eff[action_name].models():
+                proxy_index += 1  # increase counter of proxy action
+                proxy_act_name = str(f"{action_name}_{proxy_act_ind}_{proxy_index}")
+                add_eff: set[FullyHashedLearnedLiftedFluent] = {literals[ind - 1] for ind in model.keys() if
+                                                                isinstance(ind, int) and model[ind] and ind > 0}
+                del_eff: set[FullyHashedLearnedLiftedFluent] = {literals[abs(ind) - 1] for ind in model.keys() if
+                                                                isinstance(ind, int) and model[ind] and ind < 0}
+                pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[action_name].union(
+                    {literals[abs(ind) - 1] for ind in model.keys() if
+                     isinstance(ind, int) and not model[ind] and ind > 0})
+                learned_actions.add(LearnedLiftedAction(proxy_act_name, param_sorts=action_2_sort[action_name],
+                                                        precond=pre, add=add_eff, delete=del_eff))
+
+            if debug:
+                print(f"created {proxy_index} proxy actions for action: {action_name}")
+            proxy_act_ind += 1  # increase counter of base action by 1
+
+        # create model!
+        learned_fluents.update(set(map(FullyHashedLearnedLiftedFluent.to_LearnedLiftedFluent, literals)))
+        return Model(learned_fluents, learned_actions)
 
 
-def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (list[list[PlanningObject]]):
+def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (list[list[int]]):
     index_dict = {}
 
     # Build a dictionary with elements of l2 and their indexes
@@ -220,4 +198,3 @@ def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (l
             result.append([])
 
     return result
-

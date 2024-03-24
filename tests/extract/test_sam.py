@@ -49,7 +49,7 @@ class TestSAMgenerator(TestCase):
     # setting up the logistic hand made action model
 
     def test_model_extraction_1_logistics(self):
-        generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True)
+        generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True, observe_static_fluents=True)
         generator.observe_static_fluents = True
         base = Path(__file__).parent.parent
         model_dom = str(
@@ -87,7 +87,7 @@ class TestSAMgenerator(TestCase):
         traces = [generator.generate_trace()]
 
         # prob 2
-        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True)
+        generator = TraceFromGoal(problem_id=1496, observe_pres_effs=True, observe_static_fluents=True)
         generator.observe_static_fluents = True
         generator.change_goal({
             get_fluent(
