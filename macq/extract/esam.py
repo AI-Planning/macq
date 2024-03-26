@@ -8,19 +8,35 @@ from nnf import And, Or, Var, false
 
 class ESAM:
 
-    def __new__(cls, obs_trace_list: ObservedTraceList = None, action_2_sort: dict[str, list[str]] = None, debug=False):
-        """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
-        instead of creating a new one
+    def __new__(cls,
+                obs_trace_list: ObservedTraceList = None,
+                action_2_sort: dict[str, list[str]] = None,
+                debug=False
+                ) -> Model:
+        """ learns from fully observable observations under no further assumptions to extract a safe lifted action model
+        of the problem's domain.
             Args:
-                types set(str): a set of all types in the traces provided
-                trace_list(TraceList): an object holding a
-                    list of traces from the same domain. (macq.trace.trace_list.TraceList)
-                action_2_sort(dict str -> list[str])
-
+                obs_trace_list(ObservedTraceList): tokenized TraceList.
+                action_2_sort(dict str -> list[str]): optional, a map that maps the sorts of each action parameters
+                for example- {"load-truck": ["obj", "obj", "loc"], "unload-truck": ["obj", "obj", "loc"],....}
+                debug(bool): defaults to False. if True, prints debug.
                                 :return:
-                                   a model based on SAM learning
+                                   a model based on ESAM learning
                                 """
         def make_FullyHashedFluent_set(action: Action, flu: Fluent) -> set[FullyHashedLearnedLiftedFluent]:
+            """
+            Args:
+                action:
+                flu:
+
+            Returns: all FullyHashedLiftedFluent instances of 'flu' in action. FullyHashedLiftedFluent may have same
+            name and sorts but differ in param_act_inds.
+            for example:
+            assume o1 is of type object.
+            action = act(o1,o1)
+            flu= lit(O1)
+            output = {('lit', [object], [1]), ('lit', [object], [2])}
+            """
             ret: set[FullyHashedLearnedLiftedFluent] = set()
             all_act_inds: list[list[int]] = list(map(list,
                                                      product(*find_indexes_in_l2(flu.objects, action.obj_params))))
@@ -31,6 +47,12 @@ class ESAM:
             return ret
 
         def extract_clauses() -> (tuple[dict[str, set[int]], dict[str, And[Or[Var]]]]):
+            """
+            Returns: conjunction of the number that represents fluents that must appear as preconditions (con_pre).
+            conjunction of number(positive for add effect, negative for delete effect) that represents fluents that
+            may appear as an effect.
+            """
+
             if debug:
                 print("initializing conjunction of preconditions for each action")
             con_pre: dict[str, set[int]] = dict()  # represents parameter bound literals mapped by action, of pre-cond
@@ -51,13 +73,14 @@ class ESAM:
                         if all(ind <= len(a.obj_params) for ind in lif_flu.param_act_inds):
                             fluent = Fluent(lif_flu.name,
                                             [a.obj_params[ob_index] for ob_index in lif_flu.param_act_inds])
-                            if (fluent not in pre_state.fluents.keys()) or not pre_state.fluents[fluent]:
-                                'unbound or if not true, means, preA contains at the end only true value fluents'
+                            if ((fluent not in pre_state.fluents.keys())
+                                    or not pre_state.fluents[fluent]):
+                                # unbound or if not true, means, preA contains at the end only true value fluents
                                 to_remove.add(literals2index[lif_flu])
                     con_pre[a.name].difference_update(to_remove)
 
             def make_cnf_eff():
-                """add all parameter-bound literals that are surely an effect"""
+                """add all parameter-bound literals that may be an effect to cnf formula as is_eff(lit_num)"""
                 for tr in transitions:
                     pre_state: State = tr[0].state
                     post_state: State = tr[1].state
@@ -66,8 +89,8 @@ class ESAM:
                             if grounded_flu not in post_state.keys() or post_state[grounded_flu] != v:
                                 c_eff: Or[Var] = Or(false)
                                 'we use the call below to get all know param act inds for fluents'
-                                fluents: set[FullyHashedLearnedLiftedFluent] = make_FullyHashedFluent_set(a,
-                                                                                                          grounded_flu)
+                                fluents: set[FullyHashedLearnedLiftedFluent] =\
+                                    make_FullyHashedFluent_set(a, grounded_flu)
                                 for flu in fluents:
                                     if v:
                                         c_eff = c_eff.__or__(Var(-literals2index[flu]))
@@ -102,6 +125,7 @@ class ESAM:
             for a, transitions in obs_trace_list.get_all_transitions().items():
                 for trans in transitions:
                     add_not_iseff(trans[1].state)  # trans[1].state is the post state
+            # last step of function is to minimize all cnf of effects.
             if debug:
                 print("minimizing effects cnf of each action")
             for a_name in L_bLA.keys():
@@ -160,8 +184,11 @@ class ESAM:
                 pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[action_name].union(
                     {literals[abs(ind) - 1] for ind in model.keys() if
                      isinstance(ind, int) and not model[ind] and ind > 0})
-                learned_actions.add(LearnedLiftedAction(proxy_act_name, param_sorts=action_2_sort[action_name],
-                                                        precond=pre, add=add_eff, delete=del_eff))
+                learned_actions.add(
+                    LearnedLiftedAction(proxy_act_name,
+                                        param_sorts=action_2_sort[action_name],
+                                        precond=pre, add=add_eff,
+                                        delete=del_eff))
 
             if debug:
                 print(f"created {proxy_index} proxy actions for action: {action_name}")
@@ -172,7 +199,10 @@ class ESAM:
         return Model(learned_fluents, learned_actions)
 
 
-def find_indexes_in_l2(l1: list[PlanningObject], l2: list[PlanningObject]) -> (list[list[int]]):
+def find_indexes_in_l2(
+        l1: list[PlanningObject],
+        l2: list[PlanningObject])\
+        -> (list[list[int]]):
     index_dict = {}
 
     # Build a dictionary with elements of l2 and their indexes
