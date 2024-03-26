@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
-from macq.trace import Fluent, PlanningObject, TraceList
+
+import macq.trace
+from macq.trace import Fluent, PlanningObject, TraceList, Action
 from macq.generate.pddl import TraceFromGoal, VanillaSampling
 from macq.extract import Model
 from macq.extract.esam import ESAM
@@ -146,7 +148,7 @@ class TestESAM(TestCase):
         )
         esam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
 
-    def test_extraction_under_no_assumption(self):
+    def test_extraction_random_sample(self):
         vanilla = VanillaSampling(problem_id=1481, observe_pres_effs=True, observe_static_fluents=True, plan_len=10)
         base = Path(__file__).parent.parent
         plan = vanilla.generate_plan()
@@ -170,8 +172,35 @@ class TestESAM(TestCase):
         )
         esam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
 
+    def test_with_object_multiple_bindings(self):
+        action2_sort = {"add-edge": ["obj", "obj"],
+                        "remove-edge": ["obj", "obj"]}
+        base = Path(__file__).parent.parent
+        model_dom = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_domain.pddl").resolve()
+        )
+        model_prob = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_prob.pddl").resolve()
+        )
+        vanilla = VanillaSampling(dom=model_dom,
+                                  prob=model_prob,
+                                  observe_pres_effs=True,
+                                  observe_static_fluents=True)
 
+        plan = vanilla.generate_plan()
+        print(plan)
+        trace_list: TraceList = TraceList()
+        trace_list.append(vanilla.generate_single_trace_from_plan(plan=plan))
+        esam_model: Model = ESAM(obs_trace_list=trace_list.tokenize(
+            Token=IdentityObservation), action_2_sort=action2_sort, debug=True)
 
-
-
+        print(esam_model.details())
+        print("\n\n\n\n===================================")
+        model_dom = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_domain_output.pddl").resolve()
+        )
+        model_prob = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_prob_output.pddl").resolve()
+        )
+        esam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
 
