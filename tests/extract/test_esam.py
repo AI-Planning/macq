@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
-from macq.trace import Fluent, PlanningObject, TraceList, Trace
+from macq.trace import Fluent, PlanningObject, TraceList
 from macq.generate.pddl import TraceFromGoal, VanillaSampling
 from macq.extract import Model
 from macq.extract.esam import ESAM

@@ -1,5 +1,6 @@
 from ..trace import Action, Fluent, State
-from ..extract import model, LearnedLiftedAction
+from ..extract import LearnedLiftedAction
+from ..extract.model import Model
 from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from ..observation import Observation, ObservedTraceList
 
@@ -37,6 +38,7 @@ class SAMgenerator:
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
     action_2_sort: dict[str, list[str]] = dict()
+    debug = False
 
     # =======================================Initialization of data structures======================================
     def __init__(self, obs_trace_list: ObservedTraceList = None,
@@ -47,6 +49,7 @@ class SAMgenerator:
                         observed traces from the same domain.
                     action_2_sort(dict str -> list[str])
                 """
+        self.debug = debug
         if obs_trace_list is not None:
             self.obs_trace_list = obs_trace_list
             self.action_2_sort = action_2_sort
@@ -56,6 +59,8 @@ class SAMgenerator:
     def update_L_bLA(self):
         """collects all parameter bound literals and maps them based on action name
                 values of dict is a set[(fluent.name: str, sorts:list[str], param_inds:set[int])]"""
+        if self.debug:
+            print("collecting actions parameter bound literals")
         actions_in_traces: set[Action] = self.obs_trace_list.get_actions()
         for f in self.obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
@@ -223,10 +228,16 @@ class SAMgenerator:
         # initiate a learned fluent set
         self.make_learned_fluent_set()
 
-    def generate_model(self) -> model.Model:
+    def generate_model(self) -> Model:
+        if self.debug:
+            print("initiating iteration over transition")
         self.loop_over_action_triplets()
+        if self.debug:
+            print("making all lifted instances")
         self.make_lifted_instances()
-        return model.Model(self.learned_lifted_fluents, self.learned_lifted_action)
+        if self.debug:
+            print("generating learned model")
+        return Model(self.learned_lifted_fluents, self.learned_lifted_action)
 
     # =======================================THE CLASS ============================================
 
@@ -234,8 +245,10 @@ class SAMgenerator:
 class SAM:
     __sam_generator = None
 
-    def __new__(cls, obs_trace_list: ObservedTraceList = None,
-                action_2_sort: dict[str, list[str]] = None, sam_generator: SAMgenerator = None):
+    def __new__(cls,
+                obs_trace_list: ObservedTraceList = None,
+                action_2_sort: dict[str, list[str]] = None,
+                debug=False, sam_generator: SAMgenerator = None) -> Model:
         """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
         instead of creating a new one
             Args:
@@ -247,9 +260,9 @@ class SAM:
                                 :return:
                                    a model based on SAM learning
                                 """
-        if sam_generator is not None:
-            cls.__sam_generator = sam_generator
-        else:
-            cls.__sam_generator: SAMgenerator = SAMgenerator(obs_trace_list=obs_trace_list, action_2_sort=action_2_sort)
+        cls.__sam_generator = sam_generator if sam_generator is not None else (
+            SAMgenerator(obs_trace_list=obs_trace_list,
+                         action_2_sort=action_2_sort,
+                         debug=debug))
 
         return cls.__sam_generator.generate_model()
