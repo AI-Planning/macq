@@ -3,6 +3,7 @@ from unittest import TestCase
 from macq.trace import Fluent, PlanningObject, TraceList, Trace
 from macq.generate.pddl import TraceFromGoal
 from macq.extract import Model, sam
+from macq.observation.identity_observation import IdentityObservation
 
 
 # !!!note to self: need to change goal fluents to the original goal(even if it set automatically)
@@ -132,9 +133,8 @@ class TestSAMgenerator(TestCase):
         }, model_dom, model_prob)
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
-        from macq.observation import IdentityObservation
         sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
-            Token=IdentityObservation), action_2_sort=self.action_2_sort_log)
+            Token=IdentityObservation), action_2_sort=self.action_2_sort_log, debug=True)
         sam_model: Model = sam_generator.generate_model()
 
         print(sam_model.details())
@@ -203,9 +203,8 @@ class TestSAMgenerator(TestCase):
         }, model_dom, model_prob)
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
-        import macq
         sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
-            Token=macq.observation.identity_observation.IdentityObservation), action_2_sort=self.action_2_sort_log)
+            Token=IdentityObservation), action_2_sort=self.action_2_sort_log)
         sam_model: Model = sam_generator.generate_model()
         print(f"MODEL 2 \n{sam_model.details()}")
         print("\n\n\n\n===================================")

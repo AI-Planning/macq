@@ -1,8 +1,8 @@
-import macq.observation
 from ..trace import Action, Fluent, State
-from ..extract import model, LearnedLiftedAction
+from ..extract import LearnedLiftedAction
+from ..extract.model import Model
 from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
-from ..observation import ObservedTraceList
+from ..observation import Observation, ObservedTraceList
 
 
 class FluentInfo:
@@ -26,7 +26,6 @@ class SAMgenerator:
     """DESCRIPTION
     an object that handles all traces data and manipulates it in order to generate a model based on SAM algorithm
     """
-    fluents: set[Fluent] = set()  # list of all fluents collected from all traces
     obs_trace_list: ObservedTraceList
     L_bLA: dict[str, set[FluentInfo]] = dict()  # represents all parameter bound literals mapped by action
     effA_add: dict[str, set[FluentInfo]] = dict()  # dict like preA that holds delete and add biding for each action
@@ -39,20 +38,20 @@ class SAMgenerator:
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
     action_2_sort: dict[str, list[str]] = dict()
+    debug = False
 
     # =======================================Initialization of data structures======================================
     def __init__(self, obs_trace_list: ObservedTraceList = None,
-                 action_2_sort: dict[str, list[str]] = None):
+                 action_2_sort: dict[str, list[str]] = None, debug=False):
         """Creates a new SAMgenerator instance.
                Args:
                     obs_trace_list(ObservedTraceList):
                         observed traces from the same domain.
                     action_2_sort(dict str -> list[str])
                 """
-        self.obs_trace_list = obs_trace_list
+        self.debug = debug
         if obs_trace_list is not None:
             self.obs_trace_list = obs_trace_list
-            self.fluents = self.obs_trace_list.get_fluents()
             self.action_2_sort = action_2_sort
             self.update_L_bLA()
 
@@ -60,19 +59,21 @@ class SAMgenerator:
     def update_L_bLA(self):
         """collects all parameter bound literals and maps them based on action name
                 values of dict is a set[(fluent.name: str, sorts:list[str], param_inds:set[int])]"""
+        if self.debug:
+            print("collecting actions parameter bound literals")
         actions_in_traces: set[Action] = self.obs_trace_list.get_actions()
         for f in self.obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
-                if not self.L_bLA.keys().__contains__(act.name):
+                if act.name not in self.L_bLA.keys():
                     self.L_bLA[act.name] = set()
                 param_indexes_in_literal: list[int] = list()  # initiate a set of ints
                 sorts: list[str] = list()
 
-                if all(act.obj_params.__contains__(ob) for ob in f.objects):  # check to see if all fluent objects are
+                if all(ob in act.obj_params for ob in f.objects):  # check to see if all fluent objects are
                     # bound to action parameters
                     i: int = 0
                     for obj in act.obj_params:  # for every object in the parameters
-                        if f.objects.__contains__(obj):  # if the object is true in fluent then
+                        if obj in f.objects:  # if the object is true in fluent then
                             param_indexes_in_literal.append(i)  # append obj index to
                             sorts.append(self.action_2_sort[act.name].__getitem__(i))  # append obj sort
                         i += 1
@@ -80,23 +81,23 @@ class SAMgenerator:
         self.preA = self.L_bLA.copy()
 
     # =======================================ALGORITHM LOGIC========================================================
-    def remove_redundant_preconditions(self, act: Action, transitions: list[list[macq.observation.Observation]]):
+    def remove_redundant_preconditions(self, act: Action, transitions: list[list[Observation]]):
         # based on lines 6 to 8 in paper
         """removes all parameter-bound literals that there groundings are not pre-state"""
         for trans in transitions:
             pre_state: State = trans[0].state
             to_remove: set[FluentInfo] = set()
             for flu_inf in self.preA[act.name]:
-                fluent = Fluent(flu_inf.name, [obj for obj in act.obj_params if flu_inf.param_act_inds.__contains__(
-                    act.obj_params.index(obj))])  # make a fluent instance so we can use eq function
-                if (pre_state.fluents.keys().__contains__(fluent)) and not pre_state.fluents[fluent]:  # remove if
+                fluent = Fluent(flu_inf.name, [obj for obj in act.obj_params if
+                                               act.obj_params.index(obj) in flu_inf.param_act_inds])
+                if (fluent in pre_state.fluents.keys()) and not pre_state.fluents[fluent]:  # remove if
                     # unbound or if not true, means, preA contains at the end only true value fluents
                     to_remove.add(flu_inf)
             for flu_inf in to_remove:
                 self.preA[act.name].remove(flu_inf)
 
     # based on lines 9 to 11 in paper
-    def add_surely_effects(self, act: Action, transitions: list[list[macq.observation.Observation]]):
+    def add_surely_effects(self, act: Action, transitions: list[list[Observation]]):
         """add all parameter-bound literals that are surely an effect"""
         for trans in transitions:
             pre_state: State = trans[0].state
@@ -122,13 +123,13 @@ class SAMgenerator:
                         if ="delete" it adds literal binding to the delete_effect
            """
         for k, v in s1.fluents.items():
-            if (not (s2.keys().__contains__(k) and s2.__getitem__(k) == v)) and v:
+            if (not (k in s2.keys() and s2.fluents[k] == v)) and v:
                 param_indexes_in_literal: list[int] = list()
                 fluent_name = k.name
                 sorts: list[str] = list()
                 i: int = 0
                 for obj in act.obj_params:  # for every object in parameters, if object is in fluent, add its index
-                    if k.objects.__contains__(obj):
+                    if obj in k.objects:
                         param_indexes_in_literal.append(i)
                         sorts.append(self.action_2_sort.get(act.name).__getitem__(i))
                     i += 1
@@ -137,15 +138,14 @@ class SAMgenerator:
                     #         sorts.pop(i-1)
                 bla: FluentInfo = FluentInfo(fluent_name, sorts, param_indexes_in_literal)
                 if add_delete == "delete":
-                    if self.effA_delete.keys().__contains__(act.name):  # if action name exists in dictionary
+                    if act.name in self.effA_delete.keys():  # if action name exists in dictionary
                         # then add
                         self.effA_delete[act.name].add(bla)  # add it to add effect
                     else:
                         self.effA_delete[act.name] = {bla}
 
                 if add_delete == "add":
-                    if self.effA_add.keys().__contains__(
-                            act.name):  # if action name exists in dictionary then add
+                    if act.name in self.effA_add.keys():  # if action name exists in dictionary then add
                         self.effA_add[act.name].add(bla)  # add it to add effect
                     else:
                         self.effA_add[act.name] = {bla}
@@ -228,10 +228,16 @@ class SAMgenerator:
         # initiate a learned fluent set
         self.make_learned_fluent_set()
 
-    def generate_model(self) -> model.Model:
+    def generate_model(self) -> Model:
+        if self.debug:
+            print("initiating iteration over transition")
         self.loop_over_action_triplets()
+        if self.debug:
+            print("making all lifted instances")
         self.make_lifted_instances()
-        return model.Model(self.learned_lifted_fluents, self.learned_lifted_action)
+        if self.debug:
+            print("generating learned model")
+        return Model(self.learned_lifted_fluents, self.learned_lifted_action)
 
     # =======================================THE CLASS ============================================
 
@@ -239,8 +245,10 @@ class SAMgenerator:
 class SAM:
     __sam_generator = None
 
-    def __new__(cls, obs_trace_list: ObservedTraceList = None,
-                action_2_sort: dict[str, list[str]] = None, sam_generator: SAMgenerator = None):
+    def __new__(cls,
+                obs_trace_list: ObservedTraceList = None,
+                action_2_sort: dict[str, list[str]] = None,
+                debug=False, sam_generator: SAMgenerator = None) -> Model:
         """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
         instead of creating a new one
             Args:
@@ -252,9 +260,9 @@ class SAM:
                                 :return:
                                    a model based on SAM learning
                                 """
-        if sam_generator is not None:
-            cls.__sam_generator = sam_generator
-        else:
-            cls.__sam_generator: SAMgenerator = SAMgenerator(obs_trace_list=obs_trace_list, action_2_sort=action_2_sort)
+        cls.__sam_generator = sam_generator if sam_generator is not None else (
+            SAMgenerator(obs_trace_list=obs_trace_list,
+                         action_2_sort=action_2_sort,
+                         debug=debug))
 
         return cls.__sam_generator.generate_model()
