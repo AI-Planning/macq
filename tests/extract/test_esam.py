@@ -1,7 +1,5 @@
 from pathlib import Path
 from unittest import TestCase
-
-import macq.trace
 from macq.trace import Fluent, PlanningObject, TraceList, Action
 from macq.generate.pddl import TraceFromGoal, VanillaSampling
 from macq.extract import Model
@@ -194,6 +192,7 @@ class TestESAM(TestCase):
         esam_model: Model = ESAM(obs_trace_list=trace_list.tokenize(
             Token=IdentityObservation), action_2_sort=action2_sort, debug=True)
 
+
         print(esam_model.details())
         print("\n\n\n\n===================================")
         model_dom = str(
@@ -202,5 +201,5 @@ class TestESAM(TestCase):
         model_prob = str(
             (base / "pddl_testing_files/esam_pddl_files/graph_prob_output.pddl").resolve()
         )
-        esam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
+        esam_model.to_pddl_lifted('logistics', 'log00_x', model_dom, model_prob)
 
