@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 from macq.trace import Fluent, PlanningObject, TraceList, Trace
-from macq.generate.pddl import TraceFromGoal
+from macq.generate.pddl import TraceFromGoal, VanillaSampling
 from macq.extract import Model, sam
 from macq.observation.identity_observation import IdentityObservation
 
@@ -134,7 +134,7 @@ class TestSAMgenerator(TestCase):
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
         sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
-            Token=IdentityObservation), action_2_sort=self.action_2_sort_log, debug=True)
+            Token=IdentityObservation), debug=True)
         sam_model: Model = sam_generator.generate_model()
 
         print(sam_model.details())
@@ -204,7 +204,7 @@ class TestSAMgenerator(TestCase):
         traces.append(generator.generate_trace())
         trace_list: TraceList = TraceList(traces=traces)
         sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
-            Token=IdentityObservation), action_2_sort=self.action_2_sort_log)
+            Token=IdentityObservation))
         sam_model: Model = sam_generator.generate_model()
         print(f"MODEL 2 \n{sam_model.details()}")
         print("\n\n\n\n===================================")
@@ -213,5 +213,30 @@ class TestSAMgenerator(TestCase):
         )
         model_prob = str(
             (base / "pddl_testing_files/sam_pddl_runtime_generated_pddls/new_prob_copy_2.pddl").resolve()
+        )
+        sam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
+
+    def test_extraction_random_sample(self):
+        vanilla = VanillaSampling(problem_id=1481, observe_pres_effs=True, observe_static_fluents=True, plan_len=20)
+        base = Path(__file__).parent.parent
+        plan = vanilla.generate_plan()
+        print(plan)
+        print()
+        vanilla.num_traces = 4
+        vanilla.generate_traces()
+        trace_list = vanilla.traces
+        trace_list.generate_more(3)
+
+        sam_generator: sam.SAMgenerator = sam.SAMgenerator(obs_trace_list=trace_list.tokenize(
+            Token=IdentityObservation))
+        sam_model: Model = sam_generator.generate_model()
+
+        print(sam_model.details())
+        print("\n\n\n\n===================================")
+        model_dom = str(
+            (base / "pddl_testing_files/esam_pddl_files/new_domain_copy.pddl").resolve()
+        )
+        model_prob = str(
+            (base / "pddl_testing_files/esam_pddl_files/new_prob_copy.pddl").resolve()
         )
         sam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)

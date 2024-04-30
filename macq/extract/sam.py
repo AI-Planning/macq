@@ -1,9 +1,10 @@
+from collections import defaultdict
+
 from ..trace import Action, Fluent, State
 from ..extract import LearnedLiftedAction
 from ..extract.model import Model
 from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from ..observation import Observation, ObservedTraceList
-
 
 class FluentInfo:
     name: str
@@ -38,21 +39,25 @@ class SAMgenerator:
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
     action_2_sort: dict[str, list[str]] = dict()
+    sort_dict: dict[str, str]
     debug = False
 
     # =======================================Initialization of data structures======================================
     def __init__(self, obs_trace_list: ObservedTraceList = None,
-                 action_2_sort: dict[str, list[str]] = None, debug=False):
+                 debug=False):
         """Creates a new SAMgenerator instance.
                Args:
                     obs_trace_list(ObservedTraceList):
                         observed traces from the same domain.
-                    action_2_sort(dict str -> list[str])
                 """
+
         self.debug = debug
         if obs_trace_list is not None:
             self.obs_trace_list = obs_trace_list
-            self.action_2_sort = action_2_sort
+            self.sort_dict = sort_inference(obs_trace_list)
+            for act in obs_trace_list.get_actions():
+                if act.name not in self.action_2_sort.keys():
+                    self.action_2_sort[act.name] = [self.sort_dict[ob.name] for ob in act.obj_params]
             self.update_L_bLA()
 
     # =======================================UPDATE FUNCTIONS========================================================
@@ -69,13 +74,14 @@ class SAMgenerator:
                 param_indexes_in_literal: list[int] = list()  # initiate a set of ints
                 sorts: list[str] = list()
 
-                if all(ob in act.obj_params for ob in f.objects):  # check to see if all fluent objects are
+                if set(f.objects).issubset(act.obj_params):
+                # if all(ob in act.obj_params for ob in f.objects):  # check to see if all fluent objects are
                     # bound to action parameters
                     i: int = 0
-                    for obj in act.obj_params:  # for every object in the parameters
-                        if obj in f.objects:  # if the object is true in fluent then
-                            param_indexes_in_literal.append(i)  # append obj index to
-                            sorts.append(self.action_2_sort[act.name].__getitem__(i))  # append obj sort
+                    for obj in f.objects:  # for every object in the parameters
+                        if obj in act.obj_params:  # if the object is true in fluent then
+                            param_indexes_in_literal.append(act.obj_params.index(obj))  # append obj index to
+                            sorts.append(self.sort_dict[obj.name])  # append obj sort
                         i += 1
                     self.L_bLA[act.name].add(FluentInfo(f.name, sorts, param_indexes_in_literal))
         self.preA = self.L_bLA.copy()
@@ -131,11 +137,8 @@ class SAMgenerator:
                 for obj in act.obj_params:  # for every object in parameters, if object is in fluent, add its index
                     if obj in k.objects:
                         param_indexes_in_literal.append(i)
-                        sorts.append(self.action_2_sort.get(act.name).__getitem__(i))
+                        sorts.append(self.sort_dict[obj.name])
                     i += 1
-                    # for j in range(sorts.__len__()):
-                    #     if not param_indexes_in_literal.__contains__(j):
-                    #         sorts.pop(i-1)
                 bla: FluentInfo = FluentInfo(fluent_name, sorts, param_indexes_in_literal)
                 if add_delete == "delete":
                     if act.name in self.effA_delete.keys():  # if action name exists in dictionary
@@ -247,22 +250,112 @@ class SAM:
 
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
-                action_2_sort: dict[str, list[str]] = None,
-                debug=False, sam_generator: SAMgenerator = None) -> Model:
+                debug=False,
+                sam_generator: SAMgenerator = None) -> Model:
         """Creates a new SAM instance. if input includes sam_generator object than it uses the object provided
         instead of creating a new one
             Args:
                 types set(str): a set of all types in the traces provided
                 trace_list(TraceList): an object holding a
                     list of traces from the same domain. (macq.trace.trace_list.TraceList)
-                action_2_sort(dict str -> list[str])
 
                                 :return:
                                    a model based on SAM learning
                                 """
         cls.__sam_generator = sam_generator if sam_generator is not None else (
-            SAMgenerator(obs_trace_list=obs_trace_list,
-                         action_2_sort=action_2_sort,
-                         debug=debug))
+            SAMgenerator(obs_trace_list=obs_trace_list, debug=debug))
 
         return cls.__sam_generator.generate_model()
+
+
+# ======================================================================================================================
+
+def sort_inference(obs_trace_list: ObservedTraceList) -> (dict[str, str]):
+    dynamic_fluents: set[Fluent] = set()
+    os: set[str] = set()  # set of object names
+    fstates = defaultdict(list)
+    for obs_trace in obs_trace_list.observations:
+        for obs in obs_trace:
+            if obs.state:
+                for f, v in obs.state.items():
+                    os.update(obj.name for obj in f.objects)
+                    fstates[f].append(v)
+
+        for f, states in fstates.items():
+            if any(states):
+                dynamic_fluents.add(f)
+
+    objects: list[str] = list(os)  # list of object names
+    f_index_type: dict[str, list[set[str]]] = dict()
+
+    for f in dynamic_fluents:
+        if f.name not in f_index_type.keys():
+            f_index_type[f.name] = list()
+            for _ in f.objects:
+                f_index_type[f.name].append(set())
+        for index, obj in enumerate(f.objects):
+            f_index_type[f.name][index].add(obj.name)
+
+    union_sorts_set: DisjointSet = DisjointSet(len(objects))
+    for param_type_listOf_set in f_index_type.values():
+        for s in param_type_listOf_set:
+            t1: str = s.pop()
+            s.add(t1)
+            for t2 in s:
+                union_sorts_set.union_by_rank(objects.index(t1), objects.index(t2))
+
+    ugly_sorts: list[int] = list({union_sorts_set.find(i) for i in range(len(objects))})
+    ugly_sorts.sort()
+    nicer_sorting: dict[int, int] = dict()
+    for i in range(len(ugly_sorts)):
+        nicer_sorting[ugly_sorts[i]] = i
+    object_2_sort: dict[str, str] = dict()
+    for obj in objects:
+        ugly_sort = union_sorts_set.find(objects.index(obj))
+        object_2_sort[obj] = f"t{nicer_sorting[ugly_sort]}"
+
+    return object_2_sort
+
+
+class DisjointSet:  # this class was taken from geeksForGeeks
+    def __init__(self, size):
+        self.parent = [i for i in range(size)]
+        self.rank = [0] * size
+
+    # Function to find the representative (or the root node) of a set
+    def find(self, i):
+        # If i is not the representative of its set, recursively find the representative
+        if self.parent[i] != i:
+            self.parent[i] = self.find(self.parent[i])  # Path compression
+        return self.parent[i]
+
+    # Unites the set that includes i and the set that includes j by rank
+    def union_by_rank(self, i, j):
+        # Find the representatives (or the root nodes) for the set that includes i and j
+        irep = self.find(i)
+        jrep = self.find(j)
+
+        # Elements are in the same set, no need to unite anything
+        if irep == jrep:
+            return
+
+        # Get the rank of i's tree
+        irank = self.rank[irep]
+
+        # Get the rank of j's tree
+        jrank = self.rank[jrep]
+
+        # If i's rank is less than j's rank
+        if irank < jrank:
+            # Move i under j
+            self.parent[irep] = jrep
+        # Else if j's rank is less than i's rank
+        elif jrank < irank:
+            # Move j under i
+            self.parent[jrep] = irep
+        # Else if their ranks are the same
+        else:
+            # Move i under j (doesn't matter which one goes where)
+            self.parent[irep] = jrep
+            # Increment the result tree's rank by 1
+            self.rank[jrep] += 1

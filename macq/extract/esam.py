@@ -4,13 +4,13 @@ from ..extract import LearnedLiftedAction, Model
 from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
 from itertools import product
 from nnf import And, Or, Var, false
+from ..extract.sam import sort_inference
 
 
 class ESAM:
 
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
-                action_2_sort: dict[str, list[str]] = None,
                 debug=False
                 ) -> Model:
         """ learns from fully observable observations under no further assumptions to extract a safe lifted action model
@@ -137,6 +137,16 @@ class ESAM:
 
         # start of algorithm
         # step 0- initiate all class data structures.
+
+        action_2_sort: dict[str, list[str]] = dict()
+        sort_dict: dict[str, str]
+        if obs_trace_list is not None:
+            obs_trace_list = obs_trace_list
+            sort_dict = sort_inference(obs_trace_list)
+            for act in obs_trace_list.get_actions():
+                if act.name not in action_2_sort.keys():
+                    action_2_sort[act.name] = [sort_dict[ob.name] for ob in act.obj_params]
+
         literals2index: dict[FullyHashedLearnedLiftedFluent, int] = dict()
         literals: list[FullyHashedLearnedLiftedFluent] = list()
         actions_in_traces: set[Action] = obs_trace_list.get_actions() if obs_trace_list is not None else None
