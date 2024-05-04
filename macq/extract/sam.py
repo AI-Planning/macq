@@ -3,7 +3,7 @@ from collections import defaultdict
 from ..trace import Action, Fluent, State
 from ..extract import LearnedLiftedAction
 from ..extract.model import Model
-from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
+from ..extract.learned_fluent import LearnedLiftedFluent, PHashLearnedLiftedFluent
 from ..observation import Observation, ObservedTraceList
 
 class FluentInfo:
@@ -165,7 +165,7 @@ class SAMgenerator:
     # =======================================finalize and return a model============================================
     def make_act_lifted_fluent_set(self, act_name: str,
                                    keyword="PRE") -> (
-            set)[FullyHashedLearnedLiftedFluent]:
+            set)[PHashLearnedLiftedFluent]:
         """ make the fluent set for an action based on the keyword provided
         Args:
                     act_name (str):
@@ -178,16 +178,16 @@ class SAMgenerator:
         learned_fluents_set = set()
         if keyword == "PRE":
             for flu_inf in self.preA[act_name]:
-                lifted_fluent = FullyHashedLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
+                lifted_fluent = PHashLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
                 learned_fluents_set.add(lifted_fluent)
 
         if keyword == "ADD":
             for flu_inf in self.effA_add.get(act_name):
-                lifted_fluent = FullyHashedLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
+                lifted_fluent = PHashLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
                 learned_fluents_set.add(lifted_fluent)
         if keyword == "DELETE":
             for flu_inf in self.effA_delete[act_name]:
-                lifted_fluent = FullyHashedLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
+                lifted_fluent = PHashLearnedLiftedFluent(flu_inf.name, flu_inf.sorts, flu_inf.param_act_inds)
                 learned_fluents_set.add(lifted_fluent)
         return learned_fluents_set
 
@@ -196,13 +196,13 @@ class SAMgenerator:
          ignores differences of param_act_inds"""
         for lift_act in self.learned_lifted_action:
             precond = set([f.to_LearnedLiftedFluent() for f in lift_act.precond if
-                           (isinstance(f, FullyHashedLearnedLiftedFluent) and
+                           (isinstance(f, PHashLearnedLiftedFluent) and
                             lift_act.precond is not None)])
             add = set([f.to_LearnedLiftedFluent() for f in lift_act.add if
-                       (isinstance(f, FullyHashedLearnedLiftedFluent) and
+                       (isinstance(f, PHashLearnedLiftedFluent) and
                         lift_act.add is not None)])
             delete = set([f.to_LearnedLiftedFluent() for f in lift_act.delete if
-                          (isinstance(f, FullyHashedLearnedLiftedFluent) and
+                          (isinstance(f, PHashLearnedLiftedFluent) and
                            lift_act.delete is not None)])
 
             self.learned_lifted_fluents.update(set() if precond is None else precond,
@@ -215,7 +215,7 @@ class SAMgenerator:
         # {act_name:{pre:set,add:set,delete:set}}
         # for each action that was observed do:
         for action_name in self.L_bLA.keys():
-            learned_act_fluents: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()
+            learned_act_fluents: dict[str, set[PHashLearnedLiftedFluent]] = dict()
             # make all action's pre-condition fluents and add to set
             learned_act_fluents["precond"] = self.make_act_lifted_fluent_set(action_name, keyword="PRE")
             # make all action's add_eff fluents and add to set

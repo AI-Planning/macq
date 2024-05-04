@@ -62,7 +62,7 @@ class LearnedLiftedFluent:
         return str(self)
 
 
-class FullyHashedLearnedLiftedFluent:
+class PHashLearnedLiftedFluent:
     """
     solves the problem for some extraction methods that requires differences between param_act_inds for sorting
     """
@@ -73,7 +73,7 @@ class FullyHashedLearnedLiftedFluent:
         self.param_act_inds = param_act_inds
 
     def __eq__(self, other):
-        return isinstance(other, FullyHashedLearnedLiftedFluent) and hash(self) == hash(other)
+        return isinstance(other, PHashLearnedLiftedFluent) and hash(self) == hash(other)
 
     def __hash__(self):
         # Order of objects is important!

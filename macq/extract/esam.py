@@ -1,10 +1,13 @@
+from .learned_fluent import PHashLearnedLiftedFluent
 from ..observation import ObservedTraceList
 from ..trace import Action, Fluent, State, PlanningObject
 from ..extract import LearnedLiftedAction, Model
-from ..extract.learned_fluent import LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
+from ..extract.learned_fluent import LearnedLiftedFluent, PHashLearnedLiftedFluent
 from itertools import product
 from nnf import And, Or, Var, false
-from ..extract.sam import sort_inference
+from ..extract.sam import sort_inference, DisjointSet
+# NO negative preconditions appear in the current algorithm due to the use of strips. beware that this decreases the
+# model's possible action's is some states
 
 
 class ESAM:
@@ -23,7 +26,7 @@ class ESAM:
                                 :return:
                                    a model based on ESAM learning
                                 """
-        def make_FullyHashedFluent_set(action: Action, flu: Fluent) -> set[FullyHashedLearnedLiftedFluent]:
+        def make_PHashFluent_set(action: Action, flu: Fluent) -> set[PHashLearnedLiftedFluent]:
             """
             Args:
                 action:
@@ -37,13 +40,13 @@ class ESAM:
             flu= lit(O1)
             output = {('lit', [object], [1]), ('lit', [object], [2])}
             """
-            ret: set[FullyHashedLearnedLiftedFluent] = set()
+            ret: set[PHashLearnedLiftedFluent] = set()
             all_act_inds: list[list[int]] = list(map(list,
                                                      product(*find_indexes_in_l2(flu.objects, action.obj_params))))
             sorts: list[str] = [action_2_sort[action.name][i] for i in all_act_inds[0]]
             if all(len(act_inds) > 0 for act_inds in all_act_inds):
                 for act_inds in all_act_inds:  # for each product add the matching fluent information to the dict
-                    ret.add(FullyHashedLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
+                    ret.add(PHashLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
             return ret
 
         def extract_clauses() -> (tuple[dict[str, set[int]], dict[str, And[Or[Var]]]]):
@@ -89,8 +92,8 @@ class ESAM:
                             if grounded_flu not in post_state.keys() or post_state[grounded_flu] != v:
                                 c_eff: Or[Var] = Or(false)
                                 'we use the call below to get all know param act inds for fluents'
-                                fluents: set[FullyHashedLearnedLiftedFluent] =\
-                                    make_FullyHashedFluent_set(a, grounded_flu)
+                                fluents: set[PHashLearnedLiftedFluent] =\
+                                    make_PHashFluent_set(a, grounded_flu)
                                 for flu in fluents:
                                     if v:
                                         c_eff = c_eff.__or__(Var(-literals2index[flu]))
@@ -147,24 +150,24 @@ class ESAM:
                 if act.name not in action_2_sort.keys():
                     action_2_sort[act.name] = [sort_dict[ob.name] for ob in act.obj_params]
 
-        literals2index: dict[FullyHashedLearnedLiftedFluent, int] = dict()
-        literals: list[FullyHashedLearnedLiftedFluent] = list()
+        literals2index: dict[PHashLearnedLiftedFluent, int] = dict()
+        literals: list[PHashLearnedLiftedFluent] = list()
         actions_in_traces: set[Action] = obs_trace_list.get_actions() if obs_trace_list is not None else None
         # the sets below are the arguments the model constructor requires and are the endpoint of this algorithm
         learned_actions: set[LearnedLiftedAction] = set()
         learned_fluents: set[LearnedLiftedFluent] = set()
 
         # step 1, collect all literals binding of each action
-        L_bLA: dict[str, set[FullyHashedLearnedLiftedFluent]] = {act.name: set() for act in actions_in_traces}
+        L_bLA: dict[str, set[PHashLearnedLiftedFluent]] = {act.name: set() for act in actions_in_traces}
         if debug:
             print("initiating process of collecting all L_bla possible for actions")
         for f in obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
                 if all(ob in act.obj_params for ob in f.objects):
-                    L_bLA[act.name].update(make_FullyHashedFluent_set(act, f))
+                    L_bLA[act.name].update(make_PHashFluent_set(act, f))
 
         # step 2, construct useful data structures to access meaningful information
-        literals: list[FullyHashedLearnedLiftedFluent] = list(set().union(*L_bLA.values()))
+        literals: list[PHashLearnedLiftedFluent] = list(set().union(*L_bLA.values()))
         for index, l in enumerate(literals):
             literals2index[l] = index+1
 
@@ -174,7 +177,7 @@ class ESAM:
         conj_pre, cnf_eff = extract_clauses()
 
         # step 4, make all lifted actions based on lifted pre\add\delete fluents of action
-        surely_preA: dict[str, set[FullyHashedLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
+        surely_preA: dict[str, set[PHashLearnedLiftedFluent]] = dict()  # all fluents who are surely preconds
         proxy_act_ind: int = 1  # counts action number, each action has different number, each proxy has extra info
         if debug:
             print("starting creation of proxy actions")
@@ -185,13 +188,21 @@ class ESAM:
             'create proxy actions!'
             proxy_index = 0
             for model in cnf_eff[action_name].models():
+                is_to_skip: bool = False  # skip the loop because no negative preconditions are allowed in strips?
+                for ind in model.keys():
+                    if isinstance(ind, int) and not model[ind] and ind < 0: # check if there are proxy's neg precond
+                        is_to_skip = True
+                        break
+                if is_to_skip:
+                    continue
+
                 proxy_index += 1  # increase counter of proxy action
                 proxy_act_name = str(f"{action_name}_{proxy_act_ind}_{proxy_index}")
-                add_eff: set[FullyHashedLearnedLiftedFluent] = {literals[ind - 1] for ind in model.keys() if
-                                                                isinstance(ind, int) and model[ind] and ind > 0}
-                del_eff: set[FullyHashedLearnedLiftedFluent] = {literals[abs(ind) - 1] for ind in model.keys() if
-                                                                isinstance(ind, int) and model[ind] and ind < 0}
-                pre: set[FullyHashedLearnedLiftedFluent] = surely_preA[action_name].union(
+                add_eff: set[PHashLearnedLiftedFluent] = {literals[ind - 1] for ind in model.keys() if
+                                                          isinstance(ind, int) and model[ind] and ind > 0}
+                del_eff: set[PHashLearnedLiftedFluent] = {literals[abs(ind) - 1] for ind in model.keys() if
+                                                          isinstance(ind, int) and model[ind] and ind < 0}
+                pre: set[PHashLearnedLiftedFluent] = surely_preA[action_name].union(
                     {literals[abs(ind) - 1] for ind in model.keys() if
                      isinstance(ind, int) and not model[ind] and ind > 0})
                 learned_actions.add(
@@ -205,8 +216,59 @@ class ESAM:
             proxy_act_ind += 1  # increase counter of base action by 1
 
         # construct the model using the actions and fluents set we concluded from traces
-        learned_fluents.update(set(map(FullyHashedLearnedLiftedFluent.to_LearnedLiftedFluent, literals)))
+        learned_fluents.update(set(map(PHashLearnedLiftedFluent.to_LearnedLiftedFluent, literals)))
         return Model(learned_fluents, learned_actions)
+
+    @staticmethod
+    def minimize_parameters(model_dict:  dict[PHashLearnedLiftedFluent, bool], act_num_of_param: int) -> dict[int, int]:
+        """
+        the method computes the minimization of parameter list
+        Args:
+            act_num_of_param: the length of action's param's list
+            model_dict: represents the cnf, maps each literal to its grounded value
+        Returns:
+            a dictionary mapping each original param act ind_ to the new actions minimized parameter list
+        """
+        # make a table that determines if an act ind 'i' is an effect in all occurrences of F, nad is bound to index 'j'
+        #  in F, minimize i with all indexes t who are bound to 'j' in F in all true occurrences of F
+
+        ret_dict: dict[int, int] = dict()
+        if len(model_dict.keys()) == 0:
+            return ret_dict
+
+        # TODO fix it
+
+        ind_occ: dict[str, list[set[int]]] = dict()
+        for f in model_dict.keys():
+            ind_occ[f.name] = (list())
+            for _ in range(len(f.param_act_inds)):
+                ind_occ[f.name].append(set())
+
+        not_to_minimize: set[int] = set()
+
+        for f, val in model_dict.items():
+            if not val:
+                not_to_minimize.update(f.param_act_inds)
+
+        ind_sets = DisjointSet(act_num_of_param)
+        for f, val in model_dict.items():
+            for i in range(len(f.param_act_inds)):
+                if f.param_act_inds[i] not in not_to_minimize:
+                    ind_occ[f.name][i].add(f.param_act_inds[i])
+
+        for i in set(range(act_num_of_param)).difference(not_to_minimize):
+            for f, set_list in ind_occ.items():
+                for sett in set_list:
+                    if i in sett:
+                        for j in sett:
+                            ind_sets.union_by_rank(i, j)
+
+        ugly_inds: list[int] = list({ind_sets.find(i) for i in range(act_num_of_param)})
+        ugly_inds.sort()
+        for i in range(act_num_of_param):
+            ret_dict[i] = ugly_inds.index(ind_sets.find(i))
+
+        return ret_dict
 
 
 def find_indexes_in_l2(

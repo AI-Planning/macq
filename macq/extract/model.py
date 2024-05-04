@@ -11,7 +11,7 @@ from tarski.syntax.formulas import CompoundFormula, Connective, top
 from ..trace import Fluent
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction, LearnedLiftedAction
-from .learned_fluent import LearnedFluent, LearnedLiftedFluent, FullyHashedLearnedLiftedFluent
+from .learned_fluent import LearnedFluent, LearnedLiftedFluent, PHashLearnedLiftedFluent
 
 
 class Model:
@@ -179,7 +179,7 @@ class Model:
             problem_filename (str):
                 The name of the problem file to be generated.
         """
-        self.fluents: Union[Set[LearnedLiftedFluent], Set[FullyHashedLearnedLiftedFluent]]
+        self.fluents: Union[Set[LearnedLiftedFluent], Set[PHashLearnedLiftedFluent]]
         self.actions: Set[LearnedLiftedAction]
 
         lang = tarski.language(domain_name)
