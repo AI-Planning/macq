@@ -188,9 +188,11 @@ class ESAM:
             'create proxy actions!'
             proxy_index = 0
             for model in cnf_eff[action_name].models():
+                m: dict[PHashLearnedLiftedFluent, bool] = {literals[abs(ind) - 1]: model[ind] for ind
+                                                           in model.keys() if isinstance(ind, int)}
                 is_to_skip: bool = False  # skip the loop because no negative preconditions are allowed in strips?
                 for ind in model.keys():
-                    if isinstance(ind, int) and not model[ind] and ind < 0: # check if there are proxy's neg precond
+                    if isinstance(ind, int) and not model[ind] and ind < 0:  # check if there are proxy's neg precond
                         is_to_skip = True
                         break
                 if is_to_skip:
@@ -205,11 +207,20 @@ class ESAM:
                 pre: set[PHashLearnedLiftedFluent] = surely_preA[action_name].union(
                     {literals[abs(ind) - 1] for ind in model.keys() if
                      isinstance(ind, int) and not model[ind] and ind > 0})
+
+                new_ind_dict = cls.minimize_parameters(model_dict=m, act_num_of_param=len(action_2_sort[action_name]))
+                reversed_dict: dict[int, int] = {v: k for k, v in new_ind_dict.items()}
+                param_sorts: list[str] = list()
+                for i in range(len(reversed_dict.keys())):
+                    param_sorts.append(action_2_sort[action_name][reversed_dict[i]])
+
+
                 learned_actions.add(
                     LearnedLiftedAction(proxy_act_name,
-                                        param_sorts=action_2_sort[action_name],
-                                        precond=pre, add=add_eff,
-                                        delete=del_eff))
+                                        param_sorts=param_sorts,
+                                        precond=cls.modify_fluent_params(pre, new_ind_dict),
+                                        add=cls.modify_fluent_params(add_eff, new_ind_dict),
+                                        delete=cls.modify_fluent_params(del_eff, new_ind_dict)))
 
             if debug:
                 print(f"created {proxy_index} proxy actions for action: {action_name}")
@@ -235,8 +246,6 @@ class ESAM:
         ret_dict: dict[int, int] = dict()
         if len(model_dict.keys()) == 0:
             return ret_dict
-
-        # TODO fix it
 
         ind_occ: dict[str, list[set[int]]] = dict()
         for f in model_dict.keys():
@@ -269,6 +278,17 @@ class ESAM:
             ret_dict[i] = ugly_inds.index(ind_sets.find(i))
 
         return ret_dict
+
+    @staticmethod
+    def modify_fluent_params(fluents: set[PHashLearnedLiftedFluent],
+                             param_dict: dict[int, int]) -> set[PHashLearnedLiftedFluent]:
+
+        new_set: set[PHashLearnedLiftedFluent] = set()
+        for f in fluents:
+            new_f = PHashLearnedLiftedFluent(name=f.name, param_sorts=f.param_sorts,
+                                             param_act_inds=[param_dict[i] for i in f.param_act_inds])
+            new_set.add(new_f)
+        return new_set
 
 
 def find_indexes_in_l2(
