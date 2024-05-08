@@ -12,6 +12,8 @@ from .arms import ARMS
 from .locm import LOCM
 from .slaf import SLAF
 from .observer import Observer
+from .sam import SAM
+from .esam import ESAM
 
 __all__ = [
     "LearnedAction",
@@ -27,4 +29,6 @@ __all__ = [
     "LOCM",
     "SLAF",
     "Observer",
+    "SAM",
+    "ESAM"
 ]

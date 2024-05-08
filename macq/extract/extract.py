@@ -13,6 +13,8 @@ from .arms import ARMS
 from .locm import LOCM
 from .slaf import SLAF
 from .observer import Observer
+from .sam import SAM
+from .esam import ESAM
 
 @dataclass
 class SAS:
@@ -32,6 +34,8 @@ class modes(Enum):
     AMDN = auto()
     ARMS = auto()
     LOCM = auto()
+    SAM = auto()
+    ESAM = auto()
 
 
 class Extract:
@@ -77,5 +81,7 @@ class Extract:
             modes.AMDN: AMDN,
             modes.ARMS: ARMS,
             modes.LOCM: LOCM,
+            modes.SAM: SAM,
+            modes.ESAM: ESAM
         }
         return techniques[mode](obs_tracelist, debug=debug, **kwargs)
