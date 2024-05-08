@@ -1,4 +1,3 @@
-from .learned_fluent import PHashLearnedLiftedFluent
 from ..observation import ObservedTraceList
 from ..trace import Action, Fluent, State, PlanningObject
 from ..extract import LearnedLiftedAction, Model
@@ -10,11 +9,38 @@ from ..extract.sam import sort_inference, DisjointSet
 # model's possible action's is some states
 
 
+def make_PHashFluent_set(action: Action, flu: Fluent, action_2_sort: dict[str, list[str]])\
+        -> set[PHashLearnedLiftedFluent]:
+    """
+    Args:
+        action_2_sort: map of action_name mapped to the action's sort list
+        action: the action
+        flu:
+
+    Returns: all FullyHashedLiftedFluent instances of 'flu' in action. FullyHashedLiftedFluent may have same
+    name and sorts but differ in param_act_inds.
+    for example:
+    assume o1 is of type object.
+    action = act(o1,o1)
+    flu= lit(O1)
+    output = {('lit', [object], [1]), ('lit', [object], [2])}
+    """
+    ret: set[PHashLearnedLiftedFluent] = set()
+    all_act_inds: list[list[int]] = list(map(list,
+                                             product(*find_indexes_in_l2(flu.objects, action.obj_params))))
+    sorts: list[str] = [action_2_sort[action.name][i] for i in all_act_inds[0]]
+    if all(len(act_inds) > 0 for act_inds in all_act_inds):
+        for act_inds in all_act_inds:  # for each product add the matching fluent information to the dict
+            ret.add(PHashLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
+    return ret
+
+
 class ESAM:
 
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
-                debug=False
+                debug=False,
+                **kwargs
                 ) -> Model:
         """ learns from fully observable observations under no further assumptions to extract a safe lifted action model
         of the problem's domain.
@@ -26,28 +52,6 @@ class ESAM:
                                 :return:
                                    a model based on ESAM learning
                                 """
-        def make_PHashFluent_set(action: Action, flu: Fluent) -> set[PHashLearnedLiftedFluent]:
-            """
-            Args:
-                action:
-                flu:
-
-            Returns: all FullyHashedLiftedFluent instances of 'flu' in action. FullyHashedLiftedFluent may have same
-            name and sorts but differ in param_act_inds.
-            for example:
-            assume o1 is of type object.
-            action = act(o1,o1)
-            flu= lit(O1)
-            output = {('lit', [object], [1]), ('lit', [object], [2])}
-            """
-            ret: set[PHashLearnedLiftedFluent] = set()
-            all_act_inds: list[list[int]] = list(map(list,
-                                                     product(*find_indexes_in_l2(flu.objects, action.obj_params))))
-            sorts: list[str] = [action_2_sort[action.name][i] for i in all_act_inds[0]]
-            if all(len(act_inds) > 0 for act_inds in all_act_inds):
-                for act_inds in all_act_inds:  # for each product add the matching fluent information to the dict
-                    ret.add(PHashLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
-            return ret
 
         def extract_clauses() -> (tuple[dict[str, set[int]], dict[str, And[Or[Var]]]]):
             """
@@ -93,7 +97,7 @@ class ESAM:
                                 c_eff: Or[Var] = Or(false)
                                 'we use the call below to get all know param act inds for fluents'
                                 fluents: set[PHashLearnedLiftedFluent] =\
-                                    make_PHashFluent_set(a, grounded_flu)
+                                    make_PHashFluent_set(a, grounded_flu, action_2_sort=action_2_sort)
                                 for flu in fluents:
                                     if v:
                                         c_eff = c_eff.__or__(Var(-literals2index[flu]))
@@ -164,7 +168,7 @@ class ESAM:
         for f in obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
                 if all(ob in act.obj_params for ob in f.objects):
-                    L_bLA[act.name].update(make_PHashFluent_set(act, f))
+                    L_bLA[act.name].update(make_PHashFluent_set(act, f, action_2_sort=action_2_sort))
 
         # step 2, construct useful data structures to access meaningful information
         literals: list[PHashLearnedLiftedFluent] = list(set().union(*L_bLA.values()))

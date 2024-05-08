@@ -44,7 +44,8 @@ class SAMgenerator:
 
     # =======================================Initialization of data structures======================================
     def __init__(self, obs_trace_list: ObservedTraceList = None,
-                 debug=False):
+                 debug=False,
+                 **kwargs):
         """Creates a new SAMgenerator instance.
                Args:
                     obs_trace_list(ObservedTraceList):
