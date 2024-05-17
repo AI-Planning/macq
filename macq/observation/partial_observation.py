@@ -54,6 +54,9 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
+    def __hash__(self):
+        return hash((self.state, self.action))
+
     def hide_random_subset(self, step: Step, percent_missing: float):
         """Hides a random subset of the fluents in the step.
         Args:
