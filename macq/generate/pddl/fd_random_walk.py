@@ -33,13 +33,14 @@ class FDRandomWalkSampling(VanillaSampling):
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        observe_static_fluents: bool =False,
         max_time: float = 30,
         init_h: int = None,
         num_traces: int = 1,
         seed: int = None,
     ):
         """
-        Initializes a the fd random walk sampler.
+        Initializes the fd random walk sampler.
 
         Args:
             dom (str):
@@ -50,6 +51,9 @@ class FDRandomWalkSampling(VanillaSampling):
                 The ID of the problem to access.
             observe_pres_effs (bool):
                 Option to observe action preconditions and effects upon generation.
+            observe_static_fluents (bool):
+                option to observe all fluents including static fluents
+                ('i.e' no binding of the literal to objects had changed throughout the trace)
             max_time (float):
                 The maximum time allowed for a trace to be generated.
             init_h (int):
@@ -65,6 +69,7 @@ class FDRandomWalkSampling(VanillaSampling):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            observe_static_fluents=observe_static_fluents,
             num_traces=num_traces,
             seed=seed,
             max_time=max_time,
