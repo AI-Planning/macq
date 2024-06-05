@@ -37,6 +37,8 @@ def make_PHashFluent_set(action: Action, flu: Fluent, action_2_sort: dict[str, l
 
 class ESAM:
 
+    objects_names_2_types: [str, str] = dict()
+
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
                 debug=False,
@@ -150,6 +152,7 @@ class ESAM:
         if obs_trace_list is not None:
             obs_trace_list = obs_trace_list
             sort_dict = sort_inference(obs_trace_list)
+            cls.objects_names_2_types = sort_dict
             for act in obs_trace_list.get_actions():
                 if act.name not in action_2_sort.keys():
                     action_2_sort[act.name] = [sort_dict[ob.name] for ob in act.obj_params]

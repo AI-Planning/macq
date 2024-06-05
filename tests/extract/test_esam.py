@@ -27,9 +27,6 @@ class TestESAM(TestCase):
                          "drive-truck": ["obj", "loc", "loc", "cit"],
                          "fly-airplane": ["obj", "loc", "loc"]}
 
-    def setUp(self) -> None: pass
-    # setting up the logistic hand made action model
-
     def test_extraction_under_injuctive_assumption(self):
         generator: TraceFromGoal = TraceFromGoal(problem_id=1481, observe_pres_effs=True, observe_static_fluents=True)
         base = Path(__file__).parent.parent
@@ -157,7 +154,6 @@ class TestESAM(TestCase):
         vanilla.generate_traces()
         trace_list = vanilla.traces
         trace_list.generate_more(3)
-
         esam_model: Model = ESAM(obs_trace_list=trace_list.tokenize(
             Token=IdentityObservation), debug=True)
 
