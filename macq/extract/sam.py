@@ -247,7 +247,7 @@ class SAMgenerator:
 
 
 class SAM:
-    __sam_generator = None
+    __sam_generator: [SAMgenerator | None] = None
     sort_dict = dict()
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
@@ -265,7 +265,8 @@ class SAM:
                                 """
         cls.__sam_generator = sam_generator if sam_generator is not None else (
             SAMgenerator(obs_trace_list=obs_trace_list, debug=debug))
-        cls.sort_dict = sam_generator.sort_dict
+        if cls.__sam_generator is not None:
+            cls.sort_dict = sam_generator
 
         return cls.__sam_generator.generate_model()
 
