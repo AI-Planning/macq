@@ -197,6 +197,42 @@ class TestESAM(TestCase):
         )
         esam_model.to_pddl_lifted('graph', 'log00_x', model_dom, model_prob)
 
+
+    def test_with_object_multiple_bindings2(self):
+        base = Path(__file__).parent.parent
+        model_dom = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_domain.pddl").resolve()
+        )
+        model_prob = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_prob2.pddl").resolve()
+        )
+        vanilla = VanillaSampling(dom=model_dom,
+                                  prob=model_prob,
+                                  plan_len=2,
+                                  num_traces=1,
+                                  max_time=120,
+                                  observe_static_fluents=True,
+                                  observe_pres_effs=True)
+        p = vanilla.generate_plan()
+        trace_list: TraceList = TraceList([vanilla.generate_single_trace_from_plan(p)])
+
+        trace_list.traces[0].print(view="actions")
+        esam_model: Model = ESAM(obs_trace_list=trace_list.tokenize(
+            Token=IdentityObservation), debug=True)
+
+        print(esam_model.details())
+        print("\n\n\n\n===================================")
+        model_dom = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_domain_output.pddl").resolve()
+        )
+        model_prob = str(
+            (base / "pddl_testing_files/esam_pddl_files/graph_prob_output2.pddl").resolve()
+        )
+        esam_model.to_pddl_lifted('graph', 'log00_x', model_dom, model_prob)
+
+
+
+
     def test_minimize_param_act_inds(self):
         def test_minimize_param_act_inds1():
             flu1 = PHashLearnedLiftedFluent("a", ["t1"], param_act_inds=[0])
@@ -276,4 +312,3 @@ class TestESAM(TestCase):
         test_minimize_param_act_inds2()
         test_minimize_param_act_inds3()
         test_minimize_param_act_inds4()
-

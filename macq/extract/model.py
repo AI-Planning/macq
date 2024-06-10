@@ -10,7 +10,7 @@ from tarski.syntax.formulas import CompoundFormula, Connective, top
 
 from ..trace import Fluent
 from ..utils import ComplexEncoder
-from .learned_action import LearnedAction, LearnedLiftedAction
+from .learned_action import LearnedAction, LearnedLiftedAction, ParameterBoundLearnedLiftedAction
 from .learned_fluent import LearnedFluent, LearnedLiftedFluent, PHashLearnedLiftedFluent
 
 
@@ -32,7 +32,7 @@ class Model:
     def __init__(
         self,
         fluents: Union[Set[LearnedFluent], Set[LearnedLiftedFluent]],
-        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction]],
+        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction], Set[ParameterBoundLearnedLiftedAction]],
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 

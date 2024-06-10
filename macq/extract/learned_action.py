@@ -165,3 +165,23 @@ class LearnedLiftedAction:
         if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, PHashLearnedLiftedFluent):
             fluents = {fluents}
         self.delete.update(fluents)
+
+
+class ParameterBoundLearnedLiftedAction(LearnedLiftedAction):  #TODO change class name to a more correct one
+    def __init__(self, name: str, param_sorts: List[str], **kwargs):
+        super().__init__(name, param_sorts, **kwargs)
+
+    def __eq__(self, other):
+        return (
+                isinstance(other, ParameterBoundLearnedLiftedAction)
+                and self.__hash__() == other.__hash__()
+        )
+
+    def __hash__(self):
+        # Order of param_sorts is important!
+        return hash((
+             tuple(self.param_sorts),
+             frozenset(self.precond),
+             frozenset(self.add),
+             frozenset(self.delete)))
+

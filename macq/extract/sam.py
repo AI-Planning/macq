@@ -39,7 +39,7 @@ class SAMgenerator:
     learned_lifted_fluents: set[LearnedLiftedFluent] = set()
     learned_lifted_action: set[LearnedLiftedAction] = set()
     action_2_sort: dict[str, list[str]] = dict()
-    sort_dict: dict[str, str]
+    sort_dict: dict[str, str] = dict()
     debug = False
 
     # =======================================Initialization of data structures======================================
@@ -247,8 +247,8 @@ class SAMgenerator:
 
 
 class SAM:
-    __sam_generator: [SAMgenerator | None] = None
-    sort_dict = dict()
+    __sam_generator: SAMgenerator
+    objects_names_2_types = dict()
     def __new__(cls,
                 obs_trace_list: ObservedTraceList = None,
                 debug=False,
@@ -265,10 +265,10 @@ class SAM:
                                 """
         cls.__sam_generator = sam_generator if sam_generator is not None else (
             SAMgenerator(obs_trace_list=obs_trace_list, debug=debug))
-        if cls.__sam_generator is not None:
-            cls.sort_dict = sam_generator
 
-        return cls.__sam_generator.generate_model()
+        model = cls.__sam_generator.generate_model()
+        cls.objects_names_2_types = cls.__sam_generator.sort_dict
+        return model
 
 
 # ======================================================================================================================
@@ -319,6 +319,41 @@ def sort_inference(obs_trace_list: ObservedTraceList) -> (dict[str, str]):
 
     return object_2_sort
 
+
+def sort_inference_by_action(obs_trace_list: ObservedTraceList) -> (dict[str, str]):
+    actions = obs_trace_list.get_actions()
+    os: set[str] = {obj.name for action in actions for obj in action.obj_params}
+
+    objects: list[str] = list(os)  # list of object names
+    act_index_type: dict[str, list[set[str]]] = dict()
+
+    for a in actions:
+        if a.name not in act_index_type.keys():
+            act_index_type[a.name] = list()
+            for _ in a.obj_params:
+                act_index_type[a.name].append(set())
+        for index, obj in enumerate(a.obj_params):
+            act_index_type[a.name][index].add(obj.name)
+
+    union_sorts_set: DisjointSet = DisjointSet(len(objects))
+    for param_type_listOf_set in act_index_type.values():
+        for s in param_type_listOf_set:
+            t1: str = s.pop()
+            s.add(t1)
+            for t2 in s:
+                union_sorts_set.union_by_rank(objects.index(t1), objects.index(t2))
+
+    ugly_sorts: list[int] = list({union_sorts_set.find(i) for i in range(len(objects))})
+    ugly_sorts.sort()
+    nicer_sorting: dict[int, int] = dict()
+    for i in range(len(ugly_sorts)):
+        nicer_sorting[ugly_sorts[i]] = i
+    object_2_sort: dict[str, str] = dict()
+    for obj in objects:
+        ugly_sort = union_sorts_set.find(objects.index(obj))
+        object_2_sort[obj] = f"t{nicer_sorting[ugly_sort]}"
+
+    return object_2_sort
 
 class DisjointSet:  # this class was taken from geeksForGeeks
     def __init__(self, size):

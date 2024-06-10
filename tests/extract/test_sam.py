@@ -239,4 +239,7 @@ class TestSAMgenerator(TestCase):
         model_prob = str(
             (base / "pddl_testing_files/esam_pddl_files/new_prob_copy.pddl").resolve()
         )
-        sam_model.to_pddl('logistics', 'log00_x', model_dom, model_prob)
+        sam_model.to_pddl('logistics',
+                          'log00_x',
+                          domain_filename=model_dom,
+                          problem_filename=model_prob)
