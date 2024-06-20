@@ -4,19 +4,21 @@ from ..extract import Model
 from ..extract.learned_action import ParameterBoundLearnedLiftedAction
 from ..extract.learned_fluent import LearnedLiftedFluent, PHashLearnedLiftedFluent
 from itertools import product
-from nnf import And, Or, Var,  NNF
+from nnf import And, Or, Var
 from ..extract.sam import sort_inference, DisjointSet
-from ..extract.slaf import SLAF
+from ..extract.Sort import Sort
 import sys
 
 
-def make_PHashFluent_set(action: Action, flu: Fluent, action_2_sort: dict[str, list[str]])\
+def make_PHashFluent_set(action: Action, flu: Fluent, action_2_sort: dict[str, list[str]], fluent_types=None)\
         -> set[PHashLearnedLiftedFluent]:
     """
     Args:
         action_2_sort: map of action_name mapped to the action's sort list
         action: the action
-        flu:
+        flu: the fluent
+        fluent_types: dict that maps each fluent to a list of the types he accepts by order.
+
 
     Returns: all FullyHashedLiftedFluent instances of 'flu' in action. FullyHashedLiftedFluent may have same
     name and sorts but differ in param_act_inds.
@@ -25,11 +27,14 @@ def make_PHashFluent_set(action: Action, flu: Fluent, action_2_sort: dict[str, l
     action = act(o1,o1)
     flu= lit(O1)
     output = {('lit', [object], [1]), ('lit', [object], [2])}
+
+    Parameters
+    ----------
     """
     ret: set[PHashLearnedLiftedFluent] = set()
     all_act_inds: list[list[int]] = list(map(list,
                                              product(*find_indexes_in_l2(flu.objects, action.obj_params))))
-    sorts: list[str] = [action_2_sort[action.name][i] for i in all_act_inds[0]]
+    sorts: list[str] = [action_2_sort[action.name][i] for i in all_act_inds[0]] if fluent_types is None else fluent_types[flu.name]
     if all(len(act_inds) > 0 for act_inds in all_act_inds):
         for act_inds in all_act_inds:  # for each product add the matching fluent information to the dict
             ret.add(PHashLearnedLiftedFluent(flu.name, sorts, list(act_inds)))
@@ -44,13 +49,21 @@ class ESAM:
                 obs_trace_list: ObservedTraceList = None,
                 debug=False,
                 recursion_limit=2000,
+                obj_to_sort: dict[str, Sort] = None,
+                sorts: list[Sort] = None,
+                action_2_sort: dict[str, list[str]] = None,
+                fluent_types: [str, list]=None,
                 **kwargs
                 ) -> Model:
         """ learns from fully observable observations under no further assumptions to extract a safe lifted action model
         of the problem's domain.
             Args:
                 obs_trace_list(ObservedTraceList): tokenized TraceList.
+                recursion_limit(int): maximum recursion limit, option to change recursion limit, essential when trying
+                 to solve complex cnf equations
                 action_2_sort(dict str -> list[str]): optional, a map that maps the sorts of each action parameters
+                obj_to_sort(dict: str-> Sort): optional, a map that maps the sorts of each object parameters
+                sorts(list[Sort]): optional, sorts in the domain ordered s.t the parent is always before the child
                 for example- {"load-truck": ["obj", "obj", "loc"], "unload-truck": ["obj", "obj", "loc"],....}
                 debug(bool): defaults to False. if True, prints debug.
                                 :return:
@@ -107,7 +120,7 @@ class ESAM:
                                 c_eff: list[Var] = list()
                                 'we use the call below to get all know param act inds for fluents'
                                 fluents: set[PHashLearnedLiftedFluent] =\
-                                    make_PHashFluent_set(a, grounded_flu, action_2_sort=action_2_sort)
+                                    make_PHashFluent_set(a, grounded_flu, action_2_sort=action_2_sort, fluent_types=fluent_types)
                                 for flu in fluents:
                                     if val:
                                         c_eff.append(Var(-literals2index[flu]))
@@ -128,12 +141,12 @@ class ESAM:
                         if fluent in post_state.fluents.keys():
                             if not post_state.fluents[fluent]:
                                 not_eff = Var(literals2index[flu], False)
-                                cnf_ef_as_set[a.name].add(Or([not_eff]))
+                                # cnf_ef_as_set[a.name].add(Or([not_eff]))  TODO change this
                                 vars_to_forget[a.name].add(literals2index[flu])
                             else:
                                 not_eff = Var(-literals2index[flu], False)
+                                # cnf_ef_as_set[a.name].add(Or([not_eff])) TODO change this
                                 vars_to_forget[a.name].add(-literals2index[flu])
-                                cnf_ef_as_set[a.name].add(Or([not_eff]))
 
 
             if debug:
@@ -156,25 +169,35 @@ class ESAM:
                 cnf_ef[k] = And(v)
 
             for a_name in L_bLA.keys():
-                cnf_ef[a_name] = cnf_ef[a_name].implicates()
+                print(f"{a_name} cnf is: {cnf_ef[a_name]}\n")
+                print(f"{a_name} vars_to forget are: {vars_to_forget[a_name]}\n")
                 cnf_ef[a_name] = cnf_ef[a_name].forget(vars_to_forget[a_name])
-                print(f"{a_name} cnf is: {cnf_ef[a_name]}\n==================")
+                print(f"{a_name} cnf after forget is: {cnf_ef[a_name]}")
+                cnf_ef[a_name] = cnf_ef[a_name].implicates()
+                print(f"{a_name} cnf after minimization is: {cnf_ef[a_name]}\n==================")
 
             return con_pre, cnf_ef
 
         # start of algorithm
         # step 0- initiate all class data structures.
 
-        action_2_sort: dict[str, list[str]] = dict()
-        sort_dict: dict[str, str]
-        if obs_trace_list is not None:
-            obs_trace_list = obs_trace_list
-            # sort_dict = sort_inference(obs_trace_list)
-            sort_dict = sort_inference(obs_trace_list)
-            cls.objects_names_2_types = sort_dict
-            for act in obs_trace_list.get_actions():
-                if act.name not in action_2_sort.keys():
-                    action_2_sort[act.name] = [sort_dict[ob.name] for ob in act.obj_params]
+        if obj_to_sort is None or action_2_sort is None: # todo fix the condition  # added code ========================
+            action_2_sort: dict[str, list[str]] = dict()
+            sort_dict: dict[str, str]
+            if obs_trace_list is not None:
+                obs_trace_list = obs_trace_list
+                # sort_dict = sort_inference(obs_trace_list)
+                sort_dict =sort_inference(obs_trace_list)
+                cls.objects_names_2_types = sort_dict
+                for act in obs_trace_list.get_actions():
+                    if act.name not in action_2_sort.keys():
+                        action_2_sort[act.name] = [sort_dict[ob.name] for ob in act.obj_params]
+
+        else:
+            cls.objects_names_2_types = {k: v.sort_name for k,v in obj_to_sort.items()}
+
+        if debug:
+            print(action_2_sort.__str__())
 
         literals2index: dict[PHashLearnedLiftedFluent, int] = dict()
         literals: list[PHashLearnedLiftedFluent] = list()
@@ -190,10 +213,16 @@ class ESAM:
         for f in obs_trace_list.get_fluents():  # for every fluent in the acts fluents
             for act in actions_in_traces:
                 if all(ob in act.obj_params for ob in f.objects):
-                    L_bLA[act.name].update(make_PHashFluent_set(act, f, action_2_sort=action_2_sort))
+                    L_bLA[act.name].update(make_PHashFluent_set(action=act,
+                                                                flu=f,
+                                                                action_2_sort=action_2_sort,
+                                                                fluent_types=fluent_types))
 
         # step 2, construct useful data structures to access meaningful information
         literals: list[PHashLearnedLiftedFluent] = list(set().union(*L_bLA.values()))
+        all_flus: set[Fluent] = obs_trace_list.get_fluents()
+
+
         for index, l in enumerate(literals):
             literals2index[l] = index+1
 
@@ -264,7 +293,7 @@ class ESAM:
 
         # construct the model using the actions and fluents set we concluded from traces
         learned_fluents.update(set(map(PHashLearnedLiftedFluent.to_LearnedLiftedFluent, literals)))
-        return Model(learned_fluents, learned_actions)
+        return Model(learned_fluents, learned_actions, sorts if sorts else None)
 
     @staticmethod
     def minimize_parameters(model_dict:  dict[PHashLearnedLiftedFluent, bool],

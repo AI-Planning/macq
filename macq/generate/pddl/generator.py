@@ -301,6 +301,7 @@ class Generator:
             else Action(name=name, obj_params=obj_params)
         )
 
+
     def change_init(
         self,
         init_fluents: Union[Set[Fluent], List[Fluent]],
@@ -310,7 +311,7 @@ class Generator:
         """Changes the initial state of the `Generator`. The domain and problem PDDL files
         are rewritten to accomodate the new goal for later use by a planner.
 
-        Args:
+        Parameters:
             init_fluents (Union[Set[Fluent], List[Fluent]]):
                 The collection of fluents that will make up the new initial state.
             new_domain (str):

@@ -8,10 +8,10 @@ from tarski.io import fstrips as iofs
 from tarski.syntax import land
 from tarski.syntax.formulas import CompoundFormula, Connective, top
 
-from ..trace import Fluent
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction, LearnedLiftedAction, ParameterBoundLearnedLiftedAction
 from .learned_fluent import LearnedFluent, LearnedLiftedFluent, PHashLearnedLiftedFluent
+from .Sort import Sort
 
 
 class Model:
@@ -33,6 +33,7 @@ class Model:
         self,
         fluents: Union[Set[LearnedFluent], Set[LearnedLiftedFluent]],
         actions: Union[Set[LearnedAction], Set[LearnedLiftedAction], Set[ParameterBoundLearnedLiftedAction]],
+        learned_sorts: Union[list[Sort], None] = None
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 
@@ -44,6 +45,7 @@ class Model:
         """
         self.fluents = fluents
         self.actions = actions
+        self.learned_sorts = learned_sorts
 
     def __eq__(self, other):
         if not isinstance(other, Model):
@@ -187,6 +189,18 @@ class Model:
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
         sorts = set()
+        if self.learned_sorts is not None:
+            for sort in self.learned_sorts:
+                if isinstance(sort, Sort) and sort.sort_name not in sorts:
+                    if sort.parent is None:
+                        lang.sort(name=sort.sort_name)
+                        sorts.add(sort.sort_name)
+            for sort in self.learned_sorts:
+                if isinstance(sort, Sort) and sort.sort_name not in sorts:
+                    if sort.parent is not None:
+                        lang.sort(name=sort.sort_name, parent=sort.parent)
+                        sorts.add(sort.sort_name)
+
 
         if self.fluents:
             for f in self.fluents:
@@ -304,3 +318,6 @@ class Model:
     def _from_json(cls, data: dict):
         actions = set(map(LearnedAction._deserialize, data["actions"]))
         return cls(set(data["fluents"]), actions)
+
+
+
