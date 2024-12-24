@@ -1,4 +1,5 @@
-""".. include:: ../../docs/templates/extract/slaf.md"""
+""".. include:: ../../docs/extract/slaf.md"""
+
 from typing import Set, Union
 from bauhaus import Encoding
 from nnf import And, Or, Var, config, false, true

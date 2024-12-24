@@ -1,4 +1,4 @@
-""".. include:: ../../docs/templates/extract/extract.md"""
+""".. include:: ../../docs/extract/extract.md"""
 # isort: skip_file
 
 from .learned_fluent import LearnedFluent, LearnedLiftedFluent

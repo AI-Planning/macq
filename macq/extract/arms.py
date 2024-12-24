@@ -1,4 +1,4 @@
-""".. include:: ../../docs/templates/extract/arms.md"""
+""".. include:: ../../docs/extract/arms.md"""
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass

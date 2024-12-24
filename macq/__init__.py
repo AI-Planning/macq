@@ -1,3 +1,4 @@
 """
-.. include:: ../docs/templates/index.md
+.. include:: ../README.md
+.. include:: ../docs/index.md
 """

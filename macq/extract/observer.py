@@ -1,4 +1,4 @@
-""".. include:: ../../docs/templates/extract/observer.md"""
+""".. include:: ../../docs/extract/observer.md"""
 
 from collections import defaultdict
 from dataclasses import dataclass

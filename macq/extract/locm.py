@@ -1,4 +1,4 @@
-""".. 'include':: ../../docs/templates/extract/locm.md"""
+""".. 'include':: ../../docs/extract/locm.md"""
 
 from collections import defaultdict
 from dataclasses import asdict, dataclass
