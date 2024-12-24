@@ -19,7 +19,6 @@ code formatting.
 
 You can enable the pre-commit formatting hook with `pre-commit install`
 
-
 ## Development
 
 ### Type Checking
@@ -37,11 +36,5 @@ in a browser. This will provide detailed line by line test coverage information,
 so you can identify what specifically still needs testing.
 
 ### Generating Docs
-To generate the HTML documentation, run `pdoc --html macq --config latex_math=True`.
 
-During development, you can run a local HTTP server to reference/see live
-changes to the documentation: `pdoc --http : macq --config latex_math=True`.
-
-*Note: `--config latex_math=True` is required to properly render the latex found
-in many extraction techniques' documentation.*
-
+To generate the HTML documentation, run `pdoc macq --math`.
