@@ -4,8 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "macq"
+version = "0.3.10"
 description = "Action model acquisition from state trace data."
+# author="Ethan Callanan, Rebecca De Venezia, Victoria Armstrong, Alison Parades, Tathagata Chakraborti, Christian Muise",
+authors = [
+    {name = "Ethan Callanan"},
+    {name = "Rebecca De Venezia"},
+    {name = "Victoria Armstrong"},
+    {name = "Alison Parades"},
+    {name = "Tathagata Chakraborti"},
+    {name = "Christian Muise", email = "christian.muise@queensu.ca"},
+]
+maintainers = [
+    {name = "Christian Muise", email = "christian.muise@queensu.ca"}
+]
 readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["planning", "action model acquisition"]
 requires-python = ">=3.8"
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -20,6 +35,28 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "tarski",
+    "requests",
+    "rich",
+    "nnf",
+    "python-sat",
+    "bauhaus",
+    "numpy",
+    "clingo",
+    "graphviz",
+    "networkx",
+    "pydot",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "flake8",
+    "black",
+    "pre-commit",
 ]
 
 [project.urls]
