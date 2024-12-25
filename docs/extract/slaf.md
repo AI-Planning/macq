@@ -1,6 +1,6 @@
-# SLAF
+### SLAF
 
-## Usage
+#### Usage
 
 ```python
 from macq import generate, extract
