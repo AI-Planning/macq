@@ -9,7 +9,7 @@
 Include the argument `debug=True` to `Extract` to enable debugging for any
 extraction technique.
 
-_Note: debugging output and interfaces are unique to each method._
+**Note**: debugging output and interfaces are unique to each method.
 
 ## Extraction Techniques
 
@@ -19,23 +19,25 @@ _Note: debugging output and interfaces are unique to each method._
 - [AMDN](#amdn)
 - [LOCM](#locm)
 
-.. include:: ../../../docs/templates/extract/observer.md
+----
+
+.. include:: ../../docs/extract/observer.md
 
 ---
 
-.. include:: ../../../docs/templates/extract/slaf.md
+.. include:: ../../docs/extract/slaf.md
 
 ---
 
-.. include:: ../../../docs/templates/extract/arms.md
+.. include:: ../../docs/extract/arms.md
 
 ---
 
-.. include:: ../../../docs/templates/extract/amdn.md
+.. include:: ../../docs/extract/amdn.md
 
 ---
 
-.. include:: ../../../docs/templates/extract/locm.md
+.. include:: ../../docs/extract/locm.md
 
 ---
 

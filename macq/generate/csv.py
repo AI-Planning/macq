@@ -10,7 +10,13 @@ from macq.trace import (
 
 
 def load(fname: str, act_col: str, plan_id_col: str = None):
-    """Loads a trace file as a csv into a `TraceList`.
+    """Loads a trace file as a CSV into a `TraceList`.
+
+    The CSV file should have the following properties:
+
+    - An action column that contains the action names.
+    - Fluent columns with cells containing 0 or 1.
+    - (optionally) A plan ID column that contains the plan ID to separate the traces.
 
     Args:
         fname (str):
