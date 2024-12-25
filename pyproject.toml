@@ -62,3 +62,4 @@ dev = [
 [project.urls]
 Homepage = "https://macq.planning.domains"
 Documentation = "https://ai-planning.github.io/macq/"
+Repository = "https://github.com/ai-planning/macq"
