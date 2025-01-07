@@ -30,8 +30,10 @@ Once trace data is loaded, you can process the traces to produce lists of observ
 
 Depending on the observation type, different extraction techniques can be used to extract the relevant information from the observations. These are currently the techniques implemented:
 
-- [Observer](macq/extract.html#observer)
-- [SLAF](macq/extract.html#slaf)
-- [ARMS](macq/extract.html#arms)
-- [AMDN](macq/extract.html#amdn)
-- [LOCM](macq/extract.html#locm)
+| Algorithm | Trace Type | Paper |
+|---|---|---|
+| [**Observer**](macq/extract.html#observer) | [IdentityObservation](macq/observation.html#IdentityObservation) | [[1](https://aaai.org/Papers/AIPS/1994/AIPS94-057.pdf)] |
+| [**SLAF**](macq/extract.html#slaf) | [AtomicPartialObservation](macq/observation.html#AtomicPartialObservation) | [[1](https://arxiv.org/abs/1401.3437)] |
+| [**ARMS**](macq/extract.html#arms) | [PartialObservation](macq/observation.html#PartialObservation) | [[1](https://www.sciencedirect.com/science/article/pii/S0004370206001408), [2](https://aaai.org/papers/icaps-05-025-learning-action-models-from-plan-examples-with-incomplete-knowledge/)] |
+| [**AMDN**](macq/extract.html#amdn) | [NoisyPartialDisorderedParallelObservation](macq/observation.html#NoisyPartialDisorderedParallelObservation) | [[1](https://arxiv.org/abs/1908.09800)] |
+| [**LOCM**](macq/extract.html#locm) | [ActionObservation](macq/observation.html#ActionObservation) | [[1](https://ojs.aaai.org/index.php/ICAPS/article/view/13391), [2](http://eprints.hud.ac.uk/id/eprint/9052/1/LOCM_KER_author_version.pdf)] |
