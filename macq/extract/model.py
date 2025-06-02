@@ -8,7 +8,6 @@ from tarski.io import fstrips as iofs
 from tarski.syntax import land
 from tarski.syntax.formulas import CompoundFormula, Connective, top
 
-from ..trace import Fluent
 from ..utils import ComplexEncoder
 from .learned_action import LearnedAction, LearnedLiftedAction
 from .learned_fluent import LearnedFluent, LearnedLiftedFluent

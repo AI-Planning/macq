@@ -1,5 +1,4 @@
 from typing import List
-
 from macq.trace.fluent import PlanningObject
 
 

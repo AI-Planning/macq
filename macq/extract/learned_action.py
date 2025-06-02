@@ -126,6 +126,12 @@ class LearnedLiftedAction:
     def details(self):
         return f"({self.name} {' '.join(self.param_sorts)})"
 
+    # NOTE that by definition the preconditions of
+    # a lifted action is a set of parameter-bound-literals and not a lifted fluent
+    # the LearnedLiftedFluent is in fact implemented as a partially parameter-bound literal and partially lifted fluent.
+    # notice the hash function if the class referring to the object as a lifted fluent, whereas the constructor refers to
+    # the object as a parameter-bound literal by initializing the param-act_inds field. that causes a hash collision when implementing learning
+    # algorithms and referring the set as a parameter-bound literal. I would suggest renaming classes and fixing classes definitions to fit the mathematical definitions.
     def update_precond(
         self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]
     ):

@@ -1,6 +1,7 @@
 from typing import List
 
 
+
 class PlanningObject:
     """An object of a planning domain.
 
@@ -83,6 +84,8 @@ class Fluent:
             and self.objects == other.objects
         )
 
+    # why do one fluent has the property of being 'smaller' under some relation over all fluents?
+    # should be implemented as an internal method for the learning algorthm that uses it!
     def __lt__(self, other):
         if not isinstance(other, Fluent):
             raise TypeError(f"Cannot compare Fluent to {other.__name__}.")
