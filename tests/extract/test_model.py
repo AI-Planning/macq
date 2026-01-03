@@ -1,5 +1,5 @@
 from macq.extract import *
-from tests.utils.test_model import test_model as TestModel
+from tests.utils.test_model import generate_test_model as TestModel
 
 
 def test_model():

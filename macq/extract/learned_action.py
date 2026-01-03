@@ -1,8 +1,7 @@
 from __future__ import annotations
-
 from typing import List, Set, Union
-
 from . import LearnedLiftedFluent
+from macq.extract.learned_fluent import ParamBoundLFluent
 
 
 class LearnedAction:
@@ -18,9 +17,9 @@ class LearnedAction:
 
     def __eq__(self, other):
         return (
-            isinstance(other, LearnedAction)
-            and self.name == other.name
-            and self.obj_params == other.obj_params
+                isinstance(other, LearnedAction)
+                and self.name == other.name
+                and self.obj_params == other.obj_params
         )
 
     def __hash__(self):
@@ -28,7 +27,8 @@ class LearnedAction:
         return hash(self.details())
 
     def details(self):
-        # obj_params can be either a list of strings or a list of PlanningObject depending on the token type and extraction method used to learn the action
+        # obj_params can be either a list of strings or a list of PlanningObject
+        # depending on the token type and extraction method used to learn the action
         try:
             string = f"({self.name} {' '.join(self.obj_params)})"
         except TypeError:
@@ -111,9 +111,9 @@ class LearnedLiftedAction:
 
     def __eq__(self, other):
         return (
-            isinstance(other, LearnedLiftedAction)
-            and self.name == other.name
-            and self.param_sorts == other.param_sorts
+                isinstance(other, LearnedLiftedAction)
+                and self.name == other.name
+                and self.param_sorts == other.param_sorts
         )
 
     def __hash__(self):
@@ -127,7 +127,8 @@ class LearnedLiftedAction:
         return f"({self.name} {' '.join(self.param_sorts)})"
 
     def update_precond(
-        self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]
+            self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], ParamBoundLFluent, Set[
+                ParamBoundLFluent]]
     ):
         """Adds preconditions to the action.
 
@@ -135,23 +136,25 @@ class LearnedLiftedAction:
             fluents (set):
                 The set of fluents to be added to the action's preconditions.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, ParamBoundLFluent):
             fluents = {fluents}
         self.precond.update(fluents)
 
-    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]):
+    def update_add(self, fluents: Union[LearnedLiftedFluent, Set[
+            LearnedLiftedFluent], ParamBoundLFluent, Set[ParamBoundLFluent]]):
         """Adds add effects to the action.
 
         Args:
             fluents (set):
                 The set of fluents to be added to the action's add effects.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, ParamBoundLFluent):
             fluents = {fluents}
         self.add.update(fluents)
 
     def update_delete(
-        self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent]]
+            self, fluents: Union[LearnedLiftedFluent, Set[LearnedLiftedFluent], ParamBoundLFluent, Set[
+                ParamBoundLFluent]]
     ):
         """Adds delete effects to the action.
 
@@ -159,6 +162,29 @@ class LearnedLiftedAction:
             fluents (set):
                 The set of fluents to be added to the action's delete effects.
         """
-        if isinstance(fluents, LearnedLiftedFluent):
+        if isinstance(fluents, LearnedLiftedFluent) or isinstance(fluents, ParamBoundLFluent):
             fluents = {fluents}
         self.delete.update(fluents)
+
+
+class LiftedActionNegPrec(LearnedLiftedAction):  #TODO change class name to a more correct one
+    negative_precond: Union[ParamBoundLFluent, Set[ParamBoundLFluent]]
+    def __init__(self, name: str, param_sorts: List[str], **kwargs):
+        super().__init__(name, param_sorts, **kwargs)
+        self.negative_precond = set() if "negative_precond" not in kwargs else kwargs["negative_precond"]
+
+    def __eq__(self, other):
+        return (
+                isinstance(other, LiftedActionNegPrec)
+                and self.__hash__() == other.__hash__()
+        )
+
+    def __hash__(self):
+        # Order of param_sorts is important!
+        return hash((
+             tuple(self.param_sorts),
+             frozenset(self.precond),
+             frozenset(self.negative_precond),
+             frozenset(self.add),
+             frozenset(self.delete)))
+

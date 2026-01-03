@@ -237,7 +237,6 @@ class SLAF:
             The set of fluents that are entailed.
         """
 
-        global e
         top = SLAF.top
         bottom = SLAF.bottom
         validity_constraints = set()

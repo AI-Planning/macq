@@ -15,7 +15,9 @@ import pytest
 
 def test_tokenization_error():
     with pytest.raises(TokenizationError):
-        trace = generate_blocks_traces(3)[0]
+        traces = generate_blocks_traces(3)
+        assert traces, "Failed to generate traces for tokenization error test."
+        trace = traces[0]
         trace.tokenize(Token=NoisyPartialDisorderedParallelObservation)
 
 

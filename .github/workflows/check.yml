@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +26,7 @@ jobs:
           pip install -e .[dev]
           sudo apt install gringo
           sudo apt-get install graphviz
-      - if: ${{ matrix.python-version == '3.12' }}
+      - if: ${{ matrix.python-version == '3.13' }}
         name: Get branch name
         run: |
           REF=${{ github.ref }}
@@ -35,7 +35,7 @@ jobs:
           BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
           echo $BRANCH_NAME
           echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-      - if: ${{ matrix.python-version == '3.12' }}
+      - if: ${{ matrix.python-version == '3.13' }}
         name: Create placeholder coverage badge
         uses: schneegans/dynamic-badges-action@v1.0.0
         with:
@@ -53,13 +53,13 @@ jobs:
       - name: Tests
         run: python -m pytest
       # Only get coverage once
-      - if: ${{ matrix.python-version == '3.12' }}
+      - if: ${{ matrix.python-version == '3.13' }}
         name: Get coverage
         run: |
           REPORT="$(python -m pytest --cov=macq)"
           for line in "${REPORT[@]}"; do echo "$line"; done
           echo "COVERAGE=$(echo $REPORT | tail -c85 | head -c3)" >> $GITHUB_ENV
-      - if: ${{ matrix.python-version == '3.12' }}
+      - if: ${{ matrix.python-version == '3.13' }}
         name: Create coverage badge
         uses: schneegans/dynamic-badges-action@v1.0.0
         with:

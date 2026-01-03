@@ -12,12 +12,14 @@ from .arms import ARMS
 from .locm import LOCM
 from .slaf import SLAF
 from .observer import Observer
+from macq.core.signature_parameter import ObjectType
 
 __all__ = [
     "LearnedAction",
     "LearnedLiftedAction",
     "LearnedFluent",
     "LearnedLiftedFluent",
+    "ObjectType",
     "Model",
     "Extract",
     "modes",

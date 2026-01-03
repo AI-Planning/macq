@@ -1,23 +1,26 @@
 import re
 from time import sleep
 from typing import Set, List, Union
-from tarski.io import PDDLReader
-from tarski.search import GroundForwardSearchModel
-from tarski.search.operations import progress
+
+import requests
+from tarski.fstrips.action import PlainOperator
+from tarski.fstrips.fstrips import AddEffect
+from tarski.grounding.common import StateVariableLite
 from tarski.grounding.lp_grounding import (
     ground_problem_schemas_into_plain_operators,
     LPGroundingStrategy,
 )
-from tarski.syntax import land
-from tarski.syntax.ops import CompoundFormula, flatten
-from tarski.syntax.formulas import Atom, neg
-from tarski.syntax.builtins import BuiltinPredicateSymbol
-from tarski.fstrips.action import PlainOperator
-from tarski.fstrips.fstrips import AddEffect
-from tarski.model import Model, create
+from tarski.io import PDDLReader
 from tarski.io import fstrips as iofs
+from tarski.model import Model, create
+from tarski.search import GroundForwardSearchModel
+from tarski.search.operations import progress
+from tarski.syntax import land
+from tarski.syntax.builtins import BuiltinPredicateSymbol
+from tarski.syntax.formulas import Atom
+from tarski.syntax.ops import CompoundFormula, flatten
+from tarski.util import SymbolIndex
 
-import requests
 from .planning_domains_api import get_problem, get_plan
 from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
@@ -44,7 +47,7 @@ class InvalidGoalFluent(Exception):
 class Generator:
     """A Generator.
 
-    A basic PDDL state trace generator. Handles all parsing and stores the problem,
+    A basic PDDL state trace generator. Handles all parsings and stores the problem,
     language, and grounded instance for the child generators to easily access and use.
 
     Attributes:
@@ -74,9 +77,11 @@ class Generator:
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True # defaults to true to not break any pre-implemented scripts that
+           # did not consider this argument.
     ):
         """Creates a basic PDDL state trace generator. Takes either the raw filenames
-        of the domain and problem, or a problem ID.
+        of the domain and problem or a problem ID.
 
         Args:
             dom (str):
@@ -87,8 +92,10 @@ class Generator:
                 The ID of the problem to access.
             observe_pres_effs (bool):
                 Option to observe action preconditions and effects upon generation.
+            ignore_static_fluents (bool): option to ignore static fluents when generating traces. (default: True)
         """
         # get attributes
+        self.ignore_static_fluents = ignore_static_fluents
         self.pddl_dom = dom
         self.pddl_prob = prob
         self.problem_id = problem_id
@@ -114,7 +121,7 @@ class Generator:
         """Retrieves a dictionary mapping all of this problem's actions and the types
         of objects they act upon.
 
-        i.e. given the standard blocks problem/domain, this function would return:
+        i.e., given the standard blocks problem/domain, this function would return:
         {'pick-up': ['object'], 'put-down': ['object'], 'stack': ['object', 'object'],
         'unstack': ['object', 'object']}
 
@@ -133,7 +140,7 @@ class Generator:
         """Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
 
-        i.e. given the standard blocks problem/domain, this function would return:
+        i.e., given the standard blocks problem/domain, this function would return:
         {'=': ['object', 'object'], '!=': ['object', 'object'], 'on': ['object', 'object'],
         'ontable': ['object'], 'clear': ['object'], 'handempty': [], 'holding': ['object']}
 
@@ -168,20 +175,21 @@ class Generator:
                 op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
         return op_dict
 
-    def __get_all_grounded_fluents(self):
+    def __get_all_grounded_fluents(self) -> List[Fluent]:
         """Extracts all the grounded fluents in the problem.
 
         Returns:
             A list of all the grounded fluents in the problem, in the form of macq Fluents.
         """
-        return [
-            self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
-            for grounded_fluent in LPGroundingStrategy(
-                self.problem, include_variable_inequalities=True
-            )
-            .ground_state_variables()
-            .objects
-        ]
+        if self.ignore_static_fluents:
+            l1 = [self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom()) for grounded_fluent in LPGroundingStrategy(
+                self.problem, include_variable_inequalities=True).ground_state_variables().objects]
+        else:
+            l1 = [
+                self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
+                for grounded_fluent in ExtractStaticFluents(
+                    self.problem, include_variable_inequalities=True).ground_state_variables().objects]
+        return l1
 
     def __effect_split(self, act: PlainOperator):
         """Converts the effects of an action as defined by tarski to fluents as defined by macq.
@@ -294,6 +302,7 @@ class Generator:
             else Action(name=name, obj_params=obj_params)
         )
 
+
     def change_init(
         self,
         init_fluents: Union[Set[Fluent], List[Fluent]],
@@ -303,7 +312,7 @@ class Generator:
         """Changes the initial state of the `Generator`. The domain and problem PDDL files
         are rewritten to accomodate the new goal for later use by a planner.
 
-        Args:
+        Parameters:
             init_fluents (Union[Set[Fluent], List[Fluent]]):
                 The collection of fluents that will make up the new initial state.
             new_domain (str):
@@ -376,7 +385,7 @@ class Generator:
         self.pddl_dom = new_domain
         self.pddl_prob = new_prob
 
-    def generate_plan(self, from_ipc_file: bool = False, filename: str = None):
+    def generate_plan(self, from_ipc_file: bool = False, filename: str = None) -> Plan | None:
         """Generates a plan. If reading from an IPC file, the `Plan` is read directly. Otherwise, if the initial state or
         goal was changed, these changes are taken into account through the updated PDDL files. If no changes were made, the
         default nitial state/goal in the initial problem file is used.
@@ -422,7 +431,7 @@ class Generator:
                             plan_list = [f'({action})' for action in actions_with_objects]
                             return plan_list
 
-                        except TypeError:
+                        except KeyError:
                             return get_api_response(delays[1:])
 
                 plan = get_api_response([0, 1, 3, 5, 10])
@@ -465,3 +474,29 @@ class Generator:
             else:
                 trace.append(Step(macq_state, None, i + 1))
         return trace
+
+
+class ExtractStaticFluents(LPGroundingStrategy):
+    def __init__(self, problem, ground_actions=True, include_variable_inequalities=False):
+        super().__init__(problem=problem, ground_actions=ground_actions,
+                         include_variable_inequalities=include_variable_inequalities)
+
+    def ground_state_variables(self):
+        """ Create and index all state variables of the problem by exhaustively grounding all predicate and function
+        symbols that are considered to be fluent with respect to the problem constants. Thus, if the problem has one
+        fluent predicate "p" and one static predicate "q", and constants "a", "b", "c", the result of this operation
+        will be the state variables "p(a)", "p(b)" and "p(c)".
+        """
+        model = self._solve_lp()
+
+        variables = SymbolIndex()
+        for symbol in self.fluent_symbols.union(self.static_symbols):
+
+            lang = symbol.language
+            key = 'atom_' + symbol.name
+            if key in model:  # in case there is no reachable ground state variable from that fluent symbol
+                for binding in model[key]:
+                    binding_with_constants = tuple(lang.get(c) for c in binding)
+                    variables.add(StateVariableLite(symbol, binding_with_constants))
+
+        return variables

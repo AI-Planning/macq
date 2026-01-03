@@ -33,6 +33,7 @@ class FDRandomWalkSampling(VanillaSampling):
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
         max_time: float = 30,
         init_h: int = None,
         num_traces: int = 1,
@@ -65,6 +66,7 @@ class FDRandomWalkSampling(VanillaSampling):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents,
             num_traces=num_traces,
             seed=seed,
             max_time=max_time,

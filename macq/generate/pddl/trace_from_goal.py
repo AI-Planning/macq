@@ -8,6 +8,8 @@ class TraceFromGoal(Generator):
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
+
     ):
         """
         Initializes a goal state trace sampler using the domain and problem. This method of sampling
@@ -28,6 +30,7 @@ class TraceFromGoal(Generator):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents
         )
         self.trace = self.generate_trace()
 

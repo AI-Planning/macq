@@ -39,6 +39,7 @@ class VanillaSampling(Generator):
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
         plan_len: int = 1,
         num_traces: int = 0,
         seed: int = None,
@@ -69,6 +70,7 @@ class VanillaSampling(Generator):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents
         )
         if max_time <= 0:
             raise InvalidTime()

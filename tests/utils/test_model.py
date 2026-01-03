@@ -9,6 +9,6 @@ def extract_observer(traces):
     return model
 
 
-def test_model():
+def generate_test_model():
     traces = blocks_world(10)
     return extract_observer(traces)

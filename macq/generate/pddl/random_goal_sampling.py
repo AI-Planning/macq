@@ -1,7 +1,6 @@
 import random
-from typing import Dict
-from tarski.syntax.formulas import Atom
 from collections import OrderedDict
+from typing import Dict
 from . import VanillaSampling
 from ...trace import TraceList, State
 from ...utils import PercentError, basic_timer, progress
@@ -39,6 +38,7 @@ class RandomGoalSampling(VanillaSampling):
         problem_id: int = None,
         max_time: float = 30,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
     ):
         """
         Initializes a random goal state trace sampler using the plan length, number of traces,
@@ -78,6 +78,7 @@ class RandomGoalSampling(VanillaSampling):
             problem_id=problem_id,
             num_traces=num_traces,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents,
             max_time=max_time,
         )
 

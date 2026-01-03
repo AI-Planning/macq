@@ -8,10 +8,10 @@ from tarski.io import fstrips as iofs
 from tarski.syntax import land
 from tarski.syntax.formulas import CompoundFormula, Connective, top
 
-from ..trace import Fluent
 from ..utils import ComplexEncoder
-from .learned_action import LearnedAction, LearnedLiftedAction
-from .learned_fluent import LearnedFluent, LearnedLiftedFluent
+from .learned_action import LearnedAction, LearnedLiftedAction, LiftedActionNegPrec
+from .learned_fluent import LearnedFluent, LearnedLiftedFluent, ParamBoundLFluent
+from .learned_sort import Sort
 
 
 class Model:
@@ -32,7 +32,8 @@ class Model:
     def __init__(
         self,
         fluents: Union[Set[LearnedFluent], Set[LearnedLiftedFluent]],
-        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction]],
+        actions: Union[Set[LearnedAction], Set[LearnedLiftedAction], Set[LiftedActionNegPrec]],
+        learned_sorts: Union[list[Sort], None] = None
     ):
         """Initializes a Model with a set of fluents and a set of actions.
 
@@ -41,9 +42,11 @@ class Model:
                 The set of fluents in the model.
             actions (Set[LearnedAction]):
                 The set of actions in the model.
+            learned_sorts (Union[list[Sort], None]): the sorts of the objects
         """
         self.fluents = fluents
         self.actions = actions
+        self.learned_sorts = learned_sorts
 
     def __eq__(self, other):
         if not isinstance(other, Model):
@@ -179,14 +182,26 @@ class Model:
             problem_filename (str):
                 The name of the problem file to be generated.
         """
-        self.fluents: Set[LearnedLiftedFluent]
+        self.fluents: Union[Set[LearnedLiftedFluent], Set[ParamBoundLFluent]]
         self.actions: Set[LearnedLiftedAction]
 
         lang = tarski.language(domain_name)
         problem = tarski.fstrips.create_fstrips_problem(
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
-        sorts = set()
+        sorts = {"object"}
+        if self.learned_sorts is not None:
+            for s in self.learned_sorts:
+                if isinstance(s, Sort) and s.sort_name not in sorts:
+                    if s.parent is None:
+                        lang.sort(name=s.sort_name)
+                        sorts.add(s.sort_name)
+            for s in self.learned_sorts:
+                if isinstance(s, Sort) and s.sort_name not in sorts:
+                    if s.parent is not None:
+                        lang.sort(name=s.sort_name, parent=s.parent)
+                        sorts.add(s.sort_name)
+
 
         if self.fluents:
             for f in self.fluents:
@@ -196,20 +211,30 @@ class Model:
                         sorts.add(sort)
 
                 lang.predicate(f.name, *f.param_sorts)
-
         if self.actions:
             for a in self.actions:
+
+
                 vars = [lang.variable(f"x{i}", s) for i, s in enumerate(a.param_sorts)]
 
-                if len(a.precond) == 1:
-                    precond = lang.get(list(a.precond)[0].name)(*[vars[i] for i in list(a.precond)[0].param_act_inds])  # type: ignore
+                positive_precond_list = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.precond]
+
+                neg_precond_list = []
+                if isinstance(a, LiftedActionNegPrec):
+                    for f in a.negative_precond:
+                        negated_predicate = CompoundFormula(
+                                Connective.Not,[lang.get(f.name)(*[vars[i] for i in f.param_act_inds])],)
+                        neg_precond_list.append(negated_predicate)
+
+                precond_list =  positive_precond_list + neg_precond_list
+                if len(precond_list) == 1:
+                    precond = precond_list[0]
+                elif len(precond_list) == 0:
+                    precond = top
+
                 else:
                     precond = CompoundFormula(
-                        Connective.And,
-                        [
-                            lang.get(f.name)(*[vars[i] for i in f.param_act_inds])  # type: ignore
-                            for f in a.precond
-                        ],
+                        Connective.And, precond_list ,
                     )
 
                 adds = [lang.get(f.name)(*[vars[i] for i in f.param_act_inds]) for f in a.add]  # type: ignore
@@ -304,3 +329,6 @@ class Model:
     def _from_json(cls, data: dict):
         actions = set(map(LearnedAction._deserialize, data["actions"]))
         return cls(set(data["fluents"]), actions)
+
+
+
