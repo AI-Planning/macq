@@ -1,27 +1,24 @@
-from .signature_parameter import SignatureParameter
+"""The elements of a domain model, in lifted and grounded form."""
+
 from .object_type import ObjectType, CircularTypeHierarchyException, is_circular_type_hierarchy_error
+from .signature_parameter import SignatureParameter
+from .planning_object import PlanningObject
 from .fluents import LiftedFluent, ParameterBoundFluent, GroundedFluent
 from .actions import LiftedAction, GroundedAction
-from .model_type_validate import ModelTypeValidator, ModelType
-from .factory_pattern_model import Model, create_lifted_model, create_grounded_model
-
-"""package contains core elements of an action model.
-    enabling lifted and grounded representations"""
-
+from .domain_model import DomainModel, DomainModelError, DomainModelForm
 
 __all__ = [
     "ObjectType",
     "CircularTypeHierarchyException",
     "is_circular_type_hierarchy_error",
     "SignatureParameter",
+    "PlanningObject",
     "LiftedAction",
     "GroundedAction",
     "LiftedFluent",
     "ParameterBoundFluent",
     "GroundedFluent",
-    "ModelType",
-    "ModelTypeValidator",
-    "Model",
-    "create_lifted_model",
-    "create_grounded_model"
+    "DomainModel",
+    "DomainModelError",
+    "DomainModelForm",
 ]

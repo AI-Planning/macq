@@ -1,45 +1,21 @@
-from typing import List
+from dataclasses import dataclass
+from typing import Tuple
 
 from ..planning_object import PlanningObject
 
+
+@dataclass(frozen=True)
 class GroundedFluent:
+    """A predicate applied to specific objects."""
+
     name: str
-    objects: List[PlanningObject]
+    objects: Tuple[PlanningObject, ...] = ()
 
-    def __init__(self, name: str, objects: List[PlanningObject]):
-        self.name = name
-        self.objects = objects
-
-    def get_binding(self, action_parameters: List[PlanningObject]) -> List[int]:
-        """Returns indices of fluent objects in action parameters list."""
-        binding = []
-        for obj in self.objects:
-            try:
-                binding.append(action_parameters.index(obj))
-            except ValueError:
-                raise ValueError(f"Object {obj} not found in action parameters {action_parameters}")
-        return binding
-
-    def __str__(self):
-       return self.details()
+    def __post_init__(self):
+        object.__setattr__(self, "objects", tuple(self.objects))
 
     def details(self):
-        if len(self.objects) > 0:
-            string = f"{self.name} {' '.join([o.details() for o in self.objects])}"
+        return f"({' '.join([self.name, *(o.details() for o in self.objects)])})"
 
-        else:
-            string = self.name
-        return f"({string})"
-
-
-    def __repr__(self):
+    def __str__(self):
         return self.details()
-
-    def _serialize(self):
-        return str(self)
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __eq__(self, other):
-        return isinstance(other, GroundedFluent) and hash(self) == hash(other)

@@ -1,45 +1,36 @@
-from typing import List, Set
+from typing import Iterable, Tuple
 
-from ..signature_parameter import SignatureParameter
 from ..fluents.parameter_bound_fluent import ParameterBoundFluent
-
-class LiftedAction:
-
-    name: str
-    params: List[SignatureParameter]
-    positive_preconditions: Set[ParameterBoundFluent]
-    negative_preconditions: Set[ParameterBoundFluent] | None
-    add_effects: Set[ParameterBoundFluent]
-    delete_effects: Set[ParameterBoundFluent]
+from ..object_type import ObjectType
+from ..signature_parameter import SignatureParameter
+from .action_base import ActionBase
 
 
-    def __init__(self, name: str, params: List[SignatureParameter]):
-        self.positive_preconditions = set()
-        self.negative_preconditions = None
-        self.add_effects = set()
-        self.delete_effects = set()
-        self.name = name
-        self.params = params
+class LiftedAction(ActionBase):
+    """An action stated over typed parameters, with fluents bound to those parameters."""
 
+    def __init__(
+        self,
+        name: str,
+        params: Iterable[SignatureParameter],
+        positive_preconditions: Iterable[ParameterBoundFluent] = (),
+        negative_preconditions: Iterable[ParameterBoundFluent] = (),
+        add_effects: Iterable[ParameterBoundFluent] = (),
+        delete_effects: Iterable[ParameterBoundFluent] = (),
+    ):
+        super().__init__(name, positive_preconditions, negative_preconditions, add_effects, delete_effects)
+        self._params = tuple(params)
 
-    def __eq__(self, other):
-        return hash(self) == hash(other)
+    @property
+    def params(self) -> Tuple[SignatureParameter, ...]:
+        return self._params
 
-    def __hash__(self):
-        return hash((
-             self.name,
-             tuple(self.params),
-             frozenset(self.positive_preconditions),
-             frozenset(self.negative_preconditions),
-             frozenset(self.add_effects),
-             frozenset(self.delete_effects),))
+    @property
+    def signature(self) -> Tuple[str, Tuple[ObjectType, ...]]:
+        return self.name, tuple(param.object_type for param in self.params)
 
+    def _contents(self) -> tuple:
+        return super()._contents() + (self.params,)
 
-    def __str__(self):
-        return self.details()
-
-    def details(self):
-        return f"({self.name} {' '.join(param.object_type.type_name for param in self.params)})"
-
-    def __repr__(self) -> str:
-        return self.details()
+    def details(self) -> str:
+        return f"({' '.join([self.name, *(param.details() for param in self.params)])})"

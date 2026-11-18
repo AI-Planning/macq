@@ -1,22 +1,17 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .object_type import ObjectType
 
-@dataclass
-class SignatureParameter:
-    name: str
-    object_type: ObjectType = None
 
-    def __post_init__(self):
-        # Initialize with the default ObjectType if None is provided
-        if self.object_type is None:
-            self.object_type = ObjectType("object")
+@dataclass(frozen=True)
+class SignatureParameter:
+    """A named, typed parameter of an action or predicate."""
+
+    name: str
+    object_type: ObjectType = field(default_factory=ObjectType)
 
     def __str__(self):
-        return f"{self.name}"
+        return self.name
 
     def details(self):
         return f"{self.name} {self.object_type}"
-
-    def __hash__(self):
-        return hash(str(self))

@@ -1,59 +1,37 @@
-from typing import List, Set
+from typing import Iterable, Optional, Tuple
 
-from ..planning_object import PlanningObject
 from ..fluents.grounded_fluent import GroundedFluent
+from ..planning_object import PlanningObject
+from .action_base import ActionBase
 
 
-# TODO finish implementation
-class GroundedAction:
-    name: str
-    params: List[PlanningObject]
-    positive_preconditions: Set[GroundedFluent]
-    negative_preconditions: Set[GroundedFluent]
-    add_effects: Set[GroundedFluent]
-    delete_effects: Set[GroundedFluent]
-    cost: int|None
+class GroundedAction(ActionBase):
+    """An action applied to specific objects."""
 
-
-    def __init__(self, name: str, objects: List[PlanningObject],  is_strips:bool= False, cost: int=None):
-        self.name =  name
-        self.objects = objects
-        self.is_strips = is_strips
-        self.positive_preconditions = set()
-        self.negative_preconditions = set()
-        self.add_effects = set()
-        self.delete_effects = set()
-        self.cost = None
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-    def __repr__(self):
-        string = f"{self.name} {' '.join(map(str, self.obj_params))}"
-        return string
-
-    def __hash__(self):
-        raise hash(self.details())
-
-    def _serialize(self):
-        return self.name
-
-    def details(self):
-        string = f"{self.name} {' '.join([o.details() for o in self.objects])}"
-        return string
-
-    def clone(self, atomic=False):
-        if atomic:
-            return AtomicAction(
-                self.name, [obj.details() for obj in self.objects], self.cost)
-
-        return GroundedAction(self.name, self.objects.copy(), is_strips=self.is_strips, cost=self.cost)
-
-class AtomicAction(GroundedAction):
-    """An Action where the objects are represented by strings."""
-
-    def __init__(self, name: str, obj_params: List[str], cost: int = 0):
-        super().__init__(name, [PlanningObject(obj) for obj in obj_params], cost=cost)
-        self.name = name
-        self.obj_params = obj_params
+    def __init__(
+        self,
+        name: str,
+        objects: Iterable[PlanningObject],
+        positive_preconditions: Iterable[GroundedFluent] = (),
+        negative_preconditions: Iterable[GroundedFluent] = (),
+        add_effects: Iterable[GroundedFluent] = (),
+        delete_effects: Iterable[GroundedFluent] = (),
+        cost: Optional[int] = None,
+    ):
+        super().__init__(name, positive_preconditions, negative_preconditions, add_effects, delete_effects)
+        self._objects = tuple(objects)
         self.cost = cost
+
+    @property
+    def objects(self) -> Tuple[PlanningObject, ...]:
+        return self._objects
+
+    @property
+    def signature(self) -> Tuple[str, Tuple[PlanningObject, ...]]:
+        return self.name, self.objects
+
+    def _contents(self) -> tuple:
+        return super()._contents() + (self.objects, self.cost)
+
+    def details(self) -> str:
+        return f"({' '.join([self.name, *(obj.details() for obj in self.objects)])})"
