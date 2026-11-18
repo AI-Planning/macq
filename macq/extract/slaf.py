@@ -3,11 +3,10 @@
 from typing import Set, Union
 from bauhaus import Encoding
 from nnf import And, Or, Var, config, false, true
-import macq.extract as extract
+from ..core import DomainModel, DomainModelForm, GroundedAction
 from ..observation import AtomicPartialObservation, ObservedTraceList
+from ._core_conversion import to_grounded_fluent, to_planning_object
 from .exceptions import IncompatibleObservationToken
-from .learned_fluent import LearnedFluent
-from .model import Model
 
 # only used for pretty printing in debug mode
 e = Encoding()
@@ -19,7 +18,7 @@ class SLAF:
     Amir, E, and A Chang. 2008. “Learning Partially Observable Deterministic Action Models.”
     Journal of Artificial Intelligence Research 33: 349–402. https://doi.org/10.1613/jair.2575.
 
-    Extracts a Model from state observations using the SLAF technique. The AS-STRIPS-SLAF
+    Extracts a grounded domain model from state observations using the SLAF technique. The AS-STRIPS-SLAF
     algorithm is used to extract the effects of actions given a trace/observation. The algorithm
     is incapable of finding the preconditions of those actions, however.
 
@@ -33,7 +32,7 @@ class SLAF:
     are taken and states observed, these reasonings are updated and simplified. (Note that the pieces of the formula
     are stored carefully so as to easily conjoin them into one CNF formula later). Once all steps in the trace
     have been iterated through, the CNF formula is created, and all possible fluents/action propositions are
-    iterated through to determine which ones are entailed. This information is then used to extract the Model.
+    iterated through to determine which ones are entailed. This information is then used to extract the domain model.
     """
 
     # only need one true and one false
@@ -41,7 +40,7 @@ class SLAF:
     bottom = false
 
     def __new__(cls, o_list: ObservedTraceList, debug: bool = False, sample: bool = False):
-        """Creates a new Model object.
+        """Creates a new grounded `DomainModel`.
 
         Args:
             o_list (ObservationList):
@@ -64,7 +63,7 @@ class SLAF:
 
         SLAF.debug_mode = debug
         entailed = SLAF.__as_strips_slaf(o_list, sample)
-        # return the Model
+        # return the domain model
         return SLAF.__sort_results(o_list, entailed)
 
     @staticmethod
@@ -159,7 +158,7 @@ class SLAF:
 
     @staticmethod
     def __sort_results(observations: ObservedTraceList, entailed: Set):
-        """Generates a `Model` given the set of entailed propositions.
+        """Generates a `DomainModel` given the set of entailed propositions.
 
         Args:
             observations (ObservationLists):
@@ -168,20 +167,20 @@ class SLAF:
                 The set of propositions that were found to be entailed.
 
         Returns:
-            The extracted `Model`.
+            The extracted `DomainModel`.
         """
         learned_actions = {}
-        model_fluents = observations.get_fluents()
+        model_fluents = set(map(to_grounded_fluent, observations.get_fluents()))
 
         # iterate through each step
         for o in observations:
             for token in o:
                 # if an action was taken on this step
                 if token.action:
-                    # set up a base LearnedAction with the known information
-                    learned_actions[str(token.action)] = extract.LearnedAction(
+                    # set up a base action with the known information
+                    learned_actions[str(token.action)] = GroundedAction(
                         token.action.name,
-                        token.action.obj_params,
+                        map(to_planning_object, token.action.obj_params),
                         cost=token.action.cost,
                     )
         # iterate through all entailed propositions
@@ -199,7 +198,9 @@ class SLAF:
                 # update the precondition of this action with the appropriate fluent
                 #  only if it's a positive precondition
                 if "~" not in precond:
-                    learned_actions[action].update_precond({precond})
+                    learned_actions[action].positive_preconditions.add(
+                        to_grounded_fluent(precond)
+                    )
             # if this proposition holds information about an effect
             elif effect in e:
                 # split to separate effect and action, get rid of extra brackets
@@ -211,11 +212,13 @@ class SLAF:
                     # get rid of "~"
                     effect = effect[1:]
                     # update the delete effects of this action with the appropriate fluent
-                    learned_actions[action].update_delete({effect})
+                    learned_actions[action].delete_effects.add(to_grounded_fluent(effect))
                 else:
                     # update the add effects of this action with the appropriate fluent
-                    learned_actions[action].update_add({effect})
-        return Model(model_fluents, set(learned_actions.values()))
+                    learned_actions[action].add_effects.add(to_grounded_fluent(effect))
+        return DomainModel(
+            DomainModelForm.GROUNDED, model_fluents, learned_actions.values()
+        )
 
     @staticmethod
     def __as_strips_slaf(o_list: ObservedTraceList, sample: bool):
