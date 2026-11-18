@@ -55,24 +55,25 @@ print(model.details())
 **Output:**
 
 ```text
-Model:
-  Fluents: (at rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint2), (have_soil_analysis rover rover0 waypoint waypoint3), ...
+Domain model:
+  Fluents: (at x0 rover x1 waypoint), (at_rock_sample x0 waypoint), (channel_free x0 lander), (have_rock_analysis x0 rover x1 waypoint), ...
   Actions:
-    (communicate_image_data rover waypoint mode objective lander waypoint):
+    (communicate_image_data x0 rover x1 waypoint x2 mode x3 objective x4 lander x5 waypoint):
       precond:
-        calibrated camera rover
-        have_rock_analysis rover waypoint
-        communicated_rock_data waypoint
-        channel_free lander
-        at_soil_sample waypoint
-        at_rock_sample waypoint
+        (at_rock_sample 5)
+        (at_soil_sample 1)
+        (channel_free 4)
+        (communicated_rock_data 1)
+        (have_rock_analysis 0 1)
       add:
-        calibrated camera rover
-        at rover waypoint
-        have_image rover objective mode
-        channel_free lander
-        communicated_image_data objective mode
+        (at 0 1)
+        (communicated_image_data 3 2)
+        (have_image 0 3 2)
       delete:
-        calibrated camera rover
+        (channel_free 4)
     ...
 ```
+
+ARMS returns a lifted domain model. Each fluent inside an action lists the indices of the action parameters that fill its arguments, chosen from the bindings seen most often in the observations.
+
+ARMS can learn a relation that an action's parameters can't fill, such as a relation over a `camera` on an action with no `camera` parameter. These relations can't be stated in a lifted domain model, so ARMS drops each one and issues a warning.
