@@ -172,19 +172,3 @@ class LiftedActionNegPrec(LearnedLiftedAction):  #TODO change class name to a mo
     def __init__(self, name: str, param_sorts: List[str], **kwargs):
         super().__init__(name, param_sorts, **kwargs)
         self.negative_precond = set() if "negative_precond" not in kwargs else kwargs["negative_precond"]
-
-    def __eq__(self, other):
-        return (
-                isinstance(other, LiftedActionNegPrec)
-                and self.__hash__() == other.__hash__()
-        )
-
-    def __hash__(self):
-        # Order of param_sorts is important!
-        return hash((
-             tuple(self.param_sorts),
-             frozenset(self.precond),
-             frozenset(self.negative_precond),
-             frozenset(self.add),
-             frozenset(self.delete)))
-

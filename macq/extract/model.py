@@ -51,6 +51,8 @@ class Model:
     def __eq__(self, other):
         if not isinstance(other, Model):
             return False
+        if set(self.learned_sorts or []) != set(other.learned_sorts or []):
+            return False
         self_fluent_type, other_fluent_type = type(list(self.fluents)[0]), type(
             list(other.fluents)[0]
         )
@@ -84,6 +86,10 @@ class Model:
             details += f"{indent}precond:\n"
             for f in action.precond:
                 details += f"{indent * 2}{f}\n"
+            if isinstance(action, LiftedActionNegPrec):
+                details += f"{indent}negative precond:\n"
+                for f in action.negative_precond:
+                    details += f"{indent * 2}{f}\n"
             details += f"{indent}add:\n"
             for f in action.add:
                 details += f"{indent * 2}{f}\n"
@@ -163,6 +169,36 @@ class Model:
                 f"Could not determine whether the model is grounded or lifted. Fluents are of type {type(list(self.fluents)[0])} while actions are of type {type(list(self.actions)[0])}"
             )
 
+    def _learned_sorts_parents_first(self):
+        """Returns the learned sorts ordered so each parent precedes its children.
+
+        Raises:
+            ValueError: If a parent is unknown or the hierarchy contains a cycle.
+        """
+        remaining = {}
+        for s in self.learned_sorts or []:
+            if isinstance(s, Sort) and s.sort_name != "object":
+                remaining.setdefault(s.sort_name, s)
+
+        ordered = []
+        placed = {"object"}
+        while remaining:
+            ready = [
+                s
+                for s in remaining.values()
+                if s.parent is None or s.parent in placed
+            ]
+            if not ready:
+                unknown = {s.parent for s in remaining.values()} - set(remaining)
+                if unknown:
+                    raise ValueError(f"Unknown parent types: {sorted(unknown)}.")
+                raise ValueError(f"Cycle in type hierarchy: {sorted(remaining)}.")
+            for s in ready:
+                ordered.append(s)
+                placed.add(s.sort_name)
+                del remaining[s.sort_name]
+        return ordered
+
     def to_pddl_lifted(
         self,
         domain_name: str,
@@ -190,27 +226,30 @@ class Model:
             domain_name=domain_name, problem_name=problem_name, language=lang
         )
         sorts = {"object"}
-        if self.learned_sorts is not None:
-            for s in self.learned_sorts:
-                if isinstance(s, Sort) and s.sort_name not in sorts:
-                    if s.parent is None:
-                        lang.sort(name=s.sort_name)
-                        sorts.add(s.sort_name)
-            for s in self.learned_sorts:
-                if isinstance(s, Sort) and s.sort_name not in sorts:
-                    if s.parent is not None:
-                        lang.sort(name=s.sort_name, parent=s.parent)
-                        sorts.add(s.sort_name)
-
+        for s in self._learned_sorts_parents_first():
+            if s.parent is None:
+                lang.sort(name=s.sort_name)
+            else:
+                lang.sort(name=s.sort_name, parent=s.parent)
+            sorts.add(s.sort_name)
 
         if self.fluents:
+            predicates = {}
             for f in self.fluents:
                 for sort in f.param_sorts:
                     if sort not in sorts:
                         lang.sort(sort)
                         sorts.add(sort)
 
-                lang.predicate(f.name, *f.param_sorts)
+                # The same predicate can appear once per argument order.
+                if f.name not in predicates:
+                    lang.predicate(f.name, *f.param_sorts)
+                    predicates[f.name] = f.param_sorts
+                elif predicates[f.name] != f.param_sorts:
+                    raise ValueError(
+                        f"Predicate {f.name} has conflicting types: "
+                        f"{predicates[f.name]} and {f.param_sorts}."
+                    )
         if self.actions:
             for a in self.actions:
 

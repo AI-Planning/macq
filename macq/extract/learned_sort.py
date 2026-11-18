@@ -15,7 +15,11 @@ class Sort:
         self.parent = parent
 
     def __eq__(self, other):
-        return self.sort_name == other.sort_name and self.parent == other.parent
+        return (
+            isinstance(other, Sort)
+            and self.sort_name == other.sort_name
+            and self.parent == other.parent
+        )
 
     def __hash__(self):
         return hash(self.details())
@@ -51,14 +55,6 @@ class Sort:
 
 
 
-def sort_by_observations(obs_trace_list: ObservedTraceList) -> (set[Sort], dict[str, str]):
-    pass
-
-
-
-
-
-
 def sort_inference_by_fluents(obs_trace_list: ObservedTraceList,
                               true_fluents: set[Fluent]=None ) -> (dict[str, str]):
     """
@@ -74,16 +70,18 @@ def sort_inference_by_fluents(obs_trace_list: ObservedTraceList,
 
     """
     os: set[str] = set()  # set of object names
-    if not true_fluents:
-        true_fluents = set()
-        for obs_trace in obs_trace_list.observations:
-            for obs in obs_trace:
-                if obs.state:
-                    for f, v in obs.state.items():
-                        os.update(obj.name for obj in f.objects)
-                        if v:
-                            true_fluents.add(f)
+    observed_true_fluents: set[Fluent] = set()
+    for obs_trace in obs_trace_list.observations:
+        for obs in obs_trace:
+            if obs.state:
+                for f, v in obs.state.items():
+                    os.update(obj.name for obj in f.objects)
+                    if v:
+                        observed_true_fluents.add(f)
 
+    if not true_fluents:
+        true_fluents = observed_true_fluents
+    os.update(obj.name for f in true_fluents for obj in f.objects)
 
     objects: list[str] = list(os)  # list of object names
     f_index_type: dict[str, list[set[str]]] = dict()
