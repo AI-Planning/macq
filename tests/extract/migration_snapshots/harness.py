@@ -191,8 +191,29 @@ def _action_part(action, part):
     return getattr(action, _CORE_PARTS[part] if hasattr(action, "add_effects") else part)
 
 
-def normalize(model):
+def _normalize_lifted(model, scenario):
+    declared = {f.name: [str(p.object_type) for p in f.parameters] for f in model.fluents}
+
+    def fluent(bound):
+        types = declared[bound.name]
+        if scenario == "arms":  # the old output had no bindings to compare
+            return "(" + " ".join([bound.name, *types]) + ")"
+        return [bound.name, types, list(bound.bounded_params)]
+
+    actions = {}
+    for action in model.actions:
+        signature = " ".join([action.name, *(str(p.object_type) for p in action.params)])
+        actions[f"({signature})"] = {
+            part: _unique_sorted(fluent(f) for f in _action_part(action, part)) for part in _CORE_PARTS
+        }
+    used = [f for action in actions.values() for part in action.values() for f in part]
+    return {"fluents": _unique_sorted(used), "actions": dict(sorted(actions.items()))}
+
+
+def normalize(model, scenario):
     """Returns the learned content of a domain model in a canonical, comparable form."""
+    if getattr(getattr(model, "form", None), "value", None) == "lifted":
+        return _normalize_lifted(model, scenario)
     actions = {}
     for action in model.actions:
         actions[action.details().replace(" )", ")")] = {
@@ -215,7 +236,7 @@ def main(mode, scenario, output):
     elif solution_file.exists():
         _replay_solutions(scenario, json.loads(solution_file.read_text()))
 
-    result = normalize(SCENARIOS[scenario]())
+    result = normalize(SCENARIOS[scenario](), scenario)
 
     if mode == "record" and solutions:
         SOLUTIONS.mkdir(exist_ok=True)

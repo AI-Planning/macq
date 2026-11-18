@@ -1,10 +1,15 @@
 """Converts what extraction techniques learn into `macq.core` domain model parts."""
 
-from typing import Union
+from typing import Iterable, List, Union
 
-from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject
+from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject, SignatureParameter
 from ..trace import Fluent
 from ..trace import PlanningObject as TracePlanningObject
+
+
+def to_parameters(type_names: Iterable[str]) -> List[SignatureParameter]:
+    """Returns parameters named `x0`, `x1`, ... with the given object types."""
+    return [SignatureParameter(f"x{i}", ObjectType(name)) for i, name in enumerate(type_names)]
 
 
 def to_planning_object(obj: Union[TracePlanningObject, str]) -> PlanningObject:
