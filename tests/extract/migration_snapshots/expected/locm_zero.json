@@ -1,0 +1,103 @@
+{
+ "actions": {
+  "(close sort1)": {
+   "add": [
+    [
+     "sort1_state2",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ],
+   "delete": [
+    [
+     "sort1_state1",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ],
+   "precond": [
+    [
+     "sort1_state1",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ]
+  },
+  "(open sort1)": {
+   "add": [
+    [
+     "sort1_state1",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ],
+   "delete": [
+    [
+     "sort1_state0",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ],
+   "precond": [
+    [
+     "sort1_state0",
+     [
+      "sort1"
+     ],
+     [
+      0
+     ]
+    ]
+   ]
+  }
+ },
+ "fluents": [
+  [
+   "sort1_state0",
+   [
+    "sort1"
+   ],
+   [
+    0
+   ]
+  ],
+  [
+   "sort1_state1",
+   [
+    "sort1"
+   ],
+   [
+    0
+   ]
+  ],
+  [
+   "sort1_state2",
+   [
+    "sort1"
+   ],
+   [
+    0
+   ]
+  ]
+ ]
+}
