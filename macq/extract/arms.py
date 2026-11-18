@@ -458,7 +458,7 @@ class ARMS:
         actions: Dict[Action, LearnedAction],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
-        """Information constraints.
+        r"""Information constraints.
 
         Suppose we observe a relation p to be true between two actions
         (a_n) and (a_{n+1}) , and (p, a_{i_1} , ... ,) and (a_{i_k}) share
@@ -470,12 +470,12 @@ class ARMS:
         (p∈ (add_{i_1} ∪ add_{i_2} ∪ \dots ∪ add_{i_k}) ), where ∪ means logical “or”.
 
         I2. The last action (a_{i_k}) must not delete the relation p; that is,
-        (p) must not be selected to be in the delete list of (a_{i_k}): (p \\not\in del_{i_k}).
+        (p) must not be selected to be in the delete list of (a_{i_k}): (p \not\in del_{i_k}).
 
         I3. We define the weight value of a relation-action pair ((p, a)) as the
         occurrence probability of this pair in all plan examples. If the probability
         of a relation-action pair is higher than the probability threshold θ ,
-        then we set a corresponding relation constraint (p ∈ \\text{PRECOND}_a), which
+        then we set a corresponding relation constraint (p ∈ \text{PRECOND}_a), which
         receives a weight value equal to its prior probability.
         """
         if debug:
@@ -616,7 +616,7 @@ class ARMS:
         min_support: int,
         debug: bool,
     ) -> Dict[Or[Var], int]:
-        """Plan constraints.
+        r"""Plan constraints.
 
         P1. Every precondition (p) of every action (b) must be in the add
         list of a preceding action (a) and is not deleted by any actions between
@@ -634,7 +634,7 @@ class ARMS:
         rationelle in the paper) Thus, they are replaced with the following
         constraints:
 
-        Let there be an action pair (\langle a_i, a_j \\rangle, 0 \le i < j \le n-1).
+        Let there be an action pair (\langle a_i, a_j \rangle, 0 \le i < j \le n-1).
 
         P3. One of the relevant relations (p) must be chosen to be in the
         preconditions of both (a_i) and (a_j), but not in the delete list
@@ -648,7 +648,7 @@ class ARMS:
         when an action re-establishes a fact that is deleted by a previous action.
 
         The above constraints can be combined into one constraint:
-        $$\exists p ((p \in (pre_i \cap pre_j) \land p \\not \in (del_i)) \lor (p \in (add_i \cap pre_j)) \lor (p \in (del_i \cap add_j)))$$
+        $$\exists p ((p \in (pre_i \cap pre_j) \land p \not \in (del_i)) \lor (p \in (add_i \cap pre_j)) \lor (p \in (del_i \cap add_j)))$$
         """
         frequent_pairs = ARMS._apriori(
             [
