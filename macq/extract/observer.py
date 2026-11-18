@@ -4,12 +4,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Set
 
-from dataclasses import dataclass
+from ..core import DomainModel, DomainModelForm, GroundedAction
 from ..observation import IdentityObservation, ObservedTraceList
-from . import LearnedAction, Model
+from ._core_conversion import to_grounded_fluent, to_planning_object
 from .exceptions import IncompatibleObservationToken
-from .learned_fluent import LearnedFluent
-from .model import Model
 
 
 @dataclass
@@ -21,7 +19,7 @@ class DeltaObservation:
 class Observer:
     """Observer model extraction method.
 
-    Extracts a Model from state observations using the observer technique.  All
+    Extracts a grounded domain model from state observations using the observer technique.  All
     the fluents present in the observations are saved as is. The actions have
     their preconditions, add effects, and delete effects found and added to the
     object.
@@ -34,7 +32,7 @@ class Observer:
     """
 
     def __new__(cls, obs_tracelist: ObservedTraceList, **kwargs):
-        """Creates a new Model object.
+        """Creates a new grounded `DomainModel`.
 
         Args:
             observations (ObservationList):
@@ -47,7 +45,7 @@ class Observer:
             raise IncompatibleObservationToken(obs_tracelist.type, Observer)
         fluents = Observer._get_fluents(obs_tracelist)
         actions = Observer._get_actions(obs_tracelist)
-        return Model(fluents, actions)
+        return DomainModel(DomainModelForm.GROUNDED, fluents, actions)
 
     @staticmethod
     def _get_fluents(obs_tracelist: ObservedTraceList):
@@ -57,10 +55,7 @@ class Observer:
         for obs_trace in obs_tracelist:
             for obs in obs_trace:
                 # Update fluents with the fluents in this observation
-                fluents.update(
-                    LearnedFluent(f.name, [o.details() for o in f.objects])
-                    for f in obs.state.keys()
-                )
+                fluents.update(to_grounded_fluent(f) for f in obs.state.keys())
         return fluents
 
     @staticmethod
@@ -79,9 +74,11 @@ class Observer:
         # Get transitions for each action
         action_transitions = obs_tracelist.get_all_transitions()
         for action, transitions in action_transitions.items():
-            # Create a LearnedAction for the current action
-            model_action = LearnedAction(
-                action.name, action.obj_params, cost=action.cost
+            # Create a domain model action for the current action
+            model_action = GroundedAction(
+                action.name,
+                map(to_planning_object, action.obj_params),
+                cost=action.cost,
             )
 
             for pre, post in transitions:
@@ -89,13 +86,13 @@ class Observer:
                 action_pre_states[model_action].add(pre.state)
                 # Update the action's effects
                 delta = Observer.get_delta(pre.state, post.state)
-                model_action.update_add({str(f) for f in delta.added})
-                model_action.update_delete({str(f) for f in delta.deleted})
+                model_action.add_effects.update(map(to_grounded_fluent, delta.added))
+                model_action.delete_effects.update(map(to_grounded_fluent, delta.deleted))
 
         for action, pre_states in action_pre_states.items():
             # Find the (positive) intersection of the pre-states
             precond = set.intersection(*map(Observer._filter_positive, pre_states))
-            action.update_precond({str(f) for f in precond})
+            action.positive_preconditions.update(map(to_grounded_fluent, precond))
 
         return {action for action in action_pre_states}
 

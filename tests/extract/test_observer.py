@@ -8,15 +8,12 @@ from tests.utils.test_traces import blocks_world
 
 def test_observer(tmp_path):
     model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
-    model_blocks_prob = str(tmp_path / "model_blocks_problem.pddl")
 
     traces = blocks_world(5)
     observations = traces.tokenize(IdentityObservation)
     model = Extract(observations, modes.OBSERVER)
     assert model
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    model.to_pddl("model_blocks_dom", model_blocks_dom)
     with pytest.raises(InvalidQueryParameter):
         observations.fetch_observations({"test": "test"})
 
@@ -27,13 +24,10 @@ if __name__ == "__main__":
     output_dir = base / "generated_testing_files"
     output_dir.mkdir(exist_ok=True)
     model_blocks_dom = str((output_dir / "model_blocks_domain.pddl").resolve())
-    model_blocks_prob = str((output_dir / "model_blocks_problem.pddl").resolve())
 
     traces = blocks_world(5)
     observations = traces.tokenize(IdentityObservation)
     traces.print()
     model = Extract(observations, modes.OBSERVER)
     print(model.details())
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    model.to_pddl("model_blocks_dom", model_blocks_dom)

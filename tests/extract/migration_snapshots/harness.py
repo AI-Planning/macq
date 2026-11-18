@@ -184,13 +184,20 @@ def _unique_sorted(values):
     return sorted({_sort_key(v): v for v in values}.values(), key=_sort_key)
 
 
+_CORE_PARTS = {"precond": "positive_preconditions", "add": "add_effects", "delete": "delete_effects"}
+
+
+def _action_part(action, part):
+    return getattr(action, _CORE_PARTS[part] if hasattr(action, "add_effects") else part)
+
+
 def normalize(model):
     """Returns the learned content of a domain model in a canonical, comparable form."""
     actions = {}
     for action in model.actions:
         actions[action.details().replace(" )", ")")] = {
-            part: _unique_sorted(_legacy_fluent(f) for f in getattr(action, part))
-            for part in ("precond", "add", "delete")
+            part: _unique_sorted(_legacy_fluent(f) for f in _action_part(action, part))
+            for part in _CORE_PARTS
         }
     return {
         "fluents": _unique_sorted(_legacy_fluent(f) for f in model.fluents),
