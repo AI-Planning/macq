@@ -6,6 +6,7 @@ from .planning_object import PlanningObject
 from .fluents import LiftedFluent, ParameterBoundFluent, GroundedFluent
 from .actions import LiftedAction, GroundedAction
 from .domain_model import DomainModel, DomainModelError, DomainModelForm
+from .object_type_inference import infer_object_types_from_actions, infer_object_types_from_fluents
 
 __all__ = [
     "ObjectType",
@@ -21,4 +22,6 @@ __all__ = [
     "DomainModel",
     "DomainModelError",
     "DomainModelForm",
+    "infer_object_types_from_actions",
+    "infer_object_types_from_fluents",
 ]

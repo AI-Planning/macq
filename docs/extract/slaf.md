@@ -15,10 +15,10 @@ print(model.details())
 **Output:**
 
 ```text
-Model:
-  Fluents: clear location pos-06-09, clear location pos-02-05, clear location pos-08-08, clear location pos-10-05, ...
+Domain model:
+  Fluents: (clear location pos-02-05), (clear location pos-06-09), (clear location pos-08-08), (clear location pos-10-05), ...
   Actions:
-    move player player-01 direction dir-left location pos-05-02 location pos-06-02:
+    (move player player-01 direction dir-left location pos-05-02 location pos-06-02):
       precond:
       add:
       delete:

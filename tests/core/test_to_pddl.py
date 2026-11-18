@@ -238,3 +238,11 @@ def test_action_without_preconditions_or_effects_parses_with_the_pddl_library(tm
     DomainModel(LIFTED, set(), {LiftedAction("wait", [])}).to_pddl("d", filepath=str(path))
 
     assert {action.name for action in parse_domain(str(path)).actions} == {"wait"}
+
+
+def test_a_lone_negative_precondition_is_exported():
+    pick = LiftedAction("pick", [X], negative_preconditions={ParameterBoundFluent("clear", [0])})
+
+    text = normalized(DomainModel(LIFTED, [CLEAR], [pick]).to_pddl("blocks"))
+
+    assert ":precondition (and (not (clear ?x)))" in text
