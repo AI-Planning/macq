@@ -256,7 +256,4 @@ def test_amdn(tmp_path):
     assert model
 
     model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
-    model_blocks_prob = str(tmp_path / "model_blocks_problem.pddl")
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    model.to_pddl("model_blocks_dom", model_blocks_dom)
