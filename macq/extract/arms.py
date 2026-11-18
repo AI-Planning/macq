@@ -11,7 +11,6 @@ from nnf import false as nnffalse
 
 from ..core import (
     DomainModel,
-    DomainModelError,
     DomainModelForm,
     LiftedAction,
     LiftedFluent,
@@ -206,10 +205,6 @@ class ARMS:
         candidates = list(
             product(*[[i for i, p in enumerate(action.obj_params) if p == t] for t in types])
         )
-        if not candidates:
-            raise DomainModelError(
-                f"No parameter of {action.details()} can fill relation '{relation}'."
-            )
         schema = (action.name, tuple(action.obj_params))
 
         def preference(binding):
@@ -219,17 +214,31 @@ class ARMS:
         return ParameterBoundFluent(name, min(candidates, key=preference))
 
     @staticmethod
+    def _warn_dropped(relation: str, part: str, action: _ActionSchema) -> None:
+        label = {"pre": "precondition", "add": "add effect", "del": "delete effect"}[part]
+        shown = " ".join(relation.split())
+        warn(
+            f"ARMS learned ({shown}) as a {label} of {action.details()}, but the action's parameters "
+            "can't fill its arguments, so it was dropped from the domain model."
+        )
+
+    @staticmethod
     def _to_domain_model(actions: Iterable[_ActionSchema], support) -> DomainModel:
         """Builds the lifted domain model for the learned action schemas."""
         argument_types: Dict[str, Set[Tuple[str, ...]]] = defaultdict(set)
         lifted_actions = []
         for action in actions:
-            for relation in action.precond | action.add | action.delete:
-                name, *types = relation.split()
-                argument_types[name].add(tuple(types))
 
             def bind_all(relations: Set[str], part: str):
-                return [ARMS._bind(action, part, relation, support) for relation in relations]
+                bound = []
+                for relation in sorted(relations):
+                    name, *types = relation.split()
+                    if not Relation(name, types).matches(action):
+                        ARMS._warn_dropped(relation, part, action)
+                        continue
+                    argument_types[name].add(tuple(types))
+                    bound.append(ARMS._bind(action, part, relation, support))
+                return bound
 
             lifted_actions.append(
                 LiftedAction(

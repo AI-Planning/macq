@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pytest
@@ -16,6 +16,22 @@ SCENARIOS = sorted(path.stem for path in (SNAPSHOTS / "expected").glob("*.json")
 
 def _sorted(values):
     return sorted({json.dumps(v, sort_keys=True): v for v in values}.values(), key=lambda v: json.dumps(v, sort_keys=True))
+
+
+def _without_arms_relations_that_cannot_fit(expected):
+    """Applies the only change ARMS's output may have: relations its actions can't fill are dropped."""
+
+    def fits(relation, signature):
+        arguments = Counter(relation[1:-1].split()[1:])
+        parameters = Counter(signature[1:-1].split()[1:])
+        return all(count <= parameters[kind] for kind, count in arguments.items())
+
+    actions = {
+        signature: {part: [r for r in found if fits(r, signature)] for part, found in parts.items()}
+        for signature, parts in expected["actions"].items()
+    }
+    used = [relation for parts in actions.values() for found in parts.values() for relation in found]
+    return {"fluents": _sorted(used), "actions": actions}
 
 
 def _with_locm_forced_fixes(expected):
@@ -58,4 +74,6 @@ def test_extractor_learns_the_snapshotted_content(scenario, tmp_path):
     expected = json.loads((SNAPSHOTS / "expected" / f"{scenario}.json").read_text())
     if scenario.startswith("locm"):
         expected = _with_locm_forced_fixes(expected)
+    if scenario == "arms":
+        expected = _without_arms_relations_that_cannot_fit(expected)
     assert json.loads(output.read_text()) == expected

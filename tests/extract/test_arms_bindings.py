@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from macq.core import DomainModelError, DomainModelForm, ObjectType, ParameterBoundFluent
+from macq.core import DomainModelForm, ObjectType, ParameterBoundFluent
 from macq.extract.arms import ARMS, _ActionSchema
 from macq.trace import Action, Fluent, PartialState, PlanningObject
 
@@ -80,10 +80,12 @@ def test_without_evidence_distinct_parameters_are_preferred_in_order():
     assert only_action(model).add_effects == {bound("on", 0, 1)}
 
 
-def test_a_relation_with_more_arguments_than_parameters_repeats_a_parameter():
-    model = ARMS._to_domain_model([schema("pick", ["block"], precond=["on block block"])], {})
+def test_a_relation_with_more_arguments_of_a_type_than_parameters_is_dropped_with_a_warning():
+    with pytest.warns(UserWarning, match=r"\(on block block\).*precondition.*\(pick block\)"):
+        model = ARMS._to_domain_model([schema("pick", ["block"], precond=["on block block"])], {})
 
-    assert only_action(model).positive_preconditions == {bound("on", 0, 0)}
+    assert only_action(model).positive_preconditions == set()
+    assert model.fluents == frozenset()
 
 
 def test_a_relation_without_arguments_binds_to_nothing():
@@ -105,6 +107,29 @@ def test_a_predicate_seen_with_different_types_is_declared_over_their_common_par
     assert predicate.parameters[0].object_type == ObjectType()
 
 
-def test_a_relation_no_parameter_can_fill_is_rejected():
-    with pytest.raises(DomainModelError, match="at truck"):
-        ARMS._to_domain_model([schema("load", ["package"], add=["at truck"])], {})
+@pytest.mark.parametrize(
+    "part, label", [("precond", "precondition"), ("add", "add effect"), ("delete", "delete effect")]
+)
+def test_a_relation_no_parameter_can_fill_is_dropped_with_a_warning(part, label):
+    action = schema("load", ["package"], **{part: ["at truck"]})
+
+    with pytest.warns(UserWarning, match=rf"\(at truck\).*{label}.*\(load package\)"):
+        model = ARMS._to_domain_model([action], {})
+
+    assert only_action(model).add_effects == set()
+    assert model.fluents == frozenset()
+
+
+def test_relations_that_fit_are_kept_when_another_is_dropped():
+    action = schema("load", ["package"], add=["at truck", "held package"])
+
+    with pytest.warns(UserWarning):
+        model = ARMS._to_domain_model([action], {})
+
+    assert only_action(model).add_effects == {bound("held", 0)}
+
+
+def test_no_warning_when_every_relation_fits(recwarn):
+    ARMS._to_domain_model([schema("load", ["package"], add=["held package"])], {})
+
+    assert len(recwarn) == 0
