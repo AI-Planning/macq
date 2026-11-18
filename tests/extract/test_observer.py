@@ -6,15 +6,9 @@ from macq.trace import *
 from tests.utils.test_traces import blocks_world
 
 
-def test_observer():
-    # exit out to the base macq folder so we can get to /tests
-    base = Path(__file__).parent.parent
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
+def test_observer(tmp_path):
+    model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
+    model_blocks_prob = str(tmp_path / "model_blocks_problem.pddl")
 
     traces = blocks_world(5)
     observations = traces.tokenize(IdentityObservation)
@@ -30,12 +24,10 @@ def test_observer():
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
+    output_dir = base / "generated_testing_files"
+    output_dir.mkdir(exist_ok=True)
+    model_blocks_dom = str((output_dir / "model_blocks_domain.pddl").resolve())
+    model_blocks_prob = str((output_dir / "model_blocks_problem.pddl").resolve())
 
     traces = blocks_world(5)
     observations = traces.tokenize(IdentityObservation)

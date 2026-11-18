@@ -16,7 +16,7 @@ def get_fluent(name: str, objs: List[str]):
     return Fluent(name, objects)
 
 
-def test_locm():
+def test_locm(tmp_path):
     # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
@@ -31,7 +31,11 @@ def test_locm():
     )
 
     assert model
-    model.to_pddl("locm")
+    model.to_pddl(
+        "locm",
+        domain_filename=str(tmp_path / "locm.pddl"),
+        problem_filename=str(tmp_path / "locm_problem.pddl"),
+    )
 
 
 def get_example_obs(print_trace=False, ex=1):

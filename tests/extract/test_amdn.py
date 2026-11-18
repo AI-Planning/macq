@@ -213,7 +213,7 @@ def gen_tracelist():
     # return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
 
-def test_amdn():
+def test_amdn(tmp_path):
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
 
@@ -255,12 +255,8 @@ def test_amdn():
     model = Extract(observations, modes.AMDN, debug=False, occ_threshold=2)
     assert model
 
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
+    model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
+    model_blocks_prob = str(tmp_path / "model_blocks_problem.pddl")
     model.to_pddl(
         "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
     )

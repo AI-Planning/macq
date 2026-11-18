@@ -11,7 +11,7 @@ def get_fluent(name: str, objs: List[str]):
     return Fluent(name, objects)
 
 
-def test_arms():
+def test_arms(tmp_path):
     base = Path(__file__).parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
@@ -50,12 +50,8 @@ def test_arms():
 
     assert model
 
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
+    model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
+    model_blocks_prob = str(tmp_path / "model_blocks_problem.pddl")
     model.to_pddl(
         "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
     )
