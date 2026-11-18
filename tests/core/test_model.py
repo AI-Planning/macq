@@ -241,3 +241,32 @@ def test_grounded_action_cannot_use_an_undeclared_fluent(field):
 def test_parts_must_match_the_form(form, fluents, actions):
     with pytest.raises(DomainModelError, match=form.value):
         DomainModel(form, fluents, actions)
+
+
+def test_details_lists_fluents_and_action_contents_in_sorted_order():
+    block = ObjectType("block")
+    a = PlanningObject("a", block)
+    clear, held = GroundedFluent("clear", (a,)), GroundedFluent("held", (a,))
+    pick = GroundedAction("pick", (a,), [clear], [held], [held], [clear])
+    model = DomainModel(DomainModelForm.GROUNDED, [held, clear], [pick])
+
+    assert model.details() == (
+        "Domain model:\n"
+        "  Fluents: (clear block a), (held block a)\n"
+        "  Actions:\n"
+        "    (pick block a):\n"
+        "      precond:\n"
+        "        (clear block a)\n"
+        "      negative precond:\n"
+        "        (held block a)\n"
+        "      add:\n"
+        "        (held block a)\n"
+        "      delete:\n"
+        "        (clear block a)\n"
+    )
+
+
+def test_details_omits_the_negative_precondition_section_when_there_are_none():
+    model = DomainModel(DomainModelForm.GROUNDED, [], [GroundedAction("noop", ())])
+
+    assert "negative precond" not in model.details()

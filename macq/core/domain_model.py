@@ -53,6 +53,19 @@ class DomainModel:
         else:
             self._check_grounded_parts()
 
+    def details(self) -> str:
+        """Returns a readable summary of this domain model's fluents and actions, in sorted order."""
+        fluents = ", ".join(sorted(map(str, self.fluents)))
+        lines = ["Domain model:", f"  Fluents: {fluents}", "  Actions:"]
+        for action in sorted(self.actions, key=str):
+            lines.append(f"    {action}:")
+            lines += _section("precond", action.positive_preconditions)
+            if action.negative_preconditions:
+                lines += _section("negative precond", action.negative_preconditions)
+            lines += _section("add", action.add_effects)
+            lines += _section("delete", action.delete_effects)
+        return "\n".join(lines) + "\n"
+
     def to_pddl(self, domain_name: str, filepath: Optional[str] = None) -> str:
         """Returns this domain model as PDDL domain text.
 
@@ -190,6 +203,10 @@ class DomainModel:
             for fluent in _fluents_used_by(action):
                 if fluent not in self.fluents:
                     raise DomainModelError(f"Action {action!r} uses undeclared fluent {fluent}.")
+
+
+def _section(title: str, fluents: Iterable) -> List[str]:
+    return [f"      {title}:", *(f"        {fluent}" for fluent in sorted(map(str, fluents)))]
 
 
 def _fluents_used_by(action) -> Set:
