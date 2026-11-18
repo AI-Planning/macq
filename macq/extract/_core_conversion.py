@@ -1,8 +1,9 @@
 """Converts what extraction techniques learn into `macq.core` domain model parts."""
 
-from typing import Iterable, List, Union
+from typing import Iterable, List, Sequence, Union
 
 from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject, SignatureParameter
+from ..core.object_type import ROOT_TYPE_NAME
 from ..trace import Fluent
 from ..trace import PlanningObject as TracePlanningObject
 
@@ -10,6 +11,11 @@ from ..trace import PlanningObject as TracePlanningObject
 def to_parameters(type_names: Iterable[str]) -> List[SignatureParameter]:
     """Returns parameters named `x0`, `x1`, ... with the given object types."""
     return [SignatureParameter(f"x{i}", ObjectType(name)) for i, name in enumerate(type_names)]
+
+
+def common_types(signatures: Iterable[Sequence[str]]) -> List[str]:
+    """Returns each argument's type, using `object` where the given signatures disagree."""
+    return [types[0] if len(set(types)) == 1 else ROOT_TYPE_NAME for types in zip(*signatures)]
 
 
 def to_planning_object(obj: Union[TracePlanningObject, str]) -> PlanningObject:

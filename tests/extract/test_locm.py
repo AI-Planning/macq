@@ -31,11 +31,7 @@ def test_locm(tmp_path):
     )
 
     assert model
-    model.to_pddl(
-        "locm",
-        domain_filename=str(tmp_path / "locm.pddl"),
-        problem_filename=str(tmp_path / "locm_problem.pddl"),
-    )
+    model.to_pddl("locm", str(tmp_path / "locm.pddl"))
 
 
 def get_example_obs(print_trace=False, ex=1):

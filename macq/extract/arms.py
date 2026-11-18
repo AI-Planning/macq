@@ -20,7 +20,7 @@ from ..core import (
 from ..observation import Observation, ObservedTraceList, PartialObservation
 from ..trace import Action, Fluent
 from ..utils.pysat import RC2, WCNF, to_wcnf
-from ._core_conversion import to_parameters
+from ._core_conversion import common_types, to_parameters
 from .exceptions import IncompatibleObservationToken, InvalidMaxSATModel
 
 
@@ -242,17 +242,10 @@ class ARMS:
             )
 
         predicates = [
-            LiftedFluent(name, to_parameters(ARMS._common_types(signatures)))
+            LiftedFluent(name, to_parameters(common_types(signatures)))
             for name, signatures in argument_types.items()
         ]
         return DomainModel(DomainModelForm.LIFTED, predicates, lifted_actions)
-
-    @staticmethod
-    def _common_types(signatures: Set[Tuple[str, ...]]) -> List[str]:
-        """Returns each argument's type, using `object` where the observed types differ."""
-        return [
-            types[0] if len(set(types)) == 1 else "object" for types in zip(*signatures)
-        ]
 
     @staticmethod
     def _arms(
