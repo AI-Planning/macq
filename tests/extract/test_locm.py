@@ -16,7 +16,9 @@ def get_fluent(name: str, objs: List[str]):
     return Fluent(name, objects)
 
 
-def test_locm(tmp_path):
+def test_locm(tmp_path, monkeypatch):
+    # The step 7 visualization is written to the working directory.
+    monkeypatch.chdir(tmp_path)
     # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
     traces = generator.traces
