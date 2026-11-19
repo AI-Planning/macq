@@ -71,7 +71,7 @@ class NoisyObservation(Observation):
         visible_f = state.clone()
         for f in invisible_f:
             del visible_f[f]
-        noisy_f = self.extract_fluent_subset(visible_f, percent_noisy, rng)
+        noisy_f = set(self.extract_fluent_subset(visible_f, percent_noisy, rng))
         choose = (random if rng is None else rng).choice
         if not replace:
             for f in state:

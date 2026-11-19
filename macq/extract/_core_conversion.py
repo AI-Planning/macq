@@ -1,5 +1,6 @@
 """Converts what extraction techniques learn into `macq.core` domain model parts."""
 
+from functools import lru_cache
 from typing import Iterable, List, Sequence, Union
 
 from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject, SignatureParameter
@@ -21,6 +22,11 @@ def common_types(signatures: Iterable[Sequence[str]]) -> List[str]:
     return [types[0] if len(set(types)) == 1 else ROOT_TYPE_NAME for types in zip(*signatures)]
 
 
+# Extraction techniques convert the same trace objects and fluents many times, so conversions are cached.
+_CACHE_SIZE = 1 << 16
+
+
+@lru_cache(maxsize=_CACHE_SIZE)
 def to_planning_object(obj: Union[PlanningObject, str]) -> PlanningObject:
     """Returns the object a learned model uses for a trace object or its "type name" text.
 
@@ -34,6 +40,7 @@ def to_planning_object(obj: Union[PlanningObject, str]) -> PlanningObject:
     return PlanningObject(parts[1], ObjectType(parts[0]))
 
 
+@lru_cache(maxsize=_CACHE_SIZE)
 def to_grounded_fluent(fluent: Union[GroundedFluent, str]) -> GroundedFluent:
     """Returns the `core` fluent for a trace fluent or its "(name type object ...)" text."""
     if not isinstance(fluent, str):

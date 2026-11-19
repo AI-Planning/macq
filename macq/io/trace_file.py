@@ -102,6 +102,7 @@ def _dumps(source: Source, problem: Optional[str]) -> str:
 def _encode_states(states: List[State], partial: bool) -> List[dict]:
     atom_set = None
     encoded = []
+    known: Dict[GroundedFluent, str] = {}  # each fluent's text, which states repeat
     for state in states:
         texts: Dict[str, Optional[bool]] = {}
         for fluent, value in state.items():
@@ -112,7 +113,9 @@ def _encode_states(states: List[State], partial: bool) -> List[dict]:
                 )
             if not (value is None or isinstance(value, bool)):
                 raise ValueError(f"The value of {fluent} must be True, False or None, not {value!r}.")
-            text = _fluent_text(fluent)
+            text = known.get(fluent)
+            if text is None:
+                text = known[fluent] = _fluent_text(fluent)
             if text in texts:
                 raise ValueError(f"Two fluents in one state both read {text}, so {text} appears twice.")
             texts[text] = value

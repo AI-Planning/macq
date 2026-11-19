@@ -56,3 +56,22 @@ def test_planning_objects_compare_on_name_and_type():
 def test_planning_object_is_immutable():
     with pytest.raises(FrozenInstanceError):
         PlanningObject("a", ObjectType("block")).name = "b"
+
+
+def test_cached_hashes_are_left_out_of_pickles():
+    import copy
+    import pickle
+
+    truck = PlanningObject("t1", ObjectType("truck", ObjectType("vehicle")))
+    hash(truck)
+    restored = pickle.loads(pickle.dumps(truck))
+    assert "_hash" not in restored.__dict__
+    assert "_hash" not in restored.obj_type.__dict__
+    assert restored == truck and hash(restored) == hash(truck)
+    assert copy.deepcopy(truck) == truck
+
+
+def test_values_of_different_classes_are_unequal():
+    block = ObjectType("block")
+    assert PlanningObject("block", block) != block
+    assert block != "block"

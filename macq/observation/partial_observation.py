@@ -70,7 +70,7 @@ class PartialObservation(Observation):
             A Step whose state is a PartialState with the random fluents hidden.
         """
         new_fluents = {}
-        hidden_f = self.extract_fluent_subset(step.state, percent_missing, rng)
+        hidden_f = set(self.extract_fluent_subset(step.state, percent_missing, rng))
         for f in step.state:
             new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)

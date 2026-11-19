@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from ._value import CachedValue
+
 ROOT_TYPE_NAME = "object"
 
 
@@ -24,8 +26,8 @@ def is_circular_type_hierarchy_error(child_type_name: str, parent: Optional["Obj
     return False
 
 
-@dataclass(frozen=True)
-class ObjectType:
+@dataclass(frozen=True, eq=False)
+class ObjectType(CachedValue):
     """A named category of planning objects.
 
     `object` is the implicit root of every hierarchy, so a type created without a parent is a direct
@@ -42,6 +44,18 @@ class ObjectType:
             )
         if self.parent is None and self.type_name != ROOT_TYPE_NAME:
             object.__setattr__(self, "parent", ObjectType())
+
+    def _value_key(self) -> tuple:
+        return self.type_name, self.parent
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if other.__class__ is not ObjectType:
+            return NotImplemented
+        return self.type_name == other.type_name and self.parent == other.parent
+
+    __hash__ = CachedValue.__hash__
 
     def is_subtype_of(self, other: "ObjectType") -> bool:
         """Returns whether this type is `other` or one of its descendants."""
