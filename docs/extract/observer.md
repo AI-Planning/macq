@@ -6,7 +6,7 @@
 from macq import generate, extract
 from macq.observation import IdentityObservation
 
-traces = generate.pddl.VanillaSampling(problem_id=123, plan_len=20, num_traces=100).traces
+traces = generate.pddl.VanillaSampling(problem_id=1801, plan_len=20, num_traces=100).traces
 observations = traces.tokenize(IdentityObservation)
 model = extract.Extract(observations, extract.modes.OBSERVER)
 

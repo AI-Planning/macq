@@ -5,15 +5,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (domain playlistmaker)
-    (:requirements :equality :typing)
+    (:requirements :equality :typing :negative-preconditions)
     (:types
         genre - object
         song - object
     )
 
-    (:constants
-        
-    )
 
     (:predicates
         (in_playlist ?x1 - song)
@@ -22,16 +19,13 @@
         (empty )
     )
 
-    (:functions
-        
-    )
 
     
 
     
     (:action add_song
      :parameters (?add - song ?prev - song ?genre1 - genre ?genre2 - genre)
-     :precondition (and (and (and (and (not (in_playlist ?add)) (in_playlist ?prev)) (has_genre ?add ?genre1)) (has_genre ?prev ?genre2)) (not (= ?genre1 ?genre2)))
+     :precondition (and (not (in_playlist ?add)) (in_playlist ?prev) (has_genre ?add ?genre1) (has_genre ?prev ?genre2) (not (= ?genre1 ?genre2)))
      :effect (and
         (in_playlist ?add)
         (on ?prev ?add))

@@ -18,7 +18,15 @@ from tarski.syntax.formulas import Atom
 from macq.generate.pddl.planning_domains_api import get_problem
 
 FILES = Path(__file__).parent.parent.parent / "pddl_testing_files"
-LOCAL = {"door": ("door_dom.pddl", "door_prob.pddl")}
+LOCAL = {
+    "door": ("door_dom.pddl", "door_prob.pddl"),
+    "blocks": ("blocks_domain.pddl", "blocks_problem.pddl"),
+    "playlist": ("playlist_domain.pddl", "playlist_problem.pddl"),
+    "playlist-modified": (
+        "playlist_domain_modified.pddl",
+        "playlist_problem_modified.pddl",
+    ),
+}
 REMOTE = [1801, 4154, 2688, 2336, 212]
 STEPS = 30
 

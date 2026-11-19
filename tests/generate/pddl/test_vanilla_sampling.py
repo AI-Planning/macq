@@ -91,14 +91,14 @@ if __name__ == "__main__":
     tracelist.print(wrap="y")
 
     # test changing the goal and generating a plan from files extracted from a problem ID
-    vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
+    vanilla = VanillaSampling(problem_id=1801, plan_len=7, num_traces=10)
     vanilla.change_goal(
         {
             Fluent(
                 "at",
                 [
-                    PlanningObject("stone", "stone-11"),
-                    PlanningObject("location", "pos-10-07"),
+                    PlanningObject("rover", "rover0"),
+                    PlanningObject("waypoint", "waypoint3"),
                 ],
             )
         },
@@ -115,5 +115,5 @@ if __name__ == "__main__":
 
     # test generating traces with action preconditions/effects known
     vanilla_traces = VanillaSampling(
-        problem_id=123, plan_len=7, num_traces=10, observe_pres_effs=True
+        problem_id=1801, plan_len=7, num_traces=10, observe_pres_effs=True
     ).traces

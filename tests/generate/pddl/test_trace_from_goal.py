@@ -26,28 +26,38 @@ def test_invalid_goal_change():
         )
 
 def test_parameter_order():
+    def fluent(name, *objects):
+        return Fluent(name, [PlanningObject("object", o) for o in objects])
+
     # assert accuracy
-    goal_generator = TraceFromGoal(problem_id=4398)
+    goal_generator = TraceFromGoal(problem_id=4154)
     goal_generator.change_init(
         {
-            Fluent("on", [PlanningObject("object", "c"), PlanningObject("object", "a")]),
-            Fluent("clear", [PlanningObject("object", "c")]),
-            Fluent("clear", [PlanningObject("object", "b")]),
-            Fluent("ontable", [PlanningObject("object", "b")]),
-            Fluent("ontable", [PlanningObject("object", "a")]),
-            Fluent("handempty", [])
+            fluent("room", "rooma"),
+            fluent("room", "roomb"),
+            fluent("ball", "ball1"),
+            fluent("ball", "ball2"),
+            fluent("ball", "ball3"),
+            fluent("ball", "ball4"),
+            fluent("gripper", "left"),
+            fluent("gripper", "right"),
+            fluent("at-robby", "rooma"),
+            fluent("free", "left"),
+            fluent("free", "right"),
+            fluent("at", "ball1", "rooma"),
+            fluent("at", "ball2", "roomb"),
+            fluent("at", "ball3", "roomb"),
+            fluent("at", "ball4", "roomb"),
         }
     )
-    goal_generator.change_goal({
-        Fluent("on", [PlanningObject("object", "b"), PlanningObject("object", "a")]),
-    })
+    goal_generator.change_goal({fluent("at", "ball1", "roomb")})
     trace = goal_generator.generate_trace()
     # assert object order
-    for act in trace.actions:
-        if act.name == "unstack":
-            assert act.obj_params == [PlanningObject("object", "c"), PlanningObject("object", "a")]
-        elif act.name == "stack":
-            assert act.obj_params == [PlanningObject("object", "b"), PlanningObject("object", "a")]   
+    names = {act.name: [o.name for o in act.obj_params] for act in trace.actions}
+    assert names["pick"][:2] == ["ball1", "rooma"]
+    assert names["move"] == ["rooma", "roomb"]
+    assert names["drop"][:2] == ["ball1", "roomb"]
+
 
 if __name__ == "__main__":
     # exit out to the base macq folder so we can get to /tests
@@ -91,14 +101,14 @@ if __name__ == "__main__":
     print()
 
     # test changing the goal and regenerating traces from files extracted from a problem ID
-    goal_traces_sampler = TraceFromGoal(problem_id=123)
+    goal_traces_sampler = TraceFromGoal(problem_id=1801)
     goal_traces_sampler.change_goal(
         {
             Fluent(
                 "at",
                 [
-                    PlanningObject("stone", "stone-11"),
-                    PlanningObject("location", "pos-10-07"),
+                    PlanningObject("rover", "rover0"),
+                    PlanningObject("waypoint", "waypoint3"),
                 ],
             )
         },
@@ -112,5 +122,3 @@ if __name__ == "__main__":
 
     # test generating traces with action preconditions/effects known
     goal_traces = TraceFromGoal(dom=dom, prob=prob, observe_pres_effs=True).trace
-
-test_parameter_order()
