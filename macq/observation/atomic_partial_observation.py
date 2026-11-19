@@ -1,4 +1,3 @@
-from logging import warning
 from ..trace import Step, Fluent
 from . import PartialObservation, Observation
 from typing import Set
@@ -38,9 +37,6 @@ class AtomicPartialObservation(PartialObservation):
         """
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
-
-        if percent_missing == 0 and not hide:
-            warning("Creating a PartialObseration with no missing information.")
 
         Observation.__init__(self, index=step.index)
 

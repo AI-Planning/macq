@@ -1,4 +1,3 @@
-from warnings import warn
 from typing import Set
 from ..utils import PercentError
 from ..trace import Step, Fluent
@@ -34,9 +33,6 @@ class PartialObservation(Observation):
         """
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
-
-        if percent_missing == 0 and not hide:
-            warn("Creating a PartialObseration with no missing information.")
 
         # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
         Observation.__init__(self, index=step.index)
