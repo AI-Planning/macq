@@ -1,0 +1,11 @@
+(define (problem WalkProblem)
+  (:domain WalkTest)
+  (:objects Hall attic Pit - Room K1 k2 - Key)
+  (:init
+    (At Hall)
+    (Linked Hall attic)
+    (Linked attic Hall)
+    (Linked Hall Pit)
+    (KeyIn K1 Hall)
+    (KeyIn k2 attic))
+  (:goal (Holding K1)))

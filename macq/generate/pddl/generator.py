@@ -5,7 +5,7 @@ import pddlutils as pu
 import requests
 from pddl import parse_domain, parse_problem
 from pddl.action import Action as GroundAction
-from pddl.core import Problem
+from pddl.core import Domain, Problem
 from pddl.logic import Predicate
 from pddl.logic.base import And
 from pddl.parser.domain import DomainParser
@@ -74,21 +74,21 @@ class Generator:
 
     def __init__(
         self,
-        dom: str = None,
-        prob: str = None,
+        dom: Union[str, Domain] = None,
+        prob: Union[str, Problem] = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
         ignore_static_fluents: bool = True # defaults to true to not break any pre-implemented scripts that
            # did not consider this argument.
     ):
-        """Creates a basic PDDL state trace generator. Takes either the raw filenames
-        of the domain and problem or a problem ID.
+        """Creates a basic PDDL state trace generator. Takes the filenames of the domain
+        and problem, the parsed domain and problem, or a problem ID.
 
         Args:
-            dom (str):
-                The domain filename.
-            prob (str):
-                The problem filename.
+            dom (str | Domain):
+                The domain filename or parsed domain.
+            prob (str | Problem):
+                The problem filename or parsed problem.
             problem_id (int):
                 The ID of the problem to access.
             observe_pres_effs (bool):
@@ -101,14 +101,14 @@ class Generator:
         """
         # get attributes
         self.ignore_static_fluents = ignore_static_fluents
-        self.pddl_dom = dom
-        self.pddl_prob = prob
+        self.pddl_dom = None if isinstance(dom, Domain) else dom
+        self.pddl_prob = None if isinstance(prob, Problem) else prob
         self.problem_id = problem_id
         self.observe_pres_effs = observe_pres_effs
         # read the domain and problem
         if not problem_id:
-            self.domain = parse_domain(str(dom))
-            self.problem = parse_problem(str(prob))
+            self.domain = dom if isinstance(dom, Domain) else parse_domain(str(dom))
+            self.problem = prob if isinstance(prob, Problem) else parse_problem(str(prob))
         else:
             from .planning_domains_api import get_problem
 
