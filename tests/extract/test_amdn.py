@@ -1,3 +1,4 @@
+from macq.core import ObjectType, PlanningObject
 from macq.trace.disordered_parallel_actions_observation_lists import (
     default_theta_vec,
     num_parameters_feature,
@@ -23,12 +24,12 @@ def test_tokenization_error():
 
 def gen_tracelist():
     # define objects
-    red_truck = PlanningObject("", "red_truck")
-    blue_truck = PlanningObject("", "blue_truck")
-    location_a = PlanningObject("", "location_a")
-    location_b = PlanningObject("", "location_b")
-    location_c = PlanningObject("", "location_c")
-    location_d = PlanningObject("", "location_d")
+    red_truck = PlanningObject("red_truck", ObjectType(""))
+    blue_truck = PlanningObject("blue_truck", ObjectType(""))
+    location_a = PlanningObject("location_a", ObjectType(""))
+    location_b = PlanningObject("location_b", ObjectType(""))
+    location_c = PlanningObject("location_c", ObjectType(""))
+    location_d = PlanningObject("location_d", ObjectType(""))
 
     red_truck_is_truck = Fluent("truck", [red_truck])
     blue_truck_is_truck = Fluent("truck", [blue_truck])

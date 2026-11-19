@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 
 from graphviz import Digraph
 
+from macq.core import ObjectType, PlanningObject
 from macq.extract import Extract, modes
 from macq.extract.locm import AP, LOCM, Hypothesis
 from macq.generate.pddl import *
@@ -12,7 +13,7 @@ from macq.trace import *
 
 
 def get_fluent(name: str, objs: List[str]):
-    objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
+    objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
     return Fluent(name, objects)
 
 
@@ -38,13 +39,13 @@ def test_locm(tmp_path, monkeypatch):
 
 def get_example_obs(print_trace=False, ex=1):
     objects = {
-        "c1": PlanningObject("container", "c1"),
-        "c2": PlanningObject("container", "c2"),
-        "c3": PlanningObject("container", "c3"),
-        "j1": PlanningObject("jack", "j1"),
-        "j2": PlanningObject("jack", "j2"),
-        "wr1": PlanningObject("wrench", "wr1"),
-        "wr2": PlanningObject("wrench", "wr2"),
+        "c1": PlanningObject("c1", ObjectType("container")),
+        "c2": PlanningObject("c2", ObjectType("container")),
+        "c3": PlanningObject("c3", ObjectType("container")),
+        "j1": PlanningObject("j1", ObjectType("jack")),
+        "j2": PlanningObject("j2", ObjectType("jack")),
+        "wr1": PlanningObject("wr1", ObjectType("wrench")),
+        "wr2": PlanningObject("wr2", ObjectType("wrench")),
     }
     fluents = {
         "open1": Fluent("open", [objects["c1"]]),
@@ -239,8 +240,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "do_up",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -252,8 +253,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "tighten",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -270,8 +271,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "do_up",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -283,8 +284,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "undo",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -301,8 +302,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "loosen",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -314,8 +315,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "tighten",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -332,8 +333,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "loosen",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -345,8 +346,8 @@ def test_locm_step4(HS=None, is_test=True):
                             Action(
                                 "undo",
                                 [
-                                    PlanningObject("nut", "nut1"),
-                                    PlanningObject("hub", "hub1"),
+                                    PlanningObject("nut1", ObjectType("nut")),
+                                    PlanningObject("hub1", ObjectType("hub")),
                                 ],
                             ),
                             1,
@@ -383,8 +384,8 @@ def test_locm_step5(is_test=True):
                         Action(
                             "do_up",
                             [
-                                PlanningObject("nut", "nut1"),
-                                PlanningObject("hub", "hub1"),
+                                PlanningObject("nut1", ObjectType("nut")),
+                                PlanningObject("hub1", ObjectType("hub")),
                             ],
                         ),
                         2,
@@ -396,8 +397,8 @@ def test_locm_step5(is_test=True):
                         Action(
                             "undo",
                             [
-                                PlanningObject("nut", "nut1"),
-                                PlanningObject("hub", "hub1"),
+                                PlanningObject("nut1", ObjectType("nut")),
+                                PlanningObject("hub1", ObjectType("hub")),
                             ],
                         ),
                         2,
@@ -414,8 +415,8 @@ def test_locm_step5(is_test=True):
                         Action(
                             "jack_up",
                             [
-                                PlanningObject("jack", "jack1"),
-                                PlanningObject("hub", "hub1"),
+                                PlanningObject("jack1", ObjectType("jack")),
+                                PlanningObject("hub1", ObjectType("hub")),
                             ],
                         ),
                         2,
@@ -427,8 +428,8 @@ def test_locm_step5(is_test=True):
                         Action(
                             "jack_down",
                             [
-                                PlanningObject("jack", "jack1"),
-                                PlanningObject("hub", "hub1"),
+                                PlanningObject("jack1", ObjectType("jack")),
+                                PlanningObject("hub1", ObjectType("hub")),
                             ],
                         ),
                         2,

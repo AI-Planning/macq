@@ -179,7 +179,7 @@ class ARMS:
                 if pre.action is None:
                     continue
                 params = pre.action.obj_params
-                schema = (pre.action.name, tuple(obj.obj_type for obj in params))
+                schema = (pre.action.name, tuple(obj.obj_type.type_name for obj in params))
                 before = pre.state.fluents if pre.state else {}
                 after = post.state.fluents if post.state else {}
                 for fluent in {*before, *after}:
@@ -187,7 +187,7 @@ class ARMS:
                         [i for i, param in enumerate(params) if param == obj]
                         for obj in fluent.objects
                     ]
-                    relation = Relation(fluent.name, [o.obj_type for o in fluent.objects]).var()
+                    relation = Relation(fluent.name, [o.obj_type.type_name for o in fluent.objects]).var()
                     for binding in product(*positions):
                         was, now = before.get(fluent), after.get(fluent)
                         if was is True:
@@ -414,7 +414,7 @@ class ARMS:
 
             # Create action schemas for each action, replacing instantiated
             # objects with the object type.
-            types = [obj.obj_type for obj in obs_action.obj_params]
+            types = [obj.obj_type.type_name for obj in obs_action.obj_params]
             learned_action = _ActionSchema(obs_action.name, types)
             learned_actions.add(learned_action)
             action_map[obs_action] = learned_action
@@ -459,7 +459,7 @@ class ARMS:
                     f,
                     Relation(
                         f.name,
-                        [obj.obj_type for obj in f.objects],
+                        [obj.obj_type.type_name for obj in f.objects],
                     ),
                 ),
                 fluents,

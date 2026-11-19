@@ -45,9 +45,10 @@ def _deliver(count, max_actions):
 
 def _action(name, params, objects):
     """Builds a trace action over objects of type `object`, in whatever form `macq.trace` uses."""
-    from macq.trace import Action, PlanningObject
+    from macq.core import ObjectType, PlanningObject
+    from macq.trace import Action
 
-    return Action(name, [objects.setdefault(p, PlanningObject("object", p)) for p in params])
+    return Action(name, [objects.setdefault(p, PlanningObject(p, ObjectType("object"))) for p in params])
 
 
 def _action_traces(sequence):

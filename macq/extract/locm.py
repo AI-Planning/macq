@@ -7,7 +7,7 @@ from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from warnings import warn
 
 from macq.trace.action import Action
-from macq.trace.fluent import PlanningObject
+from macq.core import ObjectType, PlanningObject
 
 from ..core import (
     DomainModel,
@@ -209,7 +209,7 @@ Statics = Dict[str, List[str]]  # {action: [static preconditions]}
 class LOCM:
     """LOCM"""
 
-    zero_obj = PlanningObject("zero", "zero")
+    zero_obj = PlanningObject("zero", ObjectType("zero"))
 
     def __new__(
         cls,

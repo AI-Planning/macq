@@ -9,6 +9,7 @@ import pytest
 from pddl import parse_domain, parse_problem
 from pddl.parser.problem import ProblemParser
 
+from macq.core import ObjectType, PlanningObject
 from macq.trace import Trace
 from macq.generate.pddl import UniformWalkSampling, trace_rng
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
@@ -89,6 +90,15 @@ def test_names_keep_their_case():
     trace = sampler().generate_trace(0)
     objects = {o.name for f in trace[0].state for o in f.objects}
     assert {"Hall", "attic", "Pit", "K1", "k2"} == objects
+
+
+def test_objects_carry_the_domain_type_hierarchy():
+    walk = sampler(dom=FILES / "deliver_domain.pddl", prob=FILES / "deliver_problem.pddl").generate_trace(0)
+    locatable = ObjectType("locatable")
+    objects = {o.name: o for fluent in walk[0].state for o in fluent.objects}
+    assert objects["t1"] == PlanningObject("t1", ObjectType("truck", ObjectType("vehicle", locatable)))
+    assert objects["p1"] == PlanningObject("p1", ObjectType("package", locatable))
+    assert objects["l1"] == PlanningObject("l1", ObjectType("location"))
 
 
 def test_trace_actions_carry_no_preconditions_or_effects():

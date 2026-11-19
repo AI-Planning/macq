@@ -4,9 +4,10 @@ from pathlib import Path
 import pytest
 from pddl import parse_problem
 
+from macq.core import ObjectType, PlanningObject
 from macq.generate.pddl import Generator, VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
-from macq.trace import Fluent, PlanningObject
+from macq.trace import Fluent
 
 DOMAIN = """
 (define (domain Probe)
@@ -77,7 +78,7 @@ def write(tmp_path, domain=DOMAIN, problem=PROBLEM):
 
 
 def fluent(name, *objects):
-    return Fluent(name, [PlanningObject("object", o) for o in objects])
+    return Fluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
 
 
 def names(fluents):
@@ -126,7 +127,7 @@ def test_untyped_objects_have_the_type_object(tmp_path):
 
     [only] = Generator(dom, prob).grounded_fluents
 
-    assert only.objects[0].obj_type == "object"
+    assert only.objects[0].obj_type == ObjectType()
 
 
 def test_negative_preconditions_are_left_out_of_trace_actions(tmp_path):

@@ -4,11 +4,12 @@
 
 ```python
 from macq import generate, extract
-from macq.trace import PlanningObject, Fluent, TraceList
+from macq.core import ObjectType, PlanningObject
+from macq.trace import Fluent, TraceList
 from macq.observation import PartialObservation
 
 def get_fluent(name: str, objs: list[str]):
-    objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
+    objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
     return Fluent(name, objects)
 
 traces = TraceList()

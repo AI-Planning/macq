@@ -1,8 +1,8 @@
-from macq.core import infer_object_types_from_actions, infer_object_types_from_fluents
-from macq.trace import Action, Fluent, PlanningObject, State, Step, Trace, TraceList
+from macq.core import ObjectType, PlanningObject, infer_object_types_from_actions, infer_object_types_from_fluents
+from macq.trace import Action, Fluent, State, Step, Trace, TraceList
 from macq.observation import IdentityObservation  # isort: skip (macq.trace must load first)
 
-T1, T2, L1, L2 = (PlanningObject("object", n) for n in ("t1", "t2", "l1", "l2"))
+T1, T2, L1, L2 = (PlanningObject(n, ObjectType()) for n in ("t1", "t2", "l1", "l2"))
 
 
 def observed_traces():

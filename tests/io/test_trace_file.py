@@ -1,11 +1,13 @@
 """Tests for reading and writing trace files."""
 import json
 import random
+from pathlib import Path
 
 import pytest
 from pddl.parser.domain import DomainParser
 from pddl.parser.problem import ProblemParser
 
+from macq.core import ObjectType, PlanningObject
 from macq.generate.pddl import UniformWalkSampling, VanillaSampling
 from macq.io import InvalidTraceFile, read_trace, read_traces, write_trace
 from macq.observation import (
@@ -19,7 +21,6 @@ from macq.trace import (
     Action,
     Fluent,
     PartialState,
-    PlanningObject,
     State,
     Step,
     Trace,
@@ -126,8 +127,21 @@ def test_read_objects_keep_their_types(tmp_path, domain, problem):
     trace = walk(domain, problem)
     write_trace(tmp_path / "t.json", trace)
     read = read_trace(tmp_path / "t.json", domain, problem)
-    types = {o.name: o.obj_type for f in read[0].state for o in f.objects}
+    types = {o.name: o.obj_type.type_name for f in read[0].state for o in f.objects}
     assert types == {"t1": "Truck", "L1": "location", "L2": "location", "depot": "location"}
+
+
+def test_read_objects_carry_the_domain_type_hierarchy(tmp_path):
+    files = Path(__file__).resolve().parent.parent / "pddl_testing_files"
+    domain, problem = files / "deliver_domain.pddl", files / "deliver_problem.pddl"
+    trace = UniformWalkSampling(domain, problem, seed=3, max_actions=4).generate_trace(0)
+    write_trace(tmp_path / "t.json", trace)
+    read = read_trace(tmp_path / "t.json", domain, problem)
+    truck = ObjectType("truck", ObjectType("vehicle", ObjectType("locatable")))
+    objects = {o.name: o for f in read[0].state for o in f.objects}
+    assert objects["t1"] == PlanningObject("t1", truck)
+    assert objects["p1"].obj_type.is_subtype_of(ObjectType("locatable"))
+    assert read[0].state == trace[0].state
 
 
 def test_partial_tokens_round_trip(tmp_path, domain, problem):
@@ -174,7 +188,7 @@ def test_action_only_file_reads_against_a_shell_without_predicates(tmp_path, dom
     write_trace(tmp_path / "t.json", walk(domain, problem).tokenize(ActionObservation))
     read = read_trace(tmp_path / "t.json", DomainParser()(ACTION_ONLY_SHELL_TEXT))
     assert read[0].action.name == "drive"
-    assert read[0].action.obj_params[0].obj_type == "Truck"
+    assert read[0].action.obj_params[0].obj_type == ObjectType("Truck", ObjectType("vehicle"))
 
 
 def test_trace_of_length_zero_round_trips(tmp_path, domain, problem):
@@ -283,24 +297,22 @@ def test_writer_rejects_an_empty_trace(tmp_path):
 
 
 def test_writer_rejects_names_that_are_not_canonical(tmp_path):
-    bad = Fluent("on top", [PlanningObject("object", "a")])
+    bad = Fluent("on top", [PlanningObject("a", ObjectType("object"))])
     with pytest.raises(ValueError, match="name"):
         write_trace(tmp_path / "t.json", Trace([Step(State({bad: True}), None, 1)]))
 
 
 def test_writer_rejects_two_fluents_with_the_same_string(tmp_path):
-    first = Fluent("p", [PlanningObject("t1", "a")])
-    second = Fluent("p", [PlanningObject("t2", "a")])
+    first = Fluent("p", [PlanningObject("a", ObjectType("t1"))])
+    second = Fluent("p", [PlanningObject("a", ObjectType("t2"))])
     state = State({first: True})
     state.fluents[second] = False
-    if len(state) == 1:
-        pytest.skip("trace fluents with the same names are already equal")
     with pytest.raises(ValueError, match="twice"):
         write_trace(tmp_path / "t.json", Trace([Step(state, None, 1)]))
 
 
 def test_writer_rejects_a_non_boolean_value(tmp_path):
-    fluent = Fluent("p", [PlanningObject("object", "a")])
+    fluent = Fluent("p", [PlanningObject("a", ObjectType("object"))])
     with pytest.raises(ValueError, match="value"):
         write_trace(tmp_path / "t.json", Trace([Step(State({fluent: 1}), None, 1)]))
 

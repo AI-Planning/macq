@@ -11,7 +11,9 @@ from pddl import parse_domain, parse_problem
 from pddl.core import Domain, Problem
 from pddlutils.grounding import has_type
 
-from ..trace import Action, Fluent, PartialState, PlanningObject, State, Step, Trace, TraceList
+from ..core import PlanningObject
+from ..trace import Action, Fluent, PartialState, State, Step, Trace, TraceList
+from ..utils.pddl_objects import planning_objects
 from ..observation import Observation, PartialObservation
 
 FORMAT_VERSION = 1
@@ -225,10 +227,7 @@ class _Reader:
         for obj in [*domain.constants, *(problem.objects if problem else [])]:
             constants[str(obj.name)] = obj
         self.constants = constants
-        self.objects = {
-            name: PlanningObject(str(obj.type_tag or "object"), name)
-            for name, obj in constants.items()
-        }
+        self.objects = planning_objects(domain, constants.values())
         self.predicates = {str(p.name): p for p in domain.predicates}
         self.actions = {str(a.name): a for a in domain.actions}
         self._atoms: Optional[List[Fluent]] = None

@@ -5,7 +5,6 @@ from typing import Iterable, List, Sequence, Union
 from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject, SignatureParameter
 from ..core.object_type import ROOT_TYPE_NAME
 from ..trace import Fluent
-from ..trace import PlanningObject as TracePlanningObject
 
 
 def to_parameters(type_names: Iterable[str]) -> List[SignatureParameter]:
@@ -18,10 +17,13 @@ def common_types(signatures: Iterable[Sequence[str]]) -> List[str]:
     return [types[0] if len(set(types)) == 1 else ROOT_TYPE_NAME for types in zip(*signatures)]
 
 
-def to_planning_object(obj: Union[TracePlanningObject, str]) -> PlanningObject:
-    """Returns the `core` object for a trace object or its "type name" text."""
+def to_planning_object(obj: Union[PlanningObject, str]) -> PlanningObject:
+    """Returns the object a learned model uses for a trace object or its "type name" text.
+
+    Learned models keep flat object types, so a trace object's type keeps its name but not its parents.
+    """
     if not isinstance(obj, str):
-        return PlanningObject(obj.name, ObjectType(obj.obj_type))
+        return PlanningObject(obj.name, ObjectType(obj.obj_type.type_name))
     parts = obj.split(" ")
     if len(parts) != 2:
         raise DomainModelError(f"Expected an object as 'type name', got {obj!r}.")

@@ -13,7 +13,8 @@ from pddl.parser.problem import ProblemParser
 from pddlutils.strips import get_precondition, get_strips_literal_list
 
 from ..plan import Plan
-from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
+from ...trace import Action, State, Fluent, Trace, Step
+from ...utils.pddl_objects import planning_objects
 
 
 class PlanningDomainsAPIError(Exception):
@@ -118,10 +119,7 @@ class Generator:
         self.task = pu.Task(self.domain, self.problem)
 
         self._objects = {str(obj.name): obj for obj in self.task.objects}
-        self._planning_objects = {
-            name: PlanningObject(str(obj.type_tag or "object"), name)
-            for name, obj in self._objects.items()
-        }
+        self._planning_objects = planning_objects(self.domain, self.task.objects)
         self._changing_predicates = self.__get_changing_predicates()
         self.grounded_fluents = self.__get_all_grounded_fluents()
         self._fluent_keys = {self._fluent_key(f) for f in self.grounded_fluents}

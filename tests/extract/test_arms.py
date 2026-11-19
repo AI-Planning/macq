@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+from macq.core import ObjectType, PlanningObject
 from macq.trace import *
 from macq.extract import Extract, modes
 from macq.observation import PartialObservation
@@ -7,7 +8,7 @@ from macq.generate.pddl import *
 
 
 def get_fluent(name: str, objs: List[str]):
-    objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
+    objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
     return Fluent(name, objects)
 
 

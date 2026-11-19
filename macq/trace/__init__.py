@@ -1,4 +1,4 @@
-from .action import Action, PlanningObject
+from .action import Action
 from .fluent import Fluent
 from .state import State
 from .partial_state import PartialState
@@ -21,7 +21,6 @@ def __getattr__(name):
 
 __all__ = [
     "Action",
-    "PlanningObject",
     "Fluent",
     "State",
     "PartialState",

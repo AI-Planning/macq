@@ -1,9 +1,10 @@
 import pytest
 from pathlib import Path
+from macq.core import ObjectType, PlanningObject
 from macq.generate.pddl import TraceFromGoal
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject
+from macq.trace import Fluent
 
 
 def test_invalid_goal_change():
@@ -18,7 +19,7 @@ def test_invalid_goal_change():
         goal_traces.change_goal(
             {
                 Fluent(
-                    "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
+                    "on", [PlanningObject("a", ObjectType("object")), PlanningObject("z", ObjectType("object"))]
                 ),
             },
             "new_blocks_dom.pddl",
@@ -27,7 +28,7 @@ def test_invalid_goal_change():
 
 def test_parameter_order():
     def fluent(name, *objects):
-        return Fluent(name, [PlanningObject("object", o) for o in objects])
+        return Fluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
 
     # assert accuracy
     goal_generator = TraceFromGoal(problem_id=4154)
@@ -85,10 +86,10 @@ if __name__ == "__main__":
     goal_traces_sampler.change_goal(
         {
             Fluent(
-                "on", [PlanningObject("object", "c"), PlanningObject("object", "e")]
+                "on", [PlanningObject("c", ObjectType("object")), PlanningObject("e", ObjectType("object"))]
             ),
             Fluent(
-                "on", [PlanningObject("object", "a"), PlanningObject("object", "b")]
+                "on", [PlanningObject("a", ObjectType("object")), PlanningObject("b", ObjectType("object"))]
             ),
         },
         # new_blocks_dom,
@@ -107,8 +108,8 @@ if __name__ == "__main__":
             Fluent(
                 "at",
                 [
-                    PlanningObject("rover", "rover0"),
-                    PlanningObject("waypoint", "waypoint3"),
+                    PlanningObject("rover0", ObjectType("rover")),
+                    PlanningObject("waypoint3", ObjectType("waypoint")),
                 ],
             )
         },

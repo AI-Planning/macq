@@ -1,9 +1,10 @@
 import pytest
 from pathlib import Path
+from macq.core import ObjectType, PlanningObject
 from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject, TraceList
+from macq.trace import Fluent, TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
 
 
@@ -25,7 +26,7 @@ def test_invalid_vanilla_sampling():
         vanilla.change_goal(
             {
                 Fluent(
-                    "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
+                    "on", [PlanningObject("a", ObjectType("object")), PlanningObject("z", ObjectType("object"))]
                 ),
             },
             "new_blocks_dom.pddl",
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     vanilla.change_goal(
         {
             Fluent(
-                "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
+                "on", [PlanningObject("f", ObjectType("object")), PlanningObject("g", ObjectType("object"))]
             ),
         },
         new_blocks_dom,
@@ -97,8 +98,8 @@ if __name__ == "__main__":
             Fluent(
                 "at",
                 [
-                    PlanningObject("rover", "rover0"),
-                    PlanningObject("waypoint", "waypoint3"),
+                    PlanningObject("rover0", ObjectType("rover")),
+                    PlanningObject("waypoint3", ObjectType("waypoint")),
                 ],
             )
         },

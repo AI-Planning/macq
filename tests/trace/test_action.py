@@ -1,4 +1,4 @@
-from macq.trace import PlanningObject
+from macq.core import ObjectType, PlanningObject
 from tests.utils.generators import generate_test_actions
 
 
@@ -12,6 +12,6 @@ def test_action():
 
     assert str(a1)
 
-    obj = PlanningObject("test_obj", "test")
+    obj = PlanningObject("test", ObjectType("test_obj"))
     a1.obj_params.append(obj)
     assert obj in a1.obj_params

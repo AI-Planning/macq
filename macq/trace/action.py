@@ -1,5 +1,6 @@
 from typing import List, Optional, Set
-from .fluent import PlanningObject, Fluent
+from ..core import PlanningObject
+from .fluent import Fluent
 
 
 class Action:

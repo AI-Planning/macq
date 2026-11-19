@@ -4,7 +4,8 @@ import warnings
 
 import pytest
 
-from macq.trace import Fluent, PartialState, PlanningObject, State, Step
+from macq.core import ObjectType, PlanningObject
+from macq.trace import Fluent, PartialState, State, Step
 from macq.observation import (
     AtomicPartialObservation,
     IdentityObservation,
@@ -12,7 +13,7 @@ from macq.observation import (
     PartialObservation,
 )
 
-OBJECTS = [PlanningObject("object", f"o{i}") for i in range(6)]
+OBJECTS = [PlanningObject(f"o{i}", ObjectType("object")) for i in range(6)]
 VALUES = [True, False, None, True, None, False]
 
 
