@@ -1,0 +1,98 @@
+{
+  "format_version": 1,
+  "states": [
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Pit Hall)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn K1 Pit)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)",
+        "(Linked attic attic)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall attic)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked Pit Hall)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn K1 Pit)",
+        "(KeyIn k2 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Pit)",
+        "(Holding K1)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    }
+  ],
+  "actions": [
+    "(Move Hall attic)",
+    "(Grab k2 attic)",
+    "(Drop k2 attic)",
+    "(Move attic Hall)",
+    "(Move Hall attic)",
+    "(Move attic Hall)",
+    "(Move Hall Pit)"
+  ]
+}

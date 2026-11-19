@@ -1,0 +1,32 @@
+{
+  "format_version": 1,
+  "states": [
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked Pit Hall)",
+        "(Linked Pit attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Pit)",
+        "(At attic)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)",
+        "(Linked attic attic)"
+      ]
+    }
+  ],
+  "actions": [
+    "(Move Hall Pit)"
+  ]
+}

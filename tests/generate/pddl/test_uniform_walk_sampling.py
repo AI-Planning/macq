@@ -17,15 +17,16 @@ HERE = Path(__file__).resolve().parent
 FILES = HERE.parent.parent / "pddl_testing_files"
 DOMAIN = FILES / "walk_domain.pddl"
 PROBLEM = FILES / "walk_problem.pddl"
-RENDER = HERE / "render_walks.py"
-EXPECTED = HERE / "expected_uniform_walks.txt"
-
-sys.path.insert(0, str(HERE))
-from render_walks import render_trace  # noqa: E402
+WRITE = HERE / "write_walks.py"
+EXPECTED = HERE / "expected_uniform_walks"
 
 
 def sampler(seed=1, max_actions=6, dom=DOMAIN, prob=PROBLEM):
     return UniformWalkSampling(dom, prob, seed=seed, max_actions=max_actions)
+
+
+def steps(trace):
+    return [(step.state, step.action, step.index) for step in trace]
 
 
 def actions(trace):
@@ -50,7 +51,6 @@ def test_a_walk_that_reaches_a_dead_end_stops_and_is_kept():
     for trace in short:
         assert trace[-1].action is None
         assert len(trace) == len(actions(trace)) + 1
-        assert render_trace(trace).splitlines()[-1].endswith("-")
         last_action = actions(trace)[-1]
         assert (last_action.name, last_action.obj_params[1].name) == ("Move", "Pit")
 
@@ -109,27 +109,25 @@ def test_each_applicable_action_is_picked_about_equally_often():
 
 def test_a_trace_depends_only_on_its_index():
     walker = sampler()
-    expected = render_trace(walker.generate_trace(5))
+    expected = steps(walker.generate_trace(5))
     for i in range(4):
         walker.generate_trace(i)
-    assert render_trace(walker.generate_trace(5)) == expected
-    assert render_trace(sampler().generate_trace(5)) == expected
+    assert steps(walker.generate_trace(5)) == expected
+    assert steps(sampler().generate_trace(5)) == expected
 
 
 def test_iter_traces_matches_generate_trace():
     walker = sampler()
     walks = walker.iter_traces(3, start=2)
     assert not isinstance(walks, (list, tuple))
-    rendered = [render_trace(trace) for trace in walks]
-    assert rendered == [render_trace(walker.generate_trace(i)) for i in (2, 3, 4)]
+    generated = [steps(trace) for trace in walks]
+    assert generated == [steps(walker.generate_trace(i)) for i in (2, 3, 4)]
     assert all(isinstance(t, Trace) for t in walker.iter_traces(1))
 
 
 def test_parsed_objects_give_the_same_walks_as_paths():
     parsed = sampler(dom=parse_domain(DOMAIN), prob=parse_problem(PROBLEM))
-    assert render_trace(parsed.generate_trace(3)) == render_trace(
-        sampler().generate_trace(3)
-    )
+    assert steps(parsed.generate_trace(3)) == steps(sampler().generate_trace(3))
 
 
 def test_the_sampler_does_not_change_the_global_generator():
@@ -228,9 +226,11 @@ socket.getaddrinfo = blocked
 socket.socket.connect = blocked
 
 sys.path.insert(0, {str(HERE)!r})
-from render_walks import render_all
+from write_walks import write_all
+import tempfile
 
-assert render_all()
+with tempfile.TemporaryDirectory() as directory:
+    write_all(directory)
 assert not attempts, f"network attempts: {{attempts}}"
 """
 
@@ -242,7 +242,11 @@ def test_walks_and_observations_never_touch_the_network():
 
 
 @pytest.mark.parametrize("hash_seed", ["0", "1", "4242"])
-def test_output_is_byte_identical_to_the_stored_walks(hash_seed):
-    result = run_python(str(RENDER), PYTHONHASHSEED=hash_seed)
+def test_output_is_byte_identical_to_the_stored_walks(hash_seed, tmp_path):
+    result = run_python(str(WRITE), str(tmp_path), PYTHONHASHSEED=hash_seed)
     assert result.returncode == 0, result.stderr.decode()
-    assert result.stdout == EXPECTED.read_bytes()
+    expected = sorted(p.name for p in EXPECTED.iterdir())
+    assert sorted(p.name for p in tmp_path.iterdir()) == expected
+    assert len(expected) == 18
+    for name in expected:
+        assert (tmp_path / name).read_bytes() == (EXPECTED / name).read_bytes(), name
