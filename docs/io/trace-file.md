@@ -84,8 +84,10 @@ action count. When the domain declares no predicates, a file with states is reje
 
 #### Round trips
 
-Reading a written trace gives back the same states, actions and step indices, as long as
-every state covered the full atom set. Atoms a state leaves out are read back as false. For
+Reading a written trace gives back an equal `Trace`, as long as every state covered the full
+atom set and no action carried preconditions or effects (which samplers record only with
+`observe_pres_effs`). A trace's `problem_id` doesn't count towards equality. Atoms a state
+leaves out are read back as false. For
 example, `VanillaSampling` leaves out static atoms by default, so they come back false. The
 writer checks that all the states in a trace cover the same atoms, but it can't check that
 they cover all of them.

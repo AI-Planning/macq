@@ -26,10 +26,6 @@ def sampler(seed=1, max_actions=6, dom=DOMAIN, prob=PROBLEM):
     return UniformWalkSampling(dom, prob, seed=seed, max_actions=max_actions)
 
 
-def steps(trace):
-    return [(step.state, step.action, step.index) for step in trace]
-
-
 def actions(trace):
     return [step.action for step in trace if step.action is not None]
 
@@ -121,25 +117,25 @@ def test_each_applicable_action_is_picked_about_equally_often():
 
 def test_a_trace_depends_only_on_its_index():
     walker = sampler()
-    expected = steps(walker.generate_trace(5))
+    expected = walker.generate_trace(5)
     for i in range(4):
         walker.generate_trace(i)
-    assert steps(walker.generate_trace(5)) == expected
-    assert steps(sampler().generate_trace(5)) == expected
+    assert walker.generate_trace(5) == expected
+    assert sampler().generate_trace(5) == expected
 
 
 def test_iter_traces_matches_generate_trace():
     walker = sampler()
     walks = walker.iter_traces(3, start=2)
     assert not isinstance(walks, (list, tuple))
-    generated = [steps(trace) for trace in walks]
-    assert generated == [steps(walker.generate_trace(i)) for i in (2, 3, 4)]
+    generated = [trace for trace in walks]
+    assert generated == [walker.generate_trace(i) for i in (2, 3, 4)]
     assert all(isinstance(t, Trace) for t in walker.iter_traces(1))
 
 
 def test_parsed_objects_give_the_same_walks_as_paths():
     parsed = sampler(dom=parse_domain(DOMAIN), prob=parse_problem(PROBLEM))
-    assert steps(parsed.generate_trace(3)) == steps(sampler().generate_trace(3))
+    assert parsed.generate_trace(3) == sampler().generate_trace(3)
 
 
 def test_the_sampler_does_not_change_the_global_generator():

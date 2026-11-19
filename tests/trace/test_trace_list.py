@@ -30,7 +30,7 @@ def test_trace_list():
     for i, trace in enumerate(trace_list):
         assert usages[i] == trace.get_usage(action)
 
-    trace = generate_test_trace()
+    trace = generate_test_trace(8)  # traces compare by value, so this one must differ from the rest
     trace_list[0] = trace
     assert trace_list[0] is trace
     del trace_list[0]

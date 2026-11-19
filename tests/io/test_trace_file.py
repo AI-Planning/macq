@@ -85,10 +85,6 @@ def state_values(trace):
     return [{str(f): s.state[f] for f in s.state} for s in trace]
 
 
-def steps(trace):
-    return [(s.state, s.action, s.index) for s in trace]
-
-
 def write_json(path, data):
     path.write_text(json.dumps(data, indent=2) + "\n")
 
@@ -99,7 +95,7 @@ def write_json(path, data):
 def test_trace_round_trips_with_a_problem(tmp_path, domain, problem):
     trace = walk(domain, problem)
     write_trace(tmp_path / "t.json", trace)
-    assert steps(read_trace(tmp_path / "t.json", domain, problem)) == steps(trace)
+    assert read_trace(tmp_path / "t.json", domain, problem) == trace
 
 
 def test_trace_round_trips_with_constants_only(tmp_path, domain, problem, shell):
@@ -118,7 +114,7 @@ def test_reader_accepts_paths(tmp_path, domain, problem):
     trace = walk(domain, problem)
     write_trace(tmp_path / "t.json", trace)
     read = read_trace(tmp_path / "t.json", tmp_path / "d.pddl", str(tmp_path / "p.pddl"))
-    assert steps(read) == steps(trace)
+    assert read == trace
 
 
 def test_read_objects_keep_their_types(tmp_path, domain, problem):
@@ -179,7 +175,7 @@ def test_action_tokens_round_trip(tmp_path, domain, problem):
 def test_identity_tokens_round_trip(tmp_path, domain, problem):
     trace = walk(domain, problem)
     write_trace(tmp_path / "t.json", trace.tokenize(IdentityObservation))
-    assert steps(read_trace(tmp_path / "t.json", domain, problem)) == steps(trace)
+    assert read_trace(tmp_path / "t.json", domain, problem) == trace
 
 
 def test_action_only_file_reads_against_a_shell_without_predicates(tmp_path, domain, problem):
@@ -195,7 +191,7 @@ def test_trace_of_length_zero_round_trips(tmp_path, domain, problem):
     write_trace(tmp_path / "t.json", single)
     data = json.loads((tmp_path / "t.json").read_text())
     assert data["actions"] == [] and len(data["states"]) == 1
-    assert steps(read_trace(tmp_path / "t.json", domain, problem)) == steps(single)
+    assert read_trace(tmp_path / "t.json", domain, problem) == single
 
 
 def test_read_traces_returns_a_trace_list(tmp_path, domain, problem):
@@ -206,7 +202,7 @@ def test_read_traces_returns_a_trace_list(tmp_path, domain, problem):
     traces = read_traces(paths, domain, problem)
     assert isinstance(traces, TraceList)
     assert [t.problem_id for t in traces] == ["p0", "p1", "p2"]
-    assert [steps(t) for t in traces] == [steps(walk(domain, problem, index=i)) for i in range(3)]
+    assert list(traces) == [walk(domain, problem, index=i) for i in range(3)]
 
 
 # -- the bytes written ---------------------------------------------------------

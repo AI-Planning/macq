@@ -33,3 +33,11 @@ class Step:
         self.state = state
         self.action = action
         self.index = index
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Step)
+            and self.state == other.state
+            and self.action == other.action
+            and self.index == other.index
+        )
