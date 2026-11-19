@@ -77,14 +77,12 @@ class FDRandomWalkSampling(VanillaSampling):
         else:
             # From the FastDownward planning system:
             #
-            #   Convert heuristic value into an approximate number of actions
-            #   (does nothing on unit-cost problems).
-            #
             #   The expected walk length is np = 2 * estimated number of solution steps.
             #   (We multiply by 2 because the heuristic is underestimating.)
-            avg_op_cost = self._avg_op_cost()
-            assert avg_op_cost > 0, "Average operator cost must be greater than 0"
-            sol_steps = int((init_h / avg_op_cost) * 0.5)
+            #
+            # Every action has unit cost in the supported PDDL fragment, so the heuristic
+            # value is already an approximate number of actions.
+            sol_steps = int(init_h * 0.5)
             self.init_h = 4 * sol_steps
 
         self.plan_len = self._plan_len
@@ -101,18 +99,3 @@ class FDRandomWalkSampling(VanillaSampling):
             if random.random() < p:
                 depth += 1
         return depth
-
-    def _avg_op_cost(self):
-        """Computes the average operator cost"""
-
-        def _op_cost(a):
-            if self.problem.get_action(a).cost is None:
-                return 1
-            else:
-                return float(self.problem.get_action(a).cost.symbol)
-
-        costs = {a: _op_cost(a) for a in self.problem.actions}
-        total = 0
-        for o in self.instance.operators:
-            total += costs[o.name.split('(')[0]]
-        return total / len(self.instance.operators)

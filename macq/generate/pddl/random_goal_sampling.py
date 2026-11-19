@@ -139,10 +139,7 @@ class RandomGoalSampling(VanillaSampling):
                 self.change_goal(goal_fluents=goal_f)
 
                 # ensure that the goal doesn't hold in the initial state; restart if it does
-                init_state = {str(a) for a in self.problem.init.as_atoms()}
-                goal = {str(a) for a in self.problem.goal.subformulas}
-
-                if goal.issubset(init_state):
+                if self.task.is_goal(self.task.initial_state):
                     continue
 
                 try:
@@ -159,7 +156,7 @@ class RandomGoalSampling(VanillaSampling):
                 # map each goal to the initial state and plan used to achieve it
                 goal_states[State(state_dict)] = {
                     "plan": test_plan,
-                    "initial state": self.problem.init,
+                    "initial state": self.task.initial_state,
                 }
 
                 # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
@@ -188,7 +185,7 @@ class RandomGoalSampling(VanillaSampling):
         for goal in progress(self.goals_inits_plans.values()):
             # update the initial state if necessary
             if self.enforced_hill_climbing_sampling:
-                self.problem.init = goal["initial state"]
+                self._replace_problem(init=goal["initial state"])
             # generate a plan based on the new goal/initial state, then generate a trace based on that plan
             traces.append(self.generate_single_trace_from_plan(goal["plan"]))
         self.traces = traces

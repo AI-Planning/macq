@@ -1,25 +1,16 @@
-import re
 from time import sleep
-from typing import Set, List, Union
+from typing import Iterable, List, Optional, Set, Tuple, Union
 
+import pddlutils as pu
 import requests
-from tarski.fstrips.action import PlainOperator
-from tarski.fstrips.fstrips import AddEffect
-from tarski.grounding.common import StateVariableLite
-from tarski.grounding.lp_grounding import (
-    ground_problem_schemas_into_plain_operators,
-    LPGroundingStrategy,
-)
-from tarski.io import PDDLReader
-from tarski.io import fstrips as iofs
-from tarski.model import Model, create
-from tarski.search import GroundForwardSearchModel
-from tarski.search.operations import progress
-from tarski.syntax import land
-from tarski.syntax.builtins import BuiltinPredicateSymbol
-from tarski.syntax.formulas import Atom
-from tarski.syntax.ops import CompoundFormula, flatten
-from tarski.util import SymbolIndex
+from pddl import parse_domain, parse_problem
+from pddl.action import Action as GroundAction
+from pddl.core import Problem
+from pddl.logic import Predicate
+from pddl.logic.base import And
+from pddl.parser.domain import DomainParser
+from pddl.parser.problem import ProblemParser
+from pddlutils.strips import get_precondition, get_strips_literal_list
 
 from .planning_domains_api import get_problem, get_plan
 from ..plan import Plan
@@ -44,11 +35,23 @@ class InvalidGoalFluent(Exception):
         super().__init__(message)
 
 
+class InvalidPlanStep(Exception):
+    """Raised when a step of a plan does not name a ground action of the problem."""
+
+    def __init__(self, step, message=None):
+        if message is None:
+            message = f"{step} is not a ground action of this problem."
+        super().__init__(message)
+
+
 class Generator:
     """A Generator.
 
-    A basic PDDL state trace generator. Handles all parsings and stores the problem,
-    language, and grounded instance for the child generators to easily access and use.
+    A basic PDDL state trace generator. Handles all parsing and stores the domain,
+    problem, and planning task for the child generators to easily access and use.
+
+    Supports the PDDL fragment of pddl-utils: `:strips`, `:typing`,
+    `:negative-preconditions` and `:equality`.
 
     Attributes:
         pddl_dom (str):
@@ -57,16 +60,15 @@ class Generator:
             The name of the local PDDL problem filename (relevant if the problem ID is not provided.)
         problem_id (int):
             The ID of the problem to be accessed (relevant if local files are not provided.)
-        problem (tarski.fstrips.problem.Problem):
+        domain (pddl.core.Domain):
+            The domain definition.
+        problem (pddl.core.Problem):
             The problem definition.
-        lang (tarski.fol.FirstOrderLanguage):
-            The language definition.
-        instance (GroundForwardSearchModel):
-            The grounded instance of the problem.
+        task (pddlutils.Task):
+            The planning task, which provides the state semantics.
         grounded_fluents (list):
-            A list of all grounded (macq) fluents extracted from the given problem definition.
-        op_dict (dict):
-            The problem's ground operators, formatted to a dictionary for easy access during plan generation.
+            Every type-consistent ground atom of the problem, in the form of macq Fluents.
+            Atoms of predicates no action changes are left out if `ignore_static_fluents` is set.
         observe_pres_effs (bool):
             Option to observe action preconditions and effects upon generation.
     """
@@ -93,6 +95,10 @@ class Generator:
             observe_pres_effs (bool):
                 Option to observe action preconditions and effects upon generation.
             ignore_static_fluents (bool): option to ignore static fluents when generating traces. (default: True)
+
+        Raises:
+            NotImplementedError:
+                Raised if the domain or problem is outside the supported PDDL fragment.
         """
         # get attributes
         self.ignore_static_fluents = ignore_static_fluents
@@ -101,21 +107,23 @@ class Generator:
         self.problem_id = problem_id
         self.observe_pres_effs = observe_pres_effs
         # read the domain and problem
-        reader = PDDLReader(raise_on_error=True)
         if not problem_id:
-            reader.parse_domain(dom)
-            self.problem = reader.parse_instance(prob)
+            self.domain = parse_domain(str(dom))
+            self.problem = parse_problem(str(prob))
         else:
-            dom = requests.get(get_problem(problem_id, formalism='classical')["domain_url"]).text
-            prob = requests.get(get_problem(problem_id, formalism='classical')["problem_url"]).text
-            reader.parse_domain_string(dom)
-            self.problem = reader.parse_instance_string(prob)
-        self.lang = self.problem.language
-        # ground the problem
-        operators = ground_problem_schemas_into_plain_operators(self.problem)
-        self.instance = GroundForwardSearchModel(self.problem, operators)
+            urls = get_problem(problem_id, formalism='classical')
+            self.domain = DomainParser()(requests.get(urls["domain_url"]).text)
+            self.problem = ProblemParser()(requests.get(urls["problem_url"]).text)
+        self.task = pu.Task(self.domain, self.problem)
+
+        self._objects = {str(obj.name): obj for obj in self.task.objects}
+        self._planning_objects = {
+            name: PlanningObject(str(obj.type_tag or "object"), name)
+            for name, obj in self._objects.items()
+        }
+        self._changing_predicates = self.__get_changing_predicates()
         self.grounded_fluents = self.__get_all_grounded_fluents()
-        self.op_dict = self.__get_op_dict()
+        self._fluent_keys = {self._fluent_key(f) for f in self.grounded_fluents}
 
     def extract_action_typing(self):
         """Retrieves a dictionary mapping all of this problem's actions and the types
@@ -129,51 +137,39 @@ class Generator:
             The dictionary that indicates the types of all the objects each action in
             the problem acts upon.
         """
-        extracted_act_types = {}
-        actions = self.problem.actions.values()
-        for act in actions:
-            types = [type.sort.name for type in act.parameters.variables.values()]
-            extracted_act_types[act.name] = types
-        return extracted_act_types
+        return {
+            str(action.name): [_type_name(term) for term in action.parameters]
+            for action in self.domain.actions
+        }
 
     def extract_predicate_typing(self):
         """Retrieves a dictionary mapping all of this problem's predicates and the types
         of objects they act upon.
 
         i.e., given the standard blocks problem/domain, this function would return:
-        {'=': ['object', 'object'], '!=': ['object', 'object'], 'on': ['object', 'object'],
-        'ontable': ['object'], 'clear': ['object'], 'handempty': [], 'holding': ['object']}
+        {'on': ['object', 'object'], 'ontable': ['object'], 'clear': ['object'],
+        'handempty': [], 'holding': ['object']}
 
         Returns:
             The dictionary that indicates the types of all the objects each predicate in
             the problem acts upon.
         """
-        predicates = self.lang.predicates
-        extracted_pred_types = {}
-        for pred in predicates:
-            info = pred.signature
-            name = info[0]
-            if isinstance(name, BuiltinPredicateSymbol):
-                name = name.value
-            extracted_pred_types[name] = [type for type in info[1:]]
-        return extracted_pred_types
+        return {
+            str(predicate.name): [_type_name(term) for term in predicate.terms]
+            for predicate in self.domain.predicates
+        }
 
-    def __get_op_dict(self):
-        """Converts this problem's ground operators into a dictionary format so that the appropriate
-        tarski PlainOperators can be referenced when a plan is generated (see `generate_plan`).
+    def __get_changing_predicates(self) -> Set[str]:
+        """Finds the predicates that some action adds or deletes.
 
         Returns:
-            The problem's ground operators, in a formatted dictionary.
+            The names of the predicates that appear in an action's effects.
         """
-        op_dict = {}
-        for o in self.instance.operators:
-            # special case for actions that don't take parameters
-            if "()" in o.name:
-                op_dict["".join(["(", o.name[:-2], ")"])] = o
-            else:
-                # reformat so that operators can be referenced by the same string format the planner uses for actions
-                op_dict["".join(["(", o.name.replace("(", " ").replace(",", "")])] = o
-        return op_dict
+        names = set()
+        for action in self.domain.actions:
+            adds, deletes = _split_effects(action)
+            names.update(str(atom.name) for atom in adds + deletes)
+        return names
 
     def __get_all_grounded_fluents(self) -> List[Fluent]:
         """Extracts all the grounded fluents in the problem.
@@ -181,127 +177,109 @@ class Generator:
         Returns:
             A list of all the grounded fluents in the problem, in the form of macq Fluents.
         """
-        if self.ignore_static_fluents:
-            l1 = [self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom()) for grounded_fluent in LPGroundingStrategy(
-                self.problem, include_variable_inequalities=True).ground_state_variables().objects]
-        else:
-            l1 = [
-                self.__tarski_atom_to_macq_fluent(grounded_fluent.to_atom())
-                for grounded_fluent in ExtractStaticFluents(
-                    self.problem, include_variable_inequalities=True).ground_state_variables().objects]
-        return l1
+        return [
+            self._atom_to_fluent(atom)
+            for atom in self.task.ground_atoms()
+            if not self.ignore_static_fluents
+            or str(atom.name) in self._changing_predicates
+        ]
 
-    def __effect_split(self, act: PlainOperator):
-        """Converts the effects of an action as defined by tarski to fluents as defined by macq.
+    def _atom_to_fluent(self, atom: Predicate) -> Fluent:
+        """Converts a ground atom to a fluent as defined by macq.
 
         Args:
-            act (PlainOperator from tarski.fstrips.action):
-                The supplied action, defined using the tarski PlainOperator class.
-
-        Returns:
-            The lists of add and delete effects, in the form of a tuple macq Fluents (add, delete).
-        """
-        effects = act.effects
-        add = set()
-        delete = set()
-        for effect in effects:
-            fluent = self.__tarski_atom_to_macq_fluent(effect.atom)
-            if isinstance(effect, AddEffect):
-                add.add(fluent)
-            else:
-                delete.add(fluent)
-        return (add, delete)
-
-    def __tarski_atom_to_macq_fluent(self, atom: Atom):
-        """Converts a tarski Atom to a fluent as defined by macq.
-
-        Args:
-            atom (Atom):
-                The supplied atom, defined using the tarski Atom class.
+            atom (Predicate):
+                The supplied ground atom.
 
         Returns:
             A fluent, defined using the macq Fluent class.
         """
-        # ignore functions for now
-        if not isinstance(atom, Atom):
-            return None
-        fluent_name = atom.predicate.name
-        terms = atom.subterms
-        objects = []
-        for term in terms:
-            if isinstance(fluent_name, BuiltinPredicateSymbol):
-                fluent_name = fluent_name.value
-            objects.append(PlanningObject(term.sort.name, term.name))
-        fluent = Fluent(fluent_name, objects)
-        return fluent
+        return Fluent(
+            str(atom.name),
+            [self._planning_objects[str(term.name)] for term in atom.terms],
+        )
 
-    def tarski_state_to_macq(self, tarski_state: Model):
-        """Converts a state as defined by tarski to a state as defined by macq.
+    def _fluent_to_atom(self, fluent: Fluent) -> Predicate:
+        """Converts a macq fluent to a ground atom.
 
         Args:
-            tarski_state (Model):
-                The supplied state, defined using the tarski Model class.
+            fluent (Fluent):
+                The supplied fluent.
+
+        Returns:
+            The ground atom the fluent names.
+        """
+        return Predicate(fluent.name, *[self._objects[o.name] for o in fluent.objects])
+
+    @staticmethod
+    def _fluent_key(fluent: Fluent) -> Tuple[str, ...]:
+        return (fluent.name, *[o.name for o in fluent.objects])
+
+    def state_to_macq(self, state: Iterable[Predicate]) -> State:
+        """Converts a set of true ground atoms to a state as defined by macq.
+
+        Args:
+            state (Iterable[Predicate]):
+                The ground atoms that are true.
 
         Returns:
             A state, defined using the macq State class.
         """
-        state_fluents = {}
-        true_fluents = set()
-        for f in tarski_state.as_atoms():
-            fluent = self.__tarski_atom_to_macq_fluent(f)
-            # ignore functions for now
-            if fluent:
-                true_fluents.add(str(fluent))
-        for grounded_fluent in self.grounded_fluents:
-            state_fluents[grounded_fluent] = str(grounded_fluent) in true_fluents
+        true_fluents = {self._fluent_key(self._atom_to_fluent(a)) for a in state}
+        return State(
+            {f: self._fluent_key(f) in true_fluents for f in self.grounded_fluents}
+        )
 
-        return State(state_fluents)
+    def action_to_macq(self, action: GroundAction) -> Action:
+        """Converts a ground action to an action as defined by macq.
 
-    def tarski_act_to_macq(self, tarski_act: PlainOperator):
-        """Converts an action as defined by tarski to an action as defined by macq.
+        A macq action can't mark a precondition as negative, so only the positive
+        preconditions are recorded.
 
         Args:
-            tarski_act (PlainOperator):
-                The supplied action, defined using the tarski PlainOperator class.
+            action (GroundAction):
+                The supplied ground action.
 
         Returns:
             An action, defined using the macq Action class.
         """
-        name_split = tarski_act.name.replace(")", "").split("(")
-        name = name_split[0]
-        obj_names = name_split[1].split(", ")
+        name = str(action.name)
+        obj_params = [self._planning_objects[str(t.name)] for t in action.parameters]
+        if not self.observe_pres_effs:
+            return Action(name=name, obj_params=obj_params)
 
-        tarski_objs_mapping = {}
-        precond = set()
-        if isinstance(tarski_act.precondition, CompoundFormula):
-            raw_precond = tarski_act.precondition.subformulas
-            for raw_p in raw_precond:
-                if isinstance(raw_p, CompoundFormula):
-                    precond.add(self.__tarski_atom_to_macq_fluent(raw_p.subformulas[0]))
-                else:
-                    precond.add(self.__tarski_atom_to_macq_fluent(raw_p))
-        else:
-            precond.add(self.__tarski_atom_to_macq_fluent(tarski_act.precondition))
-        (add, delete) = self.__effect_split(tarski_act)
-
-        tarski_objs_mapping.update({o.name:o for fluent in add for o in fluent.objects })
-        tarski_objs_mapping.update({o.name:o for fluent in delete for o in fluent.objects })
-        tarski_objs_mapping.update({o.name:o for fluent in precond for o in fluent.objects })
-
-        obj_params = [tarski_objs_mapping[o] for o in obj_names]
-
-        return (
-            Action(
-                name=name,
-                obj_params=obj_params,
-                precond=precond,
-                add=add,
-                delete=delete,
-            )
-            if self.observe_pres_effs
-            else Action(name=name, obj_params=obj_params)
+        precondition = get_precondition(action)
+        conjuncts = getattr(precondition, "operands", (precondition,))
+        adds, deletes = _split_effects(action)
+        return Action(
+            name=name,
+            obj_params=obj_params,
+            precond={
+                self._atom_to_fluent(c) for c in conjuncts if isinstance(c, Predicate)
+            },
+            add={self._atom_to_fluent(atom) for atom in adds},
+            delete={self._atom_to_fluent(atom) for atom in deletes},
         )
 
+    def _replace_problem(self, init: Optional[Iterable] = None, goal=None):
+        """Swaps the initial state or goal of the problem and rebuilds the task."""
+        self.problem = Problem(
+            self.problem.name,
+            domain=self.domain,
+            objects=self.problem.objects,
+            init=self.problem.init if init is None else set(init),
+            goal=self.problem.goal if goal is None else goal,
+        )
+        self.task = pu.Task(self.domain, self.problem)
+
+    def _write_pddl(self, new_domain: str, new_prob: str):
+        """Writes the current domain and problem, for later use by a planner."""
+        with open(new_domain, "w") as domain_file:
+            domain_file.write(str(self.domain))
+        with open(new_prob, "w") as problem_file:
+            problem_file.write(str(self.problem))
+        self.pddl_dom = new_domain
+        self.pddl_prob = new_prob
 
     def change_init(
         self,
@@ -312,6 +290,9 @@ class Generator:
         """Changes the initial state of the `Generator`. The domain and problem PDDL files
         are rewritten to accomodate the new goal for later use by a planner.
 
+        Static atoms are kept when the `Generator` ignores static fluents, because the
+        caller has no way of supplying them.
+
         Parameters:
             init_fluents (Union[Set[Fluent], List[Fluent]]):
                 The collection of fluents that will make up the new initial state.
@@ -320,21 +301,15 @@ class Generator:
             new_prob (str):
                 The name of the new problem file.
         """
-        init = create(self.lang)
-        for f in init_fluents:
-            # convert fluents to tarski Atoms
-            atom = Atom(
-                self.lang.get_predicate(f.name),
-                [self.lang.get(o.name) for o in f.objects],
-            )
-            init.add(atom.predicate, *atom.subterms)
-        self.problem.init = init
-
-        # rewrite PDDL files appropriately
-        writer = iofs.FstripsWriter(self.problem)
-        writer.write(new_domain, new_prob)
-        self.pddl_dom = new_domain
-        self.pddl_prob = new_prob
+        init = {self._fluent_to_atom(f) for f in init_fluents}
+        if self.ignore_static_fluents:
+            init |= {
+                atom
+                for atom in self.task.initial_state
+                if str(atom.name) not in self._changing_predicates
+            }
+        self._replace_problem(init=init)
+        self._write_pddl(new_domain, new_prob)
 
     def change_goal(
         self,
@@ -358,32 +333,38 @@ class Generator:
                 Raised if any of the fluents supplied do not exist in this domain.
         """
         # check if the fluents to add are valid
-        available_f = self.grounded_fluents
         for f in goal_fluents:
-            if f not in available_f:
+            if self._fluent_key(f) not in self._fluent_keys:
                 raise InvalidGoalFluent(f)
 
-        # convert the given set of fluents into a formula
-        if not goal_fluents:
-            goal = land()
-        else:
-            goal = land(
-                *[
-                    Atom(
-                        self.lang.get(f.name),
-                        [self.lang.get_constant(o.name) for o in f.objects],
-                    )
-                    for f in goal_fluents
-                ]
-            )
-        # reset the goal
-        self.problem.goal = flatten(goal)
+        self._replace_problem(goal=And(*[self._fluent_to_atom(f) for f in goal_fluents]))
+        self._write_pddl(new_domain, new_prob)
 
-        # rewrite PDDL files appropriately
-        writer = iofs.FstripsWriter(self.problem)
-        writer.write(new_domain, new_prob)
-        self.pddl_dom = new_domain
-        self.pddl_prob = new_prob
+    def _plan_step_to_action(self, step: str) -> GroundAction:
+        """Finds the ground action a plan step names.
+
+        Planners may lowercase names, so names match regardless of case unless that
+        would be ambiguous.
+
+        Args:
+            step (str):
+                The plan step, such as `(stack a b)`.
+
+        Returns:
+            The ground action.
+
+        Raises:
+            InvalidPlanStep:
+                Raised if the step does not name a ground action of this problem.
+        """
+        words = step.strip("() \t").split()
+        try:
+            action_names = [str(action.name) for action in self.domain.actions]
+            name = _match_name(words[0], action_names)
+            objects = [_match_name(word, self._objects) for word in words[1:]]
+            return self.task.ground(name, *objects)
+        except (IndexError, KeyError, pu.PDDLLogicError) as error:
+            raise InvalidPlanStep(step) from error
 
     def generate_plan(self, from_ipc_file: bool = False, filename: str = None) -> Plan | None:
         """Generates a plan. If reading from an IPC file, the `Plan` is read directly. Otherwise, if the initial state or
@@ -398,18 +379,27 @@ class Generator:
 
         Returns:
             A `Plan` object that holds all the actions taken.
+
+        Raises:
+            InvalidPlanStep:
+                Raised if a step of the plan does not name a ground action of this problem.
         """
         if not from_ipc_file:
             # if the files are only being generated from the problem ID and are unaltered, retrieve the existing plan (note that
             # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
+            stored_plan = None
             if self.problem_id and not self.pddl_dom and not self.pddl_prob:
-                plan = get_plan(self.problem_id, formalism='classical')
-            # if you are not just using the unaltered files, use the local files instead
+                stored_plan = get_plan(self.problem_id, formalism='classical')
+            if stored_plan:
+                plan = stored_plan.splitlines()
+            # if there is no stored plan to use, ask the planner to solve the current problem
             else:
-                data = {
-                    "domain": open(self.pddl_dom, "r").read(),
-                    "problem": open(self.pddl_prob, "r").read(),
-                }
+                data = {"domain": str(self.domain), "problem": str(self.problem)}
+                if self.pddl_dom and self.pddl_prob:
+                    data = {
+                        "domain": open(self.pddl_dom, "r").read(),
+                        "problem": open(self.pddl_prob, "r").read(),
+                    }
 
                 headers = {"persistent": "true"}
 
@@ -425,11 +415,7 @@ class Generator:
                                 sleep(delays[0])
                                 celery_result = requests.get("https://solver.planning.domains:5001/" +
                                                              solve_request['result'])
-                            sas_plan = celery_result.json()['result']['output']['sas_plan']
-                            actions_with_objects = re.findall(r'\((.*?)\)', sas_plan)
-
-                            plan_list = [f'({action})' for action in actions_with_objects]
-                            return plan_list
+                            return celery_result.json()['result']['output']['sas_plan'].splitlines()
 
                         except KeyError:
                             return get_api_response(delays[1:])
@@ -441,11 +427,12 @@ class Generator:
                     )
 
         else:
-            f = open(filename, "r")
-            plan = list(filter(lambda x: ";" not in x, f.read().splitlines()))
+            with open(filename, "r") as f:
+                plan = f.read().splitlines()
 
-        # convert to a list of tarski PlainOperators (actions)
-        return Plan([self.op_dict[p] for p in plan if p in self.op_dict])
+        # skip blank lines and comments, such as the plan's cost
+        steps = [s.strip() for s in plan if s.strip() and not s.strip().startswith(";")]
+        return Plan([self._plan_step_to_action(step) for step in steps])
 
     def generate_single_trace_from_plan(self, plan: Plan):
         """Generates a single trace from the plan taken as input.
@@ -461,42 +448,42 @@ class Generator:
         actions = plan.actions
         plan_len = len(actions)
         # get initial state
-        state = self.problem.init
+        state = self.task.initial_state
         # note that we add 1 because the states represented take place BEFORE their subsequent action,
         # so if we need to take x actions, we need x + 1 states and therefore x + 1 steps in the trace.
         for i in range(plan_len + 1):
-            macq_state = self.tarski_state_to_macq(state)
+            macq_state = self.state_to_macq(state)
             # if we have not yet reached the end of the trace
             if len(trace) < plan_len:
                 act = actions[i]
-                trace.append(Step(macq_state, self.tarski_act_to_macq(act), i + 1))
-                state = progress(state, act)
+                trace.append(Step(macq_state, self.action_to_macq(act), i + 1))
+                state = self.task.progress(state, act)
             else:
                 trace.append(Step(macq_state, None, i + 1))
         return trace
 
 
-class ExtractStaticFluents(LPGroundingStrategy):
-    def __init__(self, problem, ground_actions=True, include_variable_inequalities=False):
-        super().__init__(problem=problem, ground_actions=ground_actions,
-                         include_variable_inequalities=include_variable_inequalities)
+def _split_effects(action: GroundAction) -> Tuple[List[Predicate], List[Predicate]]:
+    """Splits an action's effects into the atoms it adds and the atoms it deletes."""
+    literals = get_strips_literal_list(action.effect)
+    adds = [literal for literal in literals if isinstance(literal, Predicate)]
+    deletes = [
+        literal.argument for literal in literals if not isinstance(literal, Predicate)
+    ]
+    return adds, deletes
 
-    def ground_state_variables(self):
-        """ Create and index all state variables of the problem by exhaustively grounding all predicate and function
-        symbols that are considered to be fluent with respect to the problem constants. Thus, if the problem has one
-        fluent predicate "p" and one static predicate "q", and constants "a", "b", "c", the result of this operation
-        will be the state variables "p(a)", "p(b)" and "p(c)".
-        """
-        model = self._solve_lp()
 
-        variables = SymbolIndex()
-        for symbol in self.fluent_symbols.union(self.static_symbols):
+def _type_name(term) -> str:
+    """Names a parameter's type, which is `object` if none was declared."""
+    return next(iter(sorted(term.type_tags)), "object")
 
-            lang = symbol.language
-            key = 'atom_' + symbol.name
-            if key in model:  # in case there is no reachable ground state variable from that fluent symbol
-                for binding in model[key]:
-                    binding_with_constants = tuple(lang.get(c) for c in binding)
-                    variables.add(StateVariableLite(symbol, binding_with_constants))
 
-        return variables
+def _match_name(word: str, names: Iterable[str]) -> str:
+    """Finds the name a word refers to, preferring an exact match over a case-insensitive one."""
+    names = list(names)
+    if word in names:
+        return word
+    matches = [name for name in names if name.lower() == word.lower()]
+    if len(matches) != 1:
+        raise KeyError(word)
+    return matches[0]

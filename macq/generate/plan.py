@@ -1,24 +1,25 @@
 from typing import List
-from tarski.fstrips.action import PlainOperator
+
+from pddl.action import Action
 
 
 class Plan:
     """A Plan.
 
-    Holds a list of tarski `PlainOperator`s that correspond to actions that can be used
-    to generate traces. Also includes functionality to read/write plans to/from IPC files.
+    Holds a list of ground actions that can be used to generate traces. Also includes
+    functionality to read/write plans to/from IPC files.
 
     Attributes:
-        actions (List[PlainOperator]):
-            The list of actions that make up the plan.
+        actions (List[Action]):
+            The list of ground actions that make up the plan.
     """
 
-    def __init__(self, actions: List[PlainOperator]):
-        """Creates a Plan by instantiating it with the list of actions (of tarski type `PlainOperator`).
+    def __init__(self, actions: List[Action]):
+        """Creates a Plan by instantiating it with the list of ground actions.
 
         Args:
-            actions (List[PlainOperator]):
-                The list of actions that make up the plan.
+            actions (List[Action]):
+                The list of ground actions that make up the plan.
         """
         self.actions = actions
 
@@ -36,12 +37,11 @@ class Plan:
         return hash(str(self))
 
     def __str__(self):
-        string = [str(act) for act in self.actions]
-        # convert to IPC format
-        for i in range(len(string)):
-            string[i] = string[i].replace("(", " ").replace(",", "")
-            string[i] = "(" + string[i]
-        return "\n".join(string)
+        # IPC format
+        return "\n".join(
+            "(" + " ".join([str(act.name), *[str(t.name) for t in act.parameters]]) + ")"
+            for act in self.actions
+        )
 
     def __eq__(self, other):
         return isinstance(other, Plan) and self.actions == other.actions

@@ -1,4 +1,3 @@
-from tarski.search.operations import progress
 import random
 from . import Generator
 from ...utils import (
@@ -125,29 +124,29 @@ class VanillaSampling(Generator):
 
             trace = Trace()
 
-            state = self.problem.init
             valid_trace = False
             while not valid_trace:
                 trace.clear()
+                state = self.task.initial_state
                 # add more steps while the trace has not yet reached the desired length
                 for j in range(plan_len):
                     # if we have not yet reached the last step
                     if len(trace) < plan_len - 1:
                         # find the next applicable actions
-                        app_act = list(self.instance.applicable(state))
+                        app_act = self.task.applicable_actions(state)
                         # if the trace reaches a dead lock, disregard this trace and try again
                         if not app_act:
                             break
                         # pick a random applicable action and apply it
                         act = random.choice(app_act)
                         # create the trace and progress the state
-                        macq_action = self.tarski_act_to_macq(act)
-                        macq_state = self.tarski_state_to_macq(state)
+                        macq_action = self.action_to_macq(act)
+                        macq_state = self.state_to_macq(state)
                         step = Step(macq_state, macq_action, j + 1)
                         trace.append(step)
-                        state = progress(state, act)
+                        state = self.task.progress(state, act)
                     else:
-                        macq_state = self.tarski_state_to_macq(state)
+                        macq_state = self.state_to_macq(state)
                         step = Step(state=macq_state, action=None, index=j + 1)
                         trace.append(step)
                         valid_trace = True
