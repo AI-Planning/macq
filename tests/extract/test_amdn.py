@@ -214,6 +214,7 @@ def gen_tracelist():
     # return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
 
+@pytest.mark.remote_planner
 def test_amdn(tmp_path):
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent

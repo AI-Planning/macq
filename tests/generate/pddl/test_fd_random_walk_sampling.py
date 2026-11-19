@@ -9,6 +9,7 @@ from macq.trace import TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
 
 
+@pytest.mark.remote_planner
 def test_fd_random_samples():
 
     sampler = FDRandomWalkSampling(problem_id=212, num_traces=3, max_time=10)

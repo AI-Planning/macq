@@ -62,3 +62,8 @@ dev = [
 Homepage = "https://macq.planning.domains"
 Documentation = "https://ai-planning.github.io/macq/"
 Repository = "https://github.com/ai-planning/macq"
+
+[tool.pytest.ini_options]
+markers = [
+    "remote_planner: calls the remote planner at planning.domains, so needs network access (CI skips these)",
+]

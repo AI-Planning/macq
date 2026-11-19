@@ -6,6 +6,7 @@ from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
 
 
+@pytest.mark.remote_planner
 def test_invalid_goal_change():
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent.parent
@@ -25,6 +26,7 @@ def test_invalid_goal_change():
             "new_blocks_prob.pddl",
         )
 
+@pytest.mark.remote_planner
 def test_parameter_order():
     def fluent(name, *objects):
         return GroundedFluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])

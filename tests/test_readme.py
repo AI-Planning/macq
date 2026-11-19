@@ -19,6 +19,7 @@ def extract_model(traces):
     return model
 
 
+@pytest.mark.remote_planner
 def test_readme():
     traces = generate_traces()
     assert len(traces) == 4

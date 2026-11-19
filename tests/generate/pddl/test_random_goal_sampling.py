@@ -1,3 +1,4 @@
+import pytest
 import threading
 from pathlib import Path
 
@@ -9,6 +10,7 @@ DOM = str((BASE / "pddl_testing_files/blocks_domain.pddl").resolve())
 PROB = str((BASE / "pddl_testing_files/blocks_problem.pddl").resolve())
 
 
+@pytest.mark.remote_planner
 def test_goal_search_stops_at_its_time_limit():
     threads = threading.active_count()
     sampler = RandomGoalSampling(

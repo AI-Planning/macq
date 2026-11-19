@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 from typing import List
 from macq.core import GroundedFluent, ObjectType, PlanningObject
@@ -12,6 +13,7 @@ def get_fluent(name: str, objs: List[str]):
     return GroundedFluent(name, objects)
 
 
+@pytest.mark.remote_planner
 def test_arms(tmp_path):
     base = Path(__file__).parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())

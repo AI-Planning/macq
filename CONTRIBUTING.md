@@ -28,6 +28,10 @@ Run `mypy -p macq` to locate typing errors or inconsistencies in your code.
 Run `pytest` to run the test suite. To run a specific test, provide the relative
 path to the test(e.g. `pytest tests/test_readme.py`)
 
+Tests marked `remote_planner` call the planner at planning.domains, so they need
+network access. CI skips them. To skip them locally too, run
+`pytest -m "not remote_planner"`.
+
 To see the test coverage, run `pytest --cov=macq`. For a more detailed coverage
 report, run `pytest --cov=macq --cov-report=html`, and open `htmlcov/index.html`
 in a browser. This will provide detailed line by line test coverage information,

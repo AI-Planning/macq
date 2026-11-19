@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Tuple
@@ -17,6 +18,7 @@ def get_fluent(name: str, objs: List[str]):
     return GroundedFluent(name, objects)
 
 
+@pytest.mark.remote_planner
 def test_locm(tmp_path):
     # gripper
     generator = FDRandomWalkSampling(problem_id=4154, init_h=350, num_traces=1)
@@ -162,6 +164,7 @@ def get_example_obs(print_trace=False, ex=1):
     return obs
 
 
+@pytest.mark.remote_planner
 def test_locm_get_sorts(is_test=True):
     num_random_traces = 3
 
