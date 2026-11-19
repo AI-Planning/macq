@@ -84,9 +84,6 @@ class Action:
 
         return Action(self.name, self.obj_params.copy(), self.cost)
 
-    def _serialize(self):
-        return self.name
-
 
 class AtomicAction(Action):
     """An Action where the objects are represented by strings."""

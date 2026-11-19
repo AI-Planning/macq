@@ -1,5 +1,4 @@
 from warnings import warn
-from json import dumps
 from typing import Union
 import random
 from ..trace import State, Action
@@ -90,6 +89,3 @@ class Observation:
 
     def matches(self, query: dict):
         return all([self._matches(key, value) for key, value in query.items()])
-
-    def serialize(self):
-        return dumps(self, default=lambda o: o.__dict__, indent=2)
