@@ -1,0 +1,149 @@
+{
+  "format_version": 1,
+  "states": [
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)"
+      ],
+      "unknown": [
+        "(At attic)",
+        "(Holding K1)",
+        "(Linked Pit Hall)",
+        "(Linked Pit Pit)",
+        "(Linked attic Hall)",
+        "(Linked attic Pit)"
+      ]
+    },
+    {
+      "true": [
+        "(KeyIn k2 attic)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ],
+      "unknown": [
+        "(At Hall)",
+        "(At attic)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked attic Pit)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)"
+      ],
+      "unknown": [
+        "(Holding K1)",
+        "(KeyIn K1 Pit)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Hall)",
+        "(Linked Pit attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ],
+      "unknown": [
+        "(At Hall)",
+        "(At Pit)",
+        "(KeyIn K1 attic)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Hall)",
+        "(Linked Pit Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ],
+      "unknown": [
+        "(At Pit)",
+        "(At attic)",
+        "(Holding K1)",
+        "(KeyIn K1 attic)",
+        "(Linked Pit Hall)",
+        "(Linked attic Pit)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)"
+      ],
+      "unknown": [
+        "(At Hall)",
+        "(At Pit)",
+        "(KeyIn k2 Pit)",
+        "(KeyIn k2 attic)",
+        "(Linked attic Hall)",
+        "(Linked attic Pit)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ],
+      "unknown": [
+        "(Holding k2)",
+        "(KeyIn K1 Pit)",
+        "(KeyIn k2 Hall)",
+        "(KeyIn k2 Pit)",
+        "(Linked Pit attic)",
+        "(Linked attic Pit)"
+      ]
+    },
+    {
+      "true": [
+        "(At Pit)",
+        "(KeyIn K1 Hall)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ],
+      "unknown": [
+        "(At attic)",
+        "(Holding k2)",
+        "(KeyIn K1 Pit)",
+        "(KeyIn k2 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked attic Pit)"
+      ]
+    }
+  ],
+  "actions": [
+    "(Move Hall attic)",
+    "(Grab k2 attic)",
+    "(Drop k2 attic)",
+    "(Move attic Hall)",
+    "(Move Hall attic)",
+    "(Move attic Hall)",
+    "(Move Hall Pit)"
+  ]
+}

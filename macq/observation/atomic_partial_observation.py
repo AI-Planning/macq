@@ -1,5 +1,6 @@
-from logging import warning
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..trace.action import AtomicAction
+from ..core import GroundedFluent
 from . import PartialObservation, Observation
 from typing import Set
 
@@ -23,7 +24,7 @@ class AtomicPartialObservation(PartialObservation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
+        self, step: Step, percent_missing: float = 0, hide: Set[GroundedFluent] = None
     ):
         """
         Creates an AtomicPartialObservation object, storing the step.
@@ -33,14 +34,11 @@ class AtomicPartialObservation(PartialObservation):
                 The step associated with this observation.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
         """
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
-
-        if percent_missing == 0 and not hide:
-            warning("Creating a PartialObseration with no missing information.")
 
         Observation.__init__(self, index=step.index)
 
@@ -50,7 +48,7 @@ class AtomicPartialObservation(PartialObservation):
             step = self.hide_subset(step, hide)
 
         self.state = None if percent_missing == 1 else step.state.clone(atomic=True)
-        self.action = None if step.action is None else step.action.clone(atomic=True)
+        self.action = None if step.action is None else AtomicAction.of(step.action)
 
     def __eq__(self, other):
         return (

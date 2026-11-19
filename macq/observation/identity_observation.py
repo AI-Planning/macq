@@ -15,7 +15,7 @@ class IdentityObservation(Observation):
 
     class IdentityState(dict):
         def __hash__(self):
-            return hash(tuple(sorted(self.items())))
+            return hash(frozenset(self.items()))
 
     @dataclass
     class IdentityAction:
@@ -41,7 +41,7 @@ class IdentityObservation(Observation):
         super().__init__(index=step.index, **kwargs)
 
         self.state = step.state.clone()
-        self.action = None if step.action is None else step.action.clone()
+        self.action = step.action
 
     def __hash__(self):
         return super().__hash__()

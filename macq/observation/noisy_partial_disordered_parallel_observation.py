@@ -1,4 +1,5 @@
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..core import GroundedFluent
 from . import NoisyPartialObservation
 from typing import Set
 
@@ -17,7 +18,7 @@ class NoisyPartialDisorderedParallelObservation(NoisyPartialObservation):
         step: Step,
         par_act_set_ID: int,
         percent_missing: float = 0,
-        hide: Set[Fluent] = None,
+        hide: Set[GroundedFluent] = None,
         percent_noisy: float = 0,
         replace: bool = False,
     ):
@@ -31,7 +32,7 @@ class NoisyPartialDisorderedParallelObservation(NoisyPartialObservation):
                 The ID that identifies which parallel action set the action in this step is a part of.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
             percent_noisy (float):
                 The percentage of fluents to randomly make noisy in the observation.

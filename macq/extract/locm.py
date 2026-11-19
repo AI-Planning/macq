@@ -1,26 +1,52 @@
 """.. 'include':: ../../docs/extract/locm.md"""
 
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pprint import pprint
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from warnings import warn
 
-from macq.trace.action import Action
-from macq.trace.fluent import PlanningObject
+from macq.core import GroundedAction, ObjectType, PlanningObject
 
+from ..core import (
+    DomainModel,
+    DomainModelError,
+    DomainModelForm,
+    LiftedAction,
+    LiftedFluent,
+    ParameterBoundFluent,
+)
 from ..observation import ActionObservation, Observation, ObservedTraceList
-from . import LearnedLiftedAction, Model
+from ._core_conversion import common_types, to_parameters
 from .exceptions import IncompatibleObservationToken
-from .learned_fluent import LearnedLiftedFluent
-from .model import Model
+
+
+@dataclass(eq=False)
+class _StateFluent:
+    """A state of a sort's state machine, as used by one action."""
+
+    name: str
+    param_sorts: List[str]
+    param_act_inds: List[int]
+
+
+@dataclass(eq=False)
+class _ActionSchema:
+    """An action being learned, with its parameters given by their sorts."""
+
+    name: str
+    param_sorts: List[str]
+    precond: List[_StateFluent] = field(default_factory=list)
+    add: List[_StateFluent] = field(default_factory=list)
+    delete: List[_StateFluent] = field(default_factory=list)
+    statics: List[tuple] = field(default_factory=list)
 
 
 @dataclass
 class AP:
     """Action.Position (of object parameter). Position is 1-indexed."""
 
-    action: Action
+    action: GroundedAction
     pos: int  # NOTE: 1-indexed
     sort: int
 
@@ -182,7 +208,7 @@ Statics = Dict[str, List[str]]  # {action: [static preconditions]}
 class LOCM:
     """LOCM"""
 
-    zero_obj = PlanningObject("zero", "zero")
+    zero_obj = PlanningObject("zero", ObjectType("zero"))
 
     def __new__(
         cls,
@@ -192,7 +218,7 @@ class LOCM:
         view: bool = False,
         debug: Union[bool, Dict[str, bool], List[str]] = False,
     ):
-        """Creates a new Model object.
+        """Creates a new lifted `DomainModel`.
         Args:
             observations (ObservationList):
                 The state observations to extract the model from.
@@ -228,7 +254,6 @@ class LOCM:
             debug = defaultdict(lambda: False)
 
         obs_trace = obs_tracelist[0]
-        fluents, actions = None, None
 
         sorts = LOCM._get_sorts(obs_trace, debug=debug["get_sorts"])
 
@@ -244,7 +269,7 @@ class LOCM:
         HS = LOCM._step3(TS, ap_state_pointers, OS, sorts, debug["step3"])
         bindings = LOCM._step4(HS, debug["step4"])
         bindings = LOCM._step5(HS, bindings, debug["step5"])
-        fluents, actions = LOCM._step7(
+        return LOCM._step7(
             OS,
             ap_state_pointers,
             sorts,
@@ -254,7 +279,59 @@ class LOCM:
             viz,
         )
 
-        return Model(fluents, actions)
+    @staticmethod
+    def _to_domain_model(actions: List[_ActionSchema]) -> DomainModel:
+        """Builds the lifted domain model for the learned action schemas."""
+
+        def state_fluents(action):
+            return action.precond + action.add + action.delete
+
+        arities = defaultdict(set)
+        for action in actions:
+            for fluent in state_fluents(action):
+                arities[fluent.name].add(len(fluent.param_sorts))
+
+        def predicate_name(fluent: _StateFluent) -> str:
+            if len(arities[fluent.name]) > 1:
+                return f"{fluent.name}_{len(fluent.param_sorts)}"
+            return fluent.name
+
+        signatures = defaultdict(set)
+        lifted_actions = []
+        for action in actions:
+            last_param = len(action.param_sorts) - 1
+
+            def bind(fluent: _StateFluent) -> ParameterBoundFluent:
+                signatures[predicate_name(fluent)].add(tuple(fluent.param_sorts))
+                # the zero object is the last parameter, which index -1 refers to
+                indices = [last_param if i == -1 else i for i in fluent.param_act_inds]
+                return ParameterBoundFluent(predicate_name(fluent), indices)
+
+            preconditions = [bind(fluent) for fluent in action.precond]
+            for name, *arguments in action.statics:
+                indices = [argument - 1 for argument in arguments]
+                if not all(0 <= i <= last_param for i in indices):
+                    raise DomainModelError(
+                        f"Static precondition '{name}' of '{action.name}' names a missing argument."
+                    )
+                signatures[name].add(tuple(action.param_sorts[i] for i in indices))
+                preconditions.append(ParameterBoundFluent(name, indices))
+
+            lifted_actions.append(
+                LiftedAction(
+                    action.name,
+                    to_parameters(action.param_sorts),
+                    preconditions,
+                    add_effects=map(bind, action.add),
+                    delete_effects=map(bind, action.delete),
+                )
+            )
+
+        predicates = [
+            LiftedFluent(name, to_parameters(common_types(found)))
+            for name, found in signatures.items()
+        ]
+        return DomainModel(DomainModelForm.LIFTED, predicates, lifted_actions)
 
     @staticmethod
     def _get_sorts(obs_trace: List[Observation], debug=False) -> Sorts:
@@ -278,7 +355,7 @@ class LOCM:
                 continue
 
             if debug:
-                print("\n\naction:", action.name, action.obj_params)
+                print("\n\naction:", action.name, action.objects)
 
             if action.name not in ap_sort_pointers:  # new action
                 if debug:
@@ -287,7 +364,7 @@ class LOCM:
                 ap_sort_pointers[action.name] = []
 
                 # for each parameter of the action
-                for obj in action.obj_params:
+                for obj in action.objects:
                     if obj.name not in sorted_objs:  # unsorted object
                         # append a sort (set) containing the object
                         sorts.append({obj})
@@ -318,7 +395,7 @@ class LOCM:
                     print("seen action")
 
                 for ap_sort, obj in zip(
-                    ap_sort_pointers[action.name], action.obj_params
+                    ap_sort_pointers[action.name], action.objects
                 ):
                     if debug:
                         print("checking obj", obj.name)
@@ -428,7 +505,7 @@ class LOCM:
                 # add the step for the zero-object
                 obj_traces[zero_obj].append(AP(action, pos=0, sort=0))
                 # for each combination of action name A and argument pos P
-                for j, obj in enumerate(action.obj_params):
+                for j, obj in enumerate(action.objects):
                     # create transition A.P
                     ap = AP(action, pos=j + 1, sort=sorts[obj.name])
                     obj_traces[obj].append(ap)
@@ -509,19 +586,19 @@ class LOCM:
                 # for each pair of transitions B.k and C.l consecutive for O
                 for B, C in zip(seq, seq[1:]):
                     # skip if B or C only have one parameter, since there is no k' or l' to match on
-                    if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
+                    if len(B.action.objects) == 1 or len(C.action.objects) == 1:
                         continue
 
                     k = B.pos
                     l = C.pos
 
                     # check each pair B.k' and C.l'
-                    for i, Bk_ in enumerate(B.action.obj_params):
+                    for i, Bk_ in enumerate(B.action.objects):
                         k_ = i + 1
                         if k_ == k:
                             continue
                         G_ = sorts[Bk_.name]
-                        for j, Cl_ in enumerate(C.action.obj_params):
+                        for j, Cl_ in enumerate(C.action.objects):
                             l_ = j + 1
                             if l_ == l:
                                 continue
@@ -561,8 +638,8 @@ class LOCM:
                         for H in HS[BkCl].copy():
                             # if Op,k' = Oq,l' then mark the hypothesis as supported
                             if (
-                                Ap.action.obj_params[H.k_ - 1]
-                                == Aq.action.obj_params[H.l_ - 1]
+                                Ap.action.objects[H.k_ - 1]
+                                == Aq.action.objects[H.l_ - 1]
                             ):
                                 H.supported = True
                             else:  # otherwise remove the hypothesis
@@ -743,7 +820,7 @@ class LOCM:
         statics: Statics,
         debug: bool = False,
         viz: bool = False,
-    ) -> Tuple[Set[LearnedLiftedFluent], Set[LearnedLiftedAction]]:
+    ) -> DomainModel:
         """Step 7: Formation of PDDL action schema
         Implicitly includes Step 6 (statics) by including statics as an argument
         and adding to the relevant actions while being constructed.
@@ -786,7 +863,7 @@ class LOCM:
             sort_str = f"sort{sort}"
             for ap in ap_state_pointers[sort]:
                 if ap.action.name not in actions:
-                    actions[ap.action.name] = LearnedLiftedAction(
+                    actions[ap.action.name] = _ActionSchema(
                         ap.action.name,
                         [None for _ in range(len(all_aps[ap.action.name]))],  # type: ignore
                     )
@@ -800,7 +877,7 @@ class LOCM:
 
                 start_fluent_name = f"sort{sort}_state{start_state}"
                 if start_fluent_name not in fluents[ap.action.name]:
-                    start_fluent = LearnedLiftedFluent(
+                    start_fluent = _StateFluent(
                         start_fluent_name,
                         param_sorts=[sort_str],
                         param_act_inds=[ap.pos - 1],
@@ -834,12 +911,12 @@ class LOCM:
                             start_fluent.param_sorts.append(f"sort{psort}")
                             start_fluent.param_act_inds.append(pind - 1)
 
-                a.update_precond(start_fluent)
+                a.precond.append(start_fluent)
 
                 if end_state != start_state:
                     end_fluent_name = f"sort{sort}_state{end_state}"
                     if end_fluent_name not in fluents[ap.action.name]:
-                        end_fluent = LearnedLiftedFluent(
+                        end_fluent = _StateFluent(
                             end_fluent_name,
                             param_sorts=[sort_str],
                             param_act_inds=[ap.pos - 1],
@@ -873,17 +950,12 @@ class LOCM:
                                 end_fluent.param_sorts.append(f"sort{psort}")
                                 end_fluent.param_act_inds.append(pind - 1)
 
-                    a.update_delete(start_fluent)
-                    a.update_add(end_fluent)
+                    a.delete.append(start_fluent)
+                    a.add.append(end_fluent)
 
         # Step 6: Extraction of static preconditions
         for action in actions.values():
             if action.name in statics:
-                for static in statics[action.name]:
-                    action.update_precond(static)
+                action.statics.extend(statics[action.name])
 
-        return set(
-            fluent
-            for action_fluents in fluents.values()
-            for fluent in action_fluents.values()
-        ), set(actions.values())
+        return LOCM._to_domain_model(list(actions.values()))

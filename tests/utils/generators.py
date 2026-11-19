@@ -1,4 +1,5 @@
 from pathlib import Path
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.trace import *
 from macq.observation import IdentityObservation
 from macq.extract import Extract, modes
@@ -28,8 +29,8 @@ def generate_test_fluents(num_fluents: int):
     fluents : List of Fluents
         The list of testing fluents generated.
     """
-    objects = [PlanningObject("number", str(o)) for o in range(num_fluents)]
-    return [Fluent(f"fluent {str(i+1)}", [objects[i]]) for i in range(num_fluents)]
+    objects = [PlanningObject(str(o), ObjectType("number")) for o in range(num_fluents)]
+    return [GroundedFluent(f"fluent {str(i+1)}", [objects[i]]) for i in range(num_fluents)]
 
 
 def generate_test_actions(num_actions: int):
@@ -46,12 +47,12 @@ def generate_test_actions(num_actions: int):
     actions : List of Actions
         The list of testing actions generated.
     """
-    objects = [PlanningObject("number", str(o)) for o in range(num_actions)]
+    objects = [PlanningObject(str(o), ObjectType("number")) for o in range(num_actions)]
     actions = []
     for i in range(num_actions):
         action_name = "action " + str(i + 1)
         # action 1 has a cost of 1, etc.
-        action = Action(action_name, objects, i + 1)
+        action = GroundedAction(action_name, objects, cost=i + 1)
         actions.append(action)
     return actions
 

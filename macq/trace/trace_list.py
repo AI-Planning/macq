@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 from collections.abc import MutableSequence
-from typing import Callable, List, Type, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Type, Union
 from warnings import warn
 
-from ..observation import Observation, ObservedTraceList
-from . import Action, Trace
+from . import Trace
+from ..core import GroundedAction
+
+if TYPE_CHECKING:
+    from ..observation import Observation, ObservedTraceList
 
 
 class TraceList(MutableSequence):
@@ -69,7 +74,7 @@ class TraceList(MutableSequence):
     def insert(self, key: int, value: Trace):
         self.traces.insert(key, value)
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.get_total_cost()):
+    def sort(self, key: Callable, reverse: bool = False):
         self.traces.sort(reverse=reverse, key=key)
 
     def generate_more(self, num: int):
@@ -88,11 +93,11 @@ class TraceList(MutableSequence):
 
         self.traces.extend([self.generator() for _ in range(num)])
 
-    def get_usage(self, action: Action):
+    def get_usage(self, action: GroundedAction):
         """Calculates how often an action was performed in each of the traces.
 
         Args:
-            action (Action):
+            action (GroundedAction):
                 The action to find the usage of.
 
         Returns:
@@ -120,7 +125,7 @@ class TraceList(MutableSequence):
     def tokenize(
         self,
         Token: Type[Observation],
-        ObsLists: Type[ObservedTraceList] = ObservedTraceList,
+        ObsLists: Optional[Type[ObservedTraceList]] = None,
         **kwargs,
     ):
         """Tokenizes the steps in this trace.
@@ -132,6 +137,8 @@ class TraceList(MutableSequence):
             ObsLists (Type[ObservationLists]):
                 The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
+        if ObsLists is None:
+            from ..observation import ObservedTraceList as ObsLists
         return ObsLists(self, Token, **kwargs)
 
     def print(self, view="details", filter_func=lambda _: True, wrap=None):

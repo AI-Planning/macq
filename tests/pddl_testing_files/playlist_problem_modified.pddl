@@ -23,7 +23,7 @@
     )
 
     (:goal
-        (and (in_playlist pop_song) (and (in_playlist jazz_song) (and (in_playlist classical_song) (and (in_playlist classical_song_2) (in_playlist classical_song_3)))))
+        (and (in_playlist pop_song) (in_playlist jazz_song) (in_playlist classical_song) (in_playlist classical_song_2) (in_playlist classical_song_3))
     )
 
     

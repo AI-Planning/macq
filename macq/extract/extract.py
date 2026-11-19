@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, List, Union
 
+from ..core import DomainModel
+from ..trace import State  # must load before ..observation, which it imports circularly
+from ..core import GroundedAction
 from ..observation import ObservedTraceList
-from ..trace import Action, State
-from .model import Model
 
 from .amdn import AMDN
 from .arms import ARMS
@@ -17,7 +18,7 @@ from .observer import Observer
 @dataclass
 class SAS:
     pre_state: State
-    action: Action
+    action: GroundedAction
     post_state: State
 
 
@@ -37,7 +38,7 @@ class modes(Enum):
 class Extract:
     """Extracts models from observations.
 
-    The Extract class uses an extraction method to retrieve an action Model
+    The Extract class uses an extraction method to retrieve a domain model
     from state observations.
     """
 
@@ -47,8 +48,8 @@ class Extract:
         mode: modes,
         debug: Union[bool, Dict[str, bool], List[str]] = False,
         **kwargs
-    ) -> Model:
-        """Extracts a Model object.
+    ) -> DomainModel:
+        """Extracts a domain model.
 
         Extracts a model from the observations using the specified extraction
         technique.
@@ -64,8 +65,8 @@ class Extract:
                 Any extra arguments to supply to the extraction technique.
 
         Returns:
-            A Model object. The model's characteristics are determined by the
-            extraction technique used.
+            A validated `DomainModel`. Its form and contents are determined by
+            the extraction technique used.
         """
 
         if len(obs_tracelist) == 0:

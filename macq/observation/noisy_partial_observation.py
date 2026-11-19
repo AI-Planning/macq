@@ -1,5 +1,6 @@
 from macq.observation.noisy_observation import NoisyObservation
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..core import GroundedFluent
 from . import PartialObservation
 from typing import Set
 
@@ -16,7 +17,7 @@ class NoisyPartialObservation(PartialObservation, NoisyObservation):
         self,
         step: Step,
         percent_missing: float = 0,
-        hide: Set[Fluent] = None,
+        hide: Set[GroundedFluent] = None,
         percent_noisy: float = 0,
         replace: bool = False,
     ):
@@ -28,7 +29,7 @@ class NoisyPartialObservation(PartialObservation, NoisyObservation):
                 The step associated with this observation.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
             percent_noisy (float):
                 The percentage of fluents to randomly make noisy in the observation.

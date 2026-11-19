@@ -8,6 +8,7 @@ These are the various methods implemented to generate the base trace data.
 |---|---|
 | [VanillaSampling](macq/generate/pddl.html#VanillaSampling) | Samples actions uniformly at random |
 | [RandomGoalSampling](macq/generate/pddl.html#RandomGoalSampling) | Samples goals by taking a random subset of a state reached after a random walk |
+| [UniformWalkSampling](macq/generate/pddl.html#UniformWalkSampling) | Reproducible, offline random walks that keep walks ending in dead ends |
 | [FDRandomWalkSampling](macq/generate/pddl.html#FDRandomWalkSampling) | Random walk based on a heuristic-driven depth calculation (algorithm introduced in the [FD planning system](https://www.fast-downward.org/)) |
 | [TraceFromGoal](macq/generate/pddl.html#TraceFromGoal) | Generates a trace from a given domain/problem (with a goal state) |
 | [CSV](macq/generate/csv.html) | Reads a CSV file to generate a trace |
@@ -25,6 +26,10 @@ Once trace data is loaded, you can process the traces to produce lists of observ
 | [NoisyObservation](macq/observation.html#NoisyObservation) | Observations with added noise to the fluents |
 | [NoisyPartialObservation](macq/observation.html#NoisyPartialObservation) | Observations with added noise to the fluents and a subset of the fluents hidden in the states |
 | [NoisyPartialDisorderedParallelObservation](macq/observation.html#NoisyPartialDisorderedParallelObservation) | Observations with added noise to the fluents and a subset of the fluents hidden in the states, with the actions disordered and parallelized |
+
+## Trace Files
+
+Traces and observation tokens can be written to and read from [trace files](macq/io.html), a JSON format with one trace per file.
 
 ## Extraction Techniques
 

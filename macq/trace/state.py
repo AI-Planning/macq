@@ -1,26 +1,26 @@
 from __future__ import annotations
 from typing import Dict
 from rich.text import Text
-from . import Fluent
+from ..core import GroundedFluent
 
 
 class State:
     """State in a trace.
 
-    A dict-like object. Maps `Fluent` objects to boolean values, representing
+    A dict-like object. Maps `GroundedFluent` objects to boolean values, representing
     the state for a `Step` in a `Trace`.
 
     Attributes:
         fluents (dict):
-            A mapping of `Fluent` objects to their value in this state.
+            A mapping of `GroundedFluent` objects to their value in this state.
     """
 
-    def __init__(self, fluents: Dict[Fluent, bool] = None):
+    def __init__(self, fluents: Dict[GroundedFluent, bool] = None):
         """Initializes State with an optional fluent-value mapping.
 
         Args:
             fluents (dict):
-                Optional; A mapping of `Fluent` objects to their value in this
+                Optional; A mapping of `GroundedFluent` objects to their value in this
                 state. Defaults to an empty `dict`.
         """
         self.fluents = fluents if fluents is not None else {}
@@ -37,13 +37,13 @@ class State:
     def __len__(self):
         return len(self.fluents)
 
-    def __setitem__(self, key: Fluent, value: bool):
+    def __setitem__(self, key: GroundedFluent, value: bool):
         self.fluents[key] = value
 
-    def __getitem__(self, key: Fluent):
+    def __getitem__(self, key: GroundedFluent):
         return self.fluents[key]
 
-    def __delitem__(self, key: Fluent):
+    def __delitem__(self, key: GroundedFluent):
         del self.fluents[key]
 
     def __iter__(self):

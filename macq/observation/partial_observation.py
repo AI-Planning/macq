@@ -1,7 +1,7 @@
-from warnings import warn
 from typing import Set
 from ..utils import PercentError
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..core import GroundedFluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 
@@ -14,7 +14,11 @@ class PartialObservation(Observation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
+        self,
+        step: Step,
+        percent_missing: float = 0,
+        hide: Set[GroundedFluent] = None,
+        rng=None,
     ):
         """
         Creates a PartialObservation object, storing the step.
@@ -23,14 +27,13 @@ class PartialObservation(Observation):
                 The step associated with this observation.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
+            rng (random.Random):
+                Optional; The random generator to use. Defaults to the global generator.
         """
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
-
-        if percent_missing == 0 and not hide:
-            warn("Creating a PartialObseration with no missing information.")
 
         # NOTE: Can't use super due to multiple inheritence (NoisyPartialObservation)
         Observation.__init__(self, index=step.index)
@@ -40,12 +43,12 @@ class PartialObservation(Observation):
         # state information available without having to check every mapping in
         # the state (slow in large domains).
         if percent_missing < 1:
-            step = self.hide_random_subset(step, percent_missing)
+            step = self.hide_random_subset(step, percent_missing, rng)
         if hide:
             step = self.hide_subset(step, hide)
 
         self.state = None if percent_missing == 1 else step.state.clone()
-        self.action = None if step.action is None else step.action.clone()
+        self.action = step.action
 
     def __eq__(self, other):
         return (
@@ -54,28 +57,30 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def hide_random_subset(self, step: Step, percent_missing: float):
+    def hide_random_subset(self, step: Step, percent_missing: float, rng=None):
         """Hides a random subset of the fluents in the step.
         Args:
             step (Step):
                 The step to tokenize.
             percent_missing (float):
                 The percentage of fluents to hide (0-1).
+            rng (random.Random):
+                Optional; The random generator to use. Defaults to the global generator.
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
         new_fluents = {}
-        hidden_f = self.extract_fluent_subset(step.state, percent_missing)
+        hidden_f = set(self.extract_fluent_subset(step.state, percent_missing, rng))
         for f in step.state:
             new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
-    def hide_subset(self, step: Step, hide: Set[Fluent]):
+    def hide_subset(self, step: Step, hide: Set[GroundedFluent]):
         """Hides the specified set of fluents in the observation.
         Args:
             step (Step):
                 The step to tokenize.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents that will be hidden.
         Returns:
             A Step whose state is a PartialState with the specified fluents hidden.

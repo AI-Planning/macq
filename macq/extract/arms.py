@@ -1,18 +1,60 @@
 """.. include:: ../../docs/extract/arms.md"""
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass
-from typing import Dict, Hashable, List, Set, Tuple
+from dataclasses import dataclass, field
+from itertools import product
+from typing import Dict, Hashable, Iterable, List, Set, Tuple
 from warnings import warn
 
 from nnf import And, Or, Var
 from nnf import false as nnffalse
 
+from ..core import (
+    DomainModel,
+    DomainModelForm,
+    LiftedAction,
+    LiftedFluent,
+    ParameterBoundFluent,
+)
 from ..observation import Observation, ObservedTraceList, PartialObservation
-from ..trace import Action, Fluent
+from ..core import GroundedAction
+from ..core import GroundedFluent
 from ..utils.pysat import RC2, WCNF, to_wcnf
-from . import LearnedAction, LearnedFluent, Model
+from ._core_conversion import common_types, to_parameters
 from .exceptions import IncompatibleObservationToken, InvalidMaxSATModel
+
+
+@dataclass(eq=False)
+class _ActionSchema:
+    """An action being learned, with its parameters replaced by their object types."""
+
+    name: str
+    obj_params: List[str]
+    precond: Set[str] = field(default_factory=set)
+    add: Set[str] = field(default_factory=set)
+    delete: Set[str] = field(default_factory=set)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, _ActionSchema)
+            and self.name == other.name
+            and self.obj_params == other.obj_params
+        )
+
+    def __hash__(self):
+        return hash(self.details())
+
+    def details(self):
+        return f"({self.name} {' '.join(self.obj_params)})"
+
+    def update_precond(self, fluents: Set[str]):
+        self.precond.update(fluents)
+
+    def update_add(self, fluents: Set[str]):
+        self.add.update(fluents)
+
+    def update_delete(self, fluents: Set[str]):
+        self.delete.update(fluents)
 
 
 @dataclass
@@ -26,7 +68,7 @@ class Relation:
         """Generates the variable representation for NNF."""
         return f"{self.name} {' '.join(list(self.types))}"
 
-    def matches(self, action: LearnedAction):
+    def matches(self, action: _ActionSchema):
         """Determines if a relation is related to a given action."""
         action_types = set(action.obj_params)
         self_counts = Counter(self.types)
@@ -52,7 +94,7 @@ class ARMSConstraints:
 class ARMS:
     """ARMS model extraction method.
 
-    Extracts a Model from state observations using the ARMS technique. Fluents
+    Extracts a lifted domain model from state observations using the ARMS technique. Fluents
     are retrieved from the initial state. Actions are learned using the
     algorithm.
     """
@@ -105,6 +147,8 @@ class ARMS:
             raise ARMS.InvalidThreshold(threshold)
 
         fluents = obs_tracelist.get_fluents()
+        # read before learning, because the algorithm progresses the observed states
+        binding_support = ARMS._binding_support(obs_tracelist)
         # get fluents from initial state
         # call algorithm to get actions
         actions = ARMS._arms(
@@ -120,23 +164,104 @@ class ARMS:
             debug,
         )
 
-        # learned_fluents = set(map(lambda f: LearnedFluent(f.name, f.objects), fluents))
-        learned_fluents = set()
-        # format
-        for act in actions:
-            act.precond = {f"({p})" for p in act.precond}
-            act.add = {f"({p})" for p in act.add}
-            act.delete = {f"({p})" for p in act.delete}
-            learned_fluents.update(act.precond)
-            learned_fluents.update(act.add)
-            learned_fluents.update(act.delete)
-        return Model(learned_fluents, actions)
+        return ARMS._to_domain_model(actions, binding_support)
+
+    @staticmethod
+    def _binding_support(obs_tracelist: Iterable) -> Counter:
+        """Counts how often the observations show each relation bound to each action's parameters.
+
+        Relations only record object types, so the observed transitions are what show which parameter
+        fills which argument.
+        """
+        support: Counter = Counter()
+        for obs_trace in obs_tracelist:
+            tokens = list(obs_trace)
+            for pre, post in zip(tokens, tokens[1:]):
+                if pre.action is None:
+                    continue
+                params = pre.action.objects
+                schema = (pre.action.name, tuple(obj.obj_type.type_name for obj in params))
+                before = pre.state.fluents if pre.state else {}
+                after = post.state.fluents if post.state else {}
+                for fluent in {*before, *after}:
+                    positions = [
+                        [i for i, param in enumerate(params) if param == obj]
+                        for obj in fluent.objects
+                    ]
+                    relation = Relation(fluent.name, [o.obj_type.type_name for o in fluent.objects]).var()
+                    for binding in product(*positions):
+                        was, now = before.get(fluent), after.get(fluent)
+                        if was is True:
+                            support[schema, "pre", relation, binding] += 1
+                        if now is True and was is not True:
+                            support[schema, "add", relation, binding] += 1
+                        if now is False and was is not False:
+                            support[schema, "del", relation, binding] += 1
+        return support
+
+    @staticmethod
+    def _bind(action: _ActionSchema, part: str, relation: str, support) -> ParameterBoundFluent:
+        """Binds a learned relation to the action parameters with the most observed support."""
+        name, *types = relation.split()
+        candidates = list(
+            product(*[[i for i, p in enumerate(action.obj_params) if p == t] for t in types])
+        )
+        schema = (action.name, tuple(action.obj_params))
+
+        def preference(binding):
+            repeats = len(set(binding)) != len(binding)
+            return -support.get((schema, part, relation, binding), 0), repeats, binding
+
+        return ParameterBoundFluent(name, min(candidates, key=preference))
+
+    @staticmethod
+    def _warn_dropped(relation: str, part: str, action: _ActionSchema) -> None:
+        label = {"pre": "precondition", "add": "add effect", "del": "delete effect"}[part]
+        shown = " ".join(relation.split())
+        warn(
+            f"ARMS learned ({shown}) as a {label} of {action.details()}, but the action's parameters "
+            "can't fill its arguments, so it was dropped from the domain model."
+        )
+
+    @staticmethod
+    def _to_domain_model(actions: Iterable[_ActionSchema], support) -> DomainModel:
+        """Builds the lifted domain model for the learned action schemas."""
+        argument_types: Dict[str, Set[Tuple[str, ...]]] = defaultdict(set)
+        lifted_actions = []
+        for action in actions:
+
+            def bind_all(relations: Set[str], part: str):
+                bound = []
+                for relation in sorted(relations):
+                    name, *types = relation.split()
+                    if not Relation(name, types).matches(action):
+                        ARMS._warn_dropped(relation, part, action)
+                        continue
+                    argument_types[name].add(tuple(types))
+                    bound.append(ARMS._bind(action, part, relation, support))
+                return bound
+
+            lifted_actions.append(
+                LiftedAction(
+                    action.name,
+                    to_parameters(action.obj_params),
+                    bind_all(action.precond, "pre"),
+                    add_effects=bind_all(action.add, "add"),
+                    delete_effects=bind_all(action.delete, "del"),
+                )
+            )
+
+        predicates = [
+            LiftedFluent(name, to_parameters(common_types(signatures)))
+            for name, signatures in argument_types.items()
+        ]
+        return DomainModel(DomainModelForm.LIFTED, predicates, lifted_actions)
 
     @staticmethod
     def _arms(
         obs_tracelist: ObservedTraceList,
         upper_bound: int,
-        fluents: Set[Fluent],
+        fluents: Set[GroundedFluent],
         min_support: int,
         action_weight: int,
         info_weight: int,
@@ -144,7 +269,7 @@ class ARMS:
         info3_default: int,
         plan_default: int,
         debug: bool,
-    ) -> Set[LearnedAction]:
+    ) -> Set[_ActionSchema]:
         """The main driver for the ARMS algorithm."""
         learned_actions = set()  # The set of learned action models Θ
         # pointers to the earliest unlearned action for each observation list
@@ -155,7 +280,7 @@ class ARMS:
         if debug1:
             input("Press enter to continue...")
 
-        action_map_rev: Dict[LearnedAction, List[Action]] = defaultdict(list)
+        action_map_rev: Dict[_ActionSchema, List[GroundedAction]] = defaultdict(list)
         for obs_action, learned_action in action_map.items():
             action_map_rev[learned_action].append(obs_action)
 
@@ -177,7 +302,7 @@ class ARMS:
             if debug2:
                 input("Press enter to continue...")
 
-            relation_map_rev: Dict[Relation, List[Fluent]] = defaultdict(list)
+            relation_map_rev: Dict[Relation, List[GroundedFluent]] = defaultdict(list)
             for fluent, relation in relation_map.items():
                 relation_map_rev[relation].append(fluent)
 
@@ -197,7 +322,7 @@ class ARMS:
             model = ARMS.step4(max_sat, decode)
 
             debug5 = ARMS.debug_menu("Debug step 5?") if debug else False
-            # Mutates the LearnedAction (keys) of action_map_rev
+            # Mutates the _ActionSchema (keys) of action_map_rev
             ARMS.step5(
                 model,
                 list(action_map_rev.keys()),
@@ -210,7 +335,7 @@ class ARMS:
             setA = set()
             for action in action_map_rev.keys():
                 for i, obs_trace in enumerate(obs_tracelist):
-                    obs_action: Action = obs_trace[early_actions[i]].action
+                    obs_action: GroundedAction = obs_trace[early_actions[i]].action
                     # if current action is the early action for obs_trace i,
                     # update the next state with the effects and update the
                     # early action pointer
@@ -222,14 +347,14 @@ class ARMS:
                             # get fluent by cross referencing obs_trace.action params
                             candidates = relation_map_rev[add]
                             for fluent in candidates:
-                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                if set(fluent.objects).issubset(obs_action.objects):
                                     obs_trace[early_actions[i] + 1].state[fluent] = True
                                     early_actions[i] += 1
                         # Set del effects false
                         for delete in action.delete:
                             candidates = relation_map_rev[delete]
                             for fluent in candidates:
-                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                if set(fluent.objects).issubset(obs_action.objects):
                                     obs_trace[early_actions[i] + 1].state[
                                         fluent
                                     ] = False
@@ -277,25 +402,25 @@ class ARMS:
     def step1(
         obs_tracelist: ObservedTraceList, debug: bool
     ) -> Tuple[
-        Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
-        Dict[Action, LearnedAction],
+        Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]],
+        Dict[GroundedAction, _ActionSchema],
     ]:
         """(Step 1) Substitute instantiated objects in each action instance with the object type."""
 
-        learned_actions: Set[LearnedAction] = set()
-        action_map: Dict[Action, LearnedAction] = {}
+        learned_actions: Set[_ActionSchema] = set()
+        action_map: Dict[GroundedAction, _ActionSchema] = {}
         for obs_action in obs_tracelist.get_actions():
             # We don't support objects with multiple types right now, so no
             # multiple type clauses need to be generated.
 
-            # Create LearnedActions for each action, replacing instantiated
+            # Create action schemas for each action, replacing instantiated
             # objects with the object type.
-            types = [obj.obj_type for obj in obs_action.obj_params]
-            learned_action = LearnedAction(obs_action.name, types)
+            types = [obj.obj_type.type_name for obj in obs_action.objects]
+            learned_action = _ActionSchema(obs_action.name, types)
             learned_actions.add(learned_action)
             action_map[obs_action] = learned_action
 
-        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]] = {}
+        connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]] = {}
         for a1 in learned_actions:
             connected_actions[a1] = {}
             for a2 in learned_actions.difference({a1}):  # includes connecting with self
@@ -312,12 +437,12 @@ class ARMS:
     @staticmethod
     def step2(
         obs_tracelist: ObservedTraceList,
-        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set[str]]],
-        action_map: Dict[Action, LearnedAction],
-        fluents: Set[Fluent],
+        connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]],
+        action_map: Dict[GroundedAction, _ActionSchema],
+        fluents: Set[GroundedFluent],
         min_support: int,
         debug: bool,
-    ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
+    ) -> Tuple[ARMSConstraints, Dict[GroundedFluent, Relation]]:
         """(Step 2) Generate action constraints, information constraints, and plan constraints.
 
         For the unexplained actions, build a set of information and action
@@ -329,13 +454,13 @@ class ARMS:
 
         # Map fluents to relations
         # relations are fluents but with instantiated objects replaced by the object type
-        relations: Dict[Fluent, Relation] = dict(
+        relations: Dict[GroundedFluent, Relation] = dict(
             map(
                 lambda f: (
                     f,
                     Relation(
                         f.name,
-                        [obj.obj_type for obj in f.objects],
+                        [obj.obj_type.type_name for obj in f.objects],
                     ),
                 ),
                 fluents,
@@ -375,7 +500,7 @@ class ARMS:
 
     @staticmethod
     def step2A(
-        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
+        connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set]],
         relations: Set[Relation],
         debug: bool,
     ) -> List[Or[Var]]:
@@ -454,28 +579,28 @@ class ARMS:
     @staticmethod
     def step2I(
         obs_tracelist: ObservedTraceList,
-        relations: Dict[Fluent, Relation],
-        actions: Dict[Action, LearnedAction],
+        relations: Dict[GroundedFluent, Relation],
+        actions: Dict[GroundedAction, _ActionSchema],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
-        """Information constraints.
+        r"""Information constraints.
 
         Suppose we observe a relation p to be true between two actions
-        \(a_n\) and \(a_{n+1}\) , and \(p, a_{i_1} , ... ,\) and \(a_{i_k}\) share
+        (a_n) and (a_{n+1}) , and (p, a_{i_1} , ... ,) and (a_{i_k}) share
         the same parameter types. We can represent this fact by the following clauses,
-        given that \(a_{i_1} , ... ,\) and \(a_{i_k}\) appear in that order.
+        given that (a_{i_1} , ... ,) and (a_{i_k}) appear in that order.
 
-        I1. The relation \(p\) must be generated by an action \(a_{i_k} (0 \le i_k \le n)\),
-        that is, \(p\) is selected to be in the add-list of \(a_{i_k}\).
-        \(p∈ (add_{i_1} ∪ add_{i_2} ∪ \dots ∪ add_{i_k}) \), where ∪ means logical “or”.
+        I1. The relation (p) must be generated by an action (a_{i_k} (0 \le i_k \le n)),
+        that is, (p) is selected to be in the add-list of (a_{i_k}).
+        (p∈ (add_{i_1} ∪ add_{i_2} ∪ \dots ∪ add_{i_k}) ), where ∪ means logical “or”.
 
-        I2. The last action \(a_{i_k}\) must not delete the relation p; that is,
-        \(p\) must not be selected to be in the delete list of \(a_{i_k}\): \(p \\not\in del_{i_k}\).
+        I2. The last action (a_{i_k}) must not delete the relation p; that is,
+        (p) must not be selected to be in the delete list of (a_{i_k}): (p \not\in del_{i_k}).
 
-        I3. We define the weight value of a relation-action pair \((p, a)\) as the
+        I3. We define the weight value of a relation-action pair ((p, a)) as the
         occurrence probability of this pair in all plan examples. If the probability
         of a relation-action pair is higher than the probability threshold θ ,
-        then we set a corresponding relation constraint \(p ∈ \\text{PRECOND}_a\), which
+        then we set a corresponding relation constraint (p ∈ \text{PRECOND}_a), which
         receives a weight value equal to its prior probability.
         """
         if debug:
@@ -567,8 +692,8 @@ class ARMS:
 
     @staticmethod
     def _apriori(
-        action_lists: List[List[LearnedAction]], minsup: int
-    ) -> Dict[Tuple[LearnedAction, LearnedAction], int]:
+        action_lists: List[List[_ActionSchema]], minsup: int
+    ) -> Dict[Tuple[_ActionSchema, _ActionSchema], int]:
         """An implementation of the Apriori algorithm to find frequent ordered pairs of actions."""
         counts = Counter(
             [action for action_list in action_lists for action in action_list]
@@ -610,23 +735,23 @@ class ARMS:
     @staticmethod
     def step2P(
         obs_tracelist: ObservedTraceList,
-        connected_actions: Dict[LearnedAction, Dict[LearnedAction, Set]],
-        action_map: Dict[Action, LearnedAction],
+        connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set]],
+        action_map: Dict[GroundedAction, _ActionSchema],
         relations: Set[Relation],
         min_support: int,
         debug: bool,
     ) -> Dict[Or[Var], int]:
-        """Plan constraints.
+        r"""Plan constraints.
 
-        P1. Every precondition \(p\) of every action \(b\) must be in the add
-        list of a preceding action \(a\) and is not deleted by any actions between
-        \(a\) and \(b\).
+        P1. Every precondition (p) of every action (b) must be in the add
+        list of a preceding action (a) and is not deleted by any actions between
+        (a) and (b).
 
-        P2. In addition, at least one relation \(r\) in the add list of an action
+        P2. In addition, at least one relation (r) in the add list of an action
         must be useful in achieving a precondition of a later action. That is, for
-        every action \(a\), an add list relation \(r\) must be in the precondition of a
-        later action \(b\), and there is no other action between \(a\) and \(b\)
-        that either adds or deletes \(r\).
+        every action (a), an add list relation (r) must be in the precondition of a
+        later action (b), and there is no other action between (a) and (b)
+        that either adds or deletes (r).
 
         "While constraints P1 and P2 provide the general guiding principle for
         ensuring a plan’s correctness, in practice there are too many
@@ -634,21 +759,21 @@ class ARMS:
         rationelle in the paper) Thus, they are replaced with the following
         constraints:
 
-        Let there be an action pair \(\langle a_i, a_j \\rangle, 0 \le i < j \le n-1\).
+        Let there be an action pair (\langle a_i, a_j \rangle, 0 \le i < j \le n-1).
 
-        P3. One of the relevant relations \(p\) must be chosen to be in the
-        preconditions of both \(a_i\) and \(a_j\), but not in the delete list
-        of \(a_i\).
+        P3. One of the relevant relations (p) must be chosen to be in the
+        preconditions of both (a_i) and (a_j), but not in the delete list
+        of (a_i).
 
-        P4. The first action \(a_i\) adds a relevant relation that is in the
-        precondition list of the second action \(a_j\) in the pair.
+        P4. The first action (a_i) adds a relevant relation that is in the
+        precondition list of the second action (a_j) in the pair.
 
-        P5. A relevant relation \(p\) that is deleted by the first action
-        \(a_i\) is added by \(a_j\). The second clause is designed for the event
+        P5. A relevant relation (p) that is deleted by the first action
+        (a_i) is added by (a_j). The second clause is designed for the event
         when an action re-establishes a fact that is deleted by a previous action.
 
         The above constraints can be combined into one constraint:
-        $$\exists p ((p \in (pre_i \cap pre_j) \land p \\not \in (del_i)) \lor (p \in (add_i \cap pre_j)) \lor (p \in (del_i \cap add_j)))$$
+        $$\exists p ((p \in (pre_i \cap pre_j) \land p \not \in (del_i)) \lor (p \in (add_i \cap pre_j)) \lor (p \in (del_i \cap add_j)))$$
         """
         frequent_pairs = ARMS._apriori(
             [
@@ -786,13 +911,13 @@ class ARMS:
     @staticmethod
     def step5(
         model: Dict[Hashable, bool],
-        actions: List[LearnedAction],
+        actions: List[_ActionSchema],
         debug: bool,
     ):
         """(Step 5) Extract the learned action effects from the solved model."""
         action_map = {a.details(): a for a in actions}
         negative_constraints = defaultdict(set)
-        plan_constraints: List[Tuple[str, LearnedAction, LearnedAction]] = []
+        plan_constraints: List[Tuple[str, _ActionSchema, _ActionSchema]] = []
 
         # NOTE: only taking the top n (optimal number varies, determine
         # empirically) constraints usually results in more accurate action

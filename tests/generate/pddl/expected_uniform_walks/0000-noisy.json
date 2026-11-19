@@ -1,0 +1,109 @@
+{
+  "format_version": 1,
+  "states": [
+    {
+      "true": [
+        "(At Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(Holding K1)",
+        "(KeyIn K1 Pit)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked Pit attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(Holding k2)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(Holding K1)",
+        "(KeyIn k2 Pit)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked Pit Hall)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(At Pit)",
+        "(KeyIn K1 Hall)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked Pit Hall)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(Holding k2)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At attic)",
+        "(KeyIn K1 attic)",
+        "(KeyIn k2 Hall)",
+        "(KeyIn k2 Pit)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall Pit)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    },
+    {
+      "true": [
+        "(At Hall)",
+        "(Holding K1)",
+        "(KeyIn K1 attic)",
+        "(KeyIn k2 attic)",
+        "(Linked Hall attic)",
+        "(Linked attic Hall)"
+      ]
+    }
+  ],
+  "actions": [
+    "(Grab K1 Hall)",
+    "(Drop K1 Hall)",
+    "(Grab K1 Hall)",
+    "(Drop K1 Hall)",
+    "(Grab K1 Hall)",
+    "(Move Hall attic)",
+    "(Drop K1 attic)",
+    "(Move attic Hall)"
+  ]
+}

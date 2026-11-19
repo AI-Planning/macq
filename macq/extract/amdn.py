@@ -1,17 +1,17 @@
 """.. include:: ../../docs/extract/amdn.md"""
 
-from macq.trace import Fluent, Action  # for typing
-from macq.extract.learned_action import LearnedAction
+from macq.core import GroundedAction
+from macq.core import GroundedFluent
 from nnf.operators import implies
 
-import macq.extract as extract
 from typing import Dict, List, Optional, Union, Hashable
 from nnf import Aux, Var, And, Or
 from bauhaus import Encoding  # only used for pretty printing in debug mode
 from .exceptions import (
     IncompatibleObservationToken,
 )
-from .model import Model
+from ._core_conversion import action_text, to_grounded_fluent, to_planning_object
+from ..core import DomainModel, DomainModelForm, GroundedAction
 from ..trace import ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation, ObservedTraceList
 from ..utils.pysat import to_wcnf, extract_raw_model
@@ -19,46 +19,46 @@ from ..utils.pysat import to_wcnf, extract_raw_model
 e = Encoding
 
 
-def pre(r: Fluent, act: Action):
+def pre(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is a precondition of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The precondition to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the precondition will be added to.
     Returns:
         The Var that enforces that the given fluent is a precondition of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is a precondition of " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is a precondition of " + action_text(act) + ")")
 
 
-def add(r: Fluent, act: Action):
+def add(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is an add effect of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The add effect to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the add effect will be added to.
     Returns:
         The Var that enforces that the given fluent is an add effect of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is added by " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is added by " + action_text(act) + ")")
 
 
-def delete(r: Fluent, act: Action):
+def delete(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is a delete effect of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The delete effect to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the delete effect will be added to.
     Returns:
         The Var that enforces that the given fluent is a delete effect of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is deleted by " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is deleted by " + action_text(act) + ")")
 
 
 WMAX = 1
@@ -71,7 +71,7 @@ class AMDN:
         debug: bool = False,
         occ_threshold: int = 1,
     ):
-        """Creates a new Model object.
+        """Creates a new grounded `DomainModel`.
 
         Args:
             obs_tracelist (ObservationList):
@@ -106,7 +106,7 @@ class AMDN:
                 Threshold to be used for noise constraints.
 
         Returns:
-            The extracted `Model`.
+            The extracted `DomainModel`.
         """
         wcnf, decode = AMDN._solve_constraints(obs_tracelist, occ_threshold, debug)
         raw_model = extract_raw_model(wcnf, decode)
@@ -709,14 +709,14 @@ class AMDN:
         return wcnf, decode
 
     @staticmethod
-    def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, LearnedAction]):
+    def _split_raw_fluent(raw_f: Hashable, learned_actions: Dict[str, GroundedAction]):
         """Helper function for `_extract_model` that updates takes raw fluents to update
-        a dictionary of `LearnedActions`.
+        a dictionary of `GroundedAction`s.
 
         Args:
             raw_f (Hashable):
                 The raw fluent to parse.
-            learned_actions (Dict[str, LearnedAction]):
+            learned_actions (Dict[str, GroundedAction]):
                 The dictionary of learned actions that will be used to create the model.
         """
         raw_f = str(raw_f)[1:-1]
@@ -725,17 +725,17 @@ class AMDN:
         del_str = " is deleted by "
         if pre_str in raw_f:
             f, act = raw_f.split(pre_str)
-            learned_actions[act].update_precond({f})
+            learned_actions[act].positive_preconditions.add(to_grounded_fluent(f"({f})"))
         elif add_str in raw_f:
             f, act = raw_f.split(add_str)
-            learned_actions[act].update_add({f})
+            learned_actions[act].add_effects.add(to_grounded_fluent(f"({f})"))
         else:
             f, act = raw_f.split(del_str)
-            learned_actions[act].update_delete({f})
+            learned_actions[act].delete_effects.add(to_grounded_fluent(f"({f})"))
 
     @staticmethod
     def _extract_model(obs_tracelist: ObservedTraceList, model: Dict[Hashable, bool]):
-        """Converts a raw model generated from the pysat module into a macq `Model`.
+        """Converts a raw model generated from the pysat module into a macq `DomainModel`.
         Corresponds to step 5 of the AMDN algorithm.
 
         Args:
@@ -745,26 +745,20 @@ class AMDN:
                 The raw model to parse and analyze.
 
         Returns:
-            The macq action `Model`.
+            The macq `DomainModel`.
         """
-        # convert the result to a Model
-        fluents = obs_tracelist.propositions
-        # set up LearnedActions
+        # convert the result to a domain model
+        fluents = set(map(to_grounded_fluent, obs_tracelist.propositions))
+        # set up the actions
         learned_actions = {}
         for a in obs_tracelist.actions:
-            # set up a base LearnedAction with the known information
-            learned_actions[a.details()] = extract.LearnedAction(
-                a.name, a.obj_params, cost=a.cost
+            # set up a base action with the known information
+            learned_actions[action_text(a)] = GroundedAction(
+                a.name, map(to_planning_object, a.objects), cost=a.cost
             )
         # iterate through all fluents
         for raw_f in model:
             # update learned_actions (ignore auxiliary variables)
             if not isinstance(raw_f, Aux) and model[raw_f]:
                 AMDN._split_raw_fluent(raw_f, learned_actions)
-        # format
-        actions = set(learned_actions.values())
-        for act in actions:
-            act.precond = {f"({p})" for p in act.precond}
-            act.add = {f"({p})" for p in act.add}
-            act.delete = {f"({p})" for p in act.delete}
-        return Model(fluents, actions)
+        return DomainModel(DomainModelForm.GROUNDED, fluents, learned_actions.values())

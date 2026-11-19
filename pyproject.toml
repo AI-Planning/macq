@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "macq"
-version = "0.3.11"
+version = "0.4.0"
 description = "Action model acquisition from state trace data."
 # author="Ethan Callanan, Rebecca De Venezia, Victoria Armstrong, Alison Parades, Tathagata Chakraborti, Christian Muise",
 authors = [
@@ -21,30 +21,29 @@ maintainers = [
 readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["planning", "action model acquisition"]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "tarski",
+    "pddl-utils>=0.2,<0.3",
     "requests",
     "rich",
     "nnf",
     "python-sat",
     "bauhaus",
     "numpy",
-    "clingo",
     "graphviz",
     "networkx",
     "pydot",
@@ -63,3 +62,8 @@ dev = [
 Homepage = "https://macq.planning.domains"
 Documentation = "https://ai-planning.github.io/macq/"
 Repository = "https://github.com/ai-planning/macq"
+
+[tool.pytest.ini_options]
+markers = [
+    "remote_planner: calls the remote planner at planning.domains, so needs network access (CI skips these)",
+]

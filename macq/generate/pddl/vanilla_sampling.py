@@ -1,8 +1,7 @@
-from tarski.search.operations import progress
 import random
 from . import Generator
 from ...utils import (
-    set_timer_throw_exc,
+    Deadline,
     TraceSearchTimeOut,
     InvalidTime,
     set_num_traces,
@@ -39,6 +38,7 @@ class VanillaSampling(Generator):
         prob: str = None,
         problem_id: int = None,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
         plan_len: int = 1,
         num_traces: int = 0,
         seed: int = None,
@@ -69,6 +69,7 @@ class VanillaSampling(Generator):
             prob=prob,
             problem_id=problem_id,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents
         )
         if max_time <= 0:
             raise InvalidTime()
@@ -100,21 +101,21 @@ class VanillaSampling(Generator):
         self.traces = traces
         return traces
 
-    def generate_single_trace_setup(self, num_seconds: float, plan_len = None):
-        @set_timer_throw_exc(
-            num_seconds=num_seconds, exception=TraceSearchTimeOut, max_time=num_seconds
-        )
+    def generate_single_trace_setup(
+        self, num_seconds: float, plan_len=None, deadline: Deadline = None
+    ):
         def generate_single_trace(self=self, plan_len=plan_len):
             """Generates a single trace using the uniform random sampling technique.
-            Loops until a valid trace is found. The timer wrapper does not allow the function
-            to run past the time specified.
+            Loops until a valid trace is found, and raises `TraceSearchTimeOut` if
+            `num_seconds` pass first.
 
-            The outside function is a wrapper that provides parameters for both the timer
-            wrapper and the function.
+            The outside function provides the parameters. Each call gets its own
+            time limit, unless a shared `deadline` was given.
 
             Returns:
                 A Trace object (the valid trace generated).
             """
+            limit = deadline or Deadline(num_seconds)
 
             if not plan_len:
                 plan_len = self.plan_len
@@ -123,29 +124,31 @@ class VanillaSampling(Generator):
 
             trace = Trace()
 
-            state = self.problem.init
             valid_trace = False
             while not valid_trace:
+                if limit.passed():
+                    raise TraceSearchTimeOut(max_time=limit.num_seconds)
                 trace.clear()
+                state = self.task.initial_state
                 # add more steps while the trace has not yet reached the desired length
                 for j in range(plan_len):
                     # if we have not yet reached the last step
                     if len(trace) < plan_len - 1:
                         # find the next applicable actions
-                        app_act = list(self.instance.applicable(state))
+                        app_act = self.task.applicable_actions(state)
                         # if the trace reaches a dead lock, disregard this trace and try again
                         if not app_act:
                             break
                         # pick a random applicable action and apply it
                         act = random.choice(app_act)
                         # create the trace and progress the state
-                        macq_action = self.tarski_act_to_macq(act)
-                        macq_state = self.tarski_state_to_macq(state)
+                        macq_action = self.action_to_macq(act)
+                        macq_state = self.state_to_macq(state)
                         step = Step(macq_state, macq_action, j + 1)
                         trace.append(step)
-                        state = progress(state, act)
+                        state = self.task.progress(state, act)
                     else:
-                        macq_state = self.tarski_state_to_macq(state)
+                        macq_state = self.state_to_macq(state)
                         step = Step(state=macq_state, action=None, index=j + 1)
                         trace.append(step)
                         valid_trace = True

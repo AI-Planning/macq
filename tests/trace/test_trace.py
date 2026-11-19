@@ -1,4 +1,5 @@
 import pytest
+from macq.core import GroundedAction, GroundedFluent
 from macq.trace import *
 from macq.observation import IdentityObservation
 from tests.utils.generators import generate_test_steps, generate_test_trace
@@ -9,8 +10,8 @@ InvalidCostRange = Trace.InvalidCostRange
 def test_trace_add_steps():
     """
     objects = [CustomObject("number", str(o)) for o in range(6)]
-    action = Action("put down", objects, [], [], [], 1)
-    fluent = Fluent("on table", [objects[0]], True)
+    action = GroundedAction("put down", objects, [], [], [], 1)
+    fluent = GroundedFluent("on table", [objects[0]], True)
     state = State([fluent])
     trace = generate_test_trace(3)
     step4 = generate_test_steps(1, [action], [state])
@@ -32,8 +33,8 @@ def test_trace_pre_states():
     # get the first and last state
     (state1, state2) = (trace[0].state, trace[1].state)
 
-    assert isinstance(action1, Action)
-    assert isinstance(action2, Action)
+    assert isinstance(action1, GroundedAction)
+    assert isinstance(action2, GroundedAction)
     assert trace.get_pre_states(action1) == {state1}
     assert trace.get_pre_states(action2) == {state2}
 
@@ -46,8 +47,8 @@ def test_trace_post_states():
     # get the second and last state
     (state2, state3) = (trace[1].state, trace[2].state)
 
-    assert isinstance(action1, Action)
-    assert isinstance(action2, Action)
+    assert isinstance(action1, GroundedAction)
+    assert isinstance(action2, GroundedAction)
     assert trace.get_post_states(action1) == {state2}
     assert trace.get_post_states(action2) == {state3}
 
@@ -60,7 +61,7 @@ def test_trace_get_sas_triples():
     # get the second and last state
     (state2, state3) = (trace.steps[1].state, trace.steps[2].state)
 
-    assert isinstance(action2, Action)
+    assert isinstance(action2, GroundedAction)
     assert trace.get_sas_triples(action2) == [SAS(state2, action2, state3)]
 
 
@@ -68,6 +69,16 @@ def test_trace_get_sas_triples():
 def test_trace_total_cost():
     trace = generate_test_trace(5)
     assert trace.get_total_cost() == 10
+
+
+def test_unknown_costs_raise_an_error():
+    trace = generate_test_trace(3)
+    trace.steps[1].action.cost = None
+    with pytest.raises(ValueError, match="unknown"):
+        trace.get_total_cost()
+    with pytest.raises(ValueError, match="unknown"):
+        trace.get_slice_cost(1, 3)
+    assert trace.get_slice_cost(1, 1) == 1
 
 
 # test that the cost range is working correctly
@@ -94,7 +105,7 @@ def test_trace_usage():
     trace = generate_test_trace(3)
     # get the first action
     action1 = trace.steps[0].action
-    assert isinstance(action1, Action)
+    assert isinstance(action1, GroundedAction)
     assert trace.get_usage(action1) == 1 / 3
 
 
@@ -144,3 +155,17 @@ def test_trace_list_methods():
 
     trace.remove(step)
     assert step not in trace
+
+
+def test_trace_problem_id_defaults_to_none():
+    assert Trace().problem_id is None
+
+
+def test_trace_problem_id_is_kept():
+    trace = Trace(generate_test_trace(2).steps, problem_id="p03")
+    assert trace.problem_id == "p03"
+
+
+def test_trace_problem_id_does_not_affect_equality():
+    steps = generate_test_trace(2).steps
+    assert Trace(steps, problem_id="p01") == Trace(steps, problem_id="p02")

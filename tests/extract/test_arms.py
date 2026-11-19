@@ -1,5 +1,7 @@
+import pytest
 from pathlib import Path
 from typing import List
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.trace import *
 from macq.extract import Extract, modes
 from macq.observation import PartialObservation
@@ -7,11 +9,12 @@ from macq.generate.pddl import *
 
 
 def get_fluent(name: str, objs: List[str]):
-    objects = [PlanningObject(o.split()[0], o.split()[1]) for o in objs]
-    return Fluent(name, objects)
+    objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
+    return GroundedFluent(name, objects)
 
 
-def test_arms():
+@pytest.mark.remote_planner
+def test_arms(tmp_path):
     base = Path(__file__).parent.parent
     dom = str((base / "pddl_testing_files/blocks_domain.pddl").resolve())
     prob = str((base / "pddl_testing_files/blocks_problem.pddl").resolve())
@@ -50,12 +53,5 @@ def test_arms():
 
     assert model
 
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
+    model.to_pddl("model_blocks_dom", model_blocks_dom)

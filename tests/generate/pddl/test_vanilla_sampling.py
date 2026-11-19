@@ -1,10 +1,31 @@
+import random
+import threading
+import time
+
 import pytest
 from pathlib import Path
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject, TraceList
+from macq.trace import TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
+
+
+def test_a_timed_out_search_stops_running():
+    base = Path(__file__).parent.parent.parent
+    dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
+    prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
+    threads = threading.active_count()
+
+    with pytest.raises(TraceSearchTimeOut):
+        VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=0.5)
+
+    assert threading.active_count() == threads
+    random.seed(3)
+    before = random.getstate()
+    time.sleep(0.2)
+    assert random.getstate() == before
 
 
 def test_invalid_vanilla_sampling():
@@ -24,8 +45,8 @@ def test_invalid_vanilla_sampling():
         # test changing the goal and generating a plan from two local files
         vanilla.change_goal(
             {
-                Fluent(
-                    "on", [PlanningObject("object", "a"), PlanningObject("object", "z")]
+                GroundedFluent(
+                    "on", [PlanningObject("a", ObjectType("object")), PlanningObject("z", ObjectType("object"))]
                 ),
             },
             "new_blocks_dom.pddl",
@@ -75,8 +96,8 @@ if __name__ == "__main__":
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {
-            Fluent(
-                "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
+            GroundedFluent(
+                "on", [PlanningObject("f", ObjectType("object")), PlanningObject("g", ObjectType("object"))]
             ),
         },
         new_blocks_dom,
@@ -91,14 +112,14 @@ if __name__ == "__main__":
     tracelist.print(wrap="y")
 
     # test changing the goal and generating a plan from files extracted from a problem ID
-    vanilla = VanillaSampling(problem_id=123, plan_len=7, num_traces=10)
+    vanilla = VanillaSampling(problem_id=1801, plan_len=7, num_traces=10)
     vanilla.change_goal(
         {
-            Fluent(
+            GroundedFluent(
                 "at",
                 [
-                    PlanningObject("stone", "stone-11"),
-                    PlanningObject("location", "pos-10-07"),
+                    PlanningObject("rover0", ObjectType("rover")),
+                    PlanningObject("waypoint3", ObjectType("waypoint")),
                 ],
             )
         },
@@ -115,5 +136,5 @@ if __name__ == "__main__":
 
     # test generating traces with action preconditions/effects known
     vanilla_traces = VanillaSampling(
-        problem_id=123, plan_len=7, num_traces=10, observe_pres_effs=True
+        problem_id=1801, plan_len=7, num_traces=10, observe_pres_effs=True
     ).traces

@@ -1,10 +1,9 @@
 import random
-from typing import Dict
-from tarski.syntax.formulas import Atom
 from collections import OrderedDict
+from typing import Dict
 from . import VanillaSampling
 from ...trace import TraceList, State
-from ...utils import PercentError, basic_timer, progress
+from ...utils import Deadline, PercentError, TraceSearchTimeOut, progress
 
 
 class RandomGoalSampling(VanillaSampling):
@@ -39,6 +38,7 @@ class RandomGoalSampling(VanillaSampling):
         problem_id: int = None,
         max_time: float = 30,
         observe_pres_effs: bool = False,
+        ignore_static_fluents: bool = True,  # defaults to true to not break any pre-implemented scripts
     ):
         """
         Initializes a random goal state trace sampler using the plan length, number of traces,
@@ -78,6 +78,7 @@ class RandomGoalSampling(VanillaSampling):
             problem_id=problem_id,
             num_traces=num_traces,
             observe_pres_effs=observe_pres_effs,
+            ignore_static_fluents=ignore_static_fluents,
             max_time=max_time,
         )
 
@@ -101,13 +102,11 @@ class RandomGoalSampling(VanillaSampling):
         return filtered_goals
 
     def generate_goals_setup(self, num_seconds: float, goal_states: Dict):
-        @basic_timer(num_seconds=num_seconds)
         def generate_goals(self=self, goal_states=goal_states):
-            """Helper function for `goal_sampling`. Generates as many goals as possible within the specified max_time seconds (timing is
-            enforced by the basic_timer wrapper).
+            """Helper function for `goal_sampling`. Generates as many goals as possible within the specified max_time seconds.
+            The time is checked between goals, so a planner call that is already running can finish past it.
 
-            The outside function is a wrapper that provides parameters for both the timer
-            wrapper and the function.
+            The outside function provides the parameters.
 
             Given the specified number of traces `num_traces`, if `num_traces` plans of length k (`steps_deep`) are found before
             the time is up, exit early.
@@ -117,12 +116,16 @@ class RandomGoalSampling(VanillaSampling):
                     The dictionary to fill with the values of each goal state, initial state, and plan.
             """
             # create a sampler to test the complexity of the new goal by running a planner on it
+            deadline = Deadline(num_seconds)
             k_length_plans = 0
-            while True:
+            while not deadline.passed():
                 # generate a trace of the specified length and retrieve the state of the last step
-                state = self.generate_single_trace_setup(
-                    num_seconds, self.steps_deep
-                )()[-1].state
+                try:
+                    state = self.generate_single_trace_setup(
+                        num_seconds, self.steps_deep, deadline
+                    )()[-1].state
+                except TraceSearchTimeOut:
+                    break
 
                 # get all positive fluents (only positive fluents can be used for a goal)
                 goal_f = [f for f in state if state[f]]
@@ -138,10 +141,7 @@ class RandomGoalSampling(VanillaSampling):
                 self.change_goal(goal_fluents=goal_f)
 
                 # ensure that the goal doesn't hold in the initial state; restart if it does
-                init_state = {str(a) for a in self.problem.init.as_atoms()}
-                goal = {str(a) for a in self.problem.goal.subformulas}
-
-                if goal.issubset(init_state):
+                if self.task.is_goal(self.task.initial_state):
                     continue
 
                 try:
@@ -158,7 +158,7 @@ class RandomGoalSampling(VanillaSampling):
                 # map each goal to the initial state and plan used to achieve it
                 goal_states[State(state_dict)] = {
                     "plan": test_plan,
-                    "initial state": self.problem.init,
+                    "initial state": self.task.initial_state,
                 }
 
                 # optionally change the initial state of the sampler for the next iteration to the goal state just generated (ensures more diversity in goals/plans)
@@ -187,7 +187,7 @@ class RandomGoalSampling(VanillaSampling):
         for goal in progress(self.goals_inits_plans.values()):
             # update the initial state if necessary
             if self.enforced_hill_climbing_sampling:
-                self.problem.init = goal["initial state"]
+                self._replace_problem(init=goal["initial state"])
             # generate a plan based on the new goal/initial state, then generate a trace based on that plan
             traces.append(self.generate_single_trace_from_plan(goal["plan"]))
         self.traces = traces

@@ -1,13 +1,15 @@
 import pytest
 from pathlib import Path
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import FDRandomWalkSampling
 
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, PlanningObject, TraceList
+from macq.trace import TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
 
 
+@pytest.mark.remote_planner
 def test_fd_random_samples():
 
     sampler = FDRandomWalkSampling(problem_id=212, num_traces=3, max_time=10)
@@ -45,8 +47,8 @@ if __name__ == "__main__":
     # test changing the goal and generating a plan from two local files
     sampler.change_goal(
         {
-            Fluent(
-                "on", [PlanningObject("object", "f"), PlanningObject("object", "g")]
+            GroundedFluent(
+                "on", [PlanningObject("f", ObjectType("object")), PlanningObject("g", ObjectType("object"))]
             ),
         },
         new_blocks_dom,

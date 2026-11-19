@@ -15,7 +15,7 @@ from macq.observation import IdentityObservation, AtomicPartialObservation
 
 # get a domain-specific generator: uses api.planning.domains problem_id/
 # generate 100 traces of length 20 using vanilla sampling
-traces = generate.pddl.VanillaSampling(problem_id = 123, plan_len = 20, num_traces = 100).traces
+traces = generate.pddl.VanillaSampling(problem_id = 1801, plan_len = 20, num_traces = 100).traces
 
 traces.generate_more(10)
 
@@ -31,7 +31,6 @@ trace.fluents
 trace.actions
 trace.get_pre_states(action) # get the state before each occurance of action
 trace.get_post_states(action) # state after each occurance of action
-trace.get_total_cost()
 ```
 
 ## Survey

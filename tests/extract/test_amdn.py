@@ -1,3 +1,4 @@
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.trace.disordered_parallel_actions_observation_lists import (
     default_theta_vec,
     num_parameters_feature,
@@ -15,81 +16,83 @@ import pytest
 
 def test_tokenization_error():
     with pytest.raises(TokenizationError):
-        trace = generate_blocks_traces(3)[0]
+        traces = generate_blocks_traces(3)
+        assert traces, "Failed to generate traces for tokenization error test."
+        trace = traces[0]
         trace.tokenize(Token=NoisyPartialDisorderedParallelObservation)
 
 
 def gen_tracelist():
     # define objects
-    red_truck = PlanningObject("", "red_truck")
-    blue_truck = PlanningObject("", "blue_truck")
-    location_a = PlanningObject("", "location_a")
-    location_b = PlanningObject("", "location_b")
-    location_c = PlanningObject("", "location_c")
-    location_d = PlanningObject("", "location_d")
+    red_truck = PlanningObject("red_truck", ObjectType(""))
+    blue_truck = PlanningObject("blue_truck", ObjectType(""))
+    location_a = PlanningObject("location_a", ObjectType(""))
+    location_b = PlanningObject("location_b", ObjectType(""))
+    location_c = PlanningObject("location_c", ObjectType(""))
+    location_d = PlanningObject("location_d", ObjectType(""))
 
-    red_truck_is_truck = Fluent("truck", [red_truck])
-    blue_truck_is_truck = Fluent("truck", [blue_truck])
-    location_a_is_place = Fluent("place", [location_a])
-    location_b_is_place = Fluent("place", [location_b])
-    location_c_is_place = Fluent("place", [location_c])
-    location_d_is_place = Fluent("place", [location_d])
-    red_at_a = Fluent("at", [red_truck, location_a])
-    red_at_b = Fluent("at", [red_truck, location_b])
-    red_at_c = Fluent("at", [red_truck, location_c])
-    red_at_d = Fluent("at", [red_truck, location_d])
-    blue_at_a = Fluent("at", [blue_truck, location_a])
-    blue_at_b = Fluent("at", [blue_truck, location_b])
-    blue_at_c = Fluent("at", [blue_truck, location_c])
-    blue_at_d = Fluent("at", [blue_truck, location_d])
+    red_truck_is_truck = GroundedFluent("truck", [red_truck])
+    blue_truck_is_truck = GroundedFluent("truck", [blue_truck])
+    location_a_is_place = GroundedFluent("place", [location_a])
+    location_b_is_place = GroundedFluent("place", [location_b])
+    location_c_is_place = GroundedFluent("place", [location_c])
+    location_d_is_place = GroundedFluent("place", [location_d])
+    red_at_a = GroundedFluent("at", [red_truck, location_a])
+    red_at_b = GroundedFluent("at", [red_truck, location_b])
+    red_at_c = GroundedFluent("at", [red_truck, location_c])
+    red_at_d = GroundedFluent("at", [red_truck, location_d])
+    blue_at_a = GroundedFluent("at", [blue_truck, location_a])
+    blue_at_b = GroundedFluent("at", [blue_truck, location_b])
+    blue_at_c = GroundedFluent("at", [blue_truck, location_c])
+    blue_at_d = GroundedFluent("at", [blue_truck, location_d])
 
-    drive_red_a_b = Action(
+    drive_red_a_b = GroundedAction(
         "drive",
         [red_truck, location_a, location_b],
-        precond={
+        positive_preconditions={
             red_truck_is_truck,
             location_a_is_place,
             location_b_is_place,
             red_at_a,
         },
-        add={red_at_b},
-        delete={red_at_a},
+        add_effects={red_at_b},
+        delete_effects={red_at_a},
     )
-    drive_blue_c_d = Action(
+    drive_blue_c_d = GroundedAction(
         "drive",
         [blue_truck, location_c, location_d],
-        precond={
+        positive_preconditions={
             blue_truck_is_truck,
             location_c_is_place,
             location_d_is_place,
             blue_at_c,
         },
-        add={blue_at_d},
-        delete={blue_at_c},
+        add_effects={blue_at_d},
+        delete_effects={blue_at_c},
     )
-    drive_blue_d_b = Action(
+    drive_blue_d_b = GroundedAction(
         "drive",
         [blue_truck, location_d, location_b],
-        precond={
+        positive_preconditions={
             blue_truck_is_truck,
             location_d_is_place,
             location_b_is_place,
             blue_at_d,
         },
-        add={blue_at_b},
-        delete={blue_at_d},
+        add_effects={blue_at_b},
+        delete_effects={blue_at_d},
     )
-    drive_red_b_d = Action(
+    drive_red_b_d = GroundedAction(
         "drive",
         [red_truck, location_b, location_d],
-        precond={
+        positive_preconditions={
             red_truck_is_truck,
             location_b_is_place,
             location_d_is_place,
             red_at_b,
         },
-        add={red_at_d},
-        delete={red_at_b},
+        add_effects={red_at_d},
+        delete_effects={red_at_b},
     )
 
     # trace:  {red a -> b, blue c -> d}, {blue d -> b}, {red b -> d}, {red d -> a, blue b -> c}
@@ -211,7 +214,8 @@ def gen_tracelist():
     # return TraceList([Trace([step_0, step_1, step_2])])#, step_3, step_4])])
     return TraceList([Trace([step_0, step_1, step_2, step_3, step_4])])
 
-def test_amdn():
+@pytest.mark.remote_planner
+def test_amdn(tmp_path):
     # exit out to the base macq folder so we can get to /tests
     base = Path(__file__).parent.parent
 
@@ -253,12 +257,5 @@ def test_amdn():
     model = Extract(observations, modes.AMDN, debug=False, occ_threshold=2)
     assert model
 
-    model_blocks_dom = str(
-        (base / "pddl_testing_files/model_blocks_domain.pddl").resolve()
-    )
-    model_blocks_prob = str(
-        (base / "pddl_testing_files/model_blocks_problem.pddl").resolve()
-    )
-    model.to_pddl(
-        "model_blocks_dom", "model_blocks_prob", model_blocks_dom, model_blocks_prob
-    )
+    model_blocks_dom = str(tmp_path / "model_blocks_domain.pddl")
+    model.to_pddl("model_blocks_dom", model_blocks_dom)

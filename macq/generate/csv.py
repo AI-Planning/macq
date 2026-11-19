@@ -1,7 +1,5 @@
-# from ..trace import (
+from macq.core import GroundedAction, GroundedFluent
 from macq.trace import (
-    Action,
-    Fluent,
     State,
     Step,
     Trace,
@@ -15,7 +13,7 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
     The CSV file should have the following properties:
 
     - An action column that contains the action names.
-    - Fluent columns with cells containing 0 or 1.
+    - GroundedFluent columns with cells containing 0 or 1.
     - (optionally) A plan ID column that contains the plan ID to separate the traces.
 
     Args:
@@ -68,12 +66,12 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
         for i, bitvec in enumerate(plans[plan_id]):
             state = State(
                 {
-                    Fluent(f, []): bitvec[f] == "1"
+                    GroundedFluent(f, []): bitvec[f] == "1"
                     for f in bitvec
                     if f not in [act_col, plan_id_col]
                 }
             )
-            act = Action(bitvec[act_col], [])
+            act = GroundedAction(bitvec[act_col], [])
             step = Step(state, act, i)
             trace.append(step)
         traces.append(trace)
