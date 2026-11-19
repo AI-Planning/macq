@@ -1,0 +1,231 @@
+{
+ "actions": [
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      0
+     ],
+     "name": "clear"
+    },
+    {
+     "arguments": [],
+     "name": "handempty"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "holding"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "ontable"
+    }
+   ],
+   "delete_effects": [],
+   "name": "pick-up",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [],
+     "name": "handempty"
+    }
+   ]
+  },
+  {
+   "add_effects": [],
+   "delete_effects": [],
+   "name": "put-down",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      0
+     ],
+     "name": "clear"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "holding"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "ontable"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "on"
+    }
+   ],
+   "delete_effects": [],
+   "name": "stack",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    },
+    {
+     "name": "x1",
+     "type": "object"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "clear"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "holding"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "on"
+    },
+    {
+     "arguments": [
+      1
+     ],
+     "name": "ontable"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [],
+     "name": "handempty"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "holding"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "ontable"
+    }
+   ],
+   "delete_effects": [],
+   "name": "unstack",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    },
+    {
+     "name": "x1",
+     "type": "object"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      0
+     ],
+     "name": "clear"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "on"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "ontable"
+    }
+   ]
+  }
+ ],
+ "fluents": [
+  {
+   "name": "clear",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    }
+   ]
+  },
+  {
+   "name": "handempty",
+   "parameters": []
+  },
+  {
+   "name": "holding",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    }
+   ]
+  },
+  {
+   "name": "on",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    },
+    {
+     "name": "x1",
+     "type": "object"
+    }
+   ]
+  },
+  {
+   "name": "ontable",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "object"
+    }
+   ]
+  }
+ ],
+ "form": "lifted",
+ "format_version": 1,
+ "object_types": []
+}

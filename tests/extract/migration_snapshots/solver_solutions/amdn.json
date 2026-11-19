@@ -1,0 +1,88 @@
+[
+[
+[
+"(on object h object e is deleted by pick-up object f)",
+true
+],
+[
+"(ontable object c is a precondition of pick-up object f)",
+true
+],
+[
+"(holding object b is deleted by pick-up object f)",
+true
+],
+[
+"(on object e object d is deleted by put-down object c)",
+true
+],
+[
+"(on object b object g is a precondition of pick-up object f)",
+true
+],
+[
+"(on object b object g is added by put-down object c)",
+true
+],
+[
+"(on object a object h is added by put-down object f)",
+true
+],
+[
+"(ontable object c is added by put-down object f)",
+true
+],
+[
+"(on object g object j is added by put-down object f)",
+true
+],
+[
+"(on object d object a is deleted by put-down object f)",
+true
+],
+[
+"(on object i object c is added by put-down object f)",
+true
+],
+[
+"(on object h object h is a precondition of unstack object c object e)",
+true
+],
+[
+"(ontable object j is deleted by pick-up object f)",
+true
+],
+[
+"(on object i object c is a precondition of unstack object c object e)",
+true
+],
+[
+"(on object h object h is deleted by put-down object f)",
+true
+],
+[
+"(on object h object a is added by pick-up object f)",
+true
+],
+[
+"(on object f object i is deleted by put-down object f)",
+true
+],
+[
+"(on object c object i is a precondition of pick-up object f)",
+true
+],
+[
+"(on object c object i is deleted by put-down object c)",
+true
+],
+[
+"(holding object h is deleted by put-down object f)",
+true
+],
+[
+"(on object d object a is a precondition of pick-up object f)",
+true
+]
+]
+]

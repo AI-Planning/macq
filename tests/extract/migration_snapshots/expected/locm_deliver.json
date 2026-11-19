@@ -1,0 +1,326 @@
+{
+ "actions": [
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      1,
+      0,
+      2,
+      0,
+      1
+     ],
+     "name": "sort2_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0,
+      0
+     ],
+     "name": "sort2_state1_3"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      1,
+      0,
+      2,
+      0,
+      1
+     ],
+     "name": "sort2_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0,
+      0
+     ],
+     "name": "sort2_state1_3"
+    }
+   ],
+   "name": "drive",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort2"
+    },
+    {
+     "name": "x2",
+     "type": "sort2"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0,
+      2,
+      0,
+      1
+     ],
+     "name": "sort2_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0,
+      0
+     ],
+     "name": "sort2_state1_3"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort3_state1"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      0,
+      2,
+      1
+     ],
+     "name": "sort3_state0"
+    }
+   ],
+   "name": "load",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort3"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort2"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      1,
+      2
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      2,
+      1
+     ],
+     "name": "sort2_state1_2"
+    },
+    {
+     "arguments": [
+      0,
+      2,
+      1
+     ],
+     "name": "sort3_state0"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      0,
+      2,
+      1
+     ],
+     "name": "sort3_state0"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort3_state1"
+    }
+   ],
+   "name": "unload",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort3"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort2"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      1,
+      2
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      2,
+      1
+     ],
+     "name": "sort2_state1_2"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort3_state1"
+    }
+   ]
+  }
+ ],
+ "fluents": [
+  {
+   "name": "sort1_state0",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort2"
+    }
+   ]
+  },
+  {
+   "name": "sort2_state0",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort2"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort2"
+    },
+    {
+     "name": "x3",
+     "type": "sort1"
+    },
+    {
+     "name": "x4",
+     "type": "sort2"
+    }
+   ]
+  },
+  {
+   "name": "sort2_state1_2",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort2"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort2_state1_3",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort2"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort3_state0",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort3"
+    },
+    {
+     "name": "x1",
+     "type": "sort2"
+    },
+    {
+     "name": "x2",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort3_state1",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort3"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    }
+   ]
+  }
+ ],
+ "form": "lifted",
+ "format_version": 1,
+ "object_types": [
+  {
+   "name": "sort1",
+   "parent": "object"
+  },
+  {
+   "name": "sort2",
+   "parent": "object"
+  },
+  {
+   "name": "sort3",
+   "parent": "object"
+  }
+ ]
+}

@@ -1,0 +1,388 @@
+[
+[
+[
+"holding object (BREAK) in (BREAK) pre (BREAK) (put-down object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) del (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (put-down object) (BREAK) (unstack object object)",
+true
+],
+[
+"ontable object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (unstack object object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) add (BREAK) (stack object object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (stack object object)",
+true
+],
+[
+"on object object (BREAK) in (BREAK) del (BREAK) (pick-up object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) del (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) add (BREAK) (stack object object)",
+false
+],
+[
+"on object object (BREAK) in (BREAK) del (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) del (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (stack object object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) add (BREAK) (put-down object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) del (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (pick-up object)",
+true
+],
+[
+"ontable object (BREAK) relevant (BREAK) (stack object object) (BREAK) (unstack object object)",
+true
+],
+[
+"on object object (BREAK) in (BREAK) add (BREAK) (stack object object)",
+true
+],
+[
+"ontable object (BREAK) in (BREAK) del (BREAK) (pick-up object)",
+false
+],
+[
+"on object object (BREAK) in (BREAK) del (BREAK) (stack object object)",
+false
+],
+[
+"on object object (BREAK) in (BREAK) pre (BREAK) (unstack object object)",
+true
+],
+[
+"ontable object (BREAK) in (BREAK) add (BREAK) (unstack object object)",
+true
+],
+[
+"ontable object (BREAK) in (BREAK) del (BREAK) (unstack object object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (stack object object) (BREAK) (unstack object object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) del (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) add (BREAK) (put-down object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (put-down object) (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (put-down object) (BREAK) (stack object object)",
+true
+],
+[
+"on object object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (stack object object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) pre (BREAK) (unstack object object)",
+true
+],
+[
+"holding object (BREAK) in (BREAK) add (BREAK) (pick-up object)",
+true
+],
+[
+"on object object (BREAK) in (BREAK) add (BREAK) (unstack object object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (put-down object) (BREAK) (pick-up object)",
+true
+],
+[
+"on object object (BREAK) relevant (BREAK) (stack object object) (BREAK) (unstack object object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) pre (BREAK) (pick-up object)",
+true
+],
+[
+"clear object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (unstack object object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (pick-up object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) add (BREAK) (pick-up object)",
+true
+],
+[
+"clear object (BREAK) relevant (BREAK) (put-down object) (BREAK) (pick-up object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (put-down object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) del (BREAK) (unstack object object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) add (BREAK) (pick-up object)",
+true
+],
+[
+"clear object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (put-down object)",
+true
+],
+[
+"ontable object (BREAK) in (BREAK) add (BREAK) (stack object object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) del (BREAK) (pick-up object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) add (BREAK) (pick-up object)",
+true
+],
+[
+"ontable object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (put-down object)",
+true
+],
+[
+"holding object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (put-down object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) pre (BREAK) (put-down object)",
+true
+],
+[
+"holding object (BREAK) in (BREAK) del (BREAK) (pick-up object)",
+false
+],
+[
+"on object object (BREAK) in (BREAK) del (BREAK) (unstack object object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) add (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) pre (BREAK) (pick-up object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) del (BREAK) (stack object object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) pre (BREAK) (pick-up object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (stack object object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (pick-up object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (unstack object object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (pick-up object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (put-down object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (unstack object object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) pre (BREAK) (stack object object)",
+true
+],
+[
+"clear object (BREAK) in (BREAK) pre (BREAK) (put-down object)",
+true
+],
+[
+"ontable object (BREAK) in (BREAK) add (BREAK) (put-down object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) del (BREAK) (unstack object object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) pre (BREAK) (unstack object object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) pre (BREAK) (stack object object)",
+true
+],
+[
+"clear object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (stack object object)",
+false
+],
+[
+"on object object (BREAK) in (BREAK) pre (BREAK) (stack object object)",
+true
+],
+[
+"holding object (BREAK) in (BREAK) add (BREAK) (unstack object object)",
+true
+],
+[
+"holding object (BREAK) in (BREAK) pre (BREAK) (unstack object object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (put-down object) (BREAK) (unstack object object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) del (BREAK) (unstack object object)",
+false
+],
+[
+"clear object (BREAK) relevant (BREAK) (put-down object) (BREAK) (stack object object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) pre (BREAK) (stack object object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) pre (BREAK) (put-down object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (put-down object) (BREAK) (unstack object object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) pre (BREAK) (pick-up object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (put-down object) (BREAK) (pick-up object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) add (BREAK) (unstack object object)",
+false
+],
+[
+"holding object (BREAK) in (BREAK) add (BREAK) (put-down object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (unstack object object) (BREAK) (put-down object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (put-down object) (BREAK) (stack object object)",
+false
+],
+[
+"on object object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (put-down object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (stack object object) (BREAK) (unstack object object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) add (BREAK) (unstack object object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) pre (BREAK) (stack object object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (put-down object) (BREAK) (unstack object object)",
+false
+],
+[
+"clear object (BREAK) in (BREAK) del (BREAK) (stack object object)",
+false
+],
+[
+"handempty  (BREAK) in (BREAK) del (BREAK) (pick-up object)",
+false
+],
+[
+"ontable object (BREAK) in (BREAK) pre (BREAK) (unstack object object)",
+true
+],
+[
+"handempty  (BREAK) in (BREAK) del (BREAK) (stack object object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (put-down object) (BREAK) (pick-up object)",
+false
+],
+[
+"holding object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (put-down object)",
+false
+],
+[
+"ontable object (BREAK) relevant (BREAK) (pick-up object) (BREAK) (stack object object)",
+false
+]
+]
+]

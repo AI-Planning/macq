@@ -1,0 +1,373 @@
+{
+ "actions": [
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state1_1"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state2_1"
+    }
+   ],
+   "name": "pick-up",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort0"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state2_1"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state2_1"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state1_1"
+    }
+   ],
+   "name": "put-down",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort0"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      1
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0
+     ],
+     "name": "sort1_state1_1"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort1_state1_2"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ],
+   "name": "stack",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort0"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort1_state1_2"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ]
+  },
+  {
+   "add_effects": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state1"
+    },
+    {
+     "arguments": [
+      0,
+      1
+     ],
+     "name": "sort1_state1_2"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ],
+   "delete_effects": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ],
+   "name": "unstack",
+   "negative_preconditions": [],
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    },
+    {
+     "name": "x2",
+     "type": "sort0"
+    }
+   ],
+   "positive_preconditions": [
+    {
+     "arguments": [
+      2
+     ],
+     "name": "sort0_state0"
+    },
+    {
+     "arguments": [
+      1,
+      0
+     ],
+     "name": "sort1_state0"
+    },
+    {
+     "arguments": [
+      1,
+      1
+     ],
+     "name": "sort1_state2_2"
+    }
+   ]
+  }
+ ],
+ "fluents": [
+  {
+   "name": "sort0_state0",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort0"
+    }
+   ]
+  },
+  {
+   "name": "sort0_state1",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort0"
+    }
+   ]
+  },
+  {
+   "name": "sort1_state0",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort1_state1_1",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort1_state1_2",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort1_state2_1",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    }
+   ]
+  },
+  {
+   "name": "sort1_state2_2",
+   "parameters": [
+    {
+     "name": "x0",
+     "type": "sort1"
+    },
+    {
+     "name": "x1",
+     "type": "sort1"
+    }
+   ]
+  }
+ ],
+ "form": "lifted",
+ "format_version": 1,
+ "object_types": [
+  {
+   "name": "sort0",
+   "parent": "object"
+  },
+  {
+   "name": "sort1",
+   "parent": "object"
+  }
+ ]
+}
