@@ -14,7 +14,11 @@ class PartialObservation(Observation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
+        self,
+        step: Step,
+        percent_missing: float = 0,
+        hide: Set[Fluent] = None,
+        rng=None,
     ):
         """
         Creates a PartialObservation object, storing the step.
@@ -25,6 +29,8 @@ class PartialObservation(Observation):
                 The percentage of fluents to randomly hide in the observation.
             hide (Set[Fluent]):
                 The set of fluents to explicitly hide in the observation.
+            rng (random.Random):
+                Optional; The random generator to use. Defaults to the global generator.
         """
         if percent_missing > 1 or percent_missing < 0:
             raise PercentError()
@@ -40,7 +46,7 @@ class PartialObservation(Observation):
         # state information available without having to check every mapping in
         # the state (slow in large domains).
         if percent_missing < 1:
-            step = self.hide_random_subset(step, percent_missing)
+            step = self.hide_random_subset(step, percent_missing, rng)
         if hide:
             step = self.hide_subset(step, hide)
 
@@ -54,18 +60,20 @@ class PartialObservation(Observation):
             and self.action == other.action
         )
 
-    def hide_random_subset(self, step: Step, percent_missing: float):
+    def hide_random_subset(self, step: Step, percent_missing: float, rng=None):
         """Hides a random subset of the fluents in the step.
         Args:
             step (Step):
                 The step to tokenize.
             percent_missing (float):
                 The percentage of fluents to hide (0-1).
+            rng (random.Random):
+                Optional; The random generator to use. Defaults to the global generator.
         Returns:
             A Step whose state is a PartialState with the random fluents hidden.
         """
         new_fluents = {}
-        hidden_f = self.extract_fluent_subset(step.state, percent_missing)
+        hidden_f = self.extract_fluent_subset(step.state, percent_missing, rng)
         for f in step.state:
             new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)

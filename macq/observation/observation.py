@@ -67,7 +67,7 @@ class Observation:
     def _matches(self, *_):
         raise NotImplementedError()
 
-    def extract_fluent_subset(self, state: State, percent: float):
+    def extract_fluent_subset(self, state: State, percent: float, rng=None):
         """Randomly extracts a subset of fluents from a state, according to the percentage given.
 
         Args:
@@ -75,6 +75,8 @@ class Observation:
                 The state to extract fluents from.
             percent (float):
                 The percent of the state to be extracted.
+            rng (random.Random):
+                Optional; The random generator to use. Defaults to the global generator.
 
         Returns:
             The random subset of fluents.
@@ -83,7 +85,7 @@ class Observation:
 
         # shuffle keys and take an appropriate subset of them
         extracted_f = list(state)
-        random.shuffle(extracted_f)
+        (random if rng is None else rng).shuffle(extracted_f)
         return extracted_f[:num_new_f]
 
     def matches(self, query: dict):
