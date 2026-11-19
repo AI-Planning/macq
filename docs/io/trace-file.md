@@ -76,24 +76,36 @@ constants and, when one is given, the problem's objects. Atoms listed as true ar
 atoms listed as unknown are `None` in a `PartialState`, and every other atom in the atom
 set is false. Files with no states read as steps with empty states.
 
-The reader raises `InvalidTraceFile` for an unknown `format_version`, a missing or unknown
-key, a string that isn't canonical, an unsorted or repeated list, an atom that is both true
-and unknown, mixed state forms, an unknown predicate, action or object, a wrong number of
-arguments, an argument of the wrong type, and a state count that isn't one more than the
-action count. When the domain declares no predicates, a file with states is rejected.
+The reader raises `InvalidTraceFile` for:
+
+- an unknown `format_version`, or a missing or unknown key
+- a string that isn't canonical
+- an unsorted or repeated list
+- an atom that is both true and unknown
+- mixed state forms
+- an unknown predicate, action or object
+- the wrong number of arguments, or an argument of the wrong type
+- a state count that isn't one more than the action count
+- states, when the domain declares no predicates
 
 #### Round trips
 
 Reading a written trace gives back an equal `Trace`, as long as every state covered the full
 atom set and no action carried preconditions or effects (which samplers record only with
 `observe_pres_effs`). A trace's `problem_id` doesn't count towards equality. Atoms a state
-leaves out are read back as false. For
-example, `VanillaSampling` leaves out static atoms by default, so they come back false. The
-writer checks that all the states in a trace cover the same atoms, but it can't check that
-they cover all of them.
+leaves out are read back as false. For example, `VanillaSampling` leaves out static atoms by
+default, so they come back false. The writer checks that all the states in a trace cover the
+same atoms, but it can't check that they cover all of them.
 
-The writer raises `ValueError` for an empty trace, states that cover different atoms, tokens
-of which only some have states, a missing action or an action on the last step, a value
-other than `True`, `False` or `None`, a name that isn't a single PDDL symbol, or two
-fluents in one state that read the same. It raises `TypeError` for states keyed by strings,
-as in `AtomicPartialObservation`, so write traces before tokenizing them atomically.
+The writer raises `ValueError` for:
+
+- an empty trace
+- states that cover different atoms
+- tokens of which only some have states
+- a missing action, or an action on the last step
+- a value other than `True`, `False` or `None`
+- a name that isn't a single PDDL symbol
+- two fluents in one state that read the same
+
+It raises `TypeError` for states keyed by strings, as in `AtomicPartialObservation`, so
+write traces before tokenizing them atomically.
