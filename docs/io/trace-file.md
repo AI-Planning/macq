@@ -1,8 +1,7 @@
 ### Trace files
 
-A trace file holds one trace, or one trace's observation tokens, as JSON. It is the
-format learners receive in the IPC 2027 Domain Learning Track, and it describes only
-the trace, nothing about a dataset or a competition.
+A trace file holds one trace, or one trace's observation tokens, as JSON. It describes
+only the trace, nothing about how traces are grouped into a dataset.
 
 #### Usage
 
