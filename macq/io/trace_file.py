@@ -11,7 +11,6 @@ from pddl import parse_domain, parse_problem
 from pddl.core import Domain, Problem
 from pddlutils.grounding import has_type
 
-# trace must be imported before observation, or the two import each other half-loaded.
 from ..trace import Action, Fluent, PartialState, PlanningObject, State, Step, Trace, TraceList
 from ..observation import Observation, PartialObservation
 

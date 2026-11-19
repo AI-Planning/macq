@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from collections.abc import MutableSequence
-from typing import Callable, List, Type, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Type, Union
 from warnings import warn
 
-from ..observation import Observation, ObservedTraceList
 from . import Action, Trace
+
+if TYPE_CHECKING:
+    from ..observation import Observation, ObservedTraceList
 
 
 class TraceList(MutableSequence):
@@ -120,7 +124,7 @@ class TraceList(MutableSequence):
     def tokenize(
         self,
         Token: Type[Observation],
-        ObsLists: Type[ObservedTraceList] = ObservedTraceList,
+        ObsLists: Optional[Type[ObservedTraceList]] = None,
         **kwargs,
     ):
         """Tokenizes the steps in this trace.
@@ -132,6 +136,8 @@ class TraceList(MutableSequence):
             ObsLists (Type[ObservationLists]):
                 The type of `ObservationLists` to be used. Defaults to the base `ObservationLists`.
         """
+        if ObsLists is None:
+            from ..observation import ObservedTraceList as ObsLists
         return ObsLists(self, Token, **kwargs)
 
     def print(self, view="details", filter_func=lambda _: True, wrap=None):

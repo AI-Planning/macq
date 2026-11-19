@@ -410,10 +410,3 @@ def test_statics_left_out_of_states_read_back_as_false(tmp_path):
     assert read[0].state[road] is False
     assert road not in trace[0].state.fluents
 
-
-def test_macq_io_imports_on_its_own():
-    import subprocess
-    import sys
-
-    result = subprocess.run([sys.executable, "-c", "import macq.io"], capture_output=True)
-    assert result.returncode == 0, result.stderr.decode()

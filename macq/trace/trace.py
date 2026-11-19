@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Type, Iterable, Callable, Set
+from typing import TYPE_CHECKING, List, Optional, Type, Iterable, Callable, Set
 from inspect import cleandoc
 from warnings import warn
 from rich.table import Table
 from rich.text import Text
 from rich.console import Console
 from . import Action, Step, State
-from ..observation import Observation, NoisyPartialDisorderedParallelObservation
 from ..utils import TokenizationError
+
+if TYPE_CHECKING:
+    from ..observation import Observation
 
 
 @dataclass
@@ -417,6 +421,8 @@ class Trace:
             A list of observation tokens, corresponding to the steps in the
             trace.
         """
+        from ..observation import NoisyPartialDisorderedParallelObservation
+
         if Token == NoisyPartialDisorderedParallelObservation:
             raise TokenizationError(Token)
         return [Token(step=step, **kwargs) for step in self]
