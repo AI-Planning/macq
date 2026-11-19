@@ -13,6 +13,9 @@ PACKAGES = [
     "macq.extract",
     "macq.generate",
     "macq.generate.pddl",
+    "macq.generate.csv",
+    "macq.utils",
+    "macq.utils.pysat",
 ]
 
 

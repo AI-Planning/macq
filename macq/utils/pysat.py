@@ -2,7 +2,13 @@ from typing import List, Tuple, Dict, Hashable
 from pysat.formula import WCNF
 from pysat.examples.rc2 import RC2
 from nnf import And, Or, Var
-from ..extract.exceptions import InvalidMaxSATModel
+
+
+class InvalidMaxSATModel(Exception):
+    def __init__(self, model, message=None):
+        if message is None:
+            message = f"The MAX-SAT solver generated an invalid model. Model should be a list of integers. model = {model}."
+        super().__init__(message)
 
 
 def get_encoding(
