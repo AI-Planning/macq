@@ -13,7 +13,8 @@ from pddl.parser.problem import ProblemParser
 from pddlutils.strips import get_precondition, get_strips_literal_list
 
 from ..plan import Plan
-from ...trace import Action, State, Fluent, Trace, Step
+from ...trace import Action, State, Trace, Step
+from ...core import GroundedFluent
 from ...utils.pddl_objects import planning_objects
 
 
@@ -170,7 +171,7 @@ class Generator:
             names.update(str(atom.name) for atom in adds + deletes)
         return names
 
-    def __get_all_grounded_fluents(self) -> List[Fluent]:
+    def __get_all_grounded_fluents(self) -> List[GroundedFluent]:
         """Extracts all the grounded fluents in the problem.
 
         Returns:
@@ -183,7 +184,7 @@ class Generator:
             or str(atom.name) in self._changing_predicates
         ]
 
-    def _atom_to_fluent(self, atom: Predicate) -> Fluent:
+    def _atom_to_fluent(self, atom: Predicate) -> GroundedFluent:
         """Converts a ground atom to a fluent as defined by macq.
 
         Args:
@@ -191,18 +192,18 @@ class Generator:
                 The supplied ground atom.
 
         Returns:
-            A fluent, defined using the macq Fluent class.
+            A fluent, defined using the macq GroundedFluent class.
         """
-        return Fluent(
+        return GroundedFluent(
             str(atom.name),
             [self._planning_objects[str(term.name)] for term in atom.terms],
         )
 
-    def _fluent_to_atom(self, fluent: Fluent) -> Predicate:
+    def _fluent_to_atom(self, fluent: GroundedFluent) -> Predicate:
         """Converts a macq fluent to a ground atom.
 
         Args:
-            fluent (Fluent):
+            fluent (GroundedFluent):
                 The supplied fluent.
 
         Returns:
@@ -211,7 +212,7 @@ class Generator:
         return Predicate(fluent.name, *[self._objects[o.name] for o in fluent.objects])
 
     @staticmethod
-    def _fluent_key(fluent: Fluent) -> Tuple[str, ...]:
+    def _fluent_key(fluent: GroundedFluent) -> Tuple[str, ...]:
         return (fluent.name, *[o.name for o in fluent.objects])
 
     def state_to_macq(self, state: Iterable[Predicate]) -> State:
@@ -282,7 +283,7 @@ class Generator:
 
     def change_init(
         self,
-        init_fluents: Union[Set[Fluent], List[Fluent]],
+        init_fluents: Union[Set[GroundedFluent], List[GroundedFluent]],
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
@@ -293,7 +294,7 @@ class Generator:
         caller has no way of supplying them.
 
         Parameters:
-            init_fluents (Union[Set[Fluent], List[Fluent]]):
+            init_fluents (Union[Set[GroundedFluent], List[GroundedFluent]]):
                 The collection of fluents that will make up the new initial state.
             new_domain (str):
                 The name of the new domain file.
@@ -312,7 +313,7 @@ class Generator:
 
     def change_goal(
         self,
-        goal_fluents: Union[Set[Fluent], List[Fluent]],
+        goal_fluents: Union[Set[GroundedFluent], List[GroundedFluent]],
         new_domain: str = "new_domain.pddl",
         new_prob: str = "new_prob.pddl",
     ):
@@ -320,7 +321,7 @@ class Generator:
         are rewritten to accomodate the new goal for later use by a planner.
 
         Args:
-            goal_fluents (Union[Set[Fluent], List[Fluent]]):
+            goal_fluents (Union[Set[GroundedFluent], List[GroundedFluent]]):
                 The collection of fluents that will make up the new goal.
             new_domain (str):
                 The name of the new domain file.

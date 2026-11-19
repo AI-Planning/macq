@@ -2,15 +2,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.core import DomainModelForm, ObjectType, ParameterBoundFluent
 from macq.extract.arms import ARMS, _ActionSchema
-from macq.trace import Action, Fluent, PartialState
+from macq.trace import Action, PartialState
 
 A = PlanningObject("a", ObjectType("block"))
 B = PlanningObject("b", ObjectType("block"))
-ON_AB = Fluent("on", [A, B])
-ON_BA = Fluent("on", [B, A])
+ON_AB = GroundedFluent("on", [A, B])
+ON_BA = GroundedFluent("on", [B, A])
 
 
 def token(state, action=None):

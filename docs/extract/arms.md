@@ -4,13 +4,13 @@
 
 ```python
 from macq import generate, extract
-from macq.core import ObjectType, PlanningObject
-from macq.trace import Fluent, TraceList
+from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.trace import TraceList
 from macq.observation import PartialObservation
 
 def get_fluent(name: str, objs: list[str]):
     objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
-    return Fluent(name, objects)
+    return GroundedFluent(name, objects)
 
 traces = TraceList()
 generator = generate.pddl.TraceFromGoal(problem_id=1801)

@@ -1,6 +1,7 @@
 from typing import Set
 from ..utils import PercentError
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..core import GroundedFluent
 from ..trace import PartialState
 from . import Observation, InvalidQueryParameter
 
@@ -16,7 +17,7 @@ class PartialObservation(Observation):
         self,
         step: Step,
         percent_missing: float = 0,
-        hide: Set[Fluent] = None,
+        hide: Set[GroundedFluent] = None,
         rng=None,
     ):
         """
@@ -26,7 +27,7 @@ class PartialObservation(Observation):
                 The step associated with this observation.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
             rng (random.Random):
                 Optional; The random generator to use. Defaults to the global generator.
@@ -74,12 +75,12 @@ class PartialObservation(Observation):
             new_fluents[f] = None if f in hidden_f else step.state[f]
         return Step(PartialState(new_fluents), step.action, step.index)
 
-    def hide_subset(self, step: Step, hide: Set[Fluent]):
+    def hide_subset(self, step: Step, hide: Set[GroundedFluent]):
         """Hides the specified set of fluents in the observation.
         Args:
             step (Step):
                 The step to tokenize.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents that will be hidden.
         Returns:
             A Step whose state is a PartialState with the specified fluents hidden.

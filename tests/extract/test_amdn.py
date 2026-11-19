@@ -1,4 +1,4 @@
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.trace.disordered_parallel_actions_observation_lists import (
     default_theta_vec,
     num_parameters_feature,
@@ -31,20 +31,20 @@ def gen_tracelist():
     location_c = PlanningObject("location_c", ObjectType(""))
     location_d = PlanningObject("location_d", ObjectType(""))
 
-    red_truck_is_truck = Fluent("truck", [red_truck])
-    blue_truck_is_truck = Fluent("truck", [blue_truck])
-    location_a_is_place = Fluent("place", [location_a])
-    location_b_is_place = Fluent("place", [location_b])
-    location_c_is_place = Fluent("place", [location_c])
-    location_d_is_place = Fluent("place", [location_d])
-    red_at_a = Fluent("at", [red_truck, location_a])
-    red_at_b = Fluent("at", [red_truck, location_b])
-    red_at_c = Fluent("at", [red_truck, location_c])
-    red_at_d = Fluent("at", [red_truck, location_d])
-    blue_at_a = Fluent("at", [blue_truck, location_a])
-    blue_at_b = Fluent("at", [blue_truck, location_b])
-    blue_at_c = Fluent("at", [blue_truck, location_c])
-    blue_at_d = Fluent("at", [blue_truck, location_d])
+    red_truck_is_truck = GroundedFluent("truck", [red_truck])
+    blue_truck_is_truck = GroundedFluent("truck", [blue_truck])
+    location_a_is_place = GroundedFluent("place", [location_a])
+    location_b_is_place = GroundedFluent("place", [location_b])
+    location_c_is_place = GroundedFluent("place", [location_c])
+    location_d_is_place = GroundedFluent("place", [location_d])
+    red_at_a = GroundedFluent("at", [red_truck, location_a])
+    red_at_b = GroundedFluent("at", [red_truck, location_b])
+    red_at_c = GroundedFluent("at", [red_truck, location_c])
+    red_at_d = GroundedFluent("at", [red_truck, location_d])
+    blue_at_a = GroundedFluent("at", [blue_truck, location_a])
+    blue_at_b = GroundedFluent("at", [blue_truck, location_b])
+    blue_at_c = GroundedFluent("at", [blue_truck, location_c])
+    blue_at_d = GroundedFluent("at", [blue_truck, location_d])
 
     drive_red_a_b = Action(
         "drive",

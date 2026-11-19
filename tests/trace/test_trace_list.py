@@ -1,7 +1,8 @@
 from inspect import trace
 from pathlib import Path
 import pytest
-from macq.trace import TraceList, Fluent
+from macq.core import GroundedFluent
+from macq.trace import TraceList
 from tests.utils.generators import (
     generate_test_trace_list,
     generate_test_trace,
@@ -66,8 +67,8 @@ def test_trace_list_csv_load():
 
     assert isinstance(trace_list, TraceList)
     assert trace_list[0][0].action.name == "unstack object a object d"
-    assert trace_list[1][1].state[Fluent("ontable object d", [])] == True
+    assert trace_list[1][1].state[GroundedFluent("ontable object d", [])] == True
     assert trace_list[2][0].action.name == "pick-up object e"
-    assert trace_list[2][2].state[Fluent("holding object i", [])] == False
-    assert trace_list[2][2].state[Fluent("ontable object g", [])] == False
-    assert trace_list[2][2].state[Fluent("ontable object c", [])] == True
+    assert trace_list[2][2].state[GroundedFluent("holding object i", [])] == False
+    assert trace_list[2][2].state[GroundedFluent("ontable object g", [])] == False
+    assert trace_list[2][2].state[GroundedFluent("ontable object c", [])] == True

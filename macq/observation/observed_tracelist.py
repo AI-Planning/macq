@@ -9,9 +9,10 @@ from rich.table import Table
 from rich.text import Text
 
 from . import Observation
-from ..trace import Action, Fluent
+from ..trace import Action
 
 # Prevents circular importing
+from ..core import GroundedFluent
 if TYPE_CHECKING:
     from macq.trace import TraceList
 
@@ -120,8 +121,8 @@ class ObservedTraceList(MutableSequence):
                     actions.add(action)
         return actions
 
-    def get_fluents(self) -> Set[Fluent]:
-        fluents: Set[Fluent] = set()
+    def get_fluents(self) -> Set[GroundedFluent]:
+        fluents: Set[GroundedFluent] = set()
         for obs_trace in self:
             for obs in obs_trace:
                 if obs.state:

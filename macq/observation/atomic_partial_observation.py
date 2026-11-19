@@ -1,4 +1,5 @@
-from ..trace import Step, Fluent
+from ..trace import Step
+from ..core import GroundedFluent
 from . import PartialObservation, Observation
 from typing import Set
 
@@ -22,7 +23,7 @@ class AtomicPartialObservation(PartialObservation):
     """
 
     def __init__(
-        self, step: Step, percent_missing: float = 0, hide: Set[Fluent] = None
+        self, step: Step, percent_missing: float = 0, hide: Set[GroundedFluent] = None
     ):
         """
         Creates an AtomicPartialObservation object, storing the step.
@@ -32,7 +33,7 @@ class AtomicPartialObservation(PartialObservation):
                 The step associated with this observation.
             percent_missing (float):
                 The percentage of fluents to randomly hide in the observation.
-            hide (Set[Fluent]):
+            hide (Set[GroundedFluent]):
                 The set of fluents to explicitly hide in the observation.
         """
         if percent_missing > 1 or percent_missing < 0:

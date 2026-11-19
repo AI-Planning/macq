@@ -1,10 +1,10 @@
 import pytest
 from pathlib import Path
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent, TraceList
+from macq.trace import TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
 
 
@@ -25,7 +25,7 @@ def test_invalid_vanilla_sampling():
         # test changing the goal and generating a plan from two local files
         vanilla.change_goal(
             {
-                Fluent(
+                GroundedFluent(
                     "on", [PlanningObject("a", ObjectType("object")), PlanningObject("z", ObjectType("object"))]
                 ),
             },
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # test changing the goal and generating a plan from two local files
     vanilla.change_goal(
         {
-            Fluent(
+            GroundedFluent(
                 "on", [PlanningObject("f", ObjectType("object")), PlanningObject("g", ObjectType("object"))]
             ),
         },
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     vanilla = VanillaSampling(problem_id=1801, plan_len=7, num_traces=10)
     vanilla.change_goal(
         {
-            Fluent(
+            GroundedFluent(
                 "at",
                 [
                     PlanningObject("rover0", ObjectType("rover")),

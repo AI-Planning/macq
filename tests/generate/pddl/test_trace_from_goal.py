@@ -1,10 +1,9 @@
 import pytest
 from pathlib import Path
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import TraceFromGoal
 from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
-from macq.trace import Fluent
 
 
 def test_invalid_goal_change():
@@ -18,7 +17,7 @@ def test_invalid_goal_change():
         # test changing the goal and generating a plan from two local files
         goal_traces.change_goal(
             {
-                Fluent(
+                GroundedFluent(
                     "on", [PlanningObject("a", ObjectType("object")), PlanningObject("z", ObjectType("object"))]
                 ),
             },
@@ -28,7 +27,7 @@ def test_invalid_goal_change():
 
 def test_parameter_order():
     def fluent(name, *objects):
-        return Fluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
+        return GroundedFluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
 
     # assert accuracy
     goal_generator = TraceFromGoal(problem_id=4154)
@@ -85,10 +84,10 @@ if __name__ == "__main__":
     # test changing the goal and regenerating traces from local PDDL files
     goal_traces_sampler.change_goal(
         {
-            Fluent(
+            GroundedFluent(
                 "on", [PlanningObject("c", ObjectType("object")), PlanningObject("e", ObjectType("object"))]
             ),
-            Fluent(
+            GroundedFluent(
                 "on", [PlanningObject("a", ObjectType("object")), PlanningObject("b", ObjectType("object"))]
             ),
         },
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     goal_traces_sampler = TraceFromGoal(problem_id=1801)
     goal_traces_sampler.change_goal(
         {
-            Fluent(
+            GroundedFluent(
                 "at",
                 [
                     PlanningObject("rover0", ObjectType("rover")),

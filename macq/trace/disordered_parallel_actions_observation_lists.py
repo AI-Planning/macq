@@ -117,7 +117,7 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
             The supplied theta vector.
         actions (List[Action]):
             The list of all actions used in the traces given (no duplicates).
-        propositions (Set[Fluent]):
+        propositions (Set[GroundedFluent]):
             The set of all fluents.
         cross_actions (List[ActionPair]):
             The list of all possible `ActionPairs`.

@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from graphviz import Digraph
 
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.extract import Extract, modes
 from macq.extract.locm import AP, LOCM, Hypothesis
 from macq.generate.pddl import *
@@ -14,7 +14,7 @@ from macq.trace import *
 
 def get_fluent(name: str, objs: List[str]):
     objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
-    return Fluent(name, objects)
+    return GroundedFluent(name, objects)
 
 
 def test_locm(tmp_path, monkeypatch):
@@ -48,13 +48,13 @@ def get_example_obs(print_trace=False, ex=1):
         "wr2": PlanningObject("wr2", ObjectType("wrench")),
     }
     fluents = {
-        "open1": Fluent("open", [objects["c1"]]),
-        "open2": Fluent("open", [objects["c2"]]),
-        "open3": Fluent("open", [objects["c3"]]),
-        "j1in": Fluent("in", [objects["j1"], objects["c1"]]),
-        "j2in": Fluent("in", [objects["j2"], objects["c2"]]),
-        "wr1in": Fluent("in", [objects["wr1"], objects["c1"]]),
-        "wr2in": Fluent("in", [objects["wr2"], objects["c2"]]),
+        "open1": GroundedFluent("open", [objects["c1"]]),
+        "open2": GroundedFluent("open", [objects["c2"]]),
+        "open3": GroundedFluent("open", [objects["c3"]]),
+        "j1in": GroundedFluent("in", [objects["j1"], objects["c1"]]),
+        "j2in": GroundedFluent("in", [objects["j2"], objects["c2"]]),
+        "wr1in": GroundedFluent("in", [objects["wr1"], objects["c1"]]),
+        "wr2in": GroundedFluent("in", [objects["wr2"], objects["c2"]]),
     }
     actions = {
         "open1": Action("open", [objects["c1"]]),

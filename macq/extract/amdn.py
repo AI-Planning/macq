@@ -1,6 +1,7 @@
 """.. include:: ../../docs/extract/amdn.md"""
 
-from macq.trace import Fluent, Action  # for typing
+from macq.trace import Action  # for typing
+from macq.core import GroundedFluent
 from nnf.operators import implies
 
 from typing import Dict, List, Optional, Union, Hashable
@@ -18,11 +19,11 @@ from ..utils.pysat import to_wcnf, extract_raw_model
 e = Encoding
 
 
-def pre(r: Fluent, act: Action):
+def pre(r: GroundedFluent, act: Action):
     """Create a Var that enforces that the given fluent is a precondition of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The precondition to be added.
         act (Action):
             The action that the precondition will be added to.
@@ -32,11 +33,11 @@ def pre(r: Fluent, act: Action):
     return Var("(" + str(r)[1:-1] + " is a precondition of " + act.details() + ")")
 
 
-def add(r: Fluent, act: Action):
+def add(r: GroundedFluent, act: Action):
     """Create a Var that enforces that the given fluent is an add effect of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The add effect to be added.
         act (Action):
             The action that the add effect will be added to.
@@ -46,11 +47,11 @@ def add(r: Fluent, act: Action):
     return Var("(" + str(r)[1:-1] + " is added by " + act.details() + ")")
 
 
-def delete(r: Fluent, act: Action):
+def delete(r: GroundedFluent, act: Action):
     """Create a Var that enforces that the given fluent is a delete effect of the given action.
 
     Args:
-        r (Fluent):
+        r (GroundedFluent):
             The delete effect to be added.
         act (Action):
             The action that the delete effect will be added to.

@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.trace import *
 from macq.extract import Extract, modes
 from macq.observation import PartialObservation
@@ -9,7 +9,7 @@ from macq.generate.pddl import *
 
 def get_fluent(name: str, objs: List[str]):
     objects = [PlanningObject(o.split()[1], ObjectType(o.split()[0])) for o in objs]
-    return Fluent(name, objects)
+    return GroundedFluent(name, objects)
 
 
 def test_arms(tmp_path):

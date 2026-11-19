@@ -1,5 +1,5 @@
 from pathlib import Path
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.trace import *
 from macq.observation import IdentityObservation
 from macq.extract import Extract, modes
@@ -30,7 +30,7 @@ def generate_test_fluents(num_fluents: int):
         The list of testing fluents generated.
     """
     objects = [PlanningObject(str(o), ObjectType("number")) for o in range(num_fluents)]
-    return [Fluent(f"fluent {str(i+1)}", [objects[i]]) for i in range(num_fluents)]
+    return [GroundedFluent(f"fluent {str(i+1)}", [objects[i]]) for i in range(num_fluents)]
 
 
 def generate_test_actions(num_actions: int):

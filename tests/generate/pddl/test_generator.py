@@ -4,10 +4,9 @@ from pathlib import Path
 import pytest
 from pddl import parse_problem
 
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import Generator, VanillaSampling
 from macq.generate.pddl.generator import InvalidGoalFluent
-from macq.trace import Fluent
 
 DOMAIN = """
 (define (domain Probe)
@@ -78,7 +77,7 @@ def write(tmp_path, domain=DOMAIN, problem=PROBLEM):
 
 
 def fluent(name, *objects):
-    return Fluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
+    return GroundedFluent(name, [PlanningObject(o, ObjectType("object")) for o in objects])
 
 
 def names(fluents):

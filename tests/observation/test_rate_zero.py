@@ -4,8 +4,8 @@ import warnings
 
 import pytest
 
-from macq.core import ObjectType, PlanningObject
-from macq.trace import Fluent, PartialState, State, Step
+from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.trace import PartialState, State, Step
 from macq.observation import (
     AtomicPartialObservation,
     IdentityObservation,
@@ -19,7 +19,7 @@ VALUES = [True, False, None, True, None, False]
 
 def make_step(partial=True):
     values = VALUES if partial else [bool(v) for v in VALUES]
-    fluents = {Fluent("p", [o]): v for o, v in zip(OBJECTS, values)}
+    fluents = {GroundedFluent("p", [o]): v for o, v in zip(OBJECTS, values)}
     state = PartialState(fluents) if partial else State(fluents)
     return Step(state, None, 1)
 

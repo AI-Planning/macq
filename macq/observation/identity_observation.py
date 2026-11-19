@@ -15,7 +15,7 @@ class IdentityObservation(Observation):
 
     class IdentityState(dict):
         def __hash__(self):
-            return hash(tuple(sorted(self.items())))
+            return hash(frozenset(self.items()))
 
     @dataclass
     class IdentityAction:

@@ -1,5 +1,4 @@
 from .action import Action
-from .fluent import Fluent
 from .state import State
 from .partial_state import PartialState
 from .step import Step
@@ -21,7 +20,6 @@ def __getattr__(name):
 
 __all__ = [
     "Action",
-    "Fluent",
     "State",
     "PartialState",
     "Step",

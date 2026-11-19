@@ -1,4 +1,5 @@
 import pytest
+from macq.core import GroundedFluent
 from macq.trace import *
 from macq.observation import IdentityObservation
 from tests.utils.generators import generate_test_steps, generate_test_trace
@@ -10,7 +11,7 @@ def test_trace_add_steps():
     """
     objects = [CustomObject("number", str(o)) for o in range(6)]
     action = Action("put down", objects, [], [], [], 1)
-    fluent = Fluent("on table", [objects[0]], True)
+    fluent = GroundedFluent("on table", [objects[0]], True)
     state = State([fluent])
     trace = generate_test_trace(3)
     step4 = generate_test_steps(1, [action], [state])

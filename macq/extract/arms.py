@@ -17,7 +17,8 @@ from ..core import (
     ParameterBoundFluent,
 )
 from ..observation import Observation, ObservedTraceList, PartialObservation
-from ..trace import Action, Fluent
+from ..trace import Action
+from ..core import GroundedFluent
 from ..utils.pysat import RC2, WCNF, to_wcnf
 from ._core_conversion import common_types, to_parameters
 from .exceptions import IncompatibleObservationToken, InvalidMaxSATModel
@@ -260,7 +261,7 @@ class ARMS:
     def _arms(
         obs_tracelist: ObservedTraceList,
         upper_bound: int,
-        fluents: Set[Fluent],
+        fluents: Set[GroundedFluent],
         min_support: int,
         action_weight: int,
         info_weight: int,
@@ -301,7 +302,7 @@ class ARMS:
             if debug2:
                 input("Press enter to continue...")
 
-            relation_map_rev: Dict[Relation, List[Fluent]] = defaultdict(list)
+            relation_map_rev: Dict[Relation, List[GroundedFluent]] = defaultdict(list)
             for fluent, relation in relation_map.items():
                 relation_map_rev[relation].append(fluent)
 
@@ -438,10 +439,10 @@ class ARMS:
         obs_tracelist: ObservedTraceList,
         connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]],
         action_map: Dict[Action, _ActionSchema],
-        fluents: Set[Fluent],
+        fluents: Set[GroundedFluent],
         min_support: int,
         debug: bool,
-    ) -> Tuple[ARMSConstraints, Dict[Fluent, Relation]]:
+    ) -> Tuple[ARMSConstraints, Dict[GroundedFluent, Relation]]:
         """(Step 2) Generate action constraints, information constraints, and plan constraints.
 
         For the unexplained actions, build a set of information and action
@@ -453,7 +454,7 @@ class ARMS:
 
         # Map fluents to relations
         # relations are fluents but with instantiated objects replaced by the object type
-        relations: Dict[Fluent, Relation] = dict(
+        relations: Dict[GroundedFluent, Relation] = dict(
             map(
                 lambda f: (
                     f,
@@ -578,7 +579,7 @@ class ARMS:
     @staticmethod
     def step2I(
         obs_tracelist: ObservedTraceList,
-        relations: Dict[Fluent, Relation],
+        relations: Dict[GroundedFluent, Relation],
         actions: Dict[Action, _ActionSchema],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:

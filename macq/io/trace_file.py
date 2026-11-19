@@ -12,7 +12,8 @@ from pddl.core import Domain, Problem
 from pddlutils.grounding import has_type
 
 from ..core import PlanningObject
-from ..trace import Action, Fluent, PartialState, State, Step, Trace, TraceList
+from ..trace import Action, PartialState, State, Step, Trace, TraceList
+from ..core import GroundedFluent
 from ..utils.pddl_objects import planning_objects
 from ..observation import Observation, PartialObservation
 
@@ -103,7 +104,7 @@ def _encode_states(states: List[State], partial: bool) -> List[dict]:
     for state in states:
         texts: Dict[str, Optional[bool]] = {}
         for fluent, value in state.items():
-            if not isinstance(fluent, Fluent):
+            if not isinstance(fluent, GroundedFluent):
                 raise TypeError(
                     f"States must map fluents to values, not {type(fluent).__name__} "
                     "keys. Write the trace before tokenizing it atomically."
@@ -139,7 +140,7 @@ def _canonical(name, arguments) -> str:
     return "(" + " ".join([_symbol(name), *[_symbol(a) for a in arguments]]) + ")"
 
 
-def _fluent_text(fluent: Fluent) -> str:
+def _fluent_text(fluent: GroundedFluent) -> str:
     return _canonical(fluent.name, [o.name for o in fluent.objects])
 
 
@@ -230,10 +231,10 @@ class _Reader:
         self.objects = planning_objects(domain, constants.values())
         self.predicates = {str(p.name): p for p in domain.predicates}
         self.actions = {str(a.name): a for a in domain.actions}
-        self._atoms: Optional[List[Fluent]] = None
+        self._atoms: Optional[List[GroundedFluent]] = None
 
     @property
-    def atoms(self) -> List[Fluent]:
+    def atoms(self) -> List[GroundedFluent]:
         """Every type-consistent ground atom, as fluents."""
         if self._atoms is None:
             names = sorted(self.constants)
@@ -244,7 +245,7 @@ class _Reader:
                     for term in self.predicates[name].terms
                 ]
                 for arguments in product(*choices):
-                    atoms.append(Fluent(name, [self.objects[n] for n in arguments]))
+                    atoms.append(GroundedFluent(name, [self.objects[n] for n in arguments]))
             self._atoms = atoms
         return self._atoms
 

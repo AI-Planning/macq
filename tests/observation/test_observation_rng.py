@@ -2,14 +2,14 @@ import random
 
 import pytest
 
-from macq.core import ObjectType, PlanningObject
-from macq.trace import Fluent, State, Step, Trace
+from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.trace import State, Step, Trace
 from macq.observation import NoisyObservation, PartialObservation
 
 
 def make_step(index=1):
     objects = [PlanningObject(f"o{i}", ObjectType("object")) for i in range(20)]
-    fluents = {Fluent("p", [o]): i % 2 == 0 for i, o in enumerate(objects)}
+    fluents = {GroundedFluent("p", [o]): i % 2 == 0 for i, o in enumerate(objects)}
     return Step(State(fluents), None, index)
 
 

@@ -19,3 +19,6 @@ class GroundedFluent:
 
     def __str__(self):
         return self.details()
+
+    def __repr__(self):
+        return self.details()

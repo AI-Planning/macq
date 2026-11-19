@@ -7,7 +7,7 @@ import pytest
 from pddl.parser.domain import DomainParser
 from pddl.parser.problem import ProblemParser
 
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedFluent, ObjectType, PlanningObject
 from macq.generate.pddl import UniformWalkSampling, VanillaSampling
 from macq.io import InvalidTraceFile, read_trace, read_traces, write_trace
 from macq.observation import (
@@ -19,7 +19,6 @@ from macq.observation import (
 )
 from macq.trace import (
     Action,
-    Fluent,
     PartialState,
     State,
     Step,
@@ -297,14 +296,14 @@ def test_writer_rejects_an_empty_trace(tmp_path):
 
 
 def test_writer_rejects_names_that_are_not_canonical(tmp_path):
-    bad = Fluent("on top", [PlanningObject("a", ObjectType("object"))])
+    bad = GroundedFluent("on top", [PlanningObject("a", ObjectType("object"))])
     with pytest.raises(ValueError, match="name"):
         write_trace(tmp_path / "t.json", Trace([Step(State({bad: True}), None, 1)]))
 
 
 def test_writer_rejects_two_fluents_with_the_same_string(tmp_path):
-    first = Fluent("p", [PlanningObject("a", ObjectType("t1"))])
-    second = Fluent("p", [PlanningObject("a", ObjectType("t2"))])
+    first = GroundedFluent("p", [PlanningObject("a", ObjectType("t1"))])
+    second = GroundedFluent("p", [PlanningObject("a", ObjectType("t2"))])
     state = State({first: True})
     state.fluents[second] = False
     with pytest.raises(ValueError, match="twice"):
@@ -312,7 +311,7 @@ def test_writer_rejects_two_fluents_with_the_same_string(tmp_path):
 
 
 def test_writer_rejects_a_non_boolean_value(tmp_path):
-    fluent = Fluent("p", [PlanningObject("a", ObjectType("object"))])
+    fluent = GroundedFluent("p", [PlanningObject("a", ObjectType("object"))])
     with pytest.raises(ValueError, match="value"):
         write_trace(tmp_path / "t.json", Trace([Step(State({fluent: 1}), None, 1)]))
 

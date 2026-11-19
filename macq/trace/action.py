@@ -1,6 +1,5 @@
 from typing import List, Optional, Set
-from ..core import PlanningObject
-from .fluent import Fluent
+from ..core import GroundedFluent, PlanningObject
 
 
 class Action:
@@ -17,11 +16,11 @@ class Action:
             The set of objects the action acts on.
         cost (int):
             The cost to perform the action.
-        precond (Set[Fluent]):
+        precond (Set[GroundedFluent]):
             The set of Fluents that make up the precondition.
-        add (Set[Fluent]):
+        add (Set[GroundedFluent]):
             The set of Fluents that make up the add effects.
-        delete (Set[Fluent]):
+        delete (Set[GroundedFluent]):
             The set of Fluents that make up the delete effects.
     """
 
@@ -30,9 +29,9 @@ class Action:
         name: str,
         obj_params: List[PlanningObject],
         cost: int = 0,
-        precond: Optional[Set[Fluent]] = None,
-        add: Optional[Set[Fluent]] = None,
-        delete: Optional[Set[Fluent]] = None,
+        precond: Optional[Set[GroundedFluent]] = None,
+        add: Optional[Set[GroundedFluent]] = None,
+        delete: Optional[Set[GroundedFluent]] = None,
     ):
         """Initializes an Action with the parameters provided.
         The `precond`, `add`, and `delete` args should only be provided in
@@ -44,11 +43,11 @@ class Action:
                 The list of objects the action acts on.
             cost (int):
                 Optional; The cost to perform the action. Defaults to 0.
-            precond (Set[Fluent]):
+            precond (Set[GroundedFluent]):
                 Optional; The set of Fluents that make up the precondition.
-            add (Set[Fluent]):
+            add (Set[GroundedFluent]):
                 Optional; The set of Fluents that make up the add effects.
-            delete (Set[Fluent]):
+            delete (Set[GroundedFluent]):
                 Optional; The set of Fluents that make up the delete effects.
         """
         self.name = name

@@ -4,7 +4,6 @@ from typing import Iterable, List, Sequence, Union
 
 from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject, SignatureParameter
 from ..core.object_type import ROOT_TYPE_NAME
-from ..trace import Fluent
 
 
 def to_parameters(type_names: Iterable[str]) -> List[SignatureParameter]:
@@ -30,7 +29,7 @@ def to_planning_object(obj: Union[PlanningObject, str]) -> PlanningObject:
     return PlanningObject(parts[1], ObjectType(parts[0]))
 
 
-def to_grounded_fluent(fluent: Union[Fluent, str]) -> GroundedFluent:
+def to_grounded_fluent(fluent: Union[GroundedFluent, str]) -> GroundedFluent:
     """Returns the `core` fluent for a trace fluent or its "(name type object ...)" text."""
     if not isinstance(fluent, str):
         return GroundedFluent(fluent.name, tuple(map(to_planning_object, fluent.objects)))
