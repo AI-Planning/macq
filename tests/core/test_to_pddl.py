@@ -246,3 +246,50 @@ def test_a_lone_negative_precondition_is_exported():
     text = normalized(DomainModel(LIFTED, [CLEAR], [pick]).to_pddl("blocks"))
 
     assert ":precondition (and (not (clear ?x)))" in text
+
+
+def object_parameter_model(*parameters):
+    return DomainModel(
+        LIFTED,
+        [LiftedFluent("near", list(parameters))],
+        [
+            LiftedAction(
+                "touch",
+                list(parameters),
+                positive_preconditions={
+                    ParameterBoundFluent("near", list(range(len(parameters))))
+                },
+            )
+        ],
+        [BLOCK],
+    )
+
+
+def test_parameters_of_type_object_are_written_without_a_type():
+    anything = SignatureParameter("z")
+
+    text = normalized(object_parameter_model(X, anything).to_pddl("d"))
+
+    assert "(near ?x - block ?z)" in text
+    assert ":parameters (?x - block ?z)" in text
+    assert "?z - object" not in text
+
+
+def test_exported_object_parameters_parse_with_the_pddl_library(tmp_path):
+    path = tmp_path / "domain.pddl"
+    object_parameter_model(X, SignatureParameter("z")).to_pddl("d", str(path))
+
+    [action] = parse_domain(str(path)).actions
+
+    assert [sorted(p.type_tags) for p in action.parameters] == [["block"], []]
+
+
+def test_object_parameter_before_a_typed_one_reads_as_the_later_type(tmp_path):
+    # PDDL gives a bare parameter the type of the next typed one, so this domain
+    # parses but narrows ?z to block.
+    path = tmp_path / "domain.pddl"
+    object_parameter_model(SignatureParameter("z"), X).to_pddl("d", str(path))
+
+    [action] = parse_domain(str(path)).actions
+
+    assert [sorted(p.type_tags) for p in action.parameters] == [["block"], ["block"]]

@@ -5,7 +5,7 @@ from typing import Callable, Iterable, List
 
 from .domain_model_form import DomainModelError, DomainModelForm
 from .fluents import GroundedFluent, ParameterBoundFluent
-from .object_type import ObjectType
+from .object_type import ROOT_TYPE_NAME, ObjectType
 from .signature_parameter import SignatureParameter
 
 
@@ -59,8 +59,15 @@ def _lifted_sections(model):
 
     typed = bool(model.object_types)
 
+    def parameter(param: SignatureParameter) -> str:
+        # The pddl library rejects `?x - object`, so the root type is left unwritten. PDDL then gives
+        # the parameter the type of the next typed parameter, if there is one.
+        if typed and param.object_type.type_name != ROOT_TYPE_NAME:
+            return f"?{param.name} - {param.object_type}"
+        return f"?{param.name}"
+
     def parameters(params: Iterable[SignatureParameter]) -> str:
-        return " ".join(f"?{p.name} - {p.object_type}" if typed else f"?{p.name}" for p in params)
+        return " ".join(map(parameter, params))
 
     predicates = [
         f"({' '.join(filter(None, [fluent.name, parameters(fluent.parameters)]))})"
