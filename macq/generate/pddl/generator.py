@@ -12,7 +12,6 @@ from pddl.parser.domain import DomainParser
 from pddl.parser.problem import ProblemParser
 from pddlutils.strips import get_precondition, get_strips_literal_list
 
-from .planning_domains_api import get_problem, get_plan
 from ..plan import Plan
 from ...trace import Action, State, PlanningObject, Fluent, Trace, Step
 
@@ -111,6 +110,8 @@ class Generator:
             self.domain = parse_domain(str(dom))
             self.problem = parse_problem(str(prob))
         else:
+            from .planning_domains_api import get_problem
+
             urls = get_problem(problem_id, formalism='classical')
             self.domain = DomainParser()(requests.get(urls["domain_url"]).text)
             self.problem = ProblemParser()(requests.get(urls["problem_url"]).text)
@@ -389,6 +390,8 @@ class Generator:
             # if any changes were made, the local files would be used as the PDDL files are rewritten when changes are made).
             stored_plan = None
             if self.problem_id and not self.pddl_dom and not self.pddl_prob:
+                from .planning_domains_api import get_plan
+
                 stored_plan = get_plan(self.problem_id, formalism='classical')
             if stored_plan:
                 plan = stored_plan.splitlines()

@@ -318,11 +318,4 @@ def generate_lab_suite(cid, formalism):
     return SUITE
 
 
-if not checkForDomainPath():
-    print ("\n Warning: No domain path is set\n")
-
-try:
-    if VERSION != get_version():
-        print (f"\n Warning: Script version ({VERSION}) doesn't match API ({get_version()}). Do you have the latest version of this file?\n")
-except:
-    pass
+checkForDomainPath()
