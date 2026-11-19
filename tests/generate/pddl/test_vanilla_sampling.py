@@ -1,3 +1,7 @@
+import random
+import threading
+import time
+
 import pytest
 from pathlib import Path
 from macq.core import GroundedFluent, ObjectType, PlanningObject
@@ -6,6 +10,22 @@ from macq.generate.pddl.generator import InvalidGoalFluent
 from macq.utils import InvalidNumberOfTraces, InvalidPlanLength
 from macq.trace import TraceList
 from macq.utils import TraceSearchTimeOut, InvalidTime
+
+
+def test_a_timed_out_search_stops_running():
+    base = Path(__file__).parent.parent.parent
+    dom = str((base / "pddl_testing_files/playlist_domain.pddl").resolve())
+    prob = str((base / "pddl_testing_files/playlist_problem.pddl").resolve())
+    threads = threading.active_count()
+
+    with pytest.raises(TraceSearchTimeOut):
+        VanillaSampling(dom=dom, prob=prob, plan_len=10, num_traces=1, max_time=0.5)
+
+    assert threading.active_count() == threads
+    random.seed(3)
+    before = random.getstate()
+    time.sleep(0.2)
+    assert random.getstate() == before
 
 
 def test_invalid_vanilla_sampling():

@@ -1,7 +1,7 @@
 import random
 from . import Generator
 from ...utils import (
-    set_timer_throw_exc,
+    Deadline,
     TraceSearchTimeOut,
     InvalidTime,
     set_num_traces,
@@ -101,21 +101,21 @@ class VanillaSampling(Generator):
         self.traces = traces
         return traces
 
-    def generate_single_trace_setup(self, num_seconds: float, plan_len = None):
-        @set_timer_throw_exc(
-            num_seconds=num_seconds, exception=TraceSearchTimeOut, max_time=num_seconds
-        )
+    def generate_single_trace_setup(
+        self, num_seconds: float, plan_len=None, deadline: Deadline = None
+    ):
         def generate_single_trace(self=self, plan_len=plan_len):
             """Generates a single trace using the uniform random sampling technique.
-            Loops until a valid trace is found. The timer wrapper does not allow the function
-            to run past the time specified.
+            Loops until a valid trace is found, and raises `TraceSearchTimeOut` if
+            `num_seconds` pass first.
 
-            The outside function is a wrapper that provides parameters for both the timer
-            wrapper and the function.
+            The outside function provides the parameters. Each call gets its own
+            time limit, unless a shared `deadline` was given.
 
             Returns:
                 A Trace object (the valid trace generated).
             """
+            limit = deadline or Deadline(num_seconds)
 
             if not plan_len:
                 plan_len = self.plan_len
@@ -126,6 +126,8 @@ class VanillaSampling(Generator):
 
             valid_trace = False
             while not valid_trace:
+                if limit.passed():
+                    raise TraceSearchTimeOut(max_time=limit.num_seconds)
                 trace.clear()
                 state = self.task.initial_state
                 # add more steps while the trace has not yet reached the desired length

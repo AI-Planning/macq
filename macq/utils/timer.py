@@ -1,65 +1,22 @@
-from multiprocessing.pool import ThreadPool
+import time
 from typing import Union
 
 
-def set_timer_throw_exc(
-    num_seconds: Union[float, int],
-    exception: Exception,
-    *exception_args,
-    **exception_kwargs,
-):
-    def timer(function):
-        """
-        Checks that a function runs within the specified time and raises an exception if it doesn't.
+class Deadline:
+    """
+    A time limit that a search checks for itself between its steps.
 
-        Args:
-            function (function reference):
-                The generator function to be wrapped with this time-checker.
+    The search runs in the caller's thread, so it really stops once it sees the
+    deadline has passed. A step that is already running, such as a planner call,
+    can finish past the deadline.
+    """
 
-        Returns:
-            The wrapped function.
-        """
+    def __init__(self, num_seconds: Union[float, int]):
+        self.num_seconds = num_seconds
+        self._end = time.monotonic() + num_seconds
 
-        def wrapper(*args, **kwargs):
-            pool = ThreadPool(processes=1)
-
-            thr = pool.apply_async(function, args=args, kwds=kwargs)
-            # run the function for the specified seconds
-            thr.wait(num_seconds)
-            # return successful results, if ready
-            if thr.ready():
-                pool.terminate()
-                return thr.get()
-            else:
-                # otherwise, raise an exception if the function takes too long
-                raise exception(*exception_args, **exception_kwargs)
-
-        return wrapper
-
-    return timer
-
-
-def basic_timer(num_seconds: Union[float, int]):
-    def timer(function):
-        """
-        Runs a function for a specified time.
-
-        Returns:
-            The wrapped function.
-        """
-
-        def wrapper(*args, **kwargs):
-            pool = ThreadPool(processes=1)
-
-            thr = pool.apply_async(function, args=args, kwds=kwargs)
-            # run the function for the specified seconds and exit without checking for/returning results
-            thr.wait(num_seconds)
-            pool.terminate()
-            return
-
-        return wrapper
-
-    return timer
+    def passed(self) -> bool:
+        return time.monotonic() >= self._end
 
 
 class TraceSearchTimeOut(Exception):
