@@ -144,3 +144,17 @@ def test_trace_list_methods():
 
     trace.remove(step)
     assert step not in trace
+
+
+def test_trace_problem_id_defaults_to_none():
+    assert Trace().problem_id is None
+
+
+def test_trace_problem_id_is_kept():
+    trace = Trace(generate_test_trace(2).steps, problem_id="p03")
+    assert trace.problem_id == "p03"
+
+
+def test_trace_problem_id_does_not_affect_equality():
+    steps = generate_test_trace(2).steps
+    assert Trace(steps, problem_id="p01") == Trace(steps, problem_id="p02")

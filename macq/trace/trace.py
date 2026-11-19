@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Type, Iterable, Callable, Set
+from typing import List, Optional, Type, Iterable, Callable, Set
 from inspect import cleandoc
 from warnings import warn
 from rich.table import Table
@@ -37,6 +37,8 @@ class Trace:
             The set of fluents in the trace.
         actions (set):
             The set of actions in the trace.
+        problem_id (str | None):
+            An id for the problem the trace was generated from.
     """
 
     class InvalidCostRange(Exception):
@@ -45,15 +47,20 @@ class Trace:
         def __init__(self, message):
             super().__init__(message)
 
-    def __init__(self, steps: List[Step] = None):
+    def __init__(self, steps: List[Step] = None, problem_id: Optional[str] = None):
         """Initializes a Trace with an optional list of steps.
 
         Args:
             steps (list):
                 Optional; The list of steps in the trace. Defaults to an empty
                 `list`.
+            problem_id (str):
+                Optional; An id for the problem the trace was generated from,
+                written to and read from trace files. It does not affect
+                equality. Defaults to `None`.
         """
         self.steps = steps if steps is not None else []
+        self.problem_id = problem_id
         self.__reinit_actions_and_fluents()
 
     def __eq__(self, other):
