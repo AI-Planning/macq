@@ -10,8 +10,6 @@ Install macq for development by cloning the repository and running
 We recommend installing in a virtual environment to avoid package version
 conflicts.
 
-**Note: `tarski` requires [`clingo`](https://potassco.org/clingo/) be installed to work.**
-
 ### Formatting
 
 We use [black](https://black.readthedocs.io/en/stable/) for easy and consistent

@@ -36,7 +36,6 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "tarski",
     "pddl-utils>=0.2,<0.3",
     "requests",
     "rich",
@@ -44,7 +43,6 @@ dependencies = [
     "python-sat",
     "bauhaus",
     "numpy",
-    "clingo",
     "graphviz",
     "networkx",
     "pydot",
