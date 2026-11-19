@@ -1,5 +1,5 @@
-from macq.core import GroundedFluent, ObjectType, PlanningObject, infer_object_types_from_actions, infer_object_types_from_fluents
-from macq.trace import Action, State, Step, Trace, TraceList
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject, infer_object_types_from_actions, infer_object_types_from_fluents
+from macq.trace import State, Step, Trace, TraceList
 from macq.observation import IdentityObservation  # isort: skip (macq.trace must load first)
 
 T1, T2, L1, L2 = (PlanningObject(n, ObjectType()) for n in ("t1", "t2", "l1", "l2"))
@@ -8,8 +8,8 @@ T1, T2, L1, L2 = (PlanningObject(n, ObjectType()) for n in ("t1", "t2", "l1", "l
 def observed_traces():
     state = State({GroundedFluent("at", [T1, L1]): True, GroundedFluent("at", [T2, L2]): True})
     steps = [
-        Step(state, Action("wait", [T1]), 1),
-        Step(state, Action("wait", [T2]), 2),
+        Step(state, GroundedAction("wait", [T1]), 1),
+        Step(state, GroundedAction("wait", [T2]), 2),
         Step(state, None, 3),
     ]
     return TraceList([Trace(steps)]).tokenize(IdentityObservation)
@@ -38,7 +38,7 @@ def test_supplied_true_fluents_decide_the_types():
 
 
 def test_objects_in_the_same_action_position_share_a_type():
-    actions = {Action("drive", [T1, L1]), Action("drive", [T2, L2])}
+    actions = {GroundedAction("drive", [T1, L1]), GroundedAction("drive", [T2, L2])}
 
     assert groups(infer_object_types_from_actions(actions)) == [{"l1", "l2"}, {"t1", "t2"}]
 

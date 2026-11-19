@@ -1,5 +1,5 @@
 from typing import Optional
-from . import Action
+from ..core import GroundedAction
 from . import State
 
 
@@ -12,19 +12,19 @@ class Step:
     Attributes:
         state (State):
             The state in this step.
-        action (Action | None):
+        action (GroundedAction | None):
             The action taken from the state in this step.
         index (int):
             The "place" of the step in the trace.
     """
 
-    def __init__(self, state: State, action: Optional[Action], index: int):
+    def __init__(self, state: State, action: Optional[GroundedAction], index: int):
         """Initializes a Step with a state and optionally an action.
 
         Args:
             state (State):
                 The state in this step.
-            action (Action | None):
+            action (GroundedAction | None):
                 The action taken from the state in this step. Must provide a
                 value, but value can be None.
             index (int):

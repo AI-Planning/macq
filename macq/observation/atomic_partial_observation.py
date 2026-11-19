@@ -1,4 +1,5 @@
 from ..trace import Step
+from ..trace.action import AtomicAction
 from ..core import GroundedFluent
 from . import PartialObservation, Observation
 from typing import Set
@@ -47,7 +48,7 @@ class AtomicPartialObservation(PartialObservation):
             step = self.hide_subset(step, hide)
 
         self.state = None if percent_missing == 1 else step.state.clone(atomic=True)
-        self.action = None if step.action is None else step.action.clone(atomic=True)
+        self.action = None if step.action is None else AtomicAction.of(step.action)
 
     def __eq__(self, other):
         return (

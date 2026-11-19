@@ -31,7 +31,6 @@ trace.fluents
 trace.actions
 trace.get_pre_states(action) # get the state before each occurance of action
 trace.get_post_states(action) # state after each occurance of action
-trace.get_total_cost()
 ```
 
 ## Survey

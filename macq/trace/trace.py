@@ -8,7 +8,8 @@ from warnings import warn
 from rich.table import Table
 from rich.text import Text
 from rich.console import Console
-from . import Action, Step, State
+from . import Step, State
+from ..core import GroundedAction
 from ..utils import TokenizationError
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 @dataclass
 class SAS:
     pre_state: State
-    action: Action
+    action: GroundedAction
     post_state: State
 
     def __hash__(self):
@@ -130,7 +131,7 @@ class Trace:
     def reverse(self):
         self.steps.reverse()
 
-    def sort(self, reverse: bool = False, key: Callable = lambda e: e.action.cost):
+    def sort(self, key: Callable, reverse: bool = False):
         self.steps.sort(reverse=reverse, key=key)
 
     def details(self, wrap=False):
@@ -281,11 +282,11 @@ class Trace:
         for step in self.steps:
             self.__update_actions_and_fluents(step)
 
-    def get_pre_states(self, action: Action):
+    def get_pre_states(self, action: GroundedAction):
         """Retrieves the list of states prior to the action in this trace.
 
         Args:
-            action (Action):
+            action (GroundedAction):
                 The action to retrieve pre-states for.
 
         Returns:
@@ -298,11 +299,11 @@ class Trace:
                 prev_states.add(step.state)
         return prev_states
 
-    def get_post_states(self, action: Action):
+    def get_post_states(self, action: GroundedAction):
         """Retrieves the list of states after the action in this trace.
 
         Args:
-            action (Action):
+            action (GroundedAction):
                 The action to retrieve post-states for.
 
         Returns:
@@ -314,14 +315,14 @@ class Trace:
                 post_states.add(self[i + 1].state)
         return post_states
 
-    def get_sas_triples(self, action: Action) -> List[SAS]:
+    def get_sas_triples(self, action: GroundedAction) -> List[SAS]:
         """Retrieves the list of (S,A,S') triples for the action in this trace.
 
         In a (S,A,S') triple, S is the pre-state, A is the action, and S' is
         the post-state.
 
         Args:
-            action (Action):
+            action (GroundedAction):
                 The action to retrieve (S,A,S') triples for.
 
         Returns:
@@ -341,11 +342,7 @@ class Trace:
         Returns:
             The total cost of all actions performed in the trace.
         """
-        sum = 0
-        for step in self.steps:
-            if step.action:
-                sum += step.action.cost
-        return sum
+        return _total_cost(self.steps)
 
     def get_slice_cost(self, start: int, end: int):
         """Calculates the total cost of a slice of this trace.
@@ -370,18 +367,14 @@ class Trace:
                 "The start boundary must be smaller than the end boundary."
             )
 
-        sum = 0
-        for i in range(start - 1, end):
-            if self[i].action:
-                sum += self[i].action.cost
-        return sum
+        return _total_cost(self.steps[start - 1 : end])
 
-    def get_steps(self, action: Action):
+    def get_steps(self, action: GroundedAction):
         """Retrieves all the Steps in the trace that use the specified action.
 
         Args:
-            action (Action):
-                The Action to retrieve corresponding steps for.
+            action (GroundedAction):
+                The GroundedAction to retrieve corresponding steps for.
 
         Returns:
             The set of steps that use the specified action.
@@ -393,11 +386,11 @@ class Trace:
                 steps.add(action)
         return steps
 
-    def get_usage(self, action: Action):
+    def get_usage(self, action: GroundedAction):
         """Calculates how often an action was performed in this trace.
 
         Args:
-            action (Action):
+            action (GroundedAction):
                 The action to find the usage of.
 
         Returns:
@@ -426,3 +419,14 @@ class Trace:
         if Token == NoisyPartialDisorderedParallelObservation:
             raise TokenizationError(Token)
         return [Token(step=step, **kwargs) for step in self]
+
+
+def _total_cost(steps) -> int:
+    """Adds up the cost of each step's action, raising an error if any cost is unknown."""
+    total = 0
+    for step in steps:
+        if step.action:
+            if step.action.cost is None:
+                raise ValueError(f"The cost of {step.action.details()} (step {step.index}) is unknown.")
+            total += step.action.cost
+    return total

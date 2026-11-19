@@ -1,4 +1,4 @@
-from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.trace.disordered_parallel_actions_observation_lists import (
     default_theta_vec,
     num_parameters_feature,
@@ -46,53 +46,53 @@ def gen_tracelist():
     blue_at_c = GroundedFluent("at", [blue_truck, location_c])
     blue_at_d = GroundedFluent("at", [blue_truck, location_d])
 
-    drive_red_a_b = Action(
+    drive_red_a_b = GroundedAction(
         "drive",
         [red_truck, location_a, location_b],
-        precond={
+        positive_preconditions={
             red_truck_is_truck,
             location_a_is_place,
             location_b_is_place,
             red_at_a,
         },
-        add={red_at_b},
-        delete={red_at_a},
+        add_effects={red_at_b},
+        delete_effects={red_at_a},
     )
-    drive_blue_c_d = Action(
+    drive_blue_c_d = GroundedAction(
         "drive",
         [blue_truck, location_c, location_d],
-        precond={
+        positive_preconditions={
             blue_truck_is_truck,
             location_c_is_place,
             location_d_is_place,
             blue_at_c,
         },
-        add={blue_at_d},
-        delete={blue_at_c},
+        add_effects={blue_at_d},
+        delete_effects={blue_at_c},
     )
-    drive_blue_d_b = Action(
+    drive_blue_d_b = GroundedAction(
         "drive",
         [blue_truck, location_d, location_b],
-        precond={
+        positive_preconditions={
             blue_truck_is_truck,
             location_d_is_place,
             location_b_is_place,
             blue_at_d,
         },
-        add={blue_at_b},
-        delete={blue_at_d},
+        add_effects={blue_at_b},
+        delete_effects={blue_at_d},
     )
-    drive_red_b_d = Action(
+    drive_red_b_d = GroundedAction(
         "drive",
         [red_truck, location_b, location_d],
-        precond={
+        positive_preconditions={
             red_truck_is_truck,
             location_b_is_place,
             location_d_is_place,
             red_at_b,
         },
-        add={red_at_d},
-        delete={red_at_b},
+        add_effects={red_at_d},
+        delete_effects={red_at_b},
     )
 
     # trace:  {red a -> b, blue c -> d}, {blue d -> b}, {red b -> d}, {red d -> a, blue b -> c}

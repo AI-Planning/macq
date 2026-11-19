@@ -18,7 +18,6 @@ from macq.observation import (
     PartialObservation,
 )
 from macq.trace import (
-    Action,
     PartialState,
     State,
     Step,
@@ -187,7 +186,7 @@ def test_action_only_file_reads_against_a_shell_without_predicates(tmp_path, dom
     write_trace(tmp_path / "t.json", walk(domain, problem).tokenize(ActionObservation))
     read = read_trace(tmp_path / "t.json", DomainParser()(ACTION_ONLY_SHELL_TEXT))
     assert read[0].action.name == "drive"
-    assert read[0].action.obj_params[0].obj_type == ObjectType("Truck", ObjectType("vehicle"))
+    assert read[0].action.objects[0].obj_type == ObjectType("Truck", ObjectType("vehicle"))
 
 
 def test_trace_of_length_zero_round_trips(tmp_path, domain, problem):

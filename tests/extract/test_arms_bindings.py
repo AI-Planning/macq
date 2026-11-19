@@ -2,10 +2,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.core import DomainModelForm, ObjectType, ParameterBoundFluent
 from macq.extract.arms import ARMS, _ActionSchema
-from macq.trace import Action, PartialState
+from macq.trace import PartialState
 
 A = PlanningObject("a", ObjectType("block"))
 B = PlanningObject("b", ObjectType("block"))
@@ -32,7 +32,7 @@ def only_action(model):
 
 
 def test_add_effect_binds_to_the_parameters_seen_in_the_trace():
-    stack = Action("stack", [B, A])
+    stack = GroundedAction("stack", [B, A])
     traces = [[token({ON_AB: False}, stack), token({ON_AB: True})]]
 
     model = ARMS._to_domain_model(
@@ -44,7 +44,7 @@ def test_add_effect_binds_to_the_parameters_seen_in_the_trace():
 
 
 def test_precondition_and_delete_effect_use_their_own_evidence():
-    unstack = Action("unstack", [A, B])
+    unstack = GroundedAction("unstack", [A, B])
     traces = [[token({ON_AB: True, ON_BA: False}, unstack), token({ON_AB: False, ON_BA: False})]]
 
     model = ARMS._to_domain_model(
@@ -58,8 +58,8 @@ def test_precondition_and_delete_effect_use_their_own_evidence():
 
 
 def test_the_binding_with_the_most_support_wins():
-    stack = Action("stack", [A, B])
-    swapped = Action("stack", [B, A])
+    stack = GroundedAction("stack", [A, B])
+    swapped = GroundedAction("stack", [B, A])
     traces = [
         [token({ON_AB: False}, stack), token({ON_AB: True})],
         [token({ON_BA: False}, stack), token({ON_BA: True})],

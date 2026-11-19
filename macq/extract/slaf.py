@@ -15,7 +15,7 @@ e = Encoding()
 class SLAF:
     """SLAF model extraction method.
 
-    Amir, E, and A Chang. 2008. “Learning Partially Observable Deterministic Action Models.”
+    Amir, E, and A Chang. 2008. “Learning Partially Observable Deterministic GroundedAction Models.”
     Journal of Artificial Intelligence Research 33: 349–402. https://doi.org/10.1613/jair.2575.
 
     Extracts a grounded domain model from state observations using the SLAF technique. The AS-STRIPS-SLAF

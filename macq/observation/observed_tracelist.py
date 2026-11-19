@@ -9,9 +9,7 @@ from rich.table import Table
 from rich.text import Text
 
 from . import Observation
-from ..trace import Action
-
-# Prevents circular importing
+from ..core import GroundedAction
 from ..core import GroundedFluent
 if TYPE_CHECKING:
     from macq.trace import TraceList
@@ -112,8 +110,8 @@ class ObservedTraceList(MutableSequence):
         elif type(value[0]) != self.type:
             raise TokenTypeMismatch(self.type, type(value[0]))
 
-    def get_actions(self) -> Set[Action]:
-        actions: Set[Action] = set()
+    def get_actions(self) -> Set[GroundedAction]:
+        actions: Set[GroundedAction] = set()
         for obs_trace in self:
             for obs in obs_trace:
                 action = obs.action
@@ -160,7 +158,7 @@ class ObservedTraceList(MutableSequence):
         query = {"action": action}
         return self.fetch_observation_windows(query, 0, 1)
 
-    def get_all_transitions(self) -> Dict[Action, List[List[Observation]]]:
+    def get_all_transitions(self) -> Dict[GroundedAction, List[List[Observation]]]:
         actions = self.get_actions()
         try:
             return {

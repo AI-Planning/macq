@@ -95,6 +95,6 @@ def infer_object_types_from_actions(actions: Set) -> Dict[str, str]:
     Returns:
         A dictionary mapping each object name to its inferred type name.
     """
-    object_names = {obj.name for action in actions for obj in action.obj_params}
-    positions = _argument_positions((action.name, action.obj_params) for action in actions)
+    object_names = {obj.name for action in actions for obj in action.objects}
+    positions = _argument_positions((action.name, action.objects) for action in actions)
     return _types_from_positions(object_names, positions)

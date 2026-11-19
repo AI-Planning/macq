@@ -6,6 +6,11 @@ from ..core import DomainModelError, GroundedFluent, ObjectType, PlanningObject,
 from ..core.object_type import ROOT_TYPE_NAME
 
 
+def action_text(action) -> str:
+    """Returns a trace action as "name type object ...", the text extraction techniques key on."""
+    return f"{action.name} {' '.join(obj.details() for obj in action.objects)}"
+
+
 def to_parameters(type_names: Iterable[str]) -> List[SignatureParameter]:
     """Returns parameters named `x0`, `x1`, ... with the given object types."""
     return [SignatureParameter(f"x{i}", ObjectType(name)) for i, name in enumerate(type_names)]

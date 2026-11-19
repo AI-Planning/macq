@@ -7,13 +7,14 @@ from pddl import parse_domain, parse_problem
 from pddl.action import Action as GroundAction
 from pddl.core import Domain, Problem
 from pddl.logic import Predicate
-from pddl.logic.base import And
+from pddl.logic.base import And, Not
 from pddl.parser.domain import DomainParser
 from pddl.parser.problem import ProblemParser
 from pddlutils.strips import get_precondition, get_strips_literal_list
 
 from ..plan import Plan
-from ...trace import Action, State, Trace, Step
+from ...trace import State, Trace, Step
+from ...core import GroundedAction
 from ...core import GroundedFluent
 from ...utils.pddl_objects import planning_objects
 
@@ -230,35 +231,38 @@ class Generator:
             {f: self._fluent_key(f) in true_fluents for f in self.grounded_fluents}
         )
 
-    def action_to_macq(self, action: GroundAction) -> Action:
+    def action_to_macq(self, action: GroundAction) -> GroundedAction:
         """Converts a ground action to an action as defined by macq.
 
-        A macq action can't mark a precondition as negative, so only the positive
-        preconditions are recorded.
 
         Args:
             action (GroundAction):
                 The supplied ground action.
 
         Returns:
-            An action, defined using the macq Action class.
+            An action, defined using the macq GroundedAction class.
         """
         name = str(action.name)
-        obj_params = [self._planning_objects[str(t.name)] for t in action.parameters]
+        objects = [self._planning_objects[str(t.name)] for t in action.parameters]
         if not self.observe_pres_effs:
-            return Action(name=name, obj_params=obj_params)
+            return GroundedAction(name, objects)
 
         precondition = get_precondition(action)
         conjuncts = getattr(precondition, "operands", (precondition,))
         adds, deletes = _split_effects(action)
-        return Action(
-            name=name,
-            obj_params=obj_params,
-            precond={
+        return GroundedAction(
+            name,
+            objects,
+            positive_preconditions={
                 self._atom_to_fluent(c) for c in conjuncts if isinstance(c, Predicate)
             },
-            add={self._atom_to_fluent(atom) for atom in adds},
-            delete={self._atom_to_fluent(atom) for atom in deletes},
+            negative_preconditions={
+                self._atom_to_fluent(c.argument)
+                for c in conjuncts
+                if isinstance(c, Not) and isinstance(c.argument, Predicate)
+            },
+            add_effects={self._atom_to_fluent(atom) for atom in adds},
+            delete_effects={self._atom_to_fluent(atom) for atom in deletes},
         )
 
     def _replace_problem(self, init: Optional[Iterable] = None, goal=None):

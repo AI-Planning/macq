@@ -17,7 +17,7 @@ from ..core import (
     ParameterBoundFluent,
 )
 from ..observation import Observation, ObservedTraceList, PartialObservation
-from ..trace import Action
+from ..core import GroundedAction
 from ..core import GroundedFluent
 from ..utils.pysat import RC2, WCNF, to_wcnf
 from ._core_conversion import common_types, to_parameters
@@ -179,7 +179,7 @@ class ARMS:
             for pre, post in zip(tokens, tokens[1:]):
                 if pre.action is None:
                     continue
-                params = pre.action.obj_params
+                params = pre.action.objects
                 schema = (pre.action.name, tuple(obj.obj_type.type_name for obj in params))
                 before = pre.state.fluents if pre.state else {}
                 after = post.state.fluents if post.state else {}
@@ -280,7 +280,7 @@ class ARMS:
         if debug1:
             input("Press enter to continue...")
 
-        action_map_rev: Dict[_ActionSchema, List[Action]] = defaultdict(list)
+        action_map_rev: Dict[_ActionSchema, List[GroundedAction]] = defaultdict(list)
         for obs_action, learned_action in action_map.items():
             action_map_rev[learned_action].append(obs_action)
 
@@ -335,7 +335,7 @@ class ARMS:
             setA = set()
             for action in action_map_rev.keys():
                 for i, obs_trace in enumerate(obs_tracelist):
-                    obs_action: Action = obs_trace[early_actions[i]].action
+                    obs_action: GroundedAction = obs_trace[early_actions[i]].action
                     # if current action is the early action for obs_trace i,
                     # update the next state with the effects and update the
                     # early action pointer
@@ -347,14 +347,14 @@ class ARMS:
                             # get fluent by cross referencing obs_trace.action params
                             candidates = relation_map_rev[add]
                             for fluent in candidates:
-                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                if set(fluent.objects).issubset(obs_action.objects):
                                     obs_trace[early_actions[i] + 1].state[fluent] = True
                                     early_actions[i] += 1
                         # Set del effects false
                         for delete in action.delete:
                             candidates = relation_map_rev[delete]
                             for fluent in candidates:
-                                if set(fluent.objects).issubset(obs_action.obj_params):
+                                if set(fluent.objects).issubset(obs_action.objects):
                                     obs_trace[early_actions[i] + 1].state[
                                         fluent
                                     ] = False
@@ -403,19 +403,19 @@ class ARMS:
         obs_tracelist: ObservedTraceList, debug: bool
     ) -> Tuple[
         Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]],
-        Dict[Action, _ActionSchema],
+        Dict[GroundedAction, _ActionSchema],
     ]:
         """(Step 1) Substitute instantiated objects in each action instance with the object type."""
 
         learned_actions: Set[_ActionSchema] = set()
-        action_map: Dict[Action, _ActionSchema] = {}
+        action_map: Dict[GroundedAction, _ActionSchema] = {}
         for obs_action in obs_tracelist.get_actions():
             # We don't support objects with multiple types right now, so no
             # multiple type clauses need to be generated.
 
             # Create action schemas for each action, replacing instantiated
             # objects with the object type.
-            types = [obj.obj_type.type_name for obj in obs_action.obj_params]
+            types = [obj.obj_type.type_name for obj in obs_action.objects]
             learned_action = _ActionSchema(obs_action.name, types)
             learned_actions.add(learned_action)
             action_map[obs_action] = learned_action
@@ -438,7 +438,7 @@ class ARMS:
     def step2(
         obs_tracelist: ObservedTraceList,
         connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set[str]]],
-        action_map: Dict[Action, _ActionSchema],
+        action_map: Dict[GroundedAction, _ActionSchema],
         fluents: Set[GroundedFluent],
         min_support: int,
         debug: bool,
@@ -580,7 +580,7 @@ class ARMS:
     def step2I(
         obs_tracelist: ObservedTraceList,
         relations: Dict[GroundedFluent, Relation],
-        actions: Dict[Action, _ActionSchema],
+        actions: Dict[GroundedAction, _ActionSchema],
         debug: bool,
     ) -> Tuple[List[Or[Var]], Dict[Or[Var], int]]:
         r"""Information constraints.
@@ -736,7 +736,7 @@ class ARMS:
     def step2P(
         obs_tracelist: ObservedTraceList,
         connected_actions: Dict[_ActionSchema, Dict[_ActionSchema, Set]],
-        action_map: Dict[Action, _ActionSchema],
+        action_map: Dict[GroundedAction, _ActionSchema],
         relations: Set[Relation],
         min_support: int,
         debug: bool,

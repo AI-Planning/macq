@@ -13,6 +13,14 @@ ROOT = Path(__file__).parent.parent.parent
 SCENARIOS = sorted(path.stem for path in (SNAPSHOTS / "expected").glob("*.json"))
 
 
+def _with_unknown_costs(expected):
+    """Applies the only change a learned model may have: grounded action costs were 0 and are now unknown."""
+    for action in expected["actions"]:
+        if action.get("cost") == 0:
+            action["cost"] = None
+    return expected
+
+
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_extractor_learns_the_snapshotted_model(scenario, tmp_path):
     output = tmp_path / "learned.json"
@@ -24,4 +32,4 @@ def test_extractor_learns_the_snapshotted_model(scenario, tmp_path):
         capture_output=True,
     )
     expected = json.loads((SNAPSHOTS / "expected" / f"{scenario}.json").read_text())
-    assert json.loads(output.read_text()) == expected
+    assert json.loads(output.read_text()) == _with_unknown_costs(expected)

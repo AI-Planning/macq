@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from graphviz import Digraph
 
-from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.extract import Extract, modes
 from macq.extract.locm import AP, LOCM, Hypothesis
 from macq.generate.pddl import *
@@ -57,21 +57,21 @@ def get_example_obs(print_trace=False, ex=1):
         "wr2in": GroundedFluent("in", [objects["wr2"], objects["c2"]]),
     }
     actions = {
-        "open1": Action("open", [objects["c1"]]),
-        "open2": Action("open", [objects["c2"]]),
-        "open3": Action("open", [objects["c3"]]),
-        "close1": Action("close", [objects["c1"]]),
-        "close2": Action("close", [objects["c2"]]),
-        "close3": Action("close", [objects["c3"]]),
-        "fetchj1": Action("fetch_jack", [objects["j1"], objects["c1"]]),
-        "fetchj2": Action("fetch_jack", [objects["j2"], objects["c2"]]),
-        "putj1": Action("putaway_jack", [objects["j1"], objects["c1"]]),
-        "putj2": Action("putaway_jack", [objects["j2"], objects["c2"]]),
-        "fetchwr1": Action("fetch_wrench", [objects["wr1"], objects["c1"]]),
-        "fetchwr2": Action("fetch_wrench", [objects["wr2"], objects["c2"]]),
-        "putwr1": Action("putaway_wrench", [objects["wr1"], objects["c1"]]),
-        "putwr2": Action("putaway_wrench", [objects["wr2"], objects["c2"]]),
-        "closewr": Action("close", [objects["wr1"]]),
+        "open1": GroundedAction("open", [objects["c1"]]),
+        "open2": GroundedAction("open", [objects["c2"]]),
+        "open3": GroundedAction("open", [objects["c3"]]),
+        "close1": GroundedAction("close", [objects["c1"]]),
+        "close2": GroundedAction("close", [objects["c2"]]),
+        "close3": GroundedAction("close", [objects["c3"]]),
+        "fetchj1": GroundedAction("fetch_jack", [objects["j1"], objects["c1"]]),
+        "fetchj2": GroundedAction("fetch_jack", [objects["j2"], objects["c2"]]),
+        "putj1": GroundedAction("putaway_jack", [objects["j1"], objects["c1"]]),
+        "putj2": GroundedAction("putaway_jack", [objects["j2"], objects["c2"]]),
+        "fetchwr1": GroundedAction("fetch_wrench", [objects["wr1"], objects["c1"]]),
+        "fetchwr2": GroundedAction("fetch_wrench", [objects["wr2"], objects["c2"]]),
+        "putwr1": GroundedAction("putaway_wrench", [objects["wr1"], objects["c1"]]),
+        "putwr2": GroundedAction("putaway_wrench", [objects["wr2"], objects["c2"]]),
+        "closewr": GroundedAction("close", [objects["wr1"]]),
     }
 
     if ex == 1:
@@ -237,7 +237,7 @@ def test_locm_step4(HS=None, is_test=True):
                     Hypothesis(
                         S=1,
                         B=AP(
-                            Action(
+                            GroundedAction(
                                 "do_up",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -250,7 +250,7 @@ def test_locm_step4(HS=None, is_test=True):
                         k=1,
                         k_=2,
                         C=AP(
-                            Action(
+                            GroundedAction(
                                 "tighten",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -268,7 +268,7 @@ def test_locm_step4(HS=None, is_test=True):
                     Hypothesis(
                         S=1,
                         B=AP(
-                            Action(
+                            GroundedAction(
                                 "do_up",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -281,7 +281,7 @@ def test_locm_step4(HS=None, is_test=True):
                         k=1,
                         k_=2,
                         C=AP(
-                            Action(
+                            GroundedAction(
                                 "undo",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -299,7 +299,7 @@ def test_locm_step4(HS=None, is_test=True):
                     Hypothesis(
                         S=1,
                         B=AP(
-                            Action(
+                            GroundedAction(
                                 "loosen",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -312,7 +312,7 @@ def test_locm_step4(HS=None, is_test=True):
                         k=1,
                         k_=2,
                         C=AP(
-                            Action(
+                            GroundedAction(
                                 "tighten",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -330,7 +330,7 @@ def test_locm_step4(HS=None, is_test=True):
                     Hypothesis(
                         S=1,
                         B=AP(
-                            Action(
+                            GroundedAction(
                                 "loosen",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -343,7 +343,7 @@ def test_locm_step4(HS=None, is_test=True):
                         k=1,
                         k_=2,
                         C=AP(
-                            Action(
+                            GroundedAction(
                                 "undo",
                                 [
                                     PlanningObject("nut1", ObjectType("nut")),
@@ -381,7 +381,7 @@ def test_locm_step5(is_test=True):
                 Hypothesis(
                     S=1,
                     B=AP(
-                        Action(
+                        GroundedAction(
                             "do_up",
                             [
                                 PlanningObject("nut1", ObjectType("nut")),
@@ -394,7 +394,7 @@ def test_locm_step5(is_test=True):
                     k=2,
                     k_=1,
                     C=AP(
-                        Action(
+                        GroundedAction(
                             "undo",
                             [
                                 PlanningObject("nut1", ObjectType("nut")),
@@ -412,7 +412,7 @@ def test_locm_step5(is_test=True):
                 Hypothesis(
                     S=1,
                     B=AP(
-                        Action(
+                        GroundedAction(
                             "jack_up",
                             [
                                 PlanningObject("jack1", ObjectType("jack")),
@@ -425,7 +425,7 @@ def test_locm_step5(is_test=True):
                     k=2,
                     k_=1,
                     C=AP(
-                        Action(
+                        GroundedAction(
                             "jack_down",
                             [
                                 PlanningObject("jack1", ObjectType("jack")),

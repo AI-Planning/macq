@@ -3,7 +3,8 @@ from math import exp
 from numpy import dot
 from random import random
 from typing import Callable, Type, Set, List
-from . import TraceList, Step, Action, PartialState, State
+from . import TraceList, Step, PartialState, State
+from ..core import GroundedAction
 from ..observation import Observation, ObservedTraceList
 
 
@@ -13,7 +14,7 @@ class ActionPair:
     (that is, {action1, action2} is equivalent to {action2, action1}.)
     """
 
-    actions: Set[Action]
+    actions: Set[GroundedAction]
 
     def tup(self):
         actions = list(self.actions)
@@ -47,39 +48,39 @@ def default_theta_vec(k: int):
     return [(1 / k)] * k
 
 
-def objects_shared_feature(act_x: Action, act_y: Action):
+def objects_shared_feature(act_x: GroundedAction, act_y: GroundedAction):
     """Corresponds to default feature 1 from the AMDN paper.
 
     Args:
-        act_x (Action):
+        act_x (GroundedAction):
             The first action to be compared.
-        act_y (Action):
+        act_y (GroundedAction):
             The second action to be compared.
 
     Returns:
         The number of objects shared by the two actions.
     """
     num_shared = 0
-    for obj in act_x.obj_params:
-        for other_obj in act_y.obj_params:
+    for obj in act_x.objects:
+        for other_obj in act_y.objects:
             if obj == other_obj:
                 num_shared += 1
     return num_shared
 
 
-def num_parameters_feature(act_x: Action, act_y: Action):
+def num_parameters_feature(act_x: GroundedAction, act_y: GroundedAction):
     """Corresponds to default feature 2 from the AMDN paper.
 
     Args:
-        act_x (Action):
+        act_x (GroundedAction):
             The first action to be compared.
-        act_y (Action):
+        act_y (GroundedAction):
             The second action to be compared.
 
     Returns:
         1 if the actions share the same number of parameters, 0 otherwise.
     """
-    return 1 if len(act_x.obj_params) == len(act_y.obj_params) else 0
+    return 1 if len(act_x.objects) == len(act_y.objects) else 0
 
 
 def _decision(probability: float):
@@ -106,7 +107,7 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
             The trace list converted to a list of lists of tokens.
         type (Type[Observation]):
             The type of token to be used.
-        all_par_act_sets (List[List[Set[Action]]]):
+        all_par_act_sets (List[List[Set[GroundedAction]]]):
             Holds the parallel action sets for all traces.
         all_states (List(List[State])):
             Holds the relevant states for all traces. Note that these are RELATIVE to the parallel action sets and only
@@ -115,7 +116,7 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
             The list of functions to be used to create the feature vector.
         learned_theta (List[float]):
             The supplied theta vector.
-        actions (List[Action]):
+        actions (List[GroundedAction]):
             The list of all actions used in the traces given (no duplicates).
         propositions (Set[GroundedFluent]):
             The set of all fluents.
@@ -202,13 +203,13 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
             )
         return denominator
 
-    def _get_f_vec(self, act_x: Action, act_y: Action):
+    def _get_f_vec(self, act_x: GroundedAction, act_y: GroundedAction):
         """Returns the feature vector.
 
         Args:
-        act_x (Action):
+        act_x (GroundedAction):
             The first action to be used in each feature function.
-        act_y (Action):
+        act_y (GroundedAction):
             The second action to be used in each feature function.
 
         Returns:
@@ -216,13 +217,13 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
         """
         return [f(act_x, act_y) for f in self.features]
 
-    def _calculate_probability(self, act_x: Action, act_y: Action):
+    def _calculate_probability(self, act_x: GroundedAction, act_y: GroundedAction):
         """Calculates the probability of two actions being disordered.
 
         Args:
-            act_x (Action):
+            act_x (GroundedAction):
                 The first action.
-            act_y (Action):
+            act_y (GroundedAction):
                 The second action.
 
         Returns:
@@ -257,13 +258,13 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
         return cur_state
 
     def _update_partial_state(
-        self, partial_state: PartialState, orig_state: State, action: Action
+        self, partial_state: PartialState, orig_state: State, action: GroundedAction
     ):
         """
         Update the provided PartialState with the fluents provided.
         """
         new_partial = partial_state.copy()
-        effects = set([e for e in action.add] + [e for e in action.delete])
+        effects = set([e for e in action.add_effects] + [e for e in action.delete_effects])
         for e in effects:
             new_partial[e] = orig_state[e]
         return new_partial
@@ -295,9 +296,9 @@ class DisorderedParallelActionsObservationLists(ObservedTraceList):
                 a = trace[i].action
                 if a:
                     a_conditions = set(
-                        [p for p in a.precond]
-                        + [e for e in a.add]
-                        + [e for e in a.delete]
+                        [p for p in a.positive_preconditions]
+                        + [e for e in a.add_effects]
+                        + [e for e in a.delete_effects]
                     )
                     # if the action has any conditions in common with any actions in the previous parallel set (NOT parallel)
                     if a_conditions.intersection(cur_par_act_conditions) != set():

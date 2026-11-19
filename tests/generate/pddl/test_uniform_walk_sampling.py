@@ -53,7 +53,7 @@ def test_a_walk_that_reaches_a_dead_end_stops_and_is_kept():
         assert trace[-1].action is None
         assert len(trace) == len(actions(trace)) + 1
         last_action = actions(trace)[-1]
-        assert (last_action.name, last_action.obj_params[1].name) == ("Move", "Pit")
+        assert (last_action.name, last_action.objects[1].name) == ("Move", "Pit")
 
 
 def test_a_dead_initial_state_gives_one_state_and_no_actions():
@@ -103,13 +103,15 @@ def test_objects_carry_the_domain_type_hierarchy():
 
 def test_trace_actions_carry_no_preconditions_or_effects():
     for action in actions(sampler().generate_trace(0)):
-        assert not action.precond and not action.add and not action.delete
+        assert not action.positive_preconditions and not action.negative_preconditions
+        assert not action.add_effects and not action.delete_effects
+        assert action.cost is None
 
 
 def test_each_applicable_action_is_picked_about_equally_often():
     walker = sampler(max_actions=1)
     first = Counter(
-        " ".join([a.name, *[o.name for o in a.obj_params]])
+        " ".join([a.name, *[o.name for o in a.objects]])
         for i in range(3000)
         for a in actions(walker.generate_trace(i))
     )

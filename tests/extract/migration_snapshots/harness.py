@@ -45,10 +45,9 @@ def _deliver(count, max_actions):
 
 def _action(name, params, objects):
     """Builds a trace action over objects of type `object`, in whatever form `macq.trace` uses."""
-    from macq.core import ObjectType, PlanningObject
-    from macq.trace import Action
+    from macq.core import GroundedAction, ObjectType, PlanningObject
 
-    return Action(name, [objects.setdefault(p, PlanningObject(p, ObjectType("object"))) for p in params])
+    return GroundedAction(name, [objects.setdefault(p, PlanningObject(p, ObjectType("object"))) for p in params])
 
 
 def _action_traces(sequence):

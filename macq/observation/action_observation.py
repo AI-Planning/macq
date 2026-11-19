@@ -23,7 +23,7 @@ class ActionObservation(Observation):
         Observation.__init__(self, index=step.index)
 
         self.state = None # stateless representation
-        self.action = None if step.action is None else step.action.clone()
+        self.action = step.action
 
     def __eq__(self, other):
         return (

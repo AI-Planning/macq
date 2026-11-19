@@ -5,7 +5,8 @@ from enum import Enum, auto
 from typing import Dict, List, Union
 
 from ..core import DomainModel
-from ..trace import Action, State  # must load before ..observation, which it imports circularly
+from ..trace import State  # must load before ..observation, which it imports circularly
+from ..core import GroundedAction
 from ..observation import ObservedTraceList
 
 from .amdn import AMDN
@@ -17,7 +18,7 @@ from .observer import Observer
 @dataclass
 class SAS:
     pre_state: State
-    action: Action
+    action: GroundedAction
     post_state: State
 
 

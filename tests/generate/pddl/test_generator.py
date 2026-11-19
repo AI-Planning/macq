@@ -114,7 +114,7 @@ def test_names_keep_their_case_and_declared_types(tmp_path):
     action = generator.generate_single_trace_from_plan(plan)[0].action
 
     assert action.name == "Move"
-    assert [o.details() for o in action.obj_params] == [
+    assert [o.details() for o in action.objects] == [
         "Box B1",
         "place L1",
         "place L2",
@@ -129,7 +129,7 @@ def test_untyped_objects_have_the_type_object(tmp_path):
     assert only.objects[0].obj_type == ObjectType()
 
 
-def test_negative_preconditions_are_left_out_of_trace_actions(tmp_path):
+def test_observed_preconditions_keep_their_sign(tmp_path):
     dom, prob = write(tmp_path)
     generator = VanillaSampling(dom, prob, plan_len=2, observe_pres_effs=True)
 
@@ -138,9 +138,10 @@ def test_negative_preconditions_are_left_out_of_trace_actions(tmp_path):
     plan = generator.generate_plan(from_ipc_file=True, filename=str(plan_file))
     action = generator.generate_single_trace_from_plan(plan)[0].action
 
-    assert names(action.precond) == {"at B1 L1", "link L1 L2"}
-    assert names(action.add) == {"at B1 L2"}
-    assert names(action.delete) == {"at B1 L1"}
+    assert names(action.positive_preconditions) == {"at B1 L1", "link L1 L2"}
+    assert names(action.negative_preconditions) == {"sealed B1"}
+    assert names(action.add_effects) == {"at B1 L2"}
+    assert names(action.delete_effects) == {"at B1 L1"}
 
 
 def test_plans_match_regardless_of_case(tmp_path):

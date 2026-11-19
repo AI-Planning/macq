@@ -1,5 +1,5 @@
 from pathlib import Path
-from macq.core import GroundedFluent, ObjectType, PlanningObject
+from macq.core import GroundedAction, GroundedFluent, ObjectType, PlanningObject
 from macq.trace import *
 from macq.observation import IdentityObservation
 from macq.extract import Extract, modes
@@ -52,7 +52,7 @@ def generate_test_actions(num_actions: int):
     for i in range(num_actions):
         action_name = "action " + str(i + 1)
         # action 1 has a cost of 1, etc.
-        action = Action(action_name, objects, i + 1)
+        action = GroundedAction(action_name, objects, cost=i + 1)
         actions.append(action)
     return actions
 

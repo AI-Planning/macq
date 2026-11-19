@@ -43,7 +43,7 @@ class NoisyObservation(Observation):
         step = self.random_noisy_subset(step, percent_noisy, replace, rng)
 
         self.state = step.state.clone()
-        self.action = None if step.action is None else step.action.clone()
+        self.action = step.action
 
     def random_noisy_subset(
         self, step: Step, percent_noisy: float, replace: bool = False, rng=None

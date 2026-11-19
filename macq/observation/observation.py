@@ -1,7 +1,8 @@
 from warnings import warn
 from typing import Union
 import random
-from ..trace import State, Action
+from ..trace import State
+from ..core import GroundedAction
 
 
 class InvalidQueryParameter(Exception):
@@ -24,7 +25,7 @@ class Observation:
 
     index: int
     state: Union[State, None]
-    action: Union[Action, None]
+    action: Union[GroundedAction, None]
 
     def __init__(self, **kwargs):
         """

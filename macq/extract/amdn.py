@@ -1,6 +1,6 @@
 """.. include:: ../../docs/extract/amdn.md"""
 
-from macq.trace import Action  # for typing
+from macq.core import GroundedAction
 from macq.core import GroundedFluent
 from nnf.operators import implies
 
@@ -10,7 +10,7 @@ from bauhaus import Encoding  # only used for pretty printing in debug mode
 from .exceptions import (
     IncompatibleObservationToken,
 )
-from ._core_conversion import to_grounded_fluent, to_planning_object
+from ._core_conversion import action_text, to_grounded_fluent, to_planning_object
 from ..core import DomainModel, DomainModelForm, GroundedAction
 from ..trace import ActionPair
 from ..observation import NoisyPartialDisorderedParallelObservation, ObservedTraceList
@@ -19,46 +19,46 @@ from ..utils.pysat import to_wcnf, extract_raw_model
 e = Encoding
 
 
-def pre(r: GroundedFluent, act: Action):
+def pre(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is a precondition of the given action.
 
     Args:
         r (GroundedFluent):
             The precondition to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the precondition will be added to.
     Returns:
         The Var that enforces that the given fluent is a precondition of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is a precondition of " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is a precondition of " + action_text(act) + ")")
 
 
-def add(r: GroundedFluent, act: Action):
+def add(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is an add effect of the given action.
 
     Args:
         r (GroundedFluent):
             The add effect to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the add effect will be added to.
     Returns:
         The Var that enforces that the given fluent is an add effect of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is added by " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is added by " + action_text(act) + ")")
 
 
-def delete(r: GroundedFluent, act: Action):
+def delete(r: GroundedFluent, act: GroundedAction):
     """Create a Var that enforces that the given fluent is a delete effect of the given action.
 
     Args:
         r (GroundedFluent):
             The delete effect to be added.
-        act (Action):
+        act (GroundedAction):
             The action that the delete effect will be added to.
     Returns:
         The Var that enforces that the given fluent is a delete effect of the given action.
     """
-    return Var("(" + str(r)[1:-1] + " is deleted by " + act.details() + ")")
+    return Var("(" + str(r)[1:-1] + " is deleted by " + action_text(act) + ")")
 
 
 WMAX = 1
@@ -753,8 +753,8 @@ class AMDN:
         learned_actions = {}
         for a in obs_tracelist.actions:
             # set up a base action with the known information
-            learned_actions[a.details()] = GroundedAction(
-                a.name, map(to_planning_object, a.obj_params), cost=a.cost
+            learned_actions[action_text(a)] = GroundedAction(
+                a.name, map(to_planning_object, a.objects), cost=a.cost
             )
         # iterate through all fluents
         for raw_f in model:

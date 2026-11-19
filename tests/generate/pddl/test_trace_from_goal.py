@@ -53,7 +53,7 @@ def test_parameter_order():
     goal_generator.change_goal({fluent("at", "ball1", "roomb")})
     trace = goal_generator.generate_trace()
     # assert object order
-    names = {act.name: [o.name for o in act.obj_params] for act in trace.actions}
+    names = {act.name: [o.name for o in act.objects] for act in trace.actions}
     assert names["pick"][:2] == ["ball1", "rooma"]
     assert names["move"] == ["rooma", "roomb"]
     assert names["drop"][:2] == ["ball1", "roomb"]

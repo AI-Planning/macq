@@ -77,7 +77,7 @@ class Observer:
             # Create a domain model action for the current action
             model_action = GroundedAction(
                 action.name,
-                map(to_planning_object, action.obj_params),
+                map(to_planning_object, action.objects),
                 cost=action.cost,
             )
 

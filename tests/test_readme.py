@@ -1,3 +1,5 @@
+import pytest
+
 from macq import generate, extract
 from macq.observation import IdentityObservation
 
@@ -33,8 +35,8 @@ def test_readme():
     trace.get_pre_states(action1)
     trace.get_post_states(action1)
 
-    cost = trace.get_total_cost()
-    assert cost == 0
+    with pytest.raises(ValueError, match="unknown"):
+        trace.get_total_cost()
 
     model = extract_model(traces)
     model.details()  # in the readme, so worth having to guaruntee no errors

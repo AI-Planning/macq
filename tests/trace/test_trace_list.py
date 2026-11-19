@@ -56,7 +56,7 @@ def test_trace_list():
 
     assert trace_list.traces == trace_list.copy()
 
-    trace_list.sort()
+    trace_list.sort(key=len)
     trace_list.print()
 
 

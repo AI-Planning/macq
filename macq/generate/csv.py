@@ -1,6 +1,5 @@
-from macq.core import GroundedFluent
+from macq.core import GroundedAction, GroundedFluent
 from macq.trace import (
-    Action,
     State,
     Step,
     Trace,
@@ -72,7 +71,7 @@ def load(fname: str, act_col: str, plan_id_col: str = None):
                     if f not in [act_col, plan_id_col]
                 }
             )
-            act = Action(bitvec[act_col], [])
+            act = GroundedAction(bitvec[act_col], [])
             step = Step(state, act, i)
             trace.append(step)
         traces.append(trace)

@@ -6,8 +6,7 @@ from pprint import pprint
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from warnings import warn
 
-from macq.trace.action import Action
-from macq.core import ObjectType, PlanningObject
+from macq.core import GroundedAction, ObjectType, PlanningObject
 
 from ..core import (
     DomainModel,
@@ -47,7 +46,7 @@ class _ActionSchema:
 class AP:
     """Action.Position (of object parameter). Position is 1-indexed."""
 
-    action: Action
+    action: GroundedAction
     pos: int  # NOTE: 1-indexed
     sort: int
 
@@ -356,7 +355,7 @@ class LOCM:
                 continue
 
             if debug:
-                print("\n\naction:", action.name, action.obj_params)
+                print("\n\naction:", action.name, action.objects)
 
             if action.name not in ap_sort_pointers:  # new action
                 if debug:
@@ -365,7 +364,7 @@ class LOCM:
                 ap_sort_pointers[action.name] = []
 
                 # for each parameter of the action
-                for obj in action.obj_params:
+                for obj in action.objects:
                     if obj.name not in sorted_objs:  # unsorted object
                         # append a sort (set) containing the object
                         sorts.append({obj})
@@ -396,7 +395,7 @@ class LOCM:
                     print("seen action")
 
                 for ap_sort, obj in zip(
-                    ap_sort_pointers[action.name], action.obj_params
+                    ap_sort_pointers[action.name], action.objects
                 ):
                     if debug:
                         print("checking obj", obj.name)
@@ -506,7 +505,7 @@ class LOCM:
                 # add the step for the zero-object
                 obj_traces[zero_obj].append(AP(action, pos=0, sort=0))
                 # for each combination of action name A and argument pos P
-                for j, obj in enumerate(action.obj_params):
+                for j, obj in enumerate(action.objects):
                     # create transition A.P
                     ap = AP(action, pos=j + 1, sort=sorts[obj.name])
                     obj_traces[obj].append(ap)
@@ -587,19 +586,19 @@ class LOCM:
                 # for each pair of transitions B.k and C.l consecutive for O
                 for B, C in zip(seq, seq[1:]):
                     # skip if B or C only have one parameter, since there is no k' or l' to match on
-                    if len(B.action.obj_params) == 1 or len(C.action.obj_params) == 1:
+                    if len(B.action.objects) == 1 or len(C.action.objects) == 1:
                         continue
 
                     k = B.pos
                     l = C.pos
 
                     # check each pair B.k' and C.l'
-                    for i, Bk_ in enumerate(B.action.obj_params):
+                    for i, Bk_ in enumerate(B.action.objects):
                         k_ = i + 1
                         if k_ == k:
                             continue
                         G_ = sorts[Bk_.name]
-                        for j, Cl_ in enumerate(C.action.obj_params):
+                        for j, Cl_ in enumerate(C.action.objects):
                             l_ = j + 1
                             if l_ == l:
                                 continue
@@ -639,8 +638,8 @@ class LOCM:
                         for H in HS[BkCl].copy():
                             # if Op,k' = Oq,l' then mark the hypothesis as supported
                             if (
-                                Ap.action.obj_params[H.k_ - 1]
-                                == Aq.action.obj_params[H.l_ - 1]
+                                Ap.action.objects[H.k_ - 1]
+                                == Aq.action.objects[H.l_ - 1]
                             ):
                                 H.supported = True
                             else:  # otherwise remove the hypothesis

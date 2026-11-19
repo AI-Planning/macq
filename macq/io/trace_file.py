@@ -12,7 +12,8 @@ from pddl.core import Domain, Problem
 from pddlutils.grounding import has_type
 
 from ..core import PlanningObject
-from ..trace import Action, PartialState, State, Step, Trace, TraceList
+from ..trace import PartialState, State, Step, Trace, TraceList
+from ..core import GroundedAction
 from ..core import GroundedFluent
 from ..utils.pddl_objects import planning_objects
 from ..observation import Observation, PartialObservation
@@ -144,8 +145,8 @@ def _fluent_text(fluent: GroundedFluent) -> str:
     return _canonical(fluent.name, [o.name for o in fluent.objects])
 
 
-def _action_text(action: Action) -> str:
-    return _canonical(action.name, [o.name for o in action.obj_params])
+def _action_text(action: GroundedAction) -> str:
+    return _canonical(action.name, [o.name for o in action.objects])
 
 
 # -- reading ---------------------------------------------------------------------
@@ -315,11 +316,11 @@ class _Reader:
                 )
         return [self.objects[name] for name in arguments]
 
-    def action(self, text: str) -> Action:
+    def action(self, text: str) -> GroundedAction:
         name, arguments = self.parse(text)
         if name not in self.actions:
             self.fail(f"has {text}, but the domain has no action {name}")
-        return Action(name, self.arguments(text, self.actions[name].parameters, arguments))
+        return GroundedAction(name, self.arguments(text, self.actions[name].parameters, arguments))
 
     def atom(self, text: str) -> str:
         name, arguments = self.parse(text)
