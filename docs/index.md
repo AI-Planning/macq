@@ -27,6 +27,10 @@ Once trace data is loaded, you can process the traces to produce lists of observ
 | [NoisyPartialObservation](macq/observation.html#NoisyPartialObservation) | Observations with added noise to the fluents and a subset of the fluents hidden in the states |
 | [NoisyPartialDisorderedParallelObservation](macq/observation.html#NoisyPartialDisorderedParallelObservation) | Observations with added noise to the fluents and a subset of the fluents hidden in the states, with the actions disordered and parallelized |
 
+## Trace Files
+
+Traces and observation tokens can be written to and read from [trace files](macq/io.html), a JSON format with one trace per file.
+
 ## Extraction Techniques
 
 Depending on the observation type, different extraction techniques can be used to extract the relevant information from the observations. These are currently the techniques implemented:
